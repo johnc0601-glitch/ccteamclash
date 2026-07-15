@@ -1,0 +1,7 @@
+{
+  "framework": null,
+  "installCommand": "echo Skipping dependency install",
+  "buildCommand": "echo Static site ready",
+  "outputDirectory": ".",
+  "cleanUrls": true
+}
