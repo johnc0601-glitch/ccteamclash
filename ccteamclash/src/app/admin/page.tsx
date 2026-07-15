@@ -1,0 +1,2 @@
+import {PostEditor} from '@/components/PostEditor';import {SiteHeader,Footer} from '@/components/SiteHeader';
+export default function Admin(){return <main><SiteHeader/><section className="admin-hero"><div className="shell"><span className="eyebrow light">Publishing desk</span><h1>Create a story</h1><p>Upload a photo, paste your story, preview it, and save. Your draft stays in this browser automatically.</p></div></section><section className="shell admin-shell"><PostEditor/></section><Footer/></main>}
