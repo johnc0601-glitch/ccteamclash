@@ -1,27 +1,14 @@
 'use client';
 
 import {useState} from 'react';
-import type {Player} from '@/models/Player';
+import type {PublicPlayerView} from '@/services/public/PublicPlayerService';
 import type {PlayerMatchHistoryEntry, PlayerStatistics} from '@/services/statistics';
 import styles from '@/app/players/Players.module.css';
-
-export type PublicPlayerHistory = PlayerMatchHistoryEntry & {
-  opponentTeamName: string;
-  seasonName: string;
-};
-
-export type PublicPlayerView = {
-  player: Player;
-  teamName: string;
-  currentSeasonName: string;
-  currentStatistics?: PlayerStatistics;
-  careerStatistics: PlayerStatistics;
-  history: PublicPlayerHistory[];
-};
 
 type PublicPlayerDirectoryProps = {
   players: PublicPlayerView[];
   teams: Array<{id: string; name: string}>;
+  showFilters?: boolean;
 };
 
 function formatRecord(statistics: PlayerStatistics): string {
@@ -43,7 +30,11 @@ function formatDate(date: string): string {
   });
 }
 
-export function PublicPlayerDirectory({players, teams}: PublicPlayerDirectoryProps) {
+export function PublicPlayerDirectory({
+  players,
+  teams,
+  showFilters = true,
+}: PublicPlayerDirectoryProps) {
   const [search, setSearch] = useState('');
   const [teamId, setTeamId] = useState('all');
   const normalizedSearch = search.trim().toLocaleLowerCase();
@@ -53,7 +44,7 @@ export function PublicPlayerDirectory({players, teams}: PublicPlayerDirectoryPro
 
   return (
     <>
-      <div className={styles.filters}>
+      {showFilters ? <div className={styles.filters}>
         <label>
           <span>Find player</span>
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by name" />
@@ -65,7 +56,7 @@ export function PublicPlayerDirectory({players, teams}: PublicPlayerDirectoryPro
             {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
           </select>
         </label>
-      </div>
+      </div> : null}
 
       <div className={styles.directory}>
         {visiblePlayers.map(({player, teamName, currentSeasonName, currentStatistics, careerStatistics, history}) => (

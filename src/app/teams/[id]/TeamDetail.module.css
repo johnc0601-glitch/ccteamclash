@@ -1,0 +1,29 @@
+.page { padding: 54px 0 100px; }
+.back { display: inline-block; margin-bottom: 18px; color: #59635c; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+.overview { display: grid; grid-template-columns: 190px minmax(280px, 1fr) minmax(220px, .8fr); align-items: stretch; border: 1px solid #dfe2db; border-top: 0; }
+.recordBlock { padding: 24px; display: grid; align-content: center; background: #101315; color: #fff; }
+.recordBlock span, .recordBlock small { color: #b9c0bc; font-size: 9px; font-weight: 900; text-transform: uppercase; }
+.recordBlock strong { margin: 6px 0; color: var(--gold); font-size: 34px; }
+.overview dl { margin: 0; padding: 24px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; gap: 18px; }
+.overview dt { color: #707973; font-size: 9px; font-weight: 900; text-transform: uppercase; }
+.overview dd { margin: 6px 0 0; font-size: 21px; font-weight: 900; }
+.teamInfo { padding: 22px 24px; border-left: 1px solid #dfe2db; }
+.teamInfo p { margin: 0 0 12px; }
+.teamInfo span, .teamInfo strong { display: block; }
+.teamInfo span { color: #707973; font-size: 9px; font-weight: 900; text-transform: uppercase; }
+.teamInfo strong { margin-top: 4px; font-size: 12px; }
+.teamInfo a { color: #56701c; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+.description { max-width: 760px; margin: 30px 0 0; color: #5f6962; font-size: 17px; line-height: 1.65; }
+.section { margin-top: 64px; }
+.sectionHeader { margin-bottom: 24px; }
+.sectionHeader span { color: #56701c; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+.sectionHeader h2 { margin: 5px 0 0; font-size: 32px; text-transform: uppercase; }
+.sectionHeader p { margin: 5px 0 0; color: #707973; font-size: 12px; }
+.historyWrap { max-width: 100%; overflow-x: auto; border: 1px solid #dfe2db; border-radius: 6px; }
+.historyWrap table { width: 100%; min-width: 560px; border-collapse: collapse; }
+.historyWrap th, .historyWrap td { padding: 15px 14px; border-bottom: 1px solid #e7e9e4; text-align: left; font-size: 12px; }
+.historyWrap th { background: #f6f7f3; color: #68716b; font-size: 9px; font-weight: 900; text-transform: uppercase; }
+.historyWrap tbody tr:last-child td { border-bottom: 0; }
+.empty { color: #707973; }
+@media (max-width: 850px) { .overview { grid-template-columns: 1fr 1.5fr; } .teamInfo { grid-column: 1 / -1; border-top: 1px solid #dfe2db; border-left: 0; } }
+@media (max-width: 560px) { .page { padding-top: 28px; } .overview { grid-template-columns: 1fr; } .overview dl { grid-template-columns: repeat(3, minmax(0, 1fr)); } .teamInfo { grid-column: auto; } }

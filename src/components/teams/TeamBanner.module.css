@@ -1,6 +1,7 @@
-.banner { padding: 24px; display: flex; align-items: center; gap: 22px; color: #fff; overflow: hidden; }
-.banner img { width: 112px; height: 112px; object-fit: contain; }
+.banner { position: relative; padding: 24px; display: flex; align-items: center; gap: 22px; color: #fff; overflow: hidden; }
+.banner::after { content: ''; position: absolute; inset: 0; background: rgba(0, 0, 0, .24); pointer-events: none; }
+.banner > * { position: relative; z-index: 1; }
 .banner span, .banner strong { display: block; }
 .banner span { margin-bottom: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
 .banner strong { font-size: clamp(26px, 5vw, 48px); text-transform: uppercase; }
-@media (max-width: 560px) { .banner { align-items: flex-start; flex-direction: column; } .banner img { width: 84px; height: 84px; } }
+@media (max-width: 560px) { .banner { align-items: flex-start; flex-direction: column; } }

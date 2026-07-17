@@ -8,6 +8,7 @@ export type {
   PlayerMatchHistoryEntry,
   PlayerResult,
   PlayerStatistics,
+  RecordSummary,
   SeasonStatistics,
   TeamStatistics,
 } from '@/services/statistics/StatisticsTypes';

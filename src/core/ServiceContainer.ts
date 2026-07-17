@@ -9,6 +9,7 @@ import {SeasonService} from '@/domain/season/SeasonService';
 import {MockTeamRepository} from '@/repositories/TeamRepository';
 import {MockPlayerRepository} from '@/repositories/PlayerRepository';
 import {PlayerService} from '@/services/PlayerService';
+import {PublicPlayerService} from '@/services/public/PublicPlayerService';
 import {TeamService} from '@/services/TeamService';
 import {RankingsService} from '@/services/rankings';
 import {StandingsService} from '@/services/standings';
@@ -36,6 +37,7 @@ const schedules = new ScheduleService(
 );
 const statistics = new StatisticsEngine(repositories.statistics);
 const rankings = new RankingsService(players, statistics);
+const publicPlayers = new PublicPlayerService(players, teams, seasons, statistics);
 
 export const services = {
   teams,
@@ -51,5 +53,6 @@ export const services = {
   ),
   statistics,
   rankings,
+  publicPlayers,
   standings: new StandingsService(teams, statistics),
 };

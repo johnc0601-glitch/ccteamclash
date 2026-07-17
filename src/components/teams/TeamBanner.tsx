@@ -1,6 +1,6 @@
-import Image from 'next/image';
 import type {CSSProperties} from 'react';
 import type {Team} from '@/models/Team';
+import {TeamLogo} from '@/components/teams/TeamLogo';
 import styles from './TeamBanner.module.css';
 
 type TeamBannerProps = {
@@ -17,7 +17,7 @@ export function TeamBanner({team, height = 160}: TeamBannerProps) {
 
   return (
     <div className={styles.banner} style={style}>
-      {team.logo ? <Image src={team.logo} alt={`${team.name} logo`} width={112} height={112} /> : null}
+      <TeamLogo team={team} large />
       <div>
         <span>{team.city}, {team.state}</span>
         <strong>{team.name}</strong>
