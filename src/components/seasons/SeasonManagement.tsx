@@ -8,7 +8,7 @@ import type {
   SeasonStatusFilter,
   SeasonViewMode,
 } from '@/domain/season/Season';
-import {seasonService} from '@/domain/season/seasonServiceInstance';
+import {services} from '@/core/ServiceContainer';
 import {ConfirmationDialog} from '@/components/teams/ConfirmationDialog';
 import {SeasonCard} from '@/components/seasons/SeasonCard';
 import {SeasonDetailsDialog} from '@/components/seasons/SeasonDetailsDialog';
@@ -45,7 +45,7 @@ export function SeasonManagement() {
   useEffect(() => {
     let cancelled = false;
 
-    seasonService.getAll({search, status})
+    services.seasons.getAll({search, status})
       .then((nextSeasons) => {
         if (cancelled) return;
         setSeasons(nextSeasons);
@@ -80,8 +80,8 @@ export function SeasonManagement() {
 
     setSubmitting(true);
     const result = editor.mode === 'create'
-      ? await seasonService.create(values)
-      : await seasonService.update(editor.season.id, values);
+      ? await services.seasons.create(values)
+      : await services.seasons.update(editor.season.id, values);
     setSubmitting(false);
 
     if (!result.ok) {
@@ -102,8 +102,8 @@ export function SeasonManagement() {
   async function handleImmediateAction(action: 'activate' | 'duplicate', season: Season) {
     setProcessingId(season.id);
     const result = action === 'activate'
-      ? await seasonService.activate(season.id)
-      : await seasonService.duplicate(season.id);
+      ? await services.seasons.activate(season.id)
+      : await services.seasons.duplicate(season.id);
     setProcessingId(null);
 
     if (!result.ok) {
@@ -126,8 +126,8 @@ export function SeasonManagement() {
 
     setSubmitting(true);
     const result = confirmation.action === 'archive'
-      ? await seasonService.archive(confirmation.season.id)
-      : await seasonService.delete(confirmation.season.id);
+      ? await services.seasons.archive(confirmation.season.id)
+      : await services.seasons.delete(confirmation.season.id);
     setSubmitting(false);
 
     if (!result.ok) {

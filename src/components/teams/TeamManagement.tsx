@@ -2,7 +2,7 @@
 
 import {useEffect, useState} from 'react';
 import type {Team} from '@/models/Team';
-import {teamService} from '@/services/teamServiceInstance';
+import {services} from '@/core/ServiceContainer';
 import type {
   TeamFieldErrors,
   TeamInput,
@@ -46,7 +46,7 @@ export function TeamManagement() {
   useEffect(() => {
     let cancelled = false;
 
-    teamService.getAll({search, status, sort})
+    services.teams.getAll({search, status, sort})
       .then((nextTeams) => {
         if (cancelled) return;
         setTeams(nextTeams);
@@ -81,8 +81,8 @@ export function TeamManagement() {
 
     setSubmitting(true);
     const result = editor.mode === 'create'
-      ? await teamService.create(values)
-      : await teamService.update(editor.team.id, values);
+      ? await services.teams.create(values)
+      : await services.teams.update(editor.team.id, values);
     setSubmitting(false);
 
     if (!result.ok) {
@@ -105,8 +105,8 @@ export function TeamManagement() {
 
     setSubmitting(true);
     const result = confirmation.action === 'archive'
-      ? await teamService.archive(confirmation.team.id)
-      : await teamService.delete(confirmation.team.id);
+      ? await services.teams.archive(confirmation.team.id)
+      : await services.teams.delete(confirmation.team.id);
     setSubmitting(false);
 
     if (!result.ok) {
