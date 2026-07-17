@@ -35,6 +35,11 @@ export const OFFICE_SECTIONS = {
     description: 'Record completed matches and review submitted scores.',
     href: '/office/results',
   },
+  imports: {
+    title: 'Imports',
+    description: 'Validate and apply official match results from the scoring application.',
+    href: '/office/imports',
+  },
   standings: {
     title: 'Standings',
     description: 'Review the competitive order produced by league results.',
