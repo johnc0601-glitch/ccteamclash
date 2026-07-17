@@ -1,0 +1,10 @@
+.page { max-width: 920px; }
+.directory { margin-top: 48px; border-top: 1px solid #dfe3dc; }
+.course { padding: 26px 0; display: flex; align-items: center; justify-content: space-between; gap: 30px; border-bottom: 1px solid #dfe3dc; }
+.course h2 { margin: 0 0 7px; font-size: 25px; text-transform: uppercase; }
+.course p { margin: 0; color: #4e5851; }
+.course small { display: block; margin-top: 5px; color: #747d77; }
+.actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.actions a { min-height: 42px; padding: 0 15px; display: inline-flex; align-items: center; border: 1px solid #cbd1c8; border-radius: 4px; font-size: 12px; font-weight: 900; text-transform: uppercase; }
+.actions .primaryAction { border-color: #121814; background: #121814; color: #fff; }
+@media (max-width: 620px) { .course { align-items: flex-start; flex-direction: column; } .actions { width: 100%; justify-content: flex-start; } }

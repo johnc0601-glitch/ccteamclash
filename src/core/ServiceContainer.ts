@@ -1,4 +1,5 @@
 import {MockCourseRepository} from '@/domain/course/CourseRepository';
+import {CourseService} from '@/domain/course/CourseService';
 import {MockImportRepository} from '@/domain/import/ImportRepository';
 import {ImportService} from '@/domain/import/ImportService';
 import {MockScheduleRepository} from '@/domain/schedule/ScheduleRepository';
@@ -26,6 +27,7 @@ const repositories = {
 const teams = new TeamService(repositories.teams);
 const players = new PlayerService(repositories.players, teams);
 const seasons = new SeasonService(repositories.seasons);
+const courses = new CourseService(repositories.courses);
 const schedules = new ScheduleService(
   repositories.schedules,
   seasons,
@@ -39,6 +41,7 @@ export const services = {
   teams,
   players,
   seasons,
+  courses,
   schedules,
   imports: new ImportService(
     repositories.imports,
