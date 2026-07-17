@@ -9,6 +9,7 @@ import {MockTeamRepository} from '@/repositories/TeamRepository';
 import {MockPlayerRepository} from '@/repositories/PlayerRepository';
 import {PlayerService} from '@/services/PlayerService';
 import {TeamService} from '@/services/TeamService';
+import {RankingsService} from '@/services/rankings';
 import {StandingsService} from '@/services/standings';
 import {MockStatisticsRepository, StatisticsEngine} from '@/services/statistics';
 
@@ -32,6 +33,7 @@ const schedules = new ScheduleService(
   repositories.courses,
 );
 const statistics = new StatisticsEngine(repositories.statistics);
+const rankings = new RankingsService(players, statistics);
 
 export const services = {
   teams,
@@ -45,5 +47,6 @@ export const services = {
     schedules,
   ),
   statistics,
+  rankings,
   standings: new StandingsService(teams, statistics),
 };

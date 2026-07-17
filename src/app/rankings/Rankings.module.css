@@ -1,0 +1,95 @@
+.rankingsPage {
+  max-width: 1160px;
+}
+
+.rankingsGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.rankingPanel {
+  min-width: 0;
+  border: 1px solid #dfe2db;
+  border-radius: 7px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.rankingPanel > header {
+  padding: 22px 24px;
+  border-bottom: 3px solid var(--gold);
+  background: #101315;
+  color: #fff;
+}
+
+.rankingPanel header span {
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.rankingPanel h2 {
+  margin: 6px 0 0;
+  font-size: 26px;
+  text-transform: uppercase;
+}
+
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.rankingPanel table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+}
+
+.rankingPanel th,
+.rankingPanel td {
+  padding: 15px 14px;
+  border-bottom: 1px solid #e7e9e4;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.rankingPanel th {
+  background: #f5f6f2;
+  color: #6a736d;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.rankingPanel td {
+  color: #343c37;
+  font-size: 13px;
+}
+
+.rankingPanel td:first-child {
+  width: 64px;
+}
+
+.rankingPanel td:first-child strong {
+  color: #56701c;
+  font-size: 18px;
+}
+
+.rankingPanel tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.emptyState {
+  margin: 0;
+  padding: 34px 24px;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .rankingsGrid {
+    grid-template-columns: 1fr;
+  }
+}
