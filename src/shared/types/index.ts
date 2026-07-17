@@ -1,1 +1,1 @@
-export type { Match, Story, StoryLink, Team } from './league';
+export type {Match, StandingEntry, Story, StoryLink} from './league';

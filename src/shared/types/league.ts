@@ -14,7 +14,7 @@ export type Story = {
   links?: StoryLink[];
 };
 
-export type Team = {
+export type StandingEntry = {
   name: string;
   record: string;
   diff: string;
