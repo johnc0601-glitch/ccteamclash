@@ -1,0 +1,360 @@
+.commissioner-office {
+  min-height: 100svh;
+  background: #f4f5f1;
+  color: var(--ink);
+}
+
+.office-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  min-height: 76px;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: #090b0c;
+  border-bottom: 1px solid #2b2f31;
+  color: #fff;
+}
+
+.office-brand {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.office-brand-mark {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 8px;
+  color: var(--gold);
+  font-weight: 950;
+}
+
+.office-brand strong,
+.office-brand small {
+  display: block;
+}
+
+.office-brand strong {
+  font-size: 16px;
+  text-transform: uppercase;
+}
+
+.office-brand small {
+  margin-top: 3px;
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.office-public-link {
+  padding: 10px 13px;
+  border: 1px solid var(--gold);
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.office-public-link:hover,
+.office-public-link:focus-visible {
+  background: var(--gold);
+  color: #111;
+}
+
+.office-frame {
+  min-height: calc(100svh - 76px);
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+}
+
+.office-sidebar {
+  position: sticky;
+  top: 76px;
+  height: calc(100svh - 76px);
+  padding: 30px 18px;
+  background: #111516;
+  border-right: 1px solid #2b3032;
+  color: #fff;
+  overflow-y: auto;
+}
+
+.office-nav-label {
+  display: block;
+  margin: 0 12px 14px;
+  color: #858d90;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.office-nav {
+  display: grid;
+  gap: 4px;
+}
+
+.office-nav-link {
+  min-height: 42px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  border-left: 3px solid transparent;
+  border-radius: 3px;
+  color: #c8cdcf;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.office-nav-link:hover,
+.office-nav-link:focus-visible {
+  background: #1d2224;
+  color: #fff;
+}
+
+.office-nav-link.active {
+  background: #22282a;
+  border-left-color: var(--gold);
+  color: var(--gold);
+}
+
+.office-content {
+  min-width: 0;
+  padding: 56px clamp(24px, 5vw, 72px) 80px;
+}
+
+.office-page {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+}
+
+.office-page-header {
+  max-width: 760px;
+  margin-bottom: 38px;
+}
+
+.office-page-header > span,
+.office-module-frame > span {
+  color: #56701c;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.office-page-header h1 {
+  margin: 10px 0 14px;
+  font-size: clamp(42px, 6vw, 68px);
+  line-height: .95;
+  text-transform: uppercase;
+  font-style: italic;
+}
+
+.office-page-header p {
+  max-width: 680px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.office-section-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.office-section-card,
+.office-module-frame {
+  border: 1px solid #dfe2db;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.office-section-card {
+  min-height: 190px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color .18s, box-shadow .18s, transform .18s;
+}
+
+.office-section-card:hover,
+.office-section-card:focus-visible {
+  border-color: #a9b28e;
+  box-shadow: 0 12px 28px rgba(18, 24, 20, .08);
+  transform: translateY(-2px);
+}
+
+.office-section-card > span {
+  font-size: 20px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.office-section-card p {
+  margin: 12px 0 24px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.office-section-card strong {
+  margin-top: auto;
+  color: #56701c;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.office-module-frame {
+  min-height: 300px;
+  padding: 34px;
+  border-top: 4px solid var(--gold);
+}
+
+.office-module-frame h2 {
+  margin: 18px 0 10px;
+  font-size: 25px;
+  text-transform: uppercase;
+}
+
+.office-module-frame p {
+  max-width: 580px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 980px) {
+  .office-section-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .office-topbar {
+    min-height: 68px;
+    padding: 0 16px;
+  }
+
+  .office-brand-mark {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+
+  .office-brand strong {
+    font-size: 13px;
+  }
+
+  .office-brand small {
+    display: none;
+  }
+
+  .office-public-link {
+    padding: 8px 10px;
+    font-size: 9px;
+  }
+
+  .office-frame {
+    min-height: calc(100svh - 68px);
+    display: block;
+  }
+
+  .office-sidebar {
+    position: sticky;
+    top: 68px;
+    z-index: 20;
+    width: 100%;
+    height: auto;
+    padding: 10px 14px;
+    border-right: 0;
+    border-bottom: 1px solid #2b3032;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .office-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .office-nav-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .office-nav {
+    width: max-content;
+    display: flex;
+    gap: 4px;
+  }
+
+  .office-nav-link {
+    min-height: 38px;
+    padding: 0 11px;
+    border-left: 0;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+  }
+
+  .office-nav-link.active {
+    border-left-color: transparent;
+    border-bottom-color: var(--gold);
+  }
+
+  .office-content {
+    padding: 38px 18px 60px;
+  }
+
+  .office-page-header {
+    margin-bottom: 28px;
+  }
+
+  .office-page-header h1 {
+    font-size: 42px;
+  }
+
+  .office-page-header p {
+    font-size: 16px;
+  }
+
+  .office-section-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .office-section-card {
+    min-height: 160px;
+  }
+
+  .office-module-frame {
+    min-height: 240px;
+    padding: 26px;
+  }
+}
+
+@media (max-width: 420px) {
+  .office-brand strong {
+    max-width: 118px;
+    line-height: 1.05;
+  }
+
+  .office-page-header h1 {
+    font-size: 36px;
+  }
+}
