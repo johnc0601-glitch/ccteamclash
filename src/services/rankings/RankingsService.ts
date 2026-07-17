@@ -31,7 +31,7 @@ export class RankingsService {
   ): Promise<RankingEntry[]> {
     const players = await this.players.getAll({status: 'active'});
     const eligiblePlayers = womensOnly
-      ? players.filter((player) => player.eligibleForWomensRanking)
+      ? players.filter((player) => player.gender === 'Female')
       : players;
     const entries = await Promise.all(eligiblePlayers.map(async (player) => ({
       player,

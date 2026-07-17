@@ -40,7 +40,7 @@ test('PlayerService validates team and PDGA data', async () => {
     teamId: 'missing-team',
     pdgaNumber: 'ABC',
     pdgaRating: -1,
-    eligibleForWomensRanking: true,
+    gender: 'Female',
   });
 
   assert.equal(result.ok, false);
@@ -59,11 +59,11 @@ test('PlayerService creates and filters active players', async () => {
     teamId: 'team-1',
     pdgaNumber: '12345',
     pdgaRating: 950,
-    eligibleForWomensRanking: true,
+    gender: 'Female',
   });
 
   assert.equal(created.ok, true);
   const players = await service.getAll({status: 'active', teamId: 'team-1'});
   assert.equal(players.length, 1);
-  assert.equal(players[0].eligibleForWomensRanking, true);
+  assert.equal(players[0].gender, 'Female');
 });

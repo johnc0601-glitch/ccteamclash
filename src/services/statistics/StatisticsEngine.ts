@@ -5,6 +5,7 @@ import {SeasonStatistics} from '@/services/statistics/SeasonStatistics';
 import {TeamStatistics} from '@/services/statistics/TeamStatistics';
 import type {
   HeadToHeadStatistics as HeadToHeadStatisticsResult,
+  PlayerMatchHistoryEntry,
   PlayerStatistics as PlayerStatisticsResult,
   SeasonStatistics as SeasonStatisticsResult,
   TeamStatistics as TeamStatisticsResult,
@@ -38,6 +39,16 @@ export class StatisticsEngine {
     const results = await this.repository.getPublishedChallengeResults();
     return playerIds.map((playerId) =>
       this.playerStatistics.calculate(playerId, seasonId, results));
+  }
+
+  async getPlayerCareerStatistics(playerId: string): Promise<PlayerStatisticsResult> {
+    const results = await this.repository.getPublishedChallengeResults();
+    return this.playerStatistics.calculateCareer(playerId, results);
+  }
+
+  async getPlayerMatchHistory(playerId: string): Promise<PlayerMatchHistoryEntry[]> {
+    const results = await this.repository.getPublishedChallengeResults();
+    return this.playerStatistics.getMatchHistory(playerId, results);
   }
 
   async getSeasonStatistics(seasonId: string): Promise<SeasonStatisticsResult> {

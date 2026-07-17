@@ -175,7 +175,7 @@ export function PlayerManagement() {
                 <th>Team</th>
                 <th>Season matches</th>
                 <th>Finals</th>
-                <th>Women&apos;s Top 10</th>
+                <th>Gender</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -195,7 +195,7 @@ export function PlayerManagement() {
                         </span>
                       ) : <span className={styles.notQualified}>Not yet</span>}
                     </td>
-                    <td>{player.eligibleForWomensRanking ? 'Eligible' : '-'}</td>
+                    <td>{player.gender}</td>
                     <td><span className={player.active ? styles.active : styles.archived}>{player.active ? 'Active' : 'Archived'}</span></td>
                     <td>
                       <div className={styles.actions}>

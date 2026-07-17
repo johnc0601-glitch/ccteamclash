@@ -106,11 +106,14 @@ export class PlayerService {
       teamId: input.teamId.trim(),
       pdgaNumber: input.pdgaNumber.trim(),
       pdgaRating: input.pdgaRating,
-      eligibleForWomensRanking: input.eligibleForWomensRanking,
+      gender: input.gender,
     };
     const fieldErrors: PlayerFieldErrors = {};
 
     if (!normalizedInput.name) fieldErrors.name = 'Player name is required.';
+    if (normalizedInput.gender !== 'Male' && normalizedInput.gender !== 'Female') {
+      fieldErrors.gender = 'Select male or female.';
+    }
     if (!normalizedInput.teamId) {
       fieldErrors.teamId = 'Current team is required.';
     } else if (!await this.teams.getById(normalizedInput.teamId)) {

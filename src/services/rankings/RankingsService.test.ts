@@ -11,7 +11,7 @@ import test from 'node:test';
 function createPlayer(
   id: string,
   name: string,
-  eligibleForWomensRanking: boolean,
+  gender: Player['gender'],
   pdgaRating: number | null = null,
 ): Player {
   return {
@@ -20,7 +20,7 @@ function createPlayer(
     teamId: 'team-1',
     pdgaNumber: pdgaRating ? String(pdgaRating + 10000) : '',
     pdgaRating,
-    eligibleForWomensRanking,
+    gender,
     active: true,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
@@ -47,9 +47,9 @@ function createStatistics(playerId: string, wins: number, winPercentage: number)
 class TestPlayerProvider implements RankingPlayerProvider {
   async getAll(): Promise<Player[]> {
     return [
-      createPlayer('player-a', 'Alpha', true, 850),
-      createPlayer('player-b', 'Bravo', false, 1050),
-      createPlayer('player-c', 'Charlie', true, null),
+      createPlayer('player-a', 'Alpha', 'Female', 850),
+      createPlayer('player-b', 'Bravo', 'Male', 1050),
+      createPlayer('player-c', 'Charlie', 'Female', null),
     ];
   }
 }
@@ -78,7 +78,7 @@ test('RankingsService orders by wins, then win percentage, without using PDGA da
   );
 });
 
-test('RankingsService limits the womens list to eligible players', async () => {
+test('RankingsService limits the womens list to female players', async () => {
   const service = new RankingsService(new TestPlayerProvider(), new TestStatisticsProvider());
   const rankings = await service.getWomensRankings('season-1');
 

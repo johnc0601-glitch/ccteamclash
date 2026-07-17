@@ -4,7 +4,7 @@ export type Player = {
   teamId: string;
   pdgaNumber: string;
   pdgaRating: number | null;
-  eligibleForWomensRanking: boolean;
+  gender: 'Male' | 'Female';
   active: boolean;
   createdAt: string;
   updatedAt: string;

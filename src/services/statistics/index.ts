@@ -5,6 +5,7 @@ export type {StatisticsRepository} from '@/services/statistics/StatisticsReposit
 export type {
   ChallengeResult,
   HeadToHeadStatistics,
+  PlayerMatchHistoryEntry,
   PlayerResult,
   PlayerStatistics,
   SeasonStatistics,

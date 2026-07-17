@@ -91,3 +91,38 @@ test('Player season match tally counts challenges, not singles and doubles entri
   assert.equal(playerStats.matchesPlayed, 2);
   assert.equal(playerStats.finalsQualified, true);
 });
+
+test('Player career totals and match history include published results across seasons', async () => {
+  const careerResult: ChallengeResult = {
+    ...TEST_RESULTS[0],
+    id: 'test-career-2',
+    seasonId: 'season-2',
+    challengeId: 'challenge-career-2',
+    date: '2027-07-01',
+    homeTeamId: 'team-c',
+    awayTeamId: 'team-a',
+    playerResults: [{
+      id: 'player-1-career-result',
+      playerId: 'player-1',
+      playerName: 'Player One',
+      teamId: 'team-a',
+      format: 'Singles',
+      outcome: 'Loss',
+      pointsEarned: 0,
+    }],
+  };
+  const engine = new StatisticsEngine({
+    async getPublishedChallengeResults() {
+      return [...TEST_RESULTS, careerResult];
+    },
+  });
+
+  const career = await engine.getPlayerCareerStatistics('player-1');
+  const history = await engine.getPlayerMatchHistory('player-1');
+
+  assert.equal(career.matchesPlayed, 2);
+  assert.equal(career.overallRecord.wins, 1);
+  assert.equal(career.overallRecord.losses, 1);
+  assert.equal(history.length, 2);
+  assert.equal(history[0].opponentTeamId, 'team-c');
+});

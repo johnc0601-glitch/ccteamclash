@@ -64,6 +64,17 @@ export type PlayerStatistics = {
   currentStreak: string;
 };
 
+export type PlayerMatchHistoryEntry = {
+  challengeId: string;
+  seasonId: string;
+  date: string;
+  teamId: string;
+  opponentTeamId: string;
+  record: RecordSummary;
+  pointsEarned: number;
+  formats: PlayerResultFormat[];
+};
+
 export type SeasonStatistics = {
   seasonId: string;
   challengesPlayed: number;

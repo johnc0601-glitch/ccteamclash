@@ -22,13 +22,13 @@ function getInitialValues(player?: Player): PlayerInput {
     teamId: player.teamId,
     pdgaNumber: player.pdgaNumber,
     pdgaRating: player.pdgaRating,
-    eligibleForWomensRanking: player.eligibleForWomensRanking,
+    gender: player.gender,
   } : {
     name: '',
     teamId: '',
     pdgaNumber: '',
     pdgaRating: null,
-    eligibleForWomensRanking: false,
+    gender: 'Male',
   };
 }
 
@@ -79,6 +79,21 @@ export function PlayerFormDialog({
             {fieldErrors.teamId ? <small>{fieldErrors.teamId}</small> : null}
           </label>
           <label>
+            <span>Male or female</span>
+            <select
+              value={values.gender}
+              onChange={(event) => setValues((current) => ({
+                ...current,
+                gender: event.target.value as PlayerInput['gender'],
+              }))}
+              aria-invalid={Boolean(fieldErrors.gender)}
+            >
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+            {fieldErrors.gender ? <small>{fieldErrors.gender}</small> : null}
+          </label>
+          <label>
             <span>PDGA number (optional)</span>
             <input
               inputMode="numeric"
@@ -102,17 +117,6 @@ export function PlayerFormDialog({
               aria-invalid={Boolean(fieldErrors.pdgaRating)}
             />
             {fieldErrors.pdgaRating ? <small>{fieldErrors.pdgaRating}</small> : null}
-          </label>
-          <label className={styles.checkboxField}>
-            <input
-              type="checkbox"
-              checked={values.eligibleForWomensRanking}
-              onChange={(event) => setValues((current) => ({
-                ...current,
-                eligibleForWomensRanking: event.target.checked,
-              }))}
-            />
-            <span>Eligible for Women&apos;s Top 10</span>
           </label>
         </div>
         <div className={styles.formActions}>

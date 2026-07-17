@@ -1,0 +1,37 @@
+.page { max-width: 1040px; }
+.filters { margin: 42px 0 24px; padding: 15px; display: grid; grid-template-columns: minmax(220px, 1fr) 220px; gap: 12px; border: 1px solid #dfe2db; border-radius: 6px; background: #f7f8f5; }
+.filters label { display: grid; gap: 6px; }
+.filters label > span { color: #657068; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+.filters input, .filters select { width: 100%; min-height: 42px; padding: 0 11px; border: 1px solid #cfd4cc; border-radius: 4px; background: #fff; color: #121814; font: inherit; }
+.directory { border-top: 1px solid #dfe2db; }
+.player { border-bottom: 1px solid #dfe2db; }
+.player summary { min-height: 82px; padding: 16px 8px; display: grid; grid-template-columns: minmax(180px, 1fr) 120px 90px; align-items: center; gap: 20px; cursor: pointer; list-style: none; }
+.player summary::-webkit-details-marker { display: none; }
+.player summary > span { min-width: 0; }
+.player summary strong, .player summary small { display: block; }
+.player summary strong { font-size: 18px; text-transform: uppercase; }
+.player summary small { margin-top: 4px; color: #6a736d; font-size: 11px; }
+.summaryStats b { font-size: 18px; }
+.expandLabel { color: #56701c; font-size: 10px; font-weight: 900; text-align: right; text-transform: uppercase; }
+.player[open] .expandLabel { font-size: 0; }
+.player[open] .expandLabel::after { content: 'Close'; font-size: 10px; }
+.details { padding: 4px 8px 28px; }
+.identity { padding: 13px 0; display: flex; flex-wrap: wrap; gap: 16px; border-top: 1px solid #e7e9e4; color: #59635c; font-size: 12px; font-weight: 800; }
+.statSections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #dfe2db; border-bottom: 1px solid #dfe2db; }
+.statSections section { padding: 22px 24px 22px 0; }
+.statSections section + section { padding-left: 24px; border-left: 1px solid #dfe2db; }
+.statSections section > span { color: #678821; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+.statSections h3, .history h3 { margin: 5px 0 18px; font-size: 21px; text-transform: uppercase; }
+.statSections dl { margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.statSections dl div { min-width: 0; }
+.statSections dt { color: #707973; font-size: 9px; font-weight: 900; text-transform: uppercase; }
+.statSections dd { margin: 5px 0 0; font-size: 19px; font-weight: 900; }
+.statSections p { margin: 17px 0 0; color: #68716b; font-size: 12px; }
+.history { padding-top: 24px; }
+.historyTableWrap { max-width: 100%; overflow-x: auto; }
+.history table { width: 100%; min-width: 620px; border-collapse: collapse; }
+.history th, .history td { padding: 12px 10px; border-bottom: 1px solid #e7e9e4; text-align: left; font-size: 12px; }
+.history th { background: #f6f7f3; color: #68716b; font-size: 9px; font-weight: 900; text-transform: uppercase; }
+.history > p, .empty { color: #707973; }
+.empty { padding: 32px 8px; }
+@media (max-width: 700px) { .filters { grid-template-columns: 1fr; } .player summary { grid-template-columns: minmax(0, 1fr) auto; } .summaryStats { display: none; } .statSections { grid-template-columns: 1fr; } .statSections section { padding: 20px 0; } .statSections section + section { padding-left: 0; border-top: 1px solid #dfe2db; border-left: 0; } .statSections dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
