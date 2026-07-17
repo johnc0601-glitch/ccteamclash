@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/shared/constants";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CC Team Clash | Disc Golf League",
-  description: "Stories, schedules, standings, and teams from Cape Fear Team Clash.",
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

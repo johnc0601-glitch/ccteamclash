@@ -2,6 +2,15 @@
 
 A simple, low-cost league news site built with Next.js.
 
+## Project structure
+
+The application now lives at the repository root so standard project commands run from this directory.
+
+- `src/app` contains the Next.js routes.
+- `src/components` contains React UI components.
+- `src/shared` contains shared constants, hooks, types, and utilities.
+- `docs` contains project planning and architecture notes.
+
 ## Run locally
 
 ```bash
