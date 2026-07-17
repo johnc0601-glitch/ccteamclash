@@ -7,6 +7,7 @@ import {MockSeasonRepository} from '@/domain/season/SeasonRepository';
 import {SeasonService} from '@/domain/season/SeasonService';
 import {MockTeamRepository} from '@/repositories/TeamRepository';
 import {TeamService} from '@/services/TeamService';
+import {MockStatisticsRepository, StatisticsEngine} from '@/services/statistics';
 
 const repositories = {
   teams: new MockTeamRepository(),
@@ -14,6 +15,7 @@ const repositories = {
   schedules: new MockScheduleRepository(),
   courses: new MockCourseRepository(),
   imports: new MockImportRepository(),
+  statistics: new MockStatisticsRepository(),
 };
 
 const teams = new TeamService(repositories.teams);
@@ -35,4 +37,5 @@ export const services = {
     teams,
     schedules,
   ),
+  statistics: new StatisticsEngine(repositories.statistics),
 };
