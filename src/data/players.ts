@@ -1,0 +1,48 @@
+import type {Player} from '@/models/Player';
+
+export const PLAYER_MOCK_DATA = [
+  {
+    id: 'joshua-matheson',
+    name: 'Joshua Matheson',
+    teamId: 'dark-knights',
+    pdgaNumber: '',
+    pdgaRating: null,
+    eligibleForWomensRanking: false,
+    active: true,
+    createdAt: '2026-01-10T12:00:00.000Z',
+    updatedAt: '2026-07-10T12:00:00.000Z',
+  },
+  {
+    id: 'william-deering',
+    name: 'William Deering',
+    teamId: 'ninjas',
+    pdgaNumber: '',
+    pdgaRating: null,
+    eligibleForWomensRanking: false,
+    active: true,
+    createdAt: '2026-01-10T12:00:00.000Z',
+    updatedAt: '2026-07-10T12:00:00.000Z',
+  },
+  {
+    id: 'avery-mills',
+    name: 'Avery Mills',
+    teamId: 'chain-hawks',
+    pdgaNumber: '',
+    pdgaRating: null,
+    eligibleForWomensRanking: false,
+    active: true,
+    createdAt: '2026-01-10T12:00:00.000Z',
+    updatedAt: '2026-07-10T12:00:00.000Z',
+  },
+  {
+    id: 'riley-carter',
+    name: 'Riley Carter',
+    teamId: 'ninjas',
+    pdgaNumber: '',
+    pdgaRating: null,
+    eligibleForWomensRanking: false,
+    active: true,
+    createdAt: '2026-01-10T12:00:00.000Z',
+    updatedAt: '2026-07-10T12:00:00.000Z',
+  },
+] as const satisfies readonly Player[];
