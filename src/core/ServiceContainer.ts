@@ -7,6 +7,7 @@ import {MockSeasonRepository} from '@/domain/season/SeasonRepository';
 import {SeasonService} from '@/domain/season/SeasonService';
 import {MockTeamRepository} from '@/repositories/TeamRepository';
 import {TeamService} from '@/services/TeamService';
+import {StandingsService} from '@/services/standings';
 import {MockStatisticsRepository, StatisticsEngine} from '@/services/statistics';
 
 const repositories = {
@@ -26,6 +27,7 @@ const schedules = new ScheduleService(
   teams,
   repositories.courses,
 );
+const statistics = new StatisticsEngine(repositories.statistics);
 
 export const services = {
   teams,
@@ -37,5 +39,6 @@ export const services = {
     teams,
     schedules,
   ),
-  statistics: new StatisticsEngine(repositories.statistics),
+  statistics,
+  standings: new StandingsService(teams, statistics),
 };

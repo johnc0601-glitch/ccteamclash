@@ -7,20 +7,9 @@ function formatRecord(record: {wins: number; losses: number; ties: number}): str
 
 export default async function Page() {
   const activeSeason = await services.seasons.getActive();
-  const teams = await services.teams.getAll({status: 'active'});
   const standings = activeSeason
-    ? await Promise.all(teams.map(async (team) => ({
-      team,
-      stats: await services.statistics.getTeamStatistics(team.id, activeSeason.id),
-    })))
+    ? await services.standings.getSeasonStandings(activeSeason.id)
     : [];
-
-  standings.sort((left, right) =>
-    right.stats.record.wins - left.stats.record.wins
-    || right.stats.pointsPercentage - left.stats.pointsPercentage
-    || right.stats.pointDifferential - left.stats.pointDifferential
-    || right.stats.pointsFor - left.stats.pointsFor,
-  );
 
   return (
     <>
@@ -34,11 +23,11 @@ export default async function Page() {
             <span>Record</span>
             <span>Diff.</span>
           </div>
-          {standings.map(({team, stats}, index) => (
+          {standings.map(({rank, team, statistics}) => (
             <div className="standings-row" key={team.id}>
-              <span><b>{index + 1}</b>{team.name}</span>
-              <span>{formatRecord(stats.record)}</span>
-              <span>{stats.pointDifferential > 0 ? `+${stats.pointDifferential}` : stats.pointDifferential}</span>
+              <span><b>{rank}</b>{team.name}</span>
+              <span>{formatRecord(statistics.record)}</span>
+              <span>{statistics.pointDifferential > 0 ? `+${statistics.pointDifferential}` : statistics.pointDifferential}</span>
             </div>
           ))}
         </div>

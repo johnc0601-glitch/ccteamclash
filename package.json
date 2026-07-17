@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:statistics": "node --loader ./scripts/ts-paths-loader.mjs --test src/services/statistics/StatisticsEngine.test.ts"
+    "test:statistics": "node --loader ./scripts/ts-paths-loader.mjs --test src/services/statistics/StatisticsEngine.test.ts",
+    "test:standings": "node --loader ./scripts/ts-paths-loader.mjs --test src/services/standings/StandingsService.test.ts"
   },
   "dependencies": {
     "next": "16.2.10",
