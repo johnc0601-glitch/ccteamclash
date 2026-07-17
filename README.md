@@ -33,3 +33,7 @@ This deliberately avoids a database at first. Supabase can be added later when m
 ## Deploy
 
 Import the GitHub repository into Vercel, accept the defaults, then connect `ccteamclash.com` under Project Settings → Domains.
+
+---
+
+Test: verify GitHub + Vercel pipeline — committed by GitHub Copilot Chat Assistant on 2026-07-17.
