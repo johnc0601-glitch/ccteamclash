@@ -1,0 +1,623 @@
+.management {
+  display: grid;
+  gap: 22px;
+}
+
+.toolbar {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+  border: 1px solid #dfe2db;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.toolbar > :first-child {
+  min-width: 0;
+}
+
+.toolbarControls {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+
+.selectControl {
+  display: grid;
+  gap: 6px;
+}
+
+.selectControl > span,
+.seasonForm label > span:first-child {
+  color: #657068;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.selectControl select,
+.seasonForm input,
+.seasonForm textarea {
+  width: 100%;
+  border: 1px solid #cfd4cc;
+  border-radius: 4px;
+  background: #fff;
+  color: #121814;
+  font: inherit;
+}
+
+.selectControl select {
+  min-height: 42px;
+  padding: 0 34px 0 11px;
+}
+
+.viewToggle {
+  min-height: 42px;
+  padding: 3px;
+  display: flex;
+  border: 1px solid #cfd4cc;
+  border-radius: 4px;
+  background: #eef0eb;
+}
+
+.viewToggle button {
+  min-width: 62px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: #5b645e;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.viewToggle .viewActive {
+  background: #fff;
+  color: #121814;
+  box-shadow: 0 1px 4px rgba(18, 24, 20, .12);
+}
+
+.createButton,
+.primaryButton,
+.secondaryButton {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.createButton,
+.primaryButton {
+  border: 1px solid #121814;
+  background: #121814;
+  color: #fff;
+}
+
+.createButton:hover,
+.primaryButton:hover {
+  background: #28322b;
+}
+
+.secondaryButton {
+  border: 1px solid #cbd0c8;
+  background: #eef0eb;
+  color: #121814;
+}
+
+.primaryButton:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.successMessage,
+.errorMessage {
+  padding: 12px 15px;
+  border-left: 4px solid;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.successMessage {
+  border-color: #648120;
+  color: #405411;
+}
+
+.errorMessage {
+  border-color: #a12b2b;
+  color: #7b1f1f;
+}
+
+.listHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.listHeader span {
+  color: #56701c;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.listHeader h2 {
+  margin: 5px 0 0;
+  font-size: 25px;
+  text-transform: uppercase;
+}
+
+.listHeader p {
+  margin: 0;
+  color: #667067;
+  font-size: 12px;
+}
+
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #dfe2db;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.seasonTable {
+  width: 100%;
+  min-width: 1120px;
+  border-collapse: collapse;
+}
+
+.seasonTable th,
+.seasonTable td {
+  padding: 15px 14px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.seasonTable th {
+  border-bottom: 1px solid #dfe2db;
+  background: #f7f8f5;
+  color: #69726c;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.seasonTable td {
+  border-bottom: 1px solid #e8eae5;
+  color: #333b36;
+  font-size: 13px;
+}
+
+.seasonTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.seasonTable th:first-child,
+.seasonTable td:first-child {
+  width: 260px;
+}
+
+.seasonTable th:last-child,
+.seasonTable td:last-child {
+  width: 310px;
+}
+
+.seasonNameButton,
+.cardTitle {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #121814;
+  font: inherit;
+  font-weight: 950;
+  text-align: left;
+  cursor: pointer;
+}
+
+.seasonNameButton:hover,
+.cardTitle:hover {
+  color: #56701c;
+}
+
+.seasonDescription {
+  display: -webkit-box;
+  margin-top: 4px;
+  overflow: hidden;
+  color: #7b847d;
+  font-size: 11px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.statusActive,
+.statusPublished,
+.statusDraft,
+.statusArchived,
+.publicationPublished,
+.publicationDraft {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 950;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.statusActive {
+  border-color: #9ebc57;
+  background: #f2f8e7;
+  color: #486113;
+}
+
+.statusPublished,
+.publicationPublished {
+  border-color: #79a5b4;
+  background: #edf7fa;
+  color: #285d70;
+}
+
+.statusDraft,
+.publicationDraft {
+  border-color: #d1b86a;
+  background: #fff8df;
+  color: #715b14;
+}
+
+.statusArchived {
+  border-color: #b7bdba;
+  background: #eef0ef;
+  color: #5d6661;
+}
+
+.seasonActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.seasonActions button {
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid #ccd1c9;
+  border-radius: 3px;
+  background: #fff;
+  color: #333b36;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.seasonActions button:hover {
+  border-color: #8e998f;
+  background: #f5f6f2;
+}
+
+.seasonActions button:disabled {
+  cursor: wait;
+  opacity: .55;
+}
+
+.seasonActions .dangerText {
+  border-color: #e2c1c1;
+  color: #962d2d;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.seasonCard {
+  min-width: 0;
+  min-height: 390px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #dfe2db;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.yearMarker,
+.yearMarkerLarge {
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #bcc5ba;
+  border-radius: 5px;
+  background: #eef1eb;
+  color: #28342c;
+  font-weight: 950;
+}
+
+.yearMarker {
+  min-width: 62px;
+  height: 40px;
+  font-size: 13px;
+}
+
+.yearMarkerLarge {
+  width: 82px;
+  height: 64px;
+  font-size: 18px;
+}
+
+.cardTitle {
+  margin-top: 22px;
+  font-size: 21px;
+  text-transform: uppercase;
+}
+
+.cardFacts {
+  margin: 18px 0;
+  display: grid;
+  gap: 10px;
+}
+
+.cardFacts div {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.cardFacts dt,
+.detailsGrid dt {
+  color: #7b847d;
+  font-size: 9px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.cardFacts dd,
+.detailsGrid dd {
+  margin: 0;
+  color: #343c37;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cardDescription {
+  margin: 0 0 22px;
+  color: #667067;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.seasonCard .seasonActions {
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid #e7e9e4;
+}
+
+.loadingState,
+.emptyState {
+  min-height: 230px;
+  padding: 32px;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  border: 1px dashed #cbd0c8;
+  border-radius: 6px;
+  color: #667067;
+}
+
+.emptyState h3 {
+  margin: 0 0 8px;
+  color: #121814;
+  font-size: 20px;
+  text-transform: uppercase;
+}
+
+.emptyState p {
+  margin: 0;
+}
+
+.seasonForm,
+.detailsBody {
+  padding: 24px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.seasonForm label {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.seasonForm input,
+.seasonForm textarea {
+  min-height: 42px;
+  padding: 10px 12px;
+}
+
+.seasonForm textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.seasonForm input[aria-invalid="true"] {
+  border-color: #a12b2b;
+}
+
+.fullField,
+.toggleGroup {
+  grid-column: 1 / -1;
+}
+
+.toggleGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.seasonForm .checkboxControl {
+  min-height: 42px;
+  padding: 0 13px;
+  display: inline-flex;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #cfd4cc;
+  border-radius: 4px;
+  background: #f8f9f6;
+}
+
+.seasonForm .checkboxControl input {
+  width: 16px;
+  min-height: 16px;
+  margin: 0;
+}
+
+.seasonForm .checkboxControl span {
+  color: #303a33;
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: none;
+}
+
+.fieldError {
+  color: #962d2d;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dialogActions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.detailsLead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.detailsLead p {
+  margin: 14px 0 0;
+  color: #5f6962;
+  line-height: 1.6;
+}
+
+.detailsGrid {
+  margin: 26px 0 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid #e1e4de;
+  border-left: 1px solid #e1e4de;
+}
+
+.detailsGrid div {
+  min-width: 0;
+  padding: 15px;
+  display: grid;
+  gap: 6px;
+  border-right: 1px solid #e1e4de;
+  border-bottom: 1px solid #e1e4de;
+}
+
+@media (max-width: 1120px) {
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbarControls {
+    flex-wrap: wrap;
+  }
+
+  .cardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .toolbarControls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .selectControl,
+  .viewToggle,
+  .createButton {
+    width: 100%;
+  }
+
+  .viewToggle button {
+    flex: 1;
+  }
+
+  .createButton {
+    grid-column: 1 / -1;
+  }
+
+  .cardGrid,
+  .formGrid,
+  .detailsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .fullField,
+  .toggleGroup {
+    grid-column: auto;
+  }
+
+  .seasonForm,
+  .detailsBody {
+    padding: 19px;
+  }
+
+  .detailsGrid {
+    border-left: 0;
+  }
+
+  .detailsGrid div {
+    border-left: 1px solid #e1e4de;
+  }
+}
+
+@media (max-width: 430px) {
+  .toolbarControls {
+    grid-template-columns: 1fr;
+  }
+
+  .createButton {
+    grid-column: auto;
+  }
+
+  .listHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .detailsLead {
+    grid-template-columns: 1fr;
+  }
+}

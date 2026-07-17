@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useRef, type ReactNode, type SyntheticEvent} from 'react';
+import {useEffect, useId, useRef, type ReactNode, type SyntheticEvent} from 'react';
 import styles from './TeamManagement.module.css';
 
 type DialogShellProps = {
@@ -13,6 +13,7 @@ type DialogShellProps = {
 
 export function DialogShell({title, eyebrow, children, onClose, size = 'default'}: DialogShellProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   const dialogClassName = [
     styles.dialog,
     size === 'large' ? styles.dialogLarge : '',
@@ -39,13 +40,13 @@ export function DialogShell({title, eyebrow, children, onClose, size = 'default'
     <dialog
       ref={dialogRef}
       className={dialogClassName}
-      aria-labelledby="team-dialog-title"
+      aria-labelledby={titleId}
       onCancel={handleCancel}
     >
       <header className={styles.dialogHeader}>
         <div>
           <span>{eyebrow}</span>
-          <h2 id="team-dialog-title">{title}</h2>
+          <h2 id={titleId}>{title}</h2>
         </div>
         <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Close dialog" title="Close dialog">
           X
