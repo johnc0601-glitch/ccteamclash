@@ -7,6 +7,7 @@ import {SearchBar} from '@/components/teams/SearchBar';
 import {services} from '@/core/ServiceContainer';
 import type {Player} from '@/models/Player';
 import type {Team} from '@/models/Team';
+import type {PlayerStatistics} from '@/services/statistics';
 import type {
   PlayerFieldErrors,
   PlayerInput,
@@ -20,6 +21,8 @@ type ConfirmationState = {action: 'archive' | 'delete'; player: Player} | null;
 export function PlayerManagement() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [statisticsByPlayer, setStatisticsByPlayer] = useState<Map<string, PlayerStatistics>>(new Map());
+  const [activeSeasonName, setActiveSeasonName] = useState('Current season');
   const [search, setSearch] = useState('');
   const [teamId, setTeamId] = useState('all');
   const [status, setStatus] = useState<PlayerStatusFilter>('all');
@@ -41,17 +44,32 @@ export function PlayerManagement() {
 
   useEffect(() => {
     let cancelled = false;
-    services.players.getAll({search, teamId, status})
-      .then((nextPlayers) => {
+    async function loadPlayers() {
+      try {
+        setLoading(true);
+        const [nextPlayers, activeSeason] = await Promise.all([
+          services.players.getAll({search, teamId, status}),
+          services.seasons.getActive(),
+        ]);
+        const playerStatistics = activeSeason
+          ? await services.statistics.getPlayerStatisticsForPlayers(
+            nextPlayers.map((player) => player.id),
+            activeSeason.id,
+          )
+          : [];
+
         if (cancelled) return;
         setPlayers(nextPlayers);
+        setStatisticsByPlayer(new Map(playerStatistics.map((statistics) => [statistics.playerId, statistics])));
+        setActiveSeasonName(activeSeason?.name ?? 'No active season');
         setLoading(false);
-      })
-      .catch(() => {
+      } catch {
         if (cancelled) return;
         setMessage({type: 'error', text: 'Players could not be loaded.'});
         setLoading(false);
-      });
+      }
+    }
+    loadPlayers();
     return () => { cancelled = true; };
   }, [revision, search, status, teamId]);
 
@@ -141,6 +159,7 @@ export function PlayerManagement() {
         <div>
           <span>Player list</span>
           <h2>{players.length} {players.length === 1 ? 'player' : 'players'}</h2>
+          <p>{activeSeasonName} attendance and finals qualification</p>
         </div>
       </div>
 
@@ -154,27 +173,40 @@ export function PlayerManagement() {
               <tr>
                 <th>Player</th>
                 <th>Team</th>
+                <th>Season matches</th>
+                <th>Finals</th>
                 <th>Women&apos;s Top 10</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {players.map((player) => (
-                <tr key={player.id}>
-                  <td><strong>{player.name}</strong></td>
-                  <td>{teamNames.get(player.teamId) ?? player.teamId}</td>
-                  <td>{player.eligibleForWomensRanking ? 'Eligible' : '-'}</td>
-                  <td><span className={player.active ? styles.active : styles.archived}>{player.active ? 'Active' : 'Archived'}</span></td>
-                  <td>
-                    <div className={styles.actions}>
-                      <button type="button" onClick={() => openEdit(player)}>Edit</button>
-                      {player.active ? <button type="button" onClick={() => setConfirmation({action: 'archive', player})}>Archive</button> : null}
-                      <button type="button" className={styles.dangerText} onClick={() => setConfirmation({action: 'delete', player})}>Delete</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {players.map((player) => {
+                const statistics = statisticsByPlayer.get(player.id);
+                return (
+                  <tr key={player.id}>
+                    <td><strong>{player.name}</strong></td>
+                    <td>{teamNames.get(player.teamId) ?? player.teamId}</td>
+                    <td><strong>{statistics?.matchesPlayed ?? 0}</strong></td>
+                    <td>
+                      {statistics?.finalsQualified ? (
+                        <span className={styles.qualified} title="Played at least two matches">
+                          <span aria-hidden="true">&#10003;</span> Qualified
+                        </span>
+                      ) : <span className={styles.notQualified}>Not yet</span>}
+                    </td>
+                    <td>{player.eligibleForWomensRanking ? 'Eligible' : '-'}</td>
+                    <td><span className={player.active ? styles.active : styles.archived}>{player.active ? 'Active' : 'Archived'}</span></td>
+                    <td>
+                      <div className={styles.actions}>
+                        <button type="button" onClick={() => openEdit(player)}>Edit</button>
+                        {player.active ? <button type="button" onClick={() => setConfirmation({action: 'archive', player})}>Archive</button> : null}
+                        <button type="button" className={styles.dangerText} onClick={() => setConfirmation({action: 'delete', player})}>Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

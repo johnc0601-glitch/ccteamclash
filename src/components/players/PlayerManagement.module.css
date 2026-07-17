@@ -90,6 +90,12 @@
   text-transform: uppercase;
 }
 
+.listHeader p {
+  margin: 5px 0 0;
+  color: #69726c;
+  font-size: 12px;
+}
+
 .tableWrap {
   max-width: 100%;
   overflow-x: auto;
@@ -138,6 +144,29 @@
 
 .active { border-color: #9ebc57; background: #f2f8e7; color: #486113; }
 .archived { border-color: #b7bdba; background: #eef0ef; color: #5d6661; }
+
+.qualified,
+.notQualified {
+  display: inline-flex;
+  min-height: 26px;
+  padding: 0 9px;
+  align-items: center;
+  gap: 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.qualified {
+  border: 1px solid #9ebc57;
+  background: #f2f8e7;
+  color: #486113;
+}
+
+.notQualified {
+  color: #727a75;
+}
 
 .actions {
   display: flex;

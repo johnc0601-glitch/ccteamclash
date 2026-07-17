@@ -34,6 +34,7 @@ function createStatistics(playerId: string, wins: number, winPercentage: number)
     seasonId: 'season-1',
     teamIds: ['team-1'],
     matchesPlayed: wins || 1,
+    finalsQualified: wins >= 2,
     singlesRecord: {wins, losses: 0, ties: 0},
     doublesRecord: {wins: 0, losses: 0, ties: 0},
     overallRecord: {wins, losses: 0, ties: 0},

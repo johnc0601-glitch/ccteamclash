@@ -54,10 +54,40 @@ test('StatisticsEngine calculates team, player, season, and head-to-head stats',
   const playerStats = await engine.getPlayerStatistics('player-1', 'season-1');
   assert.equal(playerStats.singlesRecord.wins, 1);
   assert.equal(playerStats.doublesRecord.ties, 1);
+  assert.equal(playerStats.matchesPlayed, 1);
+  assert.equal(playerStats.finalsQualified, false);
 
   const seasonStats = await engine.getSeasonStatistics('season-1');
   assert.equal(seasonStats.challengesPlayed, 1);
 
   const headToHead = await engine.getHeadToHead('team-a', 'team-b', 'season-1');
   assert.equal(headToHead.recordForTeamA.wins, 1);
+});
+
+test('Player season match tally counts challenges, not singles and doubles entries', async () => {
+  const secondResult: ChallengeResult = {
+    ...TEST_RESULTS[0],
+    id: 'test-2',
+    challengeId: 'challenge-2',
+    date: '2026-07-15',
+    playerResults: [{
+      id: 'player-1-second-match',
+      playerId: 'player-1',
+      playerName: 'Player One',
+      teamId: 'team-a',
+      format: 'Singles',
+      outcome: 'Loss',
+      pointsEarned: 0,
+    }],
+  };
+  const engine = new StatisticsEngine({
+    async getPublishedChallengeResults() {
+      return [...TEST_RESULTS, secondResult];
+    },
+  });
+
+  const playerStats = await engine.getPlayerStatistics('player-1', 'season-1');
+
+  assert.equal(playerStats.matchesPlayed, 2);
+  assert.equal(playerStats.finalsQualified, true);
 });

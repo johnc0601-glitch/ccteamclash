@@ -10,6 +10,8 @@ import {
   sortByDate,
 } from '@/services/statistics/statisticsUtils';
 
+export const FINALS_QUALIFYING_MATCHES = 2;
+
 export class PlayerStatistics {
   calculate(playerId: string, seasonId: string, results: ChallengeResult[]): PlayerStatisticsResult {
     const singlesRecord = emptyRecord();
@@ -24,20 +26,24 @@ export class PlayerStatistics {
     sortByDate(results)
       .filter((result) => result.seasonId === seasonId)
       .forEach((result) => {
-        result.playerResults
-          .filter((playerResult) => playerResult.playerId === playerId)
-          .forEach((playerResult) => {
-            playerName = playerResult.playerName;
-            teamIds.add(playerResult.teamId);
-            matchesPlayed += 1;
-            pointsEarned += playerResult.pointsEarned;
-            recordOutcome(overallRecord, playerResult.outcome);
-            recordOutcome(
-              playerResult.format === 'Singles' ? singlesRecord : doublesRecord,
-              playerResult.outcome,
-            );
-            outcomes.push(playerResult.outcome[0]);
-          });
+        const playerResults = result.playerResults
+          .filter((playerResult) => playerResult.playerId === playerId);
+
+        if (playerResults.length > 0) {
+          matchesPlayed += 1;
+        }
+
+        playerResults.forEach((playerResult) => {
+          playerName = playerResult.playerName;
+          teamIds.add(playerResult.teamId);
+          pointsEarned += playerResult.pointsEarned;
+          recordOutcome(overallRecord, playerResult.outcome);
+          recordOutcome(
+            playerResult.format === 'Singles' ? singlesRecord : doublesRecord,
+            playerResult.outcome,
+          );
+          outcomes.push(playerResult.outcome[0]);
+        });
       });
 
     return {
@@ -46,6 +52,7 @@ export class PlayerStatistics {
       seasonId,
       teamIds: [...teamIds],
       matchesPlayed,
+      finalsQualified: matchesPlayed >= FINALS_QUALIFYING_MATCHES,
       singlesRecord,
       doublesRecord,
       overallRecord,

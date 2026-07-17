@@ -55,6 +55,7 @@ export type PlayerStatistics = {
   seasonId: string;
   teamIds: string[];
   matchesPlayed: number;
+  finalsQualified: boolean;
   singlesRecord: RecordSummary;
   doublesRecord: RecordSummary;
   overallRecord: RecordSummary;
