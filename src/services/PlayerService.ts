@@ -118,12 +118,10 @@ export class PlayerService {
     const fieldErrors: PlayerFieldErrors = {};
 
     if (!normalizedInput.name) fieldErrors.name = 'Player name is required.';
-    if (normalizedInput.gender !== 'Male' && normalizedInput.gender !== 'Female') {
-      fieldErrors.gender = 'Select male or female.';
+    if (!['Male', 'Female', 'Unknown'].includes(normalizedInput.gender)) {
+      fieldErrors.gender = 'Select male, female, or unknown.';
     }
-    if (!normalizedInput.teamId) {
-      fieldErrors.teamId = 'Current team is required.';
-    } else if (!await this.teams.getById(normalizedInput.teamId)) {
+    if (normalizedInput.teamId && !await this.teams.getById(normalizedInput.teamId)) {
       fieldErrors.teamId = 'Select a valid team.';
     }
 

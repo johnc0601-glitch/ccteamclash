@@ -144,6 +144,10 @@ export function PlayerManagement() {
     };
   }
 
+  function getPlayerTeamName(player: Player): string {
+    return player.teamId ? teamNames.get(player.teamId) ?? player.teamId : 'Unassigned';
+  }
+
   const actionProps = {
     onView: setDetailsPlayer,
     onEdit: openEdit,
@@ -211,7 +215,7 @@ export function PlayerManagement() {
                   <PlayerRow
                     key={player.id}
                     player={player}
-                    teamName={teamNames.get(player.teamId) ?? player.teamId}
+                    teamName={getPlayerTeamName(player)}
                     matchesPlayed={matchesPlayed}
                     finalsQualified={finalsQualified}
                     {...actionProps}
@@ -231,7 +235,7 @@ export function PlayerManagement() {
               <PlayerCard
                 key={player.id}
                 player={player}
-                teamName={teamNames.get(player.teamId) ?? player.teamId}
+                teamName={getPlayerTeamName(player)}
                 matchesPlayed={matchesPlayed}
                 finalsQualified={finalsQualified}
                 {...actionProps}
@@ -257,7 +261,7 @@ export function PlayerManagement() {
         return (
           <PlayerDetailsDialog
             player={detailsPlayer}
-            teamName={teamNames.get(detailsPlayer.teamId) ?? detailsPlayer.teamId}
+            teamName={getPlayerTeamName(detailsPlayer)}
             matchesPlayed={matchesPlayed}
             finalsQualified={finalsQualified}
             onEdit={openEdit}

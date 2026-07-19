@@ -109,7 +109,7 @@ export function ImportManagement() {
     setApplying(false);
     setMessage({
       type: 'success',
-      text: `${result.seasonsApplied} seasons, ${result.teamRecordsApplied} team records, and ${result.playerRecordsApplied} player records applied.`,
+      text: `${result.seasonsApplied} seasons applied. ${result.teamsCreated} teams created, ${result.teamsUpdated} teams updated, ${result.playersCreated} players created, ${result.playersMatched} players matched.`,
     });
     setRevision((current) => current + 1);
   }
@@ -128,6 +128,15 @@ export function ImportManagement() {
         <div><span>Players</span><strong>{overview.totals.players}</strong></div>
         <div><span>Status</span><strong>{overview.appliedResult ? 'Applied' : 'Ready'}</strong></div>
       </section>
+
+      {overview.appliedResult ? (
+        <section className={styles.applySummary} aria-label="Historical apply summary">
+          <div><span>Teams created</span><strong>{overview.appliedResult.teamsCreated}</strong></div>
+          <div><span>Teams updated</span><strong>{overview.appliedResult.teamsUpdated}</strong></div>
+          <div><span>Players created</span><strong>{overview.appliedResult.playersCreated}</strong></div>
+          <div><span>Players matched</span><strong>{overview.appliedResult.playersMatched}</strong></div>
+        </section>
+      ) : null}
 
       <div className={styles.listHeader}>
         <div>

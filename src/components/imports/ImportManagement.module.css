@@ -41,6 +41,7 @@
 .importForm label > span:first-child,
 .uploadDropzone > span,
 .dashboard span,
+.applySummary span,
 .validationSummary span,
 .previewPanel header span,
 .expectedUpdates > span,
@@ -138,7 +139,8 @@
   gap: 12px;
 }
 
-.dashboard div {
+.dashboard div,
+.applySummary div {
   min-height: 96px;
   padding: 18px;
   display: grid;
@@ -149,10 +151,17 @@
   background: #fff;
 }
 
-.dashboard strong {
+.dashboard strong,
+.applySummary strong {
   color: #121814;
   font-size: 28px;
   line-height: 1;
+}
+
+.applySummary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .listHeader {
@@ -686,6 +695,10 @@
 
   .dashboard {
     grid-template-columns: 1fr;
+  }
+
+  .applySummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .sourceGrid,

@@ -72,7 +72,7 @@ export class PublicPlayerService {
 
       return {
         player,
-        teamName: teamNames.get(player.teamId) ?? player.teamId,
+        teamName: player.teamId ? teamNames.get(player.teamId) ?? player.teamId : 'Unassigned',
         currentSeasonName: activeSeason?.name ?? 'Current season',
         currentStatistics: currentStatisticsByPlayer.get(player.id),
         careerStatistics,

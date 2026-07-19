@@ -47,7 +47,7 @@ export const services = {
   players,
   seasons,
   courses,
-  historicalImports: new HistoricalImportService(repositories.historicalImports),
+  historicalImports: new HistoricalImportService(repositories.historicalImports, teams, players),
   schedules,
   imports: new ImportService(
     repositories.imports,

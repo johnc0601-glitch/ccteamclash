@@ -65,4 +65,8 @@ export type HistoricalImportResult = {
   seasonsApplied: number;
   teamRecordsApplied: number;
   playerRecordsApplied: number;
+  teamsCreated: number;
+  teamsUpdated: number;
+  playersCreated: number;
+  playersMatched: number;
 };

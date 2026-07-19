@@ -68,6 +68,23 @@ test('PlayerService creates and filters active players', async () => {
   assert.equal(players[0].gender, 'Female');
 });
 
+test('PlayerService allows unassigned players with unknown gender', async () => {
+  const service = new PlayerService(new TestPlayerRepository(), teams);
+  const created = await service.create({
+    name: 'Historical Player',
+    teamId: '',
+    pdgaNumber: '',
+    pdgaRating: null,
+    gender: 'Unknown',
+  });
+
+  assert.equal(created.ok, true);
+  if (created.ok) {
+    assert.equal(created.data.teamId, '');
+    assert.equal(created.data.gender, 'Unknown');
+  }
+});
+
 test('PlayerService blocks duplicate player names', async () => {
   const repository = new TestPlayerRepository();
   const service = new PlayerService(repository, teams);
