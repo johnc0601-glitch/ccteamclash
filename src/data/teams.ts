@@ -1,3 +1,3 @@
-import type {Team} from '@/models/Team';
+import {buildHistoricalTeamSeedData} from '@/data/historicalSeed';
 
-export const TEAM_MOCK_DATA = [] as const satisfies readonly Team[];
+export const TEAM_MOCK_DATA = buildHistoricalTeamSeedData();

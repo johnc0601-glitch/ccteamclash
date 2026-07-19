@@ -1,4 +1,5 @@
 import type {SeasonService} from '@/domain/season/SeasonService';
+import {getHistoricalPlayerSeedSummary} from '@/data/historicalSeed';
 import type {Player} from '@/models/Player';
 import type {PlayerService} from '@/services/PlayerService';
 import type {TeamService} from '@/services/TeamService';
@@ -69,13 +70,31 @@ export class PublicPlayerService {
         this.statistics.getPlayerCareerStatistics(player.id),
         this.statistics.getPlayerMatchHistory(player.id),
       ]);
+      const historicalStatistics = getHistoricalPlayerSeedSummary(player.id);
+      const activeStatistics = currentStatisticsByPlayer.get(player.id);
+      const currentStatistics = activeStatistics?.matchesPlayed ? activeStatistics : undefined;
 
       return {
         player,
         teamName: player.teamId ? teamNames.get(player.teamId) ?? player.teamId : 'Unassigned',
         currentSeasonName: activeSeason?.name ?? 'Current season',
-        currentStatistics: currentStatisticsByPlayer.get(player.id),
-        careerStatistics,
+        currentStatistics,
+        careerStatistics: historicalStatistics
+          ? {
+            playerId: player.id,
+            playerName: player.name,
+            seasonId: 'historical',
+            teamIds: [],
+            matchesPlayed: historicalStatistics.matchesPlayed,
+            finalsQualified: false,
+            singlesRecord: historicalStatistics.singlesRecord,
+            doublesRecord: historicalStatistics.doublesRecord,
+            overallRecord: historicalStatistics.overallRecord,
+            winPercentage: historicalStatistics.winPercentage,
+            pointsEarned: historicalStatistics.overallRecord.wins + historicalStatistics.overallRecord.ties * 0.5,
+            currentStreak: '--',
+          }
+          : careerStatistics,
         history: history.map((entry) => ({
           ...entry,
           opponentTeamName: teamNames.get(entry.opponentTeamId) ?? entry.opponentTeamId,

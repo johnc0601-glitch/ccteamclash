@@ -4,6 +4,7 @@ import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory'
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {TeamBanner} from '@/components/teams/TeamBanner';
 import {services} from '@/core/ServiceContainer';
+import {getHistoricalTeamSeasonSummaries, getHistoricalTeamSeedSummary} from '@/data/historicalSeed';
 import type {RecordSummary} from '@/services/statistics';
 import styles from './TeamDetail.module.css';
 
@@ -42,6 +43,9 @@ export default async function TeamPage({params}: TeamPageProps) {
     ? seasonStatistics.find(({season}) => season.id === activeSeason.id)?.statistics
       ?? await services.statistics.getTeamStatistics(team.id, activeSeason.id)
     : undefined;
+  const historicalStatistics = getHistoricalTeamSeedSummary(team.id);
+  const displayStatistics = historicalStatistics ?? currentStatistics;
+  const historicalHistory = getHistoricalTeamSeasonSummaries(team.id);
   const history = seasonStatistics.filter(({statistics}) => statistics.matchesPlayed > 0);
   const homeCourse = courses.find((course) => course.name === team.homeCourse);
 
@@ -55,14 +59,14 @@ export default async function TeamPage({params}: TeamPageProps) {
 
           <section className={styles.overview}>
             <div className={styles.recordBlock}>
-              <span>{activeSeason?.name ?? 'Current season'}</span>
-              <strong>{currentStatistics ? formatRecord(currentStatistics.record) : '0-0'}</strong>
-              <small>Current record</small>
+              <span>{historicalStatistics?.seasonName ?? activeSeason?.name ?? 'Current season'}</span>
+              <strong>{displayStatistics ? formatRecord(displayStatistics.record) : '0-0'}</strong>
+              <small>{historicalStatistics ? 'All-time record' : 'Current record'}</small>
             </div>
             <dl>
-              <div><dt>Matches</dt><dd>{currentStatistics?.matchesPlayed ?? 0}</dd></div>
-              <div><dt>Points %</dt><dd>{(currentStatistics?.pointsPercentage ?? 0).toFixed(1)}%</dd></div>
-              <div><dt>Streak</dt><dd>{currentStatistics?.currentStreak ?? '--'}</dd></div>
+              <div><dt>Matches</dt><dd>{displayStatistics?.matchesPlayed ?? 0}</dd></div>
+              <div><dt>Points %</dt><dd>{(displayStatistics?.pointsPercentage ?? 0).toFixed(1)}%</dd></div>
+              <div><dt>Streak</dt><dd>{historicalStatistics ? '--' : currentStatistics?.currentStreak ?? '--'}</dd></div>
             </dl>
             <div className={styles.teamInfo}>
               <p><span>Captain</span><strong>{team.captain || 'To be announced'}</strong></p>
@@ -90,7 +94,21 @@ export default async function TeamPage({params}: TeamPageProps) {
               <span>League record</span>
               <h2>Season history</h2>
             </header>
-            {history.length ? (
+            {historicalHistory.length ? (
+              <div className={styles.historyWrap}>
+                <table>
+                  <thead><tr><th>Season</th><th>Matches</th><th>Record</th><th>Points %</th></tr></thead>
+                  <tbody>{historicalHistory.map((entry) => (
+                    <tr key={entry.seasonId}>
+                      <td><strong>{entry.seasonName}</strong></td>
+                      <td>{entry.matchesPlayed}</td>
+                      <td>{formatRecord(entry.record)}</td>
+                      <td>{entry.pointsPercentage.toFixed(1)}%</td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            ) : history.length ? (
               <div className={styles.historyWrap}>
                 <table>
                   <thead><tr><th>Season</th><th>Matches</th><th>Record</th><th>Points %</th></tr></thead>

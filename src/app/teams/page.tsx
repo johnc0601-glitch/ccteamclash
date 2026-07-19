@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {TeamLogo} from '@/components/teams/TeamLogo';
 import {services} from '@/core/ServiceContainer';
+import {getHistoricalTeamSeedSummary} from '@/data/historicalSeed';
 import type {RecordSummary} from '@/services/statistics/StatisticsTypes';
 import styles from './Teams.module.css';
 
@@ -32,6 +33,8 @@ export default async function TeamsPage() {
         <div className={styles.grid}>
           {teams.map((team) => {
             const teamStatistics = statisticsByTeam.get(team.id);
+            const historicalStatistics = getHistoricalTeamSeedSummary(team.id);
+            const displayStatistics = historicalStatistics ?? teamStatistics;
             return (
               <Link
                 className={styles.team}
@@ -46,8 +49,8 @@ export default async function TeamsPage() {
                   <p>{team.captain ? `Captain ${team.captain}` : 'Captain to be announced'}</p>
                 </div>
                 <div className={styles.record}>
-                  <strong>{teamStatistics ? formatRecord(teamStatistics.record) : '0-0'}</strong>
-                  <small>{activeSeason?.name ?? 'Current season'}</small>
+                  <strong>{displayStatistics ? formatRecord(displayStatistics.record) : '0-0'}</strong>
+                  <small>{historicalStatistics?.seasonName ?? activeSeason?.name ?? 'Current season'}</small>
                 </div>
               </Link>
             );

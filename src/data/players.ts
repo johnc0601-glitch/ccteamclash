@@ -1,3 +1,3 @@
-import type {Player} from '@/models/Player';
+import {buildHistoricalPlayerSeedData} from '@/data/historicalSeed';
 
-export const PLAYER_MOCK_DATA = [] as const satisfies readonly Player[];
+export const PLAYER_MOCK_DATA = buildHistoricalPlayerSeedData();
