@@ -1,290 +1,268 @@
 'use client';
 
 import {useEffect, useMemo, useState} from 'react';
-import {DialogShell} from '@/components/teams/DialogShell';
-import {ImportDetails} from '@/components/imports/ImportDetails';
-import {ImportHistoryTable} from '@/components/imports/ImportHistoryTable';
-import {ImportTable} from '@/components/imports/ImportTable';
-import {ImportToolbar} from '@/components/imports/ImportToolbar';
-import {UploadArea} from '@/components/imports/UploadArea';
+import {StatusBadge} from '@/components/imports/StatusBadge';
 import {services} from '@/core/ServiceContainer';
-import type {ImportHistory} from '@/domain/import/ImportHistory';
 import type {
-  ImportFieldErrors,
-  ImportJob,
-  ImportJobInput,
-  ImportStatus,
-  ImportStatusFilter,
-} from '@/domain/import/ImportJob';
-import type {ImportPreview, ImportWorkspace} from '@/domain/import/ImportService';
+  HistoricalImportPreview,
+  HistoricalImportResult,
+  HistoricalPlayerRecord,
+} from '@/domain/history/HistoricalRecord';
 import styles from './ImportManagement.module.css';
 
 type Message = {type: 'success' | 'error'; text: string} | null;
 
-const EMPTY_WORKSPACE: ImportWorkspace = {
-  seasons: [],
-  teams: [],
-  challenges: [],
+type HistoricalOverview = {
+  previews: HistoricalImportPreview[];
+  appliedResult: HistoricalImportResult | undefined;
+  totals: {
+    seasons: number;
+    teams: number;
+    players: number;
+  };
 };
 
+const EMPTY_OVERVIEW: HistoricalOverview = {
+  previews: [],
+  appliedResult: undefined,
+  totals: {
+    seasons: 0,
+    teams: 0,
+    players: 0,
+  },
+};
+
+function formatPercentage(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatRecord(record: {wins: number; losses: number; ties: number}): string {
+  return record.ties ? `${record.wins}-${record.losses}-${record.ties}` : `${record.wins}-${record.losses}`;
+}
+
+function getTopPlayers(players: HistoricalPlayerRecord[]): HistoricalPlayerRecord[] {
+  return [...players]
+    .filter((player) => player.overall.matchesPlayed > 0)
+    .sort((left, right) =>
+      right.overallWinPercentage - left.overallWinPercentage
+      || right.overall.matchesPlayed - left.overall.matchesPlayed
+      || left.playerName.localeCompare(right.playerName, undefined, {sensitivity: 'base'}),
+    )
+    .slice(0, 12);
+}
+
 export function ImportManagement() {
-  const [jobs, setJobs] = useState<ImportJob[]>([]);
-  const [history, setHistory] = useState<ImportHistory[]>([]);
-  const [workspace, setWorkspace] = useState<ImportWorkspace>(EMPTY_WORKSPACE);
+  const [overview, setOverview] = useState<HistoricalOverview>(EMPTY_OVERVIEW);
+  const [selectedSeasonId, setSelectedSeasonId] = useState('');
   const [search, setSearch] = useState('');
-  const [seasonId, setSeasonId] = useState('all');
-  const [status, setStatus] = useState<ImportStatusFilter>('all');
-  const [uploadOpen, setUploadOpen] = useState(false);
-  const [detailsJob, setDetailsJob] = useState<ImportJob | null>(null);
-  const [preview, setPreview] = useState<ImportPreview | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<ImportFieldErrors>({});
   const [message, setMessage] = useState<Message>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
   const [revision, setRevision] = useState(0);
-
-  const detailsJobId = detailsJob?.id;
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadImports() {
-      try {
-        const [nextWorkspace, nextJobs, nextHistory] = await Promise.all([
-          services.imports.getWorkspace(),
-          services.imports.getJobs({search, seasonId, status}),
-          services.imports.getHistory({search, seasonId, status}),
-        ]);
+    services.historicalImports.getOverview()
+      .then((nextOverview) => {
         if (cancelled) return;
-
-        setWorkspace(nextWorkspace);
-        setJobs(nextJobs);
-        setHistory(nextHistory);
-
-        if (detailsJobId) {
-          const previewResult = await services.imports.getPreview(detailsJobId);
-          if (cancelled) return;
-          if (previewResult.ok) {
-            setDetailsJob(previewResult.data.job);
-            setPreview(previewResult.data);
-          } else {
-            setDetailsJob(null);
-            setPreview(null);
-          }
-        }
+        setOverview(nextOverview);
+        setSelectedSeasonId((current) => current || nextOverview.previews[0]?.source.id || '');
         setLoading(false);
-      } catch {
+      })
+      .catch(() => {
         if (cancelled) return;
-        setMessage({type: 'error', text: 'Import data could not be loaded.'});
+        setMessage({type: 'error', text: 'Historical records could not be loaded.'});
         setLoading(false);
-      }
-    }
+      });
 
-    loadImports();
     return () => {
       cancelled = true;
     };
-  }, [detailsJobId, revision, search, seasonId, status]);
+  }, [revision]);
 
-  const dashboard = useMemo(() => {
-    const byStatus = jobs.reduce<Record<ImportStatus, number>>((counts, job) => ({
-      ...counts,
-      [job.status]: counts[job.status] + 1,
-    }), {
-      Pending: 0,
-      Validating: 0,
-      Ready: 0,
-      Applied: 0,
-      Failed: 0,
-      Cancelled: 0,
+  const selectedPreview = useMemo(() => {
+    return overview.previews.find((preview) => preview.source.id === selectedSeasonId)
+      ?? overview.previews[0];
+  }, [overview.previews, selectedSeasonId]);
+
+  const filteredPlayers = useMemo(() => {
+    if (!selectedPreview) return [];
+    const normalizedSearch = search.trim().toLocaleLowerCase();
+    if (!normalizedSearch) return getTopPlayers(selectedPreview.playerRecords);
+    return selectedPreview.playerRecords
+      .filter((player) => [
+        player.playerName,
+        player.teamName,
+        player.pdgaNumber,
+      ].some((value) => value.toLocaleLowerCase().includes(normalizedSearch)))
+      .sort((left, right) =>
+        left.teamName.localeCompare(right.teamName, undefined, {sensitivity: 'base'})
+        || left.playerName.localeCompare(right.playerName, undefined, {sensitivity: 'base'}),
+      )
+      .slice(0, 40);
+  }, [search, selectedPreview]);
+
+  async function handleApply() {
+    setApplying(true);
+    const result = await services.historicalImports.applyHistoricalRecords();
+    setApplying(false);
+    setMessage({
+      type: 'success',
+      text: `${result.seasonsApplied} seasons, ${result.teamRecordsApplied} team records, and ${result.playerRecordsApplied} player records applied.`,
     });
-
-    return {
-      total: jobs.length,
-      ready: byStatus.Ready,
-      applied: byStatus.Applied,
-      failed: byStatus.Failed,
-      byStatus,
-    };
-  }, [jobs]);
-
-  function refresh(successText: string) {
-    setMessage({type: 'success', text: successText});
     setRevision((current) => current + 1);
-  }
-
-  async function openDetails(job: ImportJob) {
-    const previewResult = await services.imports.getPreview(job.id);
-    if (!previewResult.ok) {
-      setMessage({type: 'error', text: previewResult.message});
-      return;
-    }
-
-    setDetailsJob(previewResult.data.job);
-    setPreview(previewResult.data);
-  }
-
-  async function handleUpload(values: ImportJobInput) {
-    setSubmitting(true);
-    const result = await services.imports.createJob(values);
-    setSubmitting(false);
-
-    if (!result.ok) {
-      setFieldErrors(result.fieldErrors ?? {});
-      setMessage({type: 'error', text: result.message});
-      return;
-    }
-
-    setFieldErrors({});
-    setUploadOpen(false);
-    setDetailsJob(result.data);
-    setPreview(null);
-    refresh('Import job created. Validate it before applying official results.');
-  }
-
-  async function handleValidate(job: ImportJob) {
-    setProcessingId(job.id);
-    const result = await services.imports.validateJob(job.id);
-    setProcessingId(null);
-
-    if (!result.ok) {
-      setMessage({type: 'error', text: result.message});
-      return;
-    }
-
-    setDetailsJob(result.data);
-    const previewResult = await services.imports.getPreview(result.data.id);
-    if (previewResult.ok) setPreview(previewResult.data);
-    refresh(result.data.status === 'Ready'
-      ? 'Import validated and ready for preview.'
-      : 'Import validation failed. Review the errors before retrying.');
-  }
-
-  async function handleApply(job: ImportJob) {
-    setProcessingId(job.id);
-    const result = await services.imports.applyJob(job.id);
-    setProcessingId(null);
-
-    if (!result.ok) {
-      setMessage({type: 'error', text: result.message});
-      return;
-    }
-
-    setDetailsJob(result.data);
-    const previewResult = await services.imports.getPreview(result.data.id);
-    if (previewResult.ok) setPreview(previewResult.data);
-    refresh('Import applied and recorded in history.');
-  }
-
-  async function handleCancel(job: ImportJob) {
-    setProcessingId(job.id);
-    const result = await services.imports.cancelJob(job.id);
-    setProcessingId(null);
-
-    if (!result.ok) {
-      setMessage({type: 'error', text: result.message});
-      return;
-    }
-
-    setDetailsJob(result.data);
-    const previewResult = await services.imports.getPreview(result.data.id);
-    if (previewResult.ok) setPreview(previewResult.data);
-    refresh('Import cancelled and recorded in history.');
   }
 
   return (
     <section className={styles.management}>
-      <ImportToolbar
-        search={search}
-        seasonId={seasonId}
-        status={status}
-        seasons={workspace.seasons}
-        onSearchChange={setSearch}
-        onSeasonChange={setSeasonId}
-        onStatusChange={setStatus}
-        onUpload={() => {
-          setFieldErrors({});
-          setMessage(null);
-          setUploadOpen(true);
-        }}
-      />
-
       {message ? (
         <div className={message.type === 'success' ? styles.successMessage : styles.errorMessage} role={message.type === 'error' ? 'alert' : 'status'}>
           {message.text}
         </div>
       ) : null}
 
-      <section className={styles.dashboard} aria-label="Import dashboard">
-        <div><span>Total imports</span><strong>{dashboard.total}</strong></div>
-        <div><span>Ready</span><strong>{dashboard.ready}</strong></div>
-        <div><span>Applied</span><strong>{dashboard.applied}</strong></div>
-        <div><span>Failed</span><strong>{dashboard.failed}</strong></div>
+      <section className={styles.dashboard} aria-label="Historical import dashboard">
+        <div><span>Seasons</span><strong>{overview.totals.seasons}</strong></div>
+        <div><span>Teams</span><strong>{overview.totals.teams}</strong></div>
+        <div><span>Players</span><strong>{overview.totals.players}</strong></div>
+        <div><span>Status</span><strong>{overview.appliedResult ? 'Applied' : 'Ready'}</strong></div>
       </section>
 
       <div className={styles.listHeader}>
         <div>
-          <span>Import queue</span>
-          <h2>{jobs.length} {jobs.length === 1 ? 'import' : 'imports'}</h2>
+          <span>Historical records</span>
+          <h2>Workbook import</h2>
         </div>
-        <p>Official scoring files are validated before any import is applied.</p>
+        <button
+          type="button"
+          className={styles.primaryButton}
+          disabled={applying || Boolean(overview.appliedResult)}
+          onClick={handleApply}
+        >
+          {overview.appliedResult ? 'Historical records applied' : applying ? 'Applying...' : 'Apply historical records'}
+        </button>
       </div>
 
-      {loading ? <div className={styles.loadingState}>Loading imports...</div> : null}
-      {!loading && jobs.length === 0 ? (
-        <div className={styles.emptyState}>
-          <h3>No imports found</h3>
-          <p>Adjust the current search or filters.</p>
-        </div>
-      ) : null}
-      {!loading && jobs.length > 0 ? (
-        <ImportTable
-          jobs={jobs}
-          processingId={processingId}
-          onView={openDetails}
-          onValidate={handleValidate}
-          onApply={handleApply}
-          onCancel={handleCancel}
-        />
-      ) : null}
+      {loading ? <div className={styles.loadingState}>Loading historical records...</div> : null}
 
-      <section className={styles.historySection} aria-labelledby="import-history-title">
-        <div className={styles.listHeader}>
-          <div>
-            <span>Permanent history</span>
-            <h2 id="import-history-title">Import history</h2>
-          </div>
-          <p>{history.length} history {history.length === 1 ? 'record' : 'records'} in this view</p>
-        </div>
-        {history.length ? <ImportHistoryTable history={history} /> : <div className={styles.inlineEmpty}>No history records match this view.</div>}
-      </section>
+      {!loading && overview.previews.length > 0 ? (
+        <>
+          <section className={styles.sourceGrid} aria-label="Historical sources">
+            {overview.previews.map((preview) => (
+              <button
+                key={preview.source.id}
+                type="button"
+                className={preview.source.id === selectedPreview?.source.id ? styles.sourceCardActive : styles.sourceCard}
+                onClick={() => setSelectedSeasonId(preview.source.id)}
+              >
+                <span>{preview.source.sourceFilename}</span>
+                <strong>{preview.source.name}</strong>
+                <small>{preview.teamCount} teams · {preview.playerCount} players</small>
+                <StatusBadge status={preview.status} />
+              </button>
+            ))}
+          </section>
 
-      {uploadOpen ? (
-        <DialogShell title="Upload import" eyebrow="Official results" onClose={() => setUploadOpen(false)} size="large">
-          <UploadArea
-            workspace={workspace}
-            fieldErrors={fieldErrors}
-            submitting={submitting}
-            onSubmit={handleUpload}
-            onCancel={() => setUploadOpen(false)}
-          />
-        </DialogShell>
-      ) : null}
+          {selectedPreview ? (
+            <section className={styles.previewPanel}>
+              <header className={styles.previewHeader}>
+                <div>
+                  <span>Preview</span>
+                  <h3>{selectedPreview.source.name}</h3>
+                </div>
+                <p>Actual match scores are ignored. Singles and doubles records are kept separate, then added for overall records.</p>
+              </header>
 
-      {detailsJob ? (
-        <ImportDetails
-          job={detailsJob}
-          preview={preview}
-          processing={processingId === detailsJob.id}
-          onValidate={handleValidate}
-          onApply={handleApply}
-          onCancelJob={handleCancel}
-          onClose={() => {
-            setDetailsJob(null);
-            setPreview(null);
-          }}
-        />
+              <section className={styles.validationSummary} aria-label="Historical validation summary">
+                <div><span>Team records</span><strong>{selectedPreview.teamCount}</strong></div>
+                <div><span>Player records</span><strong>{selectedPreview.playerCount}</strong></div>
+                <div className={styles.validationMessages}>
+                  <span>Warnings</span>
+                  <ul>
+                    {selectedPreview.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+                  </ul>
+                </div>
+              </section>
+
+              <div className={styles.listHeader}>
+                <div>
+                  <span>Teams</span>
+                  <h2>Team records</h2>
+                </div>
+                <p>Team percentage is calculated from points earned divided by points available.</p>
+              </div>
+
+              <div className={styles.tableWrap}>
+                <table className={styles.historyImportTable}>
+                  <thead>
+                    <tr>
+                      <th>Team</th>
+                      <th>Record</th>
+                      <th>Matches</th>
+                      <th>Points</th>
+                      <th>Points %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedPreview.teamRecords.map((record) => (
+                      <tr key={record.id}>
+                        <td><strong>{record.teamName}</strong></td>
+                        <td>{formatRecord(record)}</td>
+                        <td>{record.matchesPlayed}</td>
+                        <td>{record.pointsEarned} / {record.pointsAvailable}</td>
+                        <td>{formatPercentage(record.pointsPercentage)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className={styles.playerPreviewHeader}>
+                <div>
+                  <span>Players</span>
+                  <h2>{search ? 'Search results' : 'Top historical players'}</h2>
+                </div>
+                <label className={styles.searchControl}>
+                  <span>Search players</span>
+                  <input
+                    type="search"
+                    value={search}
+                    placeholder="Search player or team"
+                    onChange={(event) => setSearch(event.target.value)}
+                  />
+                </label>
+              </div>
+
+              <div className={styles.tableWrap}>
+                <table className={styles.historyImportTable}>
+                  <thead>
+                    <tr>
+                      <th>Player</th>
+                      <th>Team</th>
+                      <th>Singles</th>
+                      <th>Doubles</th>
+                      <th>Overall</th>
+                      <th>Overall %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPlayers.map((record) => (
+                      <tr key={record.id}>
+                        <td><strong>{record.playerName}</strong></td>
+                        <td>{record.teamName}</td>
+                        <td>{formatRecord(record.singles)} · {record.singles.matchesPlayed}</td>
+                        <td>{formatRecord(record.doubles)} · {record.doubles.matchesPlayed}</td>
+                        <td>{formatRecord(record.overall)} · {record.overall.matchesPlayed}</td>
+                        <td>{formatPercentage(record.overallWinPercentage)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : null}
+        </>
       ) : null}
     </section>
   );
