@@ -24,9 +24,13 @@ export class RankingsService {
     return this.getRankings(seasonId, limit, true);
   }
 
+  async getTotalRankings(seasonId: string): Promise<RankingEntry[]> {
+    return this.getRankings(seasonId, undefined, false);
+  }
+
   private async getRankings(
     seasonId: string,
-    limit: number,
+    limit: number | undefined,
     womensOnly: boolean,
   ): Promise<RankingEntry[]> {
     const players = await this.players.getAll({status: 'active'});
@@ -38,14 +42,18 @@ export class RankingsService {
       statistics: await this.statistics.getPlayerStatistics(player.id, seasonId),
     })));
 
-    return entries
+    const rankedEntries = entries
       .filter((entry) => entry.statistics.matchesPlayed > 0)
       .sort((left, right) =>
         right.statistics.overallRecord.wins - left.statistics.overallRecord.wins
         || right.statistics.winPercentage - left.statistics.winPercentage
         || left.player.name.localeCompare(right.player.name, undefined, {sensitivity: 'base'}),
-      )
-      .slice(0, Math.max(0, limit))
+      );
+    const limitedEntries = typeof limit === 'number'
+      ? rankedEntries.slice(0, Math.max(0, limit))
+      : rankedEntries;
+
+    return limitedEntries
       .map((entry, index) => ({...entry, rank: index + 1}));
   }
 }

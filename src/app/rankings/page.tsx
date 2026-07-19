@@ -7,11 +7,17 @@ type RankingTableProps = {
   title: string;
   entries: RankingEntry[];
   teamNames: Map<string, string>;
+  fullWidth?: boolean;
 };
 
-function RankingTable({title, entries, teamNames}: RankingTableProps) {
+function formatRecord(statistics: RankingEntry['statistics']): string {
+  const {wins, losses, ties} = statistics.overallRecord;
+  return ties ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`;
+}
+
+function RankingTable({title, entries, teamNames, fullWidth = false}: RankingTableProps) {
   return (
-    <section className={styles.rankingPanel}>
+    <section className={`${styles.rankingPanel} ${fullWidth ? styles.rankingPanelFull : ''}`}>
       <header>
         <span>Current rankings</span>
         <h2>{title}</h2>
@@ -24,8 +30,9 @@ function RankingTable({title, entries, teamNames}: RankingTableProps) {
                 <th>Rank</th>
                 <th>Player</th>
                 <th>Team</th>
-                <th>Wins</th>
+                <th>Record</th>
                 <th>Win %</th>
+                <th>Points</th>
               </tr>
             </thead>
             <tbody>
@@ -34,8 +41,9 @@ function RankingTable({title, entries, teamNames}: RankingTableProps) {
                   <td><strong>{rank}</strong></td>
                   <td>{player.name}</td>
                   <td>{teamNames.get(player.teamId) ?? player.teamId}</td>
-                  <td>{statistics.overallRecord.wins}</td>
+                  <td>{formatRecord(statistics)}</td>
                   <td>{statistics.winPercentage.toFixed(1)}%</td>
+                  <td>{statistics.pointsEarned}</td>
                 </tr>
               ))}
             </tbody>
@@ -49,12 +57,13 @@ function RankingTable({title, entries, teamNames}: RankingTableProps) {
 export default async function RankingsPage() {
   const activeSeason = await services.seasons.getActive();
   const teams = await services.teams.getAll({status: 'active'});
-  const [overall, women] = activeSeason
+  const [overall, women, total] = activeSeason
     ? await Promise.all([
       services.rankings.getOverallRankings(activeSeason.id),
       services.rankings.getWomensRankings(activeSeason.id),
+      services.rankings.getTotalRankings(activeSeason.id),
     ])
-    : [[], []];
+    : [[], [], []];
   const teamNames = new Map(teams.map((team) => [team.id, team.name]));
 
   return (
@@ -66,6 +75,7 @@ export default async function RankingsPage() {
         <div className={styles.rankingsGrid}>
           <RankingTable title="Overall Top 25" entries={overall} teamNames={teamNames} />
           <RankingTable title="Women's Top 10" entries={women} teamNames={teamNames} />
+          <RankingTable title="Total Rankings" entries={total} teamNames={teamNames} fullWidth />
         </div>
       </main>
       <Footer />

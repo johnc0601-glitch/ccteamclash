@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import {useState} from 'react';
 import type {PublicPlayerView} from '@/services/public/PublicPlayerService';
 import type {PlayerMatchHistoryEntry, PlayerStatistics} from '@/services/statistics';
@@ -7,8 +8,9 @@ import styles from '@/app/players/Players.module.css';
 
 type PublicPlayerDirectoryProps = {
   players: PublicPlayerView[];
-  teams: Array<{id: string; name: string}>;
   showFilters?: boolean;
+  initialMode?: 'list' | 'search';
+  showRankingsLink?: boolean;
 };
 
 function formatRecord(statistics: PlayerStatistics): string {
@@ -32,30 +34,35 @@ function formatDate(date: string): string {
 
 export function PublicPlayerDirectory({
   players,
-  teams,
   showFilters = true,
+  initialMode = 'list',
+  showRankingsLink = false,
 }: PublicPlayerDirectoryProps) {
   const [search, setSearch] = useState('');
-  const [teamId, setTeamId] = useState('all');
   const normalizedSearch = search.trim().toLocaleLowerCase();
-  const visiblePlayers = players.filter(({player}) =>
-    (teamId === 'all' || player.teamId === teamId)
-    && (!normalizedSearch || player.name.toLocaleLowerCase().includes(normalizedSearch)));
+  const searchRequired = showFilters && initialMode === 'search';
+  const hasSearch = normalizedSearch.length > 0;
+  const visiblePlayers = searchRequired && !hasSearch
+    ? []
+    : players.filter(({player}) =>
+      !normalizedSearch || [
+        player.name,
+        player.pdgaNumber,
+      ].some((value) => value.toLocaleLowerCase().includes(normalizedSearch)));
 
   return (
     <>
       {showFilters ? <div className={styles.filters}>
         <label>
           <span>Find player</span>
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by name" />
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search by player name"
+          />
         </label>
-        <label>
-          <span>Team</span>
-          <select value={teamId} onChange={(event) => setTeamId(event.target.value)}>
-            <option value="all">All teams</option>
-            {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
-          </select>
-        </label>
+        {showRankingsLink ? <Link className={styles.rankingsLink} href="/rankings">Rankings</Link> : null}
       </div> : null}
 
       <div className={styles.directory}>
@@ -125,7 +132,15 @@ export function PublicPlayerDirectory({
             </div>
           </details>
         ))}
-        {!visiblePlayers.length ? <p className={styles.empty}>No players found.</p> : null}
+        {!visiblePlayers.length ? (
+          <div className={styles.empty}>
+            <h2>{searchRequired && !hasSearch ? 'Search for a player' : 'No players found'}</h2>
+            <p>{searchRequired && !hasSearch
+              ? 'Player details will appear here as soon as you start typing.'
+              : 'Try another player name.'}</p>
+            {showRankingsLink ? <Link href="/rankings">View rankings</Link> : null}
+          </div>
+        ) : null}
       </div>
     </>
   );

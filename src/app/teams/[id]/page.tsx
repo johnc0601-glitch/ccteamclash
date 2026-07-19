@@ -81,7 +81,6 @@ export default async function TeamPage({params}: TeamPageProps) {
             </header>
             <PublicPlayerDirectory
               players={roster}
-              teams={[{id: team.id, name: team.name}]}
               showFilters={false}
             />
           </section>
