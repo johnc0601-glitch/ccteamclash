@@ -23,6 +23,12 @@ function formatRecordSummary(record: PlayerMatchHistoryEntry['record']): string 
     : `${record.wins}-${record.losses}`;
 }
 
+function formatWinPercentage(record: PlayerMatchHistoryEntry['record']): string {
+  const matchesPlayed = record.wins + record.losses + record.ties;
+  if (!matchesPlayed) return '0.0%';
+  return (((record.wins + record.ties * 0.5) / matchesPlayed) * 100).toFixed(1) + '%';
+}
+
 function formatDate(date: string): string {
   return new Date(`${date}T00:00:00Z`).toLocaleDateString('en-US', {
     month: 'short',
@@ -94,7 +100,10 @@ export function PublicPlayerDirectory({
                       <div><dt>Win %</dt><dd>{currentStatistics.winPercentage.toFixed(1)}%</dd></div>
                       <div><dt>Points</dt><dd>{currentStatistics.pointsEarned}</dd></div>
                     </dl>
-                    <p>Singles {formatRecordSummary(currentStatistics.singlesRecord)} &middot; Doubles {formatRecordSummary(currentStatistics.doublesRecord)}</p>
+                    <dl className={styles.splitStats}>
+                      <div><dt>Singles %</dt><dd>{formatWinPercentage(currentStatistics.singlesRecord)}</dd><small>{formatRecordSummary(currentStatistics.singlesRecord)}</small></div>
+                      <div><dt>Doubles %</dt><dd>{formatWinPercentage(currentStatistics.doublesRecord)}</dd><small>{formatRecordSummary(currentStatistics.doublesRecord)}</small></div>
+                    </dl>
                   </section>
                 ) : null}
                 <section>
@@ -106,7 +115,10 @@ export function PublicPlayerDirectory({
                     <div><dt>Win %</dt><dd>{careerStatistics.winPercentage.toFixed(1)}%</dd></div>
                     <div><dt>Points</dt><dd>{careerStatistics.pointsEarned}</dd></div>
                   </dl>
-                  <p>Singles {formatRecordSummary(careerStatistics.singlesRecord)} &middot; Doubles {formatRecordSummary(careerStatistics.doublesRecord)}</p>
+                  <dl className={styles.splitStats}>
+                    <div><dt>Singles %</dt><dd>{formatWinPercentage(careerStatistics.singlesRecord)}</dd><small>{formatRecordSummary(careerStatistics.singlesRecord)}</small></div>
+                    <div><dt>Doubles %</dt><dd>{formatWinPercentage(careerStatistics.doublesRecord)}</dd><small>{formatRecordSummary(careerStatistics.doublesRecord)}</small></div>
+                  </dl>
                 </section>
               </div>
 

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import {notFound} from 'next/navigation';
 import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
-import {TeamBanner} from '@/components/teams/TeamBanner';
+import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
 import {services} from '@/core/ServiceContainer';
 import {getHistoricalTeamSeasonSummaries, getHistoricalTeamSeedSummary} from '@/data/historicalSeed';
 import type {RecordSummary} from '@/services/statistics';
@@ -55,7 +55,7 @@ export default async function TeamPage({params}: TeamPageProps) {
       <main className={styles.page}>
         <div className="shell">
           <Link className={styles.back} href="/teams">Back to teams</Link>
-          <TeamBanner team={team} />
+          <ClientTeamBanner initialTeam={team} />
 
           <section className={styles.overview}>
             <div className={styles.recordBlock}>

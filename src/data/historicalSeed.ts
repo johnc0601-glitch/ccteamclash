@@ -30,6 +30,19 @@ export type HistoricalPlayerSeedSummary = {
   winPercentage: number;
 };
 
+export type HistoricalPlayerSeasonSummary = HistoricalPlayerSeedSummary & {
+  playerName: string;
+  teamId: string;
+  teamName: string;
+  seasonId: string;
+  seasonName: string;
+};
+
+export type HistoricalTeamSeasonStanding = HistoricalTeamSeedSummary & {
+  teamName: string;
+  rank: number;
+};
+
 const HISTORICAL_IMPORTED_AT = '2026-07-19T00:00:00.000Z';
 const HISTORICAL_TEAM_DESCRIPTION = 'Imported from historical Coastal Clash records.';
 const HISTORICAL_TEAM_CITY = 'Wilmington';
@@ -165,6 +178,85 @@ export function getHistoricalPlayerSeedSummary(playerId: string): HistoricalPlay
     overallRecord,
     winPercentage: calculateWinPercentage(overallRecord),
   };
+}
+
+export function getLatestHistoricalSeasonName(): string {
+  return getLatestHistoricalSeason()?.name ?? 'Imported last season';
+}
+
+export function getLatestHistoricalTeamStandings(): HistoricalTeamSeasonStanding[] {
+  const latestSeason = getLatestHistoricalSeason();
+  if (!latestSeason) return [];
+
+  return latestSeason.teamRecords
+    .map((record) => ({
+      teamId: createSlug(record.teamName),
+      teamName: record.teamName,
+      seasonId: latestSeason.id,
+      seasonName: latestSeason.name,
+      matchesPlayed: record.matchesPlayed,
+      record: {
+        wins: record.wins,
+        losses: record.losses,
+        ties: record.ties,
+      },
+      pointsEarned: record.pointsEarned,
+      pointsAvailable: record.pointsAvailable,
+      pointsPercentage: calculatePercentage(record.pointsEarned, record.pointsAvailable),
+      rank: 0,
+    }))
+    .sort((first, second) =>
+      second.record.wins - first.record.wins
+      || first.record.losses - second.record.losses
+      || second.pointsPercentage - first.pointsPercentage
+      || second.pointsEarned - first.pointsEarned
+      || first.teamName.localeCompare(second.teamName, undefined, {sensitivity: 'base'}))
+    .map((standing, index) => ({...standing, rank: index + 1}));
+}
+
+export function getLatestHistoricalPlayerSeasonSummaries(): HistoricalPlayerSeasonSummary[] {
+  const latestSeason = getLatestHistoricalSeason();
+  if (!latestSeason) return [];
+
+  const summariesByPlayer = new Map<string, HistoricalPlayerSeasonSummary>();
+
+  for (const record of latestSeason.playerRecords) {
+    const playerId = createSlug(record.playerName);
+    const existingSummary = summariesByPlayer.get(playerId);
+    const singlesRecord = existingSummary
+      ? addRecords(existingSummary.singlesRecord, record.singles)
+      : {...record.singles};
+    const doublesRecord = existingSummary
+      ? addRecords(existingSummary.doublesRecord, record.doubles)
+      : {...record.doubles};
+    const overallRecord = addRecords(singlesRecord, doublesRecord);
+
+    summariesByPlayer.set(playerId, {
+      playerId,
+      playerName: record.playerName,
+      teamId: createSlug(record.teamName),
+      teamName: record.teamName,
+      seasonId: latestSeason.id,
+      seasonName: latestSeason.name,
+      matchesPlayed: countMatches(overallRecord),
+      singlesRecord,
+      doublesRecord,
+      overallRecord,
+      winPercentage: calculateWinPercentage(overallRecord),
+    });
+  }
+
+  return Array.from(summariesByPlayer.values())
+    .filter((summary) => summary.matchesPlayed > 0)
+    .sort((first, second) =>
+      second.overallRecord.wins - first.overallRecord.wins
+      || second.winPercentage - first.winPercentage
+      || second.matchesPlayed - first.matchesPlayed
+      || first.playerName.localeCompare(second.playerName, undefined, {sensitivity: 'base'}));
+}
+
+function getLatestHistoricalSeason() {
+  return HISTORICAL_RECORD_SOURCES[HISTORICAL_RECORD_SOURCES.length - 1];
 }
 
 function getCaptainByTeam(

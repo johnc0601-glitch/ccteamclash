@@ -521,6 +521,38 @@
   padding: 3px;
 }
 
+.logoUploadField {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.logoUploadField > span:first-child {
+  color: #657068;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.logoUploadControl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.logoUploadActions {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.logoButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .fieldError {
   color: #962d2d;
   font-size: 11px;

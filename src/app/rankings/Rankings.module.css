@@ -11,9 +11,10 @@
 
 .rankingPanel {
   min-width: 0;
-  border: 1px solid #dfe2db;
-  border-radius: 7px;
-  background: #fff;
+  border: 1px solid #263839;
+  border-radius: 9px;
+  background: #0f1415;
+  box-shadow: 0 18px 46px rgba(16, 24, 32, .16);
   overflow: hidden;
 }
 
@@ -23,21 +24,26 @@
 
 .rankingPanel > header {
   padding: 22px 24px;
-  border-bottom: 3px solid var(--gold);
-  background: #101315;
+  border-bottom: 3px solid #a27752;
+  background:
+    radial-gradient(circle at 100% 0, rgba(0,111,113,.26), transparent 16rem),
+    linear-gradient(145deg, #101820, #061f24);
   color: #fff;
 }
 
 .rankingPanel header span {
-  color: var(--gold);
+  color: #a27752;
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 950;
   text-transform: uppercase;
 }
 
 .rankingPanel h2 {
   margin: 6px 0 0;
+  font-family: var(--cc-font-display);
   font-size: 26px;
+  font-style: italic;
+  letter-spacing: -.03em;
   text-transform: uppercase;
 }
 
@@ -55,21 +61,21 @@
 .rankingPanel th,
 .rankingPanel td {
   padding: 15px 14px;
-  border-bottom: 1px solid #e7e9e4;
+  border-bottom: 1px solid #263839;
   text-align: left;
   white-space: nowrap;
 }
 
 .rankingPanel th {
-  background: #f5f6f2;
-  color: #6a736d;
+  background: #151b1c;
+  color: #a7b7b4;
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 950;
   text-transform: uppercase;
 }
 
 .rankingPanel td {
-  color: #343c37;
+  color: #eaf1ef;
   font-size: 13px;
 }
 
@@ -78,18 +84,139 @@
 }
 
 .rankingPanel td:first-child strong {
-  color: #56701c;
+  min-width: 30px;
+  min-height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #8a613e, #a27752);
+  color: #fff;
+  font-family: var(--cc-font-display);
   font-size: 18px;
+  letter-spacing: -.03em;
 }
 
 .rankingPanel tbody tr:last-child td {
   border-bottom: 0;
 }
 
+.clickableRow {
+  cursor: pointer;
+  transition: background-color .18s ease, color .18s ease;
+}
+
+.clickableRow:hover,
+.clickableRow:focus {
+  background: rgba(162, 119, 82, .14);
+  outline: none;
+}
+
+.clickableRow:focus-visible {
+  box-shadow: inset 0 0 0 2px #a27752;
+}
+
 .emptyState {
   margin: 0;
   padding: 34px 24px;
-  color: var(--muted);
+  color: #a7b7b4;
+}
+
+.playerCardDialog {
+  padding: 24px;
+}
+
+.playerCardLead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.playerCardAvatar {
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #a27752;
+  border-radius: 8px;
+  background: #101820;
+  color: #fff;
+  font-family: var(--cc-font-display);
+  font-size: 26px;
+  font-style: italic;
+  letter-spacing: -.03em;
+}
+
+.playerCardLead span,
+.playerCardStats dt {
+  color: #006f71;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.playerCardLead h3 {
+  margin: 5px 0;
+  color: #101820;
+  font-family: var(--cc-font-display);
+  font-size: 28px;
+  font-style: italic;
+  letter-spacing: -.03em;
+  text-transform: uppercase;
+}
+
+.playerCardLead p {
+  margin: 0;
+  color: #66746f;
+}
+
+.playerCardStats {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.playerCardStats div {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #d9dfd8;
+  border-radius: 8px;
+  background: #f8faf7;
+}
+
+.playerCardStats dd {
+  margin: 6px 0 0;
+  color: #101820;
+  font-size: 22px;
+  font-weight: 950;
+}
+
+.playerCardStats small {
+  display: block;
+  margin-top: 5px;
+  color: #66746f;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dialogActions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dialogActions button {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 4px;
+  background: #101820;
+  color: #fff;
+  font-weight: 950;
+  text-transform: uppercase;
+  cursor: pointer;
 }
 
 @media (max-width: 900px) {
@@ -99,5 +226,16 @@
 
   .rankingPanelFull {
     grid-column: auto;
+  }
+
+  .playerCardStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .playerCardLead,
+  .playerCardStats {
+    grid-template-columns: 1fr;
   }
 }

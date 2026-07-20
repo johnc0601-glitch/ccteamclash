@@ -1,5 +1,7 @@
-import {useState, type FormEvent} from 'react';
+import {useRef, useState, type ChangeEvent, type FormEvent} from 'react';
 import type {TeamFieldErrors, TeamInput} from '@/types/team';
+import {TeamLogo} from '@/components/teams/TeamLogo';
+import {createTeamLogoDataUrl} from '@/shared/utils';
 import styles from './TeamManagement.module.css';
 
 type TeamFormProps = {
@@ -20,9 +22,30 @@ export function TeamForm({
   onCancel,
 }: TeamFormProps) {
   const [values, setValues] = useState<TeamInput>(initialValues);
+  const [logoError, setLogoError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function setField(field: keyof TeamInput, value: string) {
     setValues((current) => ({...current, [field]: value}));
+  }
+
+  async function handleLogoUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const logo = await createTeamLogoDataUrl(file);
+      setField('logo', logo);
+      setLogoError('');
+    } catch (error) {
+      setLogoError(error instanceof Error ? error.message : 'Logo could not be loaded.');
+    }
+  }
+
+  function clearLogo() {
+    setField('logo', '');
+    setLogoError('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -73,10 +96,30 @@ export function TeamForm({
           <span>Home course</span>
           <input name="homeCourse" value={values.homeCourse} onChange={(event) => setField('homeCourse', event.target.value)} />
         </label>
-        <label className={styles.fullField}>
-          <span>Logo URL</span>
-          <input name="logo" type="url" value={values.logo} onChange={(event) => setField('logo', event.target.value)} />
-        </label>
+        <div className={`${styles.fullField} ${styles.logoUploadField}`}>
+          <span>Logo</span>
+          <div className={styles.logoUploadControl}>
+            <TeamLogo
+              team={{
+                id: 'logo-preview',
+                active: true,
+                createdAt: '',
+                updatedAt: '',
+                ...values,
+              }}
+              large
+            />
+            <div className={styles.logoUploadActions}>
+              <input name="logo" type="url" value={values.logo} onChange={(event) => setField('logo', event.target.value)} placeholder="Logo URL or uploaded image" />
+              <div className={styles.logoButtons}>
+                <button type="button" className={styles.secondaryButton} onClick={() => fileInputRef.current?.click()}>Upload logo</button>
+                {values.logo ? <button type="button" className={styles.secondaryButton} onClick={clearLogo}>Clear</button> : null}
+              </div>
+              <input ref={fileInputRef} className={styles.srOnly} type="file" accept="image/*" onChange={handleLogoUpload} />
+              {logoError ? <small className={styles.fieldError}>{logoError}</small> : null}
+            </div>
+          </div>
+        </div>
         <label>
           <span>Primary color</span>
           <span className={styles.colorControl}>
