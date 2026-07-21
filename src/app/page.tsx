@@ -29,8 +29,6 @@ export default async function Home() {
             <p>{lead.excerpt}</p>
             <div className="home-actions">
               <Link href={`/stories/${lead.slug}`} className="button gold-button">Read story <span>-&gt;</span></Link>
-              <Link href="/teams" className="button outline-home-button">View teams</Link>
-              <Link href="/players" className="button subtle-home-button">Players</Link>
             </div>
           </div>
         </section>
