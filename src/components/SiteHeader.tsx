@@ -1,13 +1,16 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import {ThemeToggle} from '@/components/ThemeToggle';
-import {BRAND_MARK, BRAND_NAME, BRAND_TAGLINE, FOOTER_COPY} from '@/shared/constants';
+import {BRAND_LOGO, BRAND_NAME, BRAND_TAGLINE, FOOTER_COPY} from '@/shared/constants';
 
 export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="shell nav-wrap">
         <Link href="/" className="brand">
-          <span className="brand-mark">{BRAND_MARK}</span>
+          <span className="brand-mark">
+            <Image src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} priority />
+          </span>
           <span><strong>{BRAND_NAME}</strong><small>{BRAND_TAGLINE}</small></span>
         </Link>
         <nav>
@@ -31,7 +34,9 @@ export function Footer() {
     <footer>
       <div className="shell footer-wrap">
         <div className="brand">
-          <span className="brand-mark">{BRAND_MARK}</span>
+          <span className="brand-mark">
+            <Image src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} />
+          </span>
           <span><strong>{BRAND_NAME}</strong><small>{BRAND_TAGLINE}</small></span>
         </div>
         <p>{FOOTER_COPY}</p>

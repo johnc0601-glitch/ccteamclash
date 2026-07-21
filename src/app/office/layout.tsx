@@ -1,7 +1,8 @@
 import type {Metadata} from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import {OfficeNav} from '@/components/commissioner/OfficeNav';
-import {BRAND_MARK, BRAND_NAME} from '@/shared/constants';
+import {BRAND_LOGO, BRAND_NAME} from '@/shared/constants';
 import './office.css';
 
 export const metadata: Metadata = {
@@ -14,7 +15,9 @@ export default function CommissionerOfficeLayout({children}: Readonly<{children:
     <div className="commissioner-office">
       <header className="office-topbar">
         <Link href="/office" className="office-brand">
-          <span className="office-brand-mark">{BRAND_MARK}</span>
+          <span className="office-brand-mark">
+            <Image src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} priority />
+          </span>
           <span>
             <strong>Commissioner Office</strong>
             <small>{BRAND_NAME} control center</small>
