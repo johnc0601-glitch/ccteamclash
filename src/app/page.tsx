@@ -1,11 +1,16 @@
 import Link from 'next/link';
+import type {ReactNode} from 'react';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {RotatingMatchCard} from '@/components/RotatingMatchCard';
 import {services} from '@/core/ServiceContainer';
 import {getLatestHistoricalPlayerSeasonSummaries} from '@/data/historicalSeed';
-import {matches, stories, teams} from '@/lib-data';
+import {matches, teams} from '@/lib-data';
+import {getStories} from '@/services/stories/StoryService';
+
+export const dynamic = 'force-dynamic';
 
 export default async function Home() {
+  const stories = await getStories();
   const lead = stories[0];
   const topTeams = teams.slice(0, 3);
   const topPlayers = getLatestHistoricalPlayerSeasonSummaries().slice(0, 3);
@@ -15,19 +20,21 @@ export default async function Home() {
     <main className="home-page">
       <SiteHeader />
 
-      <section className="story-home-hero">
-        <div className="story-home-photo" aria-hidden="true" />
-        <div className="story-home-content">
-          <span className="eyebrow">Featured story</span>
-          <h1>{lead.title}</h1>
-          <p>{lead.excerpt}</p>
-          <div className="home-actions">
-            <Link href={`/stories/${lead.slug}`} className="button gold-button">Read story <span>-&gt;</span></Link>
-            <Link href="/teams" className="button outline-home-button">View teams</Link>
-            <Link href="/players" className="button subtle-home-button">Players</Link>
+      {lead ? (
+        <section className="story-home-hero">
+          <StoryPhoto className="story-home-photo" image={lead.image} />
+          <div className="story-home-content">
+            <span className="eyebrow">Featured story</span>
+            <h1>{lead.title}</h1>
+            <p>{lead.excerpt}</p>
+            <div className="home-actions">
+              <Link href={`/stories/${lead.slug}`} className="button gold-button">Read story <span>-&gt;</span></Link>
+              <Link href="/teams" className="button outline-home-button">View teams</Link>
+              <Link href="/players" className="button subtle-home-button">Players</Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="shell story-home-stack">
         <RotatingMatchCard matches={matches} teams={teamLogos} />
@@ -77,7 +84,7 @@ export default async function Home() {
           <div className="compact-story-grid">
             {stories.slice(0, 2).map((story) => (
               <article className="compact-story" key={story.slug}>
-                <div className={`compact-photo ${story.image}`}><span>League story</span></div>
+                <StoryPhoto className="compact-photo" image={story.image}><span>League story</span></StoryPhoto>
                 <div>
                   <small>{story.date}</small>
                   <h3>{story.title}</h3>
@@ -96,4 +103,18 @@ export default async function Home() {
 
 function formatRecord(record: {wins: number; losses: number; ties: number}): string {
   return record.ties ? `${record.wins}-${record.losses}-${record.ties}` : `${record.wins}-${record.losses}`;
+}
+
+function StoryPhoto({className, image, children}: {className: string; image: string; children?: ReactNode}) {
+  const isUrl = image.startsWith('http://') || image.startsWith('https://') || image.startsWith('/');
+
+  return (
+    <div
+      className={isUrl ? className : `${className} ${image}`}
+      style={isUrl ? {backgroundImage: `url(${image})`} : undefined}
+      aria-hidden={!children}
+    >
+      {children}
+    </div>
+  );
 }
