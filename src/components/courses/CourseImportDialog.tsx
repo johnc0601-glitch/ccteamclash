@@ -18,8 +18,8 @@ type ParsedRow = CourseImportInput & {
   row: number;
 };
 
-const SAMPLE_IMPORT = `name,city,state,googleMapsUrl,udiscUrl,homeTeam,active
-Castle Hayne Disc Golf Course,Wilmington,NC,https://maps.app.goo.gl/example,https://udisc.com/courses/example,Riptide,true`;
+const SAMPLE_IMPORT = `name,city,state,googleMapsUrl,udiscUrl,photoUrl,homeTeam,description,active
+Castle Hayne Disc Golf Course,Wilmington,NC,https://maps.app.goo.gl/example,https://udisc.com/courses/example,https://example.com/course-photo.jpg,Riptide,A league course with details maintained on UDisc.,true`;
 
 function normalize(value: string): string {
   return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
@@ -99,6 +99,8 @@ function parseCourseImport(text: string, teams: Team[]): ParsedRow[] {
         ?? rowValues.get('map url')
         ?? '',
       udiscUrl: rowValues.get('udiscurl') ?? rowValues.get('udisc url') ?? '',
+      photoUrl: rowValues.get('photourl') ?? rowValues.get('photo url') ?? rowValues.get('image') ?? '',
+      description: rowValues.get('description') ?? '',
       homeTeamId: homeTeamId || undefined,
       active: parseActive(rowValues.get('active') ?? ''),
     };
@@ -124,7 +126,7 @@ export function CourseImportDialog({
     <DialogShell title="Import courses" eyebrow="Course directory" onClose={onClose} size="large">
       <form className={styles.courseForm} onSubmit={handleSubmit}>
         <div className={styles.importIntro}>
-          <p>Paste rows from a spreadsheet. Google Maps should be the direct place link. UDisc is optional.</p>
+          <p>Paste rows from a spreadsheet. Google Maps should be the direct place link. UDisc and photo links are optional.</p>
           <strong>{parsedRows.length} {parsedRows.length === 1 ? 'course' : 'courses'} ready</strong>
         </div>
         <label className={styles.fullWidth}>

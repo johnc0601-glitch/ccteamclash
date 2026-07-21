@@ -3,7 +3,11 @@ import {services} from '@/core/ServiceContainer';
 import styles from './Courses.module.css';
 
 export default async function CoursesPage() {
-  const courses = await services.courses.getAll({status: 'active'});
+  const [courses, teams] = await Promise.all([
+    services.courses.getAll({status: 'active'}),
+    services.teams.getAll({status: 'active'}),
+  ]);
+  const teamNames = new Map(teams.map((team) => [team.id, team.name]));
 
   return (
     <>
@@ -11,21 +15,34 @@ export default async function CoursesPage() {
       <main className={`shell page-shell ${styles.page}`}>
         <span className="eyebrow">League travel</span>
         <h1>Courses</h1>
-        <p className="intro">Directions to every active CC Team Clash course.</p>
+        <p className="intro">League course cards with directions and UDisc course info.</p>
         <div className={styles.directory}>
-          {courses.map((course) => (
-            <article className={styles.course} key={course.id}>
-              <div>
-                <h2>{course.name}</h2>
-                <p>{course.address || `${course.city}, ${course.state}`}</p>
-                {course.address ? <small>{course.city}, {course.state}</small> : null}
-              </div>
-              <div className={styles.actions}>
-                <a className={styles.primaryAction} href={course.mapUrl} target="_blank" rel="noreferrer">Open directions</a>
-                {course.udiscUrl ? <a href={course.udiscUrl} target="_blank" rel="noreferrer">View on UDisc</a> : null}
-              </div>
-            </article>
-          ))}
+          {courses.map((course) => {
+            const homeTeamName = course.homeTeamId ? teamNames.get(course.homeTeamId) : undefined;
+            return (
+              <article className={styles.course} key={course.id}>
+                <div
+                  className={course.photoUrl ? styles.photo : `${styles.photo} ${styles.photoFallback}`}
+                  style={course.photoUrl ? {backgroundImage: `url(${course.photoUrl})`} : undefined}
+                  aria-label={`${course.name} course photo`}
+                >
+                  {!course.photoUrl ? <span>Course photo</span> : null}
+                </div>
+                <div className={styles.cardBody}>
+                  <div>
+                    <span className={styles.location}>{course.city}, {course.state}</span>
+                    <h2>{course.name}</h2>
+                    {homeTeamName ? <p className={styles.homeTeam}>Home course: {homeTeamName}</p> : null}
+                    <p>{course.description || 'Course details and current layout information are maintained on UDisc.'}</p>
+                  </div>
+                  <div className={styles.actions}>
+                    <a className={styles.primaryAction} href={course.mapUrl} target="_blank" rel="noreferrer">Directions</a>
+                    {course.udiscUrl ? <a href={course.udiscUrl} target="_blank" rel="noreferrer">Course info</a> : null}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </main>
       <Footer />

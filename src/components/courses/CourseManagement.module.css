@@ -4,7 +4,7 @@
 .toolbar label, .courseForm label { min-width: 0; display: grid; gap: 6px; }
 .toolbar label > span, .courseForm label > span { color: #657068; font-size: 10px; font-weight: 900; text-transform: uppercase; }
 .courseForm label > span em { margin-left: 5px; color: #8a918c; font-style: normal; font-weight: 700; }
-.toolbar select, .courseForm input { width: 100%; min-height: 42px; padding: 0 11px; border: 1px solid #cfd4cc; border-radius: 4px; background: #fff; color: #121814; font: inherit; }
+.toolbar select, .courseForm input, .descriptionInput { width: 100%; min-height: 42px; padding: 0 11px; border: 1px solid #cfd4cc; border-radius: 4px; background: #fff; color: #121814; font: inherit; }
 .primaryButton, .secondaryButton { min-height: 42px; padding: 0 16px; border-radius: 4px; font: inherit; font-size: 12px; font-weight: 900; cursor: pointer; }
 .primaryButton { border: 1px solid #121814; background: #121814; color: #fff; }
 .secondaryButton { border: 1px solid #cbd0c8; background: #eef0eb; color: #121814; }
@@ -31,6 +31,7 @@
 .formGrid { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 18px; }
 .fullWidth { grid-column: 1 / -1; }
 .courseForm input { padding: 10px 12px; }
+.descriptionInput { padding: 10px 12px; resize: vertical; line-height: 1.5; }
 .courseForm input[aria-invalid="true"] { border-color: #a12b2b; }
 .courseForm small { color: #962d2d; font-size: 11px; font-weight: 800; }
 .formActions { margin-top: 24px; display: flex; justify-content: flex-end; gap: 9px; }

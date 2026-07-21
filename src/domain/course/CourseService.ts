@@ -155,6 +155,8 @@ export class CourseService {
       address: input.address.trim(),
       mapUrl: input.mapUrl.trim(),
       udiscUrl: input.udiscUrl.trim(),
+      photoUrl: input.photoUrl.trim(),
+      description: input.description.trim(),
       homeTeamId: input.homeTeamId?.trim() || undefined,
     };
     const fieldErrors: CourseFieldErrors = {};
@@ -169,6 +171,9 @@ export class CourseService {
     }
     if (normalizedInput.udiscUrl && !isWebUrl(normalizedInput.udiscUrl)) {
       fieldErrors.udiscUrl = 'Enter a valid web link.';
+    }
+    if (normalizedInput.photoUrl && !isWebUrl(normalizedInput.photoUrl)) {
+      fieldErrors.photoUrl = 'Enter a valid web link.';
     }
 
     const courses = await this.repository.getAll();

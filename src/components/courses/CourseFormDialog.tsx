@@ -20,6 +20,8 @@ const EMPTY_INPUT: CourseInput = {
   address: '',
   mapUrl: '',
   udiscUrl: '',
+  photoUrl: '',
+  description: '',
   homeTeamId: undefined,
 };
 
@@ -31,6 +33,8 @@ export function CourseFormDialog({course, fieldErrors, submitting, onSubmit, onC
     address: course.address,
     mapUrl: course.mapUrl,
     udiscUrl: course.udiscUrl,
+    photoUrl: course.photoUrl,
+    description: course.description,
     homeTeamId: course.homeTeamId,
   } : EMPTY_INPUT);
 
@@ -80,6 +84,15 @@ export function CourseFormDialog({course, fieldErrors, submitting, onSubmit, onC
             <span>UDisc link <em>Optional</em></span>
             <input type="url" value={values.udiscUrl} onChange={(event) => update('udiscUrl', event.target.value)} aria-invalid={Boolean(fieldErrors.udiscUrl)} placeholder="https://udisc.com/courses/..." />
             {fieldErrors.udiscUrl ? <small>{fieldErrors.udiscUrl}</small> : null}
+          </label>
+          <label className={styles.fullWidth}>
+            <span>Photo link <em>Optional</em></span>
+            <input type="url" value={values.photoUrl} onChange={(event) => update('photoUrl', event.target.value)} aria-invalid={Boolean(fieldErrors.photoUrl)} placeholder="https://..." />
+            {fieldErrors.photoUrl ? <small>{fieldErrors.photoUrl}</small> : null}
+          </label>
+          <label className={styles.fullWidth}>
+            <span>Description <em>Optional</em></span>
+            <textarea className={styles.descriptionInput} value={values.description} onChange={(event) => update('description', event.target.value)} rows={3} />
           </label>
         </div>
         <div className={styles.formActions}>

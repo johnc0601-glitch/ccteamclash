@@ -6,13 +6,15 @@ export type Course = {
   address: string;
   mapUrl: string;
   udiscUrl: string;
+  photoUrl: string;
+  description: string;
   homeTeamId?: string;
   active: boolean;
   createdAt: string;
   updatedAt: string;
 };
 
-export type CourseInput = Pick<Course, 'name' | 'city' | 'state' | 'address' | 'mapUrl' | 'udiscUrl' | 'homeTeamId'>;
+export type CourseInput = Pick<Course, 'name' | 'city' | 'state' | 'address' | 'mapUrl' | 'udiscUrl' | 'photoUrl' | 'description' | 'homeTeamId'>;
 
 export type CourseImportInput = CourseInput & {
   active?: boolean;
