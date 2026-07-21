@@ -13,4 +13,8 @@ export const teams: StandingEntry[] = getLatestHistoricalTeamStandings().map((st
     : `${standing.record.wins}-${standing.record.losses}`,
   diff: `${standing.pointsPercentage.toFixed(1)}%`,
 }));
-export const matches: Match[] = [{date:'Saturday, July 18',time:'9:00 AM',course:'Castle Hayne Disc Golf Course',home:'Dark Knights',away:'Ninjas'},{date:'Saturday, July 18',time:'10:30 AM',course:'Castle Hayne Disc Golf Course',home:'Chain Hawks',away:'Bogey Men'}]
+export const matches: Match[] = [
+  {date: 'Saturday, July 18', time: '9:00 AM', course: 'Castle Hayne Disc Golf Course', home: 'Riptide', away: 'KB'},
+  {date: 'Saturday, July 18', time: '10:30 AM', course: 'Castle Hayne Disc Golf Course', home: 'Ninjas', away: 'Wild Turkey'},
+  {date: 'Saturday, July 25', time: '9:00 AM', course: 'Castle Hayne Disc Golf Course', home: 'Cougar Country', away: "Hayneous OG's"},
+]

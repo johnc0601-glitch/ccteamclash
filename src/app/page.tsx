@@ -1,11 +1,15 @@
 import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {RotatingMatchCard} from '@/components/RotatingMatchCard';
+import {services} from '@/core/ServiceContainer';
+import {getLatestHistoricalPlayerSeasonSummaries} from '@/data/historicalSeed';
 import {matches, stories, teams} from '@/lib-data';
 
-export default function Home() {
+export default async function Home() {
   const lead = stories[0];
   const topTeams = teams.slice(0, 3);
+  const topPlayers = getLatestHistoricalPlayerSeasonSummaries().slice(0, 3);
+  const teamLogos = await services.teams.getAll();
 
   return (
     <main className="home-page">
@@ -26,14 +30,24 @@ export default function Home() {
       </section>
 
       <section className="shell story-home-stack">
-        <RotatingMatchCard matches={matches} />
+        <RotatingMatchCard matches={matches} teams={teamLogos} />
 
         <article className="dark-panel story-home-card">
           <div>
             <span className="panel-title">Leaderboard</span>
             <h2>Rankings</h2>
           </div>
-          <p>Overall rankings, top 25, women, singles, and doubles live together in one clean view.</p>
+          <div className="ranking-mini-head"><span>#</span><span>Player</span><span>Win %</span></div>
+          {topPlayers.map((entry, index) => (
+            <div className="ranking-mini-row" key={entry.playerId}>
+              <span>{index + 1}</span>
+              <span>
+                <strong>{entry.playerName}</strong>
+                <small>{entry.teamName} · {formatRecord(entry.overallRecord)}</small>
+              </span>
+              <b>{entry.winPercentage.toFixed(1)}%</b>
+            </div>
+          ))}
           <Link href="/rankings" className="gold-link">Open rankings -&gt;</Link>
         </article>
 
@@ -78,4 +92,8 @@ export default function Home() {
       <Footer />
     </main>
   );
+}
+
+function formatRecord(record: {wins: number; losses: number; ties: number}): string {
+  return record.ties ? `${record.wins}-${record.losses}-${record.ties}` : `${record.wins}-${record.losses}`;
 }

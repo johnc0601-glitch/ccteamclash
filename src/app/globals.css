@@ -617,11 +617,100 @@ td,
 }
 
 .story-home-card .mini-standing {
-  font-size: 12px;
+  padding: 7px 0;
+  font-size: 15px;
+  font-weight: 900;
 }
 
 .story-home-card .mini-standing span:first-child {
   min-width: 0;
+}
+
+.story-home-card .mini-table-head {
+  padding: 8px 0 6px;
+  font-size: 11px;
+}
+
+.story-home-card .mini-standing b {
+  width: 26px;
+  height: 26px;
+  font-size: 13px;
+}
+
+.match-logo-frame {
+  width: 88px;
+  height: 88px;
+  overflow: hidden;
+  border-radius: 14px;
+  clip-path: none;
+  font-size: 28px;
+}
+
+.match-team-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ranking-mini-head,
+.ranking-mini-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 62px;
+  gap: 10px;
+  align-items: center;
+}
+
+.ranking-mini-head {
+  padding: 8px 0 6px;
+  color: #aebdb9;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.ranking-mini-row {
+  padding: 8px 0;
+  border-top: 1px solid rgba(255,255,255,.13);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.ranking-mini-row > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(162,119,82,.2);
+  color: var(--cc-bronze);
+  font-weight: 950;
+}
+
+.ranking-mini-row strong,
+.ranking-mini-row small {
+  display: block;
+  min-width: 0;
+}
+
+.ranking-mini-row strong {
+  overflow: hidden;
+  color: #fff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranking-mini-row small {
+  margin-top: 3px;
+  color: #8fa19d;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ranking-mini-row b {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 950;
+  text-align: right;
 }
 
 .match-card-footer {
@@ -662,14 +751,26 @@ td,
   color: #66746f;
 }
 
+:root:not([data-theme="dark"]) .ranking-mini-head,
+:root:not([data-theme="dark"]) .ranking-mini-row small {
+  color: #66746f;
+}
+
 :root:not([data-theme="dark"]) .story-home-card .mini-standing,
+:root:not([data-theme="dark"]) .ranking-mini-row,
 :root:not([data-theme="dark"]) .match-details,
 :root:not([data-theme="dark"]) .compact-story {
   border-color: var(--cc-card-border);
 }
 
-:root:not([data-theme="dark"]) .mini-standing b {
+:root:not([data-theme="dark"]) .mini-standing b,
+:root:not([data-theme="dark"]) .ranking-mini-row > span:first-child {
   background: rgba(0,111,113,.12);
+}
+
+:root:not([data-theme="dark"]) .ranking-mini-row strong,
+:root:not([data-theme="dark"]) .ranking-mini-row b {
+  color: var(--cc-heading);
 }
 
 :root:not([data-theme="dark"]) .team-shield,

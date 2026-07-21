@@ -49,6 +49,14 @@ const HISTORICAL_TEAM_CITY = 'Wilmington';
 const HISTORICAL_TEAM_STATE = 'NC';
 const HISTORICAL_PRIMARY_COLOR = '#121814';
 const HISTORICAL_SECONDARY_COLOR = '#f4f6f2';
+const HISTORICAL_TEAM_LOGOS: Record<string, string> = {
+  'cougar-country': '/team-logos/cougar-country.jpg',
+  'hayneous-og-s': '/team-logos/hayneous-ogs.jpg',
+  kb: '/team-logos/kb.png',
+  ninjas: '/team-logos/ninjas.jpg',
+  riptide: '/team-logos/riptide.jpg',
+  'wild-turkey': '/team-logos/wild-turkey.jpg',
+};
 
 export function buildHistoricalTeamSeedData(): Team[] {
   const teamsByName = new Map<string, Team>();
@@ -70,7 +78,7 @@ export function buildHistoricalTeamSeedData(): Team[] {
         state: HISTORICAL_TEAM_STATE,
         captain: captainByTeam.get(teamKey) ?? '',
         homeCourse: '',
-        logo: '',
+        logo: HISTORICAL_TEAM_LOGOS[createSlug(record.teamName)] ?? '',
         primaryColor: HISTORICAL_PRIMARY_COLOR,
         secondaryColor: HISTORICAL_SECONDARY_COLOR,
         website: '',
