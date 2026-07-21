@@ -38,6 +38,20 @@ function formatDate(date: string): string {
   });
 }
 
+function normalizeSearchText(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+}
+
+function uniquePlayers(players: PublicPlayerView[]): PublicPlayerView[] {
+  const playersById = new Map<string, PublicPlayerView>();
+  for (const player of players) {
+    if (!playersById.has(player.player.id)) {
+      playersById.set(player.player.id, player);
+    }
+  }
+  return Array.from(playersById.values());
+}
+
 export function PublicPlayerDirectory({
   players,
   showFilters = true,
@@ -45,16 +59,17 @@ export function PublicPlayerDirectory({
   showRankingsLink = false,
 }: PublicPlayerDirectoryProps) {
   const [search, setSearch] = useState('');
-  const normalizedSearch = search.trim().toLocaleLowerCase();
+  const normalizedSearch = normalizeSearchText(search);
+  const searchablePlayers = uniquePlayers(players);
   const searchRequired = showFilters && initialMode === 'search';
   const hasSearch = normalizedSearch.length > 0;
   const visiblePlayers = searchRequired && !hasSearch
     ? []
-    : players.filter(({player}) =>
+    : searchablePlayers.filter(({player}) =>
       !normalizedSearch || [
         player.name,
         player.pdgaNumber,
-      ].some((value) => value.toLocaleLowerCase().includes(normalizedSearch)));
+      ].some((value) => normalizeSearchText(value).includes(normalizedSearch)));
 
   return (
     <>

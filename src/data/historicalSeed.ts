@@ -99,12 +99,13 @@ export function buildHistoricalPlayerSeedData(): Player[] {
 
   for (const source of HISTORICAL_RECORD_SOURCES) {
     for (const record of source.playerRecords) {
-      const playerKey = normalize(record.playerName);
+      const playerName = normalizeDisplayName(record.playerName);
+      const playerKey = normalize(playerName);
       if (playersByName.has(playerKey)) continue;
 
       playersByName.set(playerKey, {
-        id: createSlug(record.playerName),
-        name: record.playerName,
+        id: createSlug(playerName),
+        name: playerName,
         teamId: '',
         pdgaNumber: record.pdgaNumber,
         pdgaRating: record.pdgaRating,
@@ -299,7 +300,11 @@ function createShortName(teamName: string, usedShortNames: Set<string>): string 
 }
 
 function normalize(value: string): string {
-  return value.trim().toLocaleLowerCase();
+  return normalizeDisplayName(value).toLocaleLowerCase();
+}
+
+function normalizeDisplayName(value: string): string {
+  return value.trim().replace(/\s+/g, ' ');
 }
 
 function emptyRecord(): HistoricalRecordSummary {
