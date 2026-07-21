@@ -19,7 +19,6 @@ export async function getStories(): Promise<Story[]> {
     const result = await withTimeout(list({
       prefix: STORY_STORE_PATH,
       limit: 1,
-      storeId: process.env.BLOB_STORE_ID,
     }));
     const storyBlob = result.blobs.find((blob) => blob.pathname === STORY_STORE_PATH);
 
@@ -58,7 +57,6 @@ export async function saveStories(stories: Story[]): Promise<Story[]> {
     allowOverwrite: true,
     cacheControlMaxAge: 60,
     contentType: 'application/json',
-    storeId: process.env.BLOB_STORE_ID,
   });
 
   return normalizedStories;
@@ -128,7 +126,7 @@ function cleanText(value: unknown): string {
 }
 
 function isBlobConnected(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 }
 
 async function withTimeout<T>(promise: Promise<T>): Promise<T> {

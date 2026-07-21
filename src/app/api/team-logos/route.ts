@@ -7,7 +7,7 @@ const ALLOWED_LOGO_TYPES = new Set(['image/webp', 'image/png', 'image/jpeg', 'im
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
-  if (!process.env.BLOB_READ_WRITE_TOKEN && !process.env.BLOB_STORE_ID) {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
     return Response.json({error: 'Logo storage is not connected yet.'}, {status: 503});
   }
 
@@ -34,7 +34,6 @@ export async function POST(request: Request) {
       allowOverwrite: true,
       cacheControlMaxAge: 31536000,
       contentType: file.type,
-      storeId: process.env.BLOB_STORE_ID,
     });
 
     return Response.json({url: blob.url});
