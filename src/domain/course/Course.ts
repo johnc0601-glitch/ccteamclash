@@ -12,7 +12,21 @@ export type Course = {
   updatedAt: string;
 };
 
-export type CourseInput = Pick<Course, 'name' | 'city' | 'state' | 'address' | 'mapUrl' | 'udiscUrl'>;
+export type CourseInput = Pick<Course, 'name' | 'city' | 'state' | 'address' | 'mapUrl' | 'udiscUrl' | 'homeTeamId'>;
+
+export type CourseImportInput = CourseInput & {
+  active?: boolean;
+};
+
+export type CourseImportResult = {
+  created: Course[];
+  updated: Course[];
+  skipped: Array<{
+    row: number;
+    message: string;
+    fieldErrors?: CourseFieldErrors;
+  }>;
+};
 
 export type CourseStatusFilter = 'all' | 'active' | 'archived';
 

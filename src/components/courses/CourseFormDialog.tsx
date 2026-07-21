@@ -20,6 +20,7 @@ const EMPTY_INPUT: CourseInput = {
   address: '',
   mapUrl: '',
   udiscUrl: '',
+  homeTeamId: undefined,
 };
 
 export function CourseFormDialog({course, fieldErrors, submitting, onSubmit, onClose}: CourseFormDialogProps) {
@@ -30,6 +31,7 @@ export function CourseFormDialog({course, fieldErrors, submitting, onSubmit, onC
     address: course.address,
     mapUrl: course.mapUrl,
     udiscUrl: course.udiscUrl,
+    homeTeamId: course.homeTeamId,
   } : EMPTY_INPUT);
 
   function update(field: keyof CourseInput, value: string) {

@@ -47,7 +47,9 @@ export default async function TeamPage({params}: TeamPageProps) {
   const displayStatistics = historicalStatistics ?? currentStatistics;
   const historicalHistory = getHistoricalTeamSeasonSummaries(team.id);
   const history = seasonStatistics.filter(({statistics}) => statistics.matchesPlayed > 0);
-  const homeCourse = courses.find((course) => course.name === team.homeCourse);
+  const homeCourses = courses.filter((course) =>
+    course.homeTeamId === team.id || (team.homeCourse && course.name === team.homeCourse));
+  const displayedHomeCourseName = homeCourses[0]?.name ?? team.homeCourse;
 
   return (
     <>
@@ -70,8 +72,18 @@ export default async function TeamPage({params}: TeamPageProps) {
             </dl>
             <div className={styles.teamInfo}>
               <p><span>Captain</span><strong>{team.captain || 'To be announced'}</strong></p>
-              <p><span>Home course</span><strong>{team.homeCourse || 'To be announced'}</strong></p>
-              {homeCourse ? <a href={homeCourse.mapUrl} target="_blank" rel="noreferrer">Open directions</a> : null}
+              <p><span>Home course</span><strong>{displayedHomeCourseName || 'To be announced'}</strong></p>
+              {homeCourses.length ? (
+                <div className={styles.courseLinks}>
+                  {homeCourses.map((course) => (
+                    <div key={course.id}>
+                      {homeCourses.length > 1 ? <small>{course.name}</small> : null}
+                      <a href={course.mapUrl} target="_blank" rel="noreferrer">Directions</a>
+                      {course.udiscUrl ? <a href={course.udiscUrl} target="_blank" rel="noreferrer">Course info</a> : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </section>
 
