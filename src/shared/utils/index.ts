@@ -1,2 +1,2 @@
 export { createSlug } from './slug';
-export { createTeamLogoDataUrl } from './logoUpload';
+export { createTeamLogoDataUrl, createTeamLogoUrl } from './logoUpload';

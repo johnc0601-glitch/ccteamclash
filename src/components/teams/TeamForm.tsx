@@ -1,7 +1,7 @@
 import {useRef, useState, type ChangeEvent, type FormEvent} from 'react';
 import type {TeamFieldErrors, TeamInput} from '@/types/team';
 import {TeamLogo} from '@/components/teams/TeamLogo';
-import {createTeamLogoDataUrl} from '@/shared/utils';
+import {createTeamLogoUrl} from '@/shared/utils';
 import styles from './TeamManagement.module.css';
 
 type TeamFormProps = {
@@ -23,6 +23,7 @@ export function TeamForm({
 }: TeamFormProps) {
   const [values, setValues] = useState<TeamInput>(initialValues);
   const [logoError, setLogoError] = useState('');
+  const [logoUploading, setLogoUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function setField(field: keyof TeamInput, value: string) {
@@ -34,11 +35,15 @@ export function TeamForm({
     if (!file) return;
 
     try {
-      const logo = await createTeamLogoDataUrl(file);
+      setLogoUploading(true);
+      const logo = await createTeamLogoUrl(file, values.name || values.shortName || file.name);
       setField('logo', logo);
       setLogoError('');
     } catch (error) {
       setLogoError(error instanceof Error ? error.message : 'Logo could not be loaded.');
+    } finally {
+      setLogoUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }
 
@@ -112,7 +117,9 @@ export function TeamForm({
             <div className={styles.logoUploadActions}>
               <input name="logo" type="url" value={values.logo} onChange={(event) => setField('logo', event.target.value)} placeholder="Logo URL or uploaded image" />
               <div className={styles.logoButtons}>
-                <button type="button" className={styles.secondaryButton} onClick={() => fileInputRef.current?.click()}>Upload logo</button>
+                <button type="button" className={styles.secondaryButton} onClick={() => fileInputRef.current?.click()} disabled={logoUploading}>
+                  {logoUploading ? 'Uploading...' : 'Upload logo'}
+                </button>
                 {values.logo ? <button type="button" className={styles.secondaryButton} onClick={clearLogo}>Clear</button> : null}
               </div>
               <input ref={fileInputRef} className={styles.srOnly} type="file" accept="image/*" onChange={handleLogoUpload} />
@@ -149,7 +156,7 @@ export function TeamForm({
       </div>
       <div className={styles.dialogActions}>
         <button type="button" className={styles.secondaryButton} onClick={onCancel}>Cancel</button>
-        <button type="submit" className={styles.primaryButton} disabled={submitting}>
+        <button type="submit" className={styles.primaryButton} disabled={submitting || logoUploading}>
           {submitting ? 'Saving...' : submitLabel}
         </button>
       </div>
