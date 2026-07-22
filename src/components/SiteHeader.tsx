@@ -21,6 +21,7 @@ export function SiteHeader() {
           <Link href="/rankings">Rankings</Link>
           <Link href="/teams">Teams</Link>
           <Link href="/players">Players</Link>
+          <Link href="/courses">Courses</Link>
           <Link className="post-nav" href="/admin">Create post</Link>
         </nav>
         <ThemeToggle />
@@ -44,6 +45,7 @@ export function Footer() {
           <Link href="/schedule">Schedule</Link>
           <Link href="/standings">Standings</Link>
           <Link href="/rankings">Rankings</Link>
+          <Link href="/courses">Courses</Link>
           <Link href="/admin">Post</Link>
         </div>
       </div>
