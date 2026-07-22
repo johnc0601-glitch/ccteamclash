@@ -17,6 +17,7 @@
 .searchBar input,
 .selectControl select,
 .teamForm input,
+.teamForm select,
 .teamForm textarea {
   width: 100%;
   border: 1px solid #cfd4cc;
@@ -493,6 +494,7 @@
 }
 
 .teamForm input,
+.teamForm select,
 .teamForm textarea {
   min-height: 42px;
   padding: 10px 12px;

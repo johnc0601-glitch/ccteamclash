@@ -5,8 +5,11 @@ import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
 import {services} from '@/core/ServiceContainer';
 import {getHistoricalTeamSeasonSummaries, getHistoricalTeamSeedSummary} from '@/data/historicalSeed';
+import {getStoredCourses} from '@/services/courses/CourseStore';
 import type {RecordSummary} from '@/services/statistics';
 import styles from './TeamDetail.module.css';
+
+export const dynamic = 'force-dynamic';
 
 type TeamPageProps = {
   params: Promise<{id: string}>;
@@ -32,7 +35,7 @@ export default async function TeamPage({params}: TeamPageProps) {
     services.seasons.getActive(),
     services.seasons.getAll(),
     services.publicPlayers.getAll(team.id),
-    services.courses.getAll({status: 'active'}),
+    getStoredCourses({status: 'active'}),
   ]);
   const publishedSeasons = seasons.filter((season) => season.published);
   const seasonStatistics = await Promise.all(publishedSeasons.map(async (season) => ({

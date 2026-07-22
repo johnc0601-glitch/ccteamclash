@@ -1,10 +1,13 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {services} from '@/core/ServiceContainer';
+import {getStoredCourses} from '@/services/courses/CourseStore';
 import styles from './Courses.module.css';
+
+export const dynamic = 'force-dynamic';
 
 export default async function CoursesPage() {
   const [courses, teams] = await Promise.all([
-    services.courses.getAll({status: 'active'}),
+    getStoredCourses({status: 'active'}),
     services.teams.getAll({status: 'active'}),
   ]);
   const teamNames = new Map(teams.map((team) => [team.id, team.name]));

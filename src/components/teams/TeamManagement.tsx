@@ -1,6 +1,7 @@
 'use client';
 
 import {useEffect, useState} from 'react';
+import type {Course} from '@/domain/course/Course';
 import type {Team} from '@/models/Team';
 import {services} from '@/core/ServiceContainer';
 import type {
@@ -30,6 +31,7 @@ type ConfirmationState = {
 
 export function TeamManagement() {
   const [teams, setTeams] = useState<Team[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<TeamStatusFilter>('all');
   const [sort, setSort] = useState<TeamSortOption>('alphabetical');
@@ -62,6 +64,23 @@ export function TeamManagement() {
       cancelled = true;
     };
   }, [revision, search, sort, status]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch('/api/courses?status=active', {cache: 'no-store'})
+      .then((response) => response.json() as Promise<{courses?: Course[]}>)
+      .then((payload) => {
+        if (!cancelled) setCourses(payload.courses ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setCourses([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function openCreateDialog() {
     setFieldErrors({});
@@ -199,6 +218,7 @@ export function TeamManagement() {
           team={editor.mode === 'edit' ? editor.team : undefined}
           fieldErrors={fieldErrors}
           submitting={submitting}
+          courses={courses}
           onSubmit={handleFormSubmit}
           onClose={() => setEditor(null)}
         />

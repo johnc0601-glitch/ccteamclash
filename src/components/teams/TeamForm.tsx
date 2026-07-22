@@ -1,4 +1,5 @@
 import {useRef, useState, type ChangeEvent, type FormEvent} from 'react';
+import type {Course} from '@/domain/course/Course';
 import type {TeamFieldErrors, TeamInput} from '@/types/team';
 import {TeamLogo} from '@/components/teams/TeamLogo';
 import {createTeamLogoUrl} from '@/shared/utils';
@@ -9,6 +10,7 @@ type TeamFormProps = {
   fieldErrors: TeamFieldErrors;
   submitLabel: string;
   submitting: boolean;
+  courses: Course[];
   onSubmit: (values: TeamInput) => void;
   onCancel: () => void;
 };
@@ -18,6 +20,7 @@ export function TeamForm({
   fieldErrors,
   submitLabel,
   submitting,
+  courses,
   onSubmit,
   onCancel,
 }: TeamFormProps) {
@@ -99,7 +102,12 @@ export function TeamForm({
         </label>
         <label>
           <span>Home course</span>
-          <input name="homeCourse" value={values.homeCourse} onChange={(event) => setField('homeCourse', event.target.value)} />
+          <select name="homeCourse" value={values.homeCourse} onChange={(event) => setField('homeCourse', event.target.value)}>
+            <option value="">To be announced</option>
+            {courses.map((course) => (
+              <option key={course.id} value={course.name}>{course.name}</option>
+            ))}
+          </select>
         </label>
         <div className={`${styles.fullField} ${styles.logoUploadField}`}>
           <span>Logo</span>

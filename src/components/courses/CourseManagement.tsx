@@ -19,6 +19,15 @@ import styles from './CourseManagement.module.css';
 
 type EditorState = {mode: 'create'} | {mode: 'edit'; course: Course} | null;
 
+type CourseApiResponse = {
+  courses?: Course[];
+  result?: CourseImportResult;
+  ok?: boolean;
+  message?: string;
+  fieldErrors?: CourseFieldErrors;
+  error?: string;
+};
+
 export function CourseManagement() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -39,9 +48,12 @@ export function CourseManagement() {
     async function loadCourses() {
       try {
         setLoading(true);
-        const nextCourses = await services.courses.getAll({search, status});
+        const params = new URLSearchParams({search, status});
+        const response = await fetch(`/api/courses?${params.toString()}`, {cache: 'no-store'});
+        const payload = await response.json() as CourseApiResponse;
+        if (!response.ok) throw new Error(payload.error ?? 'Courses could not be loaded.');
         if (!cancelled) {
-          setCourses(nextCourses);
+          setCourses(payload.courses ?? []);
           setLoading(false);
         }
       } catch {
@@ -70,17 +82,18 @@ export function CourseManagement() {
   async function handleSubmit(input: CourseInput) {
     if (!editor) return;
     setSubmitting(true);
-    const result = editor.mode === 'create'
-      ? await services.courses.create(input)
-      : await services.courses.update(editor.course.id, input);
+    const payload = await saveCourseAction(editor.mode === 'create'
+      ? {action: 'create', input}
+      : {action: 'update', id: editor.course.id, input});
     setSubmitting(false);
 
-    if (!result.ok) {
-      setFieldErrors(result.fieldErrors ?? {});
-      setMessage({type: 'error', text: result.message});
+    if (!payload.ok) {
+      setFieldErrors(payload.fieldErrors ?? {});
+      setMessage({type: 'error', text: payload.message ?? payload.error ?? 'Course could not be saved.'});
       return;
     }
 
+    setCourses(payload.courses ?? []);
     setEditor(null);
     setFieldErrors({});
     setMessage({type: 'success', text: editor.mode === 'create' ? 'Course added.' : 'Course updated.'});
@@ -90,34 +103,48 @@ export function CourseManagement() {
   async function handleArchive() {
     if (!archiveTarget) return;
     setSubmitting(true);
-    const result = await services.courses.archive(archiveTarget.id);
+    const payload = await saveCourseAction({action: 'archive', id: archiveTarget.id});
     setSubmitting(false);
     setArchiveTarget(null);
-    setMessage(result.ok
+    setMessage(payload.ok
       ? {type: 'success', text: 'Course archived.'}
-      : {type: 'error', text: result.message});
-    if (result.ok) setRevision((current) => current + 1);
+      : {type: 'error', text: payload.message ?? payload.error ?? 'Course could not be archived.'});
+    if (payload.ok) {
+      setCourses(payload.courses ?? []);
+      setRevision((current) => current + 1);
+    }
   }
 
   async function handleRestore(course: Course) {
     setSubmitting(true);
-    const result = await services.courses.restore(course.id);
+    const payload = await saveCourseAction({action: 'restore', id: course.id});
     setSubmitting(false);
-    setMessage(result.ok
+    setMessage(payload.ok
       ? {type: 'success', text: 'Course restored.'}
-      : {type: 'error', text: result.message});
-    if (result.ok) setRevision((current) => current + 1);
+      : {type: 'error', text: payload.message ?? payload.error ?? 'Course could not be restored.'});
+    if (payload.ok) {
+      setCourses(payload.courses ?? []);
+      setRevision((current) => current + 1);
+    }
   }
 
   async function handleImport(inputs: CourseImportInput[]) {
     setSubmitting(true);
-    const result = await services.courses.importCourses(inputs);
+    const payload = await saveCourseAction({action: 'import', inputs});
     setSubmitting(false);
+
+    if (payload.ok === false) {
+      setMessage({type: 'error', text: payload.error ?? payload.message ?? 'Courses could not be imported.'});
+      return;
+    }
+
+    const result = payload.result ?? {created: [], updated: [], skipped: []};
     setImportResult(result);
     setMessage({
       type: result.skipped.length ? 'error' : 'success',
       text: `${result.created.length} created, ${result.updated.length} updated, ${result.skipped.length} skipped.`,
     });
+    setCourses(payload.courses ?? []);
     setRevision((current) => current + 1);
   }
 
@@ -182,4 +209,19 @@ export function CourseManagement() {
       {archiveTarget ? <ConfirmationDialog title="Archive course?" message={`${archiveTarget.name} will remain on existing schedules but cannot be selected for new matches.`} confirmLabel="Archive course" submitting={submitting} onConfirm={handleArchive} onClose={() => setArchiveTarget(null)} /> : null}
     </section>
   );
+}
+
+async function saveCourseAction(payload: object): Promise<CourseApiResponse> {
+  const response = await fetch('/api/courses', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  });
+  const result = await response.json() as CourseApiResponse;
+
+  if (!response.ok) {
+    return {...result, ok: false};
+  }
+
+  return result;
 }
