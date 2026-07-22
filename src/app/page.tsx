@@ -2,9 +2,9 @@ import Link from 'next/link';
 import type {ReactNode} from 'react';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {RotatingMatchCard} from '@/components/RotatingMatchCard';
-import {services} from '@/core/ServiceContainer';
 import {getLatestHistoricalPlayerSeasonSummaries} from '@/data/historicalSeed';
 import {matches, teams} from '@/lib-data';
+import {getStoredTeams} from '@/services/teams/TeamStore';
 import {getStories} from '@/services/stories/StoryService';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ export default async function Home() {
   const lead = stories[0];
   const topTeams = teams.slice(0, 3);
   const topPlayers = getLatestHistoricalPlayerSeasonSummaries().slice(0, 3);
-  const teamLogos = await services.teams.getAll();
+  const teamLogos = await getStoredTeams();
 
   return (
     <main className="home-page">

@@ -5,7 +5,6 @@ import {CourseFormDialog} from '@/components/courses/CourseFormDialog';
 import {CourseImportDialog} from '@/components/courses/CourseImportDialog';
 import {ConfirmationDialog} from '@/components/teams/ConfirmationDialog';
 import {SearchBar} from '@/components/teams/SearchBar';
-import {services} from '@/core/ServiceContainer';
 import type {
   Course,
   CourseFieldErrors,
@@ -70,9 +69,11 @@ export function CourseManagement() {
   useEffect(() => {
     let cancelled = false;
 
-    services.teams.getAll({status: 'active'}).then((nextTeams) => {
-      if (!cancelled) setTeams(nextTeams);
-    });
+    fetch('/api/teams?status=active', {cache: 'no-store'})
+      .then((response) => response.json() as Promise<{teams?: Team[]}>)
+      .then((payload) => {
+        if (!cancelled) setTeams(payload.teams ?? []);
+      });
 
     return () => {
       cancelled = true;

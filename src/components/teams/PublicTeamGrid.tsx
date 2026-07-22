@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import {useEffect, useState} from 'react';
-import {services} from '@/core/ServiceContainer';
 import {getHistoricalTeamSeedSummary} from '@/data/historicalSeed';
 import type {Team} from '@/models/Team';
 import type {RecordSummary} from '@/services/statistics/StatisticsTypes';
@@ -26,9 +25,11 @@ export function PublicTeamGrid({initialTeams, activeSeasonName}: PublicTeamGridP
   useEffect(() => {
     let cancelled = false;
 
-    services.teams.getAll({status: 'active'}).then((nextTeams) => {
-      if (!cancelled) setTeams(nextTeams);
-    });
+    fetch('/api/teams?status=active', {cache: 'no-store'})
+      .then((response) => response.json() as Promise<{teams?: Team[]}>)
+      .then((payload) => {
+        if (!cancelled) setTeams(payload.teams ?? []);
+      });
 
     return () => {
       cancelled = true;

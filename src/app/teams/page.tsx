@@ -1,11 +1,14 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {PublicTeamGrid} from '@/components/teams/PublicTeamGrid';
 import {services} from '@/core/ServiceContainer';
+import {getStoredTeams} from '@/services/teams/TeamStore';
 import styles from './Teams.module.css';
+
+export const dynamic = 'force-dynamic';
 
 export default async function TeamsPage() {
   const [teams, activeSeason] = await Promise.all([
-    services.teams.getAll({status: 'active'}),
+    getStoredTeams({status: 'active'}),
     services.seasons.getActive(),
   ]);
 

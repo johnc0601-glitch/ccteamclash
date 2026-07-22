@@ -6,6 +6,7 @@ import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
 import {services} from '@/core/ServiceContainer';
 import {getHistoricalTeamSeasonSummaries, getHistoricalTeamSeedSummary} from '@/data/historicalSeed';
 import {getStoredCourses} from '@/services/courses/CourseStore';
+import {getStoredTeamById, getStoredTeams} from '@/services/teams/TeamStore';
 import type {RecordSummary} from '@/services/statistics';
 import styles from './TeamDetail.module.css';
 
@@ -22,13 +23,13 @@ function formatRecord(record: RecordSummary): string {
 }
 
 export async function generateStaticParams() {
-  const teams = await services.teams.getAll({status: 'active'});
+  const teams = await getStoredTeams({status: 'active'});
   return teams.map((team) => ({id: team.id}));
 }
 
 export default async function TeamPage({params}: TeamPageProps) {
   const {id} = await params;
-  const team = await services.teams.getById(id);
+  const team = await getStoredTeamById(id);
   if (!team?.active) notFound();
 
   const [activeSeason, seasons, roster, courses] = await Promise.all([
@@ -51,7 +52,7 @@ export default async function TeamPage({params}: TeamPageProps) {
   const historicalHistory = getHistoricalTeamSeasonSummaries(team.id);
   const history = seasonStatistics.filter(({statistics}) => statistics.matchesPlayed > 0);
   const homeCourses = courses.filter((course) =>
-    course.homeTeamId === team.id || (team.homeCourse && course.name === team.homeCourse));
+    team.homeCourse && sameCourse(team.homeCourse, course.name));
   const displayedHomeCourseName = homeCourses[0]?.name ?? team.homeCourse;
 
   return (
@@ -144,4 +145,8 @@ export default async function TeamPage({params}: TeamPageProps) {
       <Footer />
     </>
   );
+}
+
+function sameCourse(left: string, right: string): boolean {
+  return left.trim().toLocaleLowerCase() === right.trim().toLocaleLowerCase();
 }

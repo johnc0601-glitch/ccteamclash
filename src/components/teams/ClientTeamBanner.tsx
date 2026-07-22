@@ -1,7 +1,6 @@
 'use client';
 
 import {useEffect, useState} from 'react';
-import {services} from '@/core/ServiceContainer';
 import type {Team} from '@/models/Team';
 import {TeamBanner} from '@/components/teams/TeamBanner';
 
@@ -15,9 +14,11 @@ export function ClientTeamBanner({initialTeam}: ClientTeamBannerProps) {
   useEffect(() => {
     let cancelled = false;
 
-    services.teams.getById(initialTeam.id).then((nextTeam) => {
-      if (!cancelled && nextTeam) setTeam(nextTeam);
-    });
+    fetch(`/api/teams?id=${encodeURIComponent(initialTeam.id)}`, {cache: 'no-store'})
+      .then((response) => response.json() as Promise<{team?: Team}>)
+      .then((payload) => {
+        if (!cancelled && payload.team) setTeam(payload.team);
+      });
 
     return () => {
       cancelled = true;

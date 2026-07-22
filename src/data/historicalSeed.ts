@@ -57,6 +57,16 @@ const HISTORICAL_TEAM_LOGOS: Record<string, string> = {
   riptide: '/team-logos/riptide.jpg',
   'wild-turkey': '/team-logos/wild-turkey.jpg',
 };
+const HISTORICAL_TEAM_HOME_COURSES: Record<string, string> = {
+  'beast-mode': 'Beast on Honey Hill',
+  'cougar-country': 'Cougar Country',
+  'dark-knights': 'Castle Hayne Park',
+  'hayneous-og-s': 'Castle Hayne Park',
+  kb: 'Joe Eakes Park',
+  ninjas: 'Northeast Creek Park',
+  riptide: 'Splinter City',
+  'wild-turkey': 'Wild Turkey',
+};
 
 export function buildHistoricalTeamSeedData(): Team[] {
   const teamsByName = new Map<string, Team>();
@@ -77,7 +87,7 @@ export function buildHistoricalTeamSeedData(): Team[] {
         city: HISTORICAL_TEAM_CITY,
         state: HISTORICAL_TEAM_STATE,
         captain: captainByTeam.get(teamKey) ?? '',
-        homeCourse: '',
+        homeCourse: HISTORICAL_TEAM_HOME_COURSES[createSlug(record.teamName)] ?? '',
         logo: HISTORICAL_TEAM_LOGOS[createSlug(record.teamName)] ?? '',
         primaryColor: HISTORICAL_PRIMARY_COLOR,
         secondaryColor: HISTORICAL_SECONDARY_COLOR,

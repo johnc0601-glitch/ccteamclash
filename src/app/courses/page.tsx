@@ -1,6 +1,6 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
-import {services} from '@/core/ServiceContainer';
 import {getStoredCourses} from '@/services/courses/CourseStore';
+import {getStoredTeams} from '@/services/teams/TeamStore';
 import styles from './Courses.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export default async function CoursesPage() {
   const [courses, teams] = await Promise.all([
     getStoredCourses({status: 'active'}),
-    services.teams.getAll({status: 'active'}),
+    getStoredTeams({status: 'active'}),
   ]);
 
   return (
@@ -21,15 +21,16 @@ export default async function CoursesPage() {
         <div className={styles.directory}>
           {courses.map((course) => {
             const courseTeams = teams.filter((team) =>
-              sameCourse(team.homeCourse, course.name) || team.id === course.homeTeamId);
+              sameCourse(team.homeCourse, course.name));
+            const photoUrl = getCoursePhotoUrl(course.photoUrl);
             return (
               <article className={styles.course} key={course.id}>
                 <div
-                  className={course.photoUrl ? styles.photo : `${styles.photo} ${styles.photoFallback}`}
-                  style={course.photoUrl ? {backgroundImage: `url(${course.photoUrl})`} : undefined}
+                  className={photoUrl ? styles.photo : `${styles.photo} ${styles.photoFallback}`}
+                  style={photoUrl ? {backgroundImage: `url(${photoUrl})`} : undefined}
                   aria-label={`${course.name} course photo`}
                 >
-                  {!course.photoUrl ? <span>Course photo</span> : null}
+                  {!photoUrl ? <span>Course photo</span> : null}
                 </div>
                 <div className={styles.cardBody}>
                   <div>
@@ -55,4 +56,9 @@ export default async function CoursesPage() {
 
 function sameCourse(left: string, right: string): boolean {
   return left.trim().toLocaleLowerCase() === right.trim().toLocaleLowerCase();
+}
+
+function getCoursePhotoUrl(url: string): string {
+  const cleanedUrl = url.trim();
+  return /\.(jpe?g|png|webp|gif)(\?.*)?$/i.test(cleanedUrl) ? cleanedUrl : '';
 }

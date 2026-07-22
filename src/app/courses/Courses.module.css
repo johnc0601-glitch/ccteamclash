@@ -107,14 +107,15 @@
 }
 
 .actions .primaryAction {
-  border-color: #101820;
-  background: #101820;
-  color: #fff;
+  border-color: #cbd1c8;
+  background: transparent;
+  color: var(--cc-heading);
 }
 
 .actions .primaryAction:hover {
   border-color: #006f71;
-  background: #006f71;
+  background: transparent;
+  color: #006f71;
 }
 
 @media (max-width: 950px) {

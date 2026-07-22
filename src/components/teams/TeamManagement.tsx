@@ -3,7 +3,6 @@
 import {useEffect, useState} from 'react';
 import type {Course} from '@/domain/course/Course';
 import type {Team} from '@/models/Team';
-import {services} from '@/core/ServiceContainer';
 import type {
   TeamFieldErrors,
   TeamInput,
@@ -29,6 +28,14 @@ type ConfirmationState = {
   team: Team;
 } | null;
 
+type TeamApiResponse = {
+  teams?: Team[];
+  ok?: boolean;
+  message?: string;
+  fieldErrors?: TeamFieldErrors;
+  error?: string;
+};
+
 export function TeamManagement() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -48,10 +55,12 @@ export function TeamManagement() {
   useEffect(() => {
     let cancelled = false;
 
-    services.teams.getAll({search, status, sort})
-      .then((nextTeams) => {
+    const params = new URLSearchParams({search, status, sort});
+    fetch(`/api/teams?${params.toString()}`, {cache: 'no-store'})
+      .then((response) => response.json() as Promise<TeamApiResponse>)
+      .then((payload) => {
         if (cancelled) return;
-        setTeams(nextTeams);
+        setTeams(payload.teams ?? []);
         setLoading(false);
       })
       .catch(() => {
@@ -99,17 +108,18 @@ export function TeamManagement() {
     if (!editor) return;
 
     setSubmitting(true);
-    const result = editor.mode === 'create'
-      ? await services.teams.create(values)
-      : await services.teams.update(editor.team.id, values);
+    const result = await saveTeamAction(editor.mode === 'create'
+      ? {action: 'create', input: values}
+      : {action: 'update', id: editor.team.id, input: values});
     setSubmitting(false);
 
     if (!result.ok) {
       setFieldErrors(result.fieldErrors ?? {});
-      setMessage({type: 'error', text: result.message});
+      setMessage({type: 'error', text: result.message ?? result.error ?? 'Team could not be saved.'});
       return;
     }
 
+    setTeams(result.teams ?? []);
     setEditor(null);
     setFieldErrors({});
     setMessage({
@@ -123,13 +133,14 @@ export function TeamManagement() {
     if (!confirmation) return;
 
     setSubmitting(true);
-    const result = confirmation.action === 'archive'
-      ? await services.teams.archive(confirmation.team.id)
-      : await services.teams.delete(confirmation.team.id);
+    const result = await saveTeamAction({
+      action: confirmation.action,
+      id: confirmation.team.id,
+    });
     setSubmitting(false);
 
     if (!result.ok) {
-      setMessage({type: 'error', text: result.message});
+      setMessage({type: 'error', text: result.message ?? result.error ?? 'Team could not be updated.'});
       setConfirmation(null);
       return;
     }
@@ -138,6 +149,7 @@ export function TeamManagement() {
       type: 'success',
       text: confirmation.action === 'archive' ? 'Team archived.' : 'Team deleted.',
     });
+    setTeams(result.teams ?? []);
     setConfirmation(null);
     setDetailsTeam(null);
     setRevision((current) => current + 1);
@@ -247,4 +259,19 @@ export function TeamManagement() {
       ) : null}
     </section>
   );
+}
+
+async function saveTeamAction(payload: object): Promise<TeamApiResponse> {
+  const response = await fetch('/api/teams', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  });
+  const result = await response.json() as TeamApiResponse;
+
+  if (!response.ok) {
+    return {...result, ok: false};
+  }
+
+  return result;
 }
