@@ -3,6 +3,7 @@ import {RankingsClient} from '@/components/rankings/RankingsClient';
 import {
   getLatestHistoricalPlayerSeasonSummaries,
   getLatestHistoricalSeasonName,
+  isHistoricalFemalePlayer,
 } from '@/data/historicalSeed';
 import styles from './Rankings.module.css';
 
@@ -11,7 +12,10 @@ export default async function RankingsPage() {
   const total = getLatestHistoricalPlayerSeasonSummaries()
     .map((summary, index) => ({summary, rank: index + 1}));
   const overall = total.slice(0, 25);
-  const women = total.filter(({summary}) => summary.playerName).slice(0, 0);
+  const women = total
+    .filter(({summary}) => isHistoricalFemalePlayer(summary.playerName))
+    .slice(0, 10)
+    .map((entry, index) => ({...entry, rank: index + 1}));
 
   return (
     <>

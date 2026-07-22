@@ -153,6 +153,10 @@ export function buildHistoricalPlayerSeedData(): Player[] {
   return Array.from(playersByName.values()).sort((first, second) => first.name.localeCompare(second.name));
 }
 
+export function isHistoricalFemalePlayer(playerName: string): boolean {
+  return HISTORICAL_FEMALE_PLAYERS.has(normalize(playerName));
+}
+
 export function getHistoricalTeamSeedSummary(teamId: string): HistoricalTeamSeedSummary | undefined {
   const summaries = getHistoricalTeamSeasonSummaries(teamId);
   if (!summaries.length) return undefined;
