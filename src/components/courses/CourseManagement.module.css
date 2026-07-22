@@ -34,6 +34,10 @@
 .descriptionInput { padding: 10px 12px; resize: vertical; line-height: 1.5; }
 .courseForm input[aria-invalid="true"] { border-color: #a12b2b; }
 .courseForm small { color: #962d2d; font-size: 11px; font-weight: 800; }
+.photoUploadField { min-width: 0; display: grid; gap: 8px; }
+.photoUploadField > span:first-child { color: #657068; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+.photoUploadPreview { min-height: 220px; overflow: hidden; display: grid; place-items: center; border: 1px solid #cfd4cc; border-radius: 4px; background: #f2f4f0 center / cover no-repeat; color: #657068; font-size: 12px; font-weight: 900; }
+.photoUploadActions { display: flex; flex-wrap: wrap; gap: 8px; }
 .formActions { margin-top: 24px; display: flex; justify-content: flex-end; gap: 9px; }
 .importIntro { margin-bottom: 16px; display: flex; justify-content: space-between; gap: 18px; color: #58635c; font-size: 13px; line-height: 1.5; }
 .importIntro p { margin: 0; }
@@ -42,4 +46,5 @@
 .importResult { margin-top: 14px; padding: 12px; display: flex; flex-wrap: wrap; gap: 10px; border: 1px solid #dfe2db; border-radius: 5px; background: #f7f8f5; }
 .importResult strong { color: #121814; font-size: 12px; }
 .importErrors { margin: 12px 0 0; color: #8f2525; font-size: 12px; font-weight: 800; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @media (max-width: 700px) { .toolbar, .formGrid { grid-template-columns: 1fr; } .toolbarActions { justify-content: stretch; } .toolbarActions button { flex: 1; } .fullWidth { grid-column: auto; } .courseForm { padding: 19px; } .importIntro { flex-direction: column; gap: 8px; } }
