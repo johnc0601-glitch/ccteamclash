@@ -40,7 +40,7 @@ export default async function CoursesPage() {
                   </div>
                   <div className={styles.actions}>
                     <a className={styles.primaryAction} href={course.mapUrl} target="_blank" rel="noreferrer">Directions</a>
-                    {course.udiscUrl ? <a href={course.udiscUrl} target="_blank" rel="noreferrer">Course info</a> : null}
+                    {course.udiscUrl ? <a href={course.udiscUrl} target="_blank" rel="noreferrer">UDisc</a> : null}
                   </div>
                 </div>
               </article>

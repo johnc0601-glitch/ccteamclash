@@ -82,7 +82,7 @@ export default async function TeamPage({params}: TeamPageProps) {
                     <div key={course.id}>
                       {homeCourses.length > 1 ? <small>{course.name}</small> : null}
                       <a href={course.mapUrl} target="_blank" rel="noreferrer">Directions</a>
-                      {course.udiscUrl ? <a href={course.udiscUrl} target="_blank" rel="noreferrer">Course info</a> : null}
+                      {course.udiscUrl ? <a href={course.udiscUrl} target="_blank" rel="noreferrer">UDisc</a> : null}
                     </div>
                   ))}
                 </div>

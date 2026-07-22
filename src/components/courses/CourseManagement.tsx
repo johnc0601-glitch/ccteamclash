@@ -204,7 +204,7 @@ export function CourseManagement() {
         </div>
       ) : null}
 
-      {editor ? <CourseFormDialog course={editor.mode === 'edit' ? editor.course : undefined} fieldErrors={fieldErrors} submitting={submitting} onSubmit={handleSubmit} onClose={() => setEditor(null)} /> : null}
+      {editor ? <CourseFormDialog course={editor.mode === 'edit' ? editor.course : undefined} teams={teams} fieldErrors={fieldErrors} submitting={submitting} onSubmit={handleSubmit} onClose={() => setEditor(null)} /> : null}
       {importOpen ? <CourseImportDialog teams={teams} submitting={submitting} result={importResult} onImport={handleImport} onClose={() => setImportOpen(false)} /> : null}
       {archiveTarget ? <ConfirmationDialog title="Archive course?" message={`${archiveTarget.name} will remain on existing schedules but cannot be selected for new matches.`} confirmLabel="Archive course" submitting={submitting} onConfirm={handleArchive} onClose={() => setArchiveTarget(null)} /> : null}
     </section>
