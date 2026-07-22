@@ -3,12 +3,10 @@
 import {useState, type FormEvent} from 'react';
 import {DialogShell} from '@/components/teams/DialogShell';
 import type {Course, CourseFieldErrors, CourseInput} from '@/domain/course/Course';
-import type {Team} from '@/models/Team';
 import styles from './CourseManagement.module.css';
 
 type CourseFormDialogProps = {
   course?: Course;
-  teams: Team[];
   fieldErrors: CourseFieldErrors;
   submitting: boolean;
   onSubmit: (input: CourseInput) => void;
@@ -27,7 +25,7 @@ const EMPTY_INPUT: CourseInput = {
   homeTeamId: undefined,
 };
 
-export function CourseFormDialog({course, teams, fieldErrors, submitting, onSubmit, onClose}: CourseFormDialogProps) {
+export function CourseFormDialog({course, fieldErrors, submitting, onSubmit, onClose}: CourseFormDialogProps) {
   const [values, setValues] = useState<CourseInput>(course ? {
     name: course.name,
     city: course.city,
@@ -91,16 +89,6 @@ export function CourseFormDialog({course, teams, fieldErrors, submitting, onSubm
             <span>Photo link <em>Optional</em></span>
             <input type="url" value={values.photoUrl} onChange={(event) => update('photoUrl', event.target.value)} aria-invalid={Boolean(fieldErrors.photoUrl)} placeholder="https://..." />
             {fieldErrors.photoUrl ? <small>{fieldErrors.photoUrl}</small> : null}
-          </label>
-          <label className={styles.fullWidth}>
-            <span>Home team <em>Optional</em></span>
-            <select value={values.homeTeamId ?? ''} onChange={(event) => update('homeTeamId', event.target.value)}>
-              <option value="">No home team assigned</option>
-              {teams.map((team) => (
-                <option key={team.id} value={team.id}>{team.name}</option>
-              ))}
-            </select>
-            {fieldErrors.homeTeamId ? <small>{fieldErrors.homeTeamId}</small> : null}
           </label>
           <label className={styles.fullWidth}>
             <span>Description <em>Optional</em></span>

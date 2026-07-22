@@ -10,7 +10,6 @@ export default async function CoursesPage() {
     getStoredCourses({status: 'active'}),
     services.teams.getAll({status: 'active'}),
   ]);
-  const teamNames = new Map(teams.map((team) => [team.id, team.name]));
 
   return (
     <>
@@ -21,7 +20,8 @@ export default async function CoursesPage() {
         <p className="intro">League course cards with directions and UDisc course info.</p>
         <div className={styles.directory}>
           {courses.map((course) => {
-            const homeTeamName = course.homeTeamId ? teamNames.get(course.homeTeamId) : undefined;
+            const courseTeams = teams.filter((team) =>
+              sameCourse(team.homeCourse, course.name) || team.id === course.homeTeamId);
             return (
               <article className={styles.course} key={course.id}>
                 <div
@@ -35,7 +35,7 @@ export default async function CoursesPage() {
                   <div>
                     <span className={styles.location}>{course.city}, {course.state}</span>
                     <h2>{course.name}</h2>
-                    {homeTeamName ? <p className={styles.homeTeam}>Home course: {homeTeamName}</p> : null}
+                    {courseTeams.length ? <p className={styles.homeTeam}>Teams: {courseTeams.map((team) => team.name).join(', ')}</p> : null}
                     <p>{course.description || 'Course details and current layout information are maintained on UDisc.'}</p>
                   </div>
                   <div className={styles.actions}>
@@ -51,4 +51,8 @@ export default async function CoursesPage() {
       <Footer />
     </>
   );
+}
+
+function sameCourse(left: string, right: string): boolean {
+  return left.trim().toLocaleLowerCase() === right.trim().toLocaleLowerCase();
 }
