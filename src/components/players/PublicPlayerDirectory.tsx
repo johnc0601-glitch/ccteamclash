@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import {useState} from 'react';
+import {PublicPlayerProfileCard} from '@/components/players/PublicPlayerProfileCard';
 import type {PublicPlayerView} from '@/services/public/PublicPlayerService';
-import type {PlayerMatchHistoryEntry, PlayerStatistics} from '@/services/statistics';
+import {createProfileFromPublicPlayerView} from '@/services/playerProfiles';
+import type {PlayerStatistics} from '@/services/statistics';
 import styles from '@/app/players/Players.module.css';
 
 type PublicPlayerDirectoryProps = {
@@ -17,31 +19,10 @@ function formatRecord(statistics: PlayerStatistics): string {
   return formatRecordSummary(statistics.overallRecord);
 }
 
-function formatRecordSummary(record: PlayerMatchHistoryEntry['record']): string {
+function formatRecordSummary(record: PlayerStatistics['overallRecord']): string {
   return record.ties
     ? `${record.wins}-${record.losses}-${record.ties}`
     : `${record.wins}-${record.losses}`;
-}
-
-function formatWinPercentage(record: PlayerMatchHistoryEntry['record']): string {
-  const matchesPlayed = record.wins + record.losses + record.ties;
-  if (!matchesPlayed) return '0.0%';
-  return (((record.wins + record.ties * 0.5) / matchesPlayed) * 100).toFixed(1) + '%';
-}
-
-function formatDate(date: string): string {
-  return new Date(`${date}T00:00:00Z`).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
-}
-
-function formatGender(gender: string): string {
-  if (gender === 'Female') return 'F';
-  if (gender === 'Male') return 'M';
-  return '-';
 }
 
 function normalizeSearchText(value: string): string {
@@ -93,78 +74,25 @@ export function PublicPlayerDirectory({
       </div> : null}
 
       <div className={styles.directory}>
-        {visiblePlayers.map(({player, teamName, currentSeasonName, currentStatistics, careerStatistics, history}) => (
-          <details className={styles.player} key={player.id}>
-            <summary>
-              <span><strong>{player.name}</strong><small>{teamName}</small></span>
-              <span className={styles.summaryStats}>
-                <b>{formatRecord(currentStatistics ?? careerStatistics)}</b>
-                <small>{currentStatistics ? currentSeasonName : 'Career'}</small>
-              </span>
-              <span className={styles.expandLabel}>View stats</span>
-            </summary>
-            <div className={styles.details}>
-              <div className={styles.identity}>
-                <span>{formatGender(player.gender)}</span>
-                {player.pdgaNumber ? <span>PDGA #{player.pdgaNumber}</span> : null}
-                {player.pdgaRating ? <span>Rating {player.pdgaRating}</span> : null}
-              </div>
+        {visiblePlayers.map((playerView) => {
+          const {player, teamName, currentSeasonName, currentStatistics, careerStatistics} = playerView;
 
-              <div className={styles.statSections}>
-                {currentStatistics ? (
-                  <section>
-                    <span>{currentSeasonName}</span>
-                    <h3>Current season</h3>
-                    <dl>
-                      <div><dt>Matches</dt><dd>{currentStatistics.matchesPlayed}</dd></div>
-                      <div><dt>Record</dt><dd>{formatRecord(currentStatistics)}</dd></div>
-                      <div><dt>Win %</dt><dd>{currentStatistics.winPercentage.toFixed(1)}%</dd></div>
-                      <div><dt>Points</dt><dd>{currentStatistics.pointsEarned}</dd></div>
-                    </dl>
-                    <dl className={styles.splitStats}>
-                      <div><dt>Singles %</dt><dd>{formatWinPercentage(currentStatistics.singlesRecord)}</dd><small>{formatRecordSummary(currentStatistics.singlesRecord)}</small></div>
-                      <div><dt>Doubles %</dt><dd>{formatWinPercentage(currentStatistics.doublesRecord)}</dd><small>{formatRecordSummary(currentStatistics.doublesRecord)}</small></div>
-                    </dl>
-                  </section>
-                ) : null}
-                <section>
-                  <span>All seasons</span>
-                  <h3>Career</h3>
-                  <dl>
-                    <div><dt>Matches</dt><dd>{careerStatistics.matchesPlayed}</dd></div>
-                    <div><dt>Record</dt><dd>{formatRecord(careerStatistics)}</dd></div>
-                    <div><dt>Win %</dt><dd>{careerStatistics.winPercentage.toFixed(1)}%</dd></div>
-                    <div><dt>Points</dt><dd>{careerStatistics.pointsEarned}</dd></div>
-                  </dl>
-                  <dl className={styles.splitStats}>
-                    <div><dt>Singles %</dt><dd>{formatWinPercentage(careerStatistics.singlesRecord)}</dd><small>{formatRecordSummary(careerStatistics.singlesRecord)}</small></div>
-                    <div><dt>Doubles %</dt><dd>{formatWinPercentage(careerStatistics.doublesRecord)}</dd><small>{formatRecordSummary(careerStatistics.doublesRecord)}</small></div>
-                  </dl>
-                </section>
+          return (
+            <details className={styles.player} key={player.id}>
+              <summary>
+                <span><strong>{player.name}</strong><small>{teamName}</small></span>
+                <span className={styles.summaryStats}>
+                  <b>{formatRecord(currentStatistics ?? careerStatistics)}</b>
+                  <small>{currentStatistics ? currentSeasonName : 'Career'}</small>
+                </span>
+                <span className={styles.expandLabel}>View stats</span>
+              </summary>
+              <div className={styles.details}>
+                <PublicPlayerProfileCard profile={createProfileFromPublicPlayerView(playerView)} />
               </div>
-
-              <section className={styles.history}>
-                <h3>Match history</h3>
-                {history.length ? (
-                  <div className={styles.historyTableWrap}>
-                    <table>
-                      <thead><tr><th>Date</th><th>Opponent</th><th>Season</th><th>Record</th><th>Points</th></tr></thead>
-                      <tbody>{history.map((entry) => (
-                        <tr key={`${entry.challengeId}-${player.id}`}>
-                          <td>{formatDate(entry.date)}</td>
-                          <td>{entry.opponentTeamName}</td>
-                          <td>{entry.seasonName}</td>
-                          <td>{formatRecordSummary(entry.record)}</td>
-                          <td>{entry.pointsEarned}</td>
-                        </tr>
-                      ))}</tbody>
-                    </table>
-                  </div>
-                ) : <p>No published match history yet.</p>}
-              </section>
-            </div>
-          </details>
-        ))}
+            </details>
+          );
+        })}
         {!visiblePlayers.length ? (
           <div className={styles.empty}>
             <h2>{searchRequired && !hasSearch ? 'Search for a player' : 'No players found'}</h2>

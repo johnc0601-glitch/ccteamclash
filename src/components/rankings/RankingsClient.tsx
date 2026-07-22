@@ -1,8 +1,10 @@
 'use client';
 
 import {useState, type KeyboardEvent} from 'react';
+import {PublicPlayerProfileCard} from '@/components/players/PublicPlayerProfileCard';
 import {DialogShell} from '@/components/teams/DialogShell';
 import type {HistoricalPlayerSeasonSummary} from '@/data/historicalSeed';
+import {createProfileFromHistoricalSummary} from '@/services/playerProfiles';
 import styles from '@/app/rankings/Rankings.module.css';
 
 export type HistoricalRankingEntry = {
@@ -32,12 +34,6 @@ function formatRecordSummary(record: HistoricalPlayerSeasonSummary['overallRecor
 
 function formatRecord(summary: HistoricalPlayerSeasonSummary): string {
   return formatRecordSummary(summary.overallRecord);
-}
-
-function formatWinPercentage(record: HistoricalPlayerSeasonSummary['overallRecord']): string {
-  const matchesPlayed = record.wins + record.losses + record.ties;
-  if (!matchesPlayed) return '0.0%';
-  return (((record.wins + record.ties * 0.5) / matchesPlayed) * 100).toFixed(1) + '%';
 }
 
 function formatPoints(summary: HistoricalPlayerSeasonSummary): string {
@@ -135,14 +131,7 @@ export function RankingsClient({overall, women, total}: RankingsClientProps) {
               </div>
             </div>
 
-            <dl className={styles.playerCardStats}>
-              <div><dt>Overall</dt><dd>{formatRecord(selectedEntry.summary)}</dd></div>
-              <div><dt>Win %</dt><dd>{selectedEntry.summary.winPercentage.toFixed(1)}%</dd></div>
-              <div><dt>Points</dt><dd>{formatPoints(selectedEntry.summary)}</dd></div>
-              <div><dt>Team</dt><dd>{selectedEntry.summary.teamName}</dd></div>
-              <div><dt>Singles</dt><dd>{formatWinPercentage(selectedEntry.summary.singlesRecord)}</dd><small>{formatRecordSummary(selectedEntry.summary.singlesRecord)}</small></div>
-              <div><dt>Doubles</dt><dd>{formatWinPercentage(selectedEntry.summary.doublesRecord)}</dd><small>{formatRecordSummary(selectedEntry.summary.doublesRecord)}</small></div>
-            </dl>
+            <PublicPlayerProfileCard profile={createProfileFromHistoricalSummary(selectedEntry.summary)} compact />
 
             <div className={styles.dialogActions}>
               <button type="button" onClick={() => setSelectedEntry(null)} data-initial-focus>Close</button>
