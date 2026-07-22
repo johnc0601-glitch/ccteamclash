@@ -67,6 +67,29 @@ const HISTORICAL_TEAM_HOME_COURSES: Record<string, string> = {
   riptide: 'Splinter City',
   'wild-turkey': 'Wild Turkey',
 };
+const HISTORICAL_FEMALE_PLAYERS = new Set([
+  'alisica fussell',
+  'angel mabee',
+  'ariel cosmo',
+  'ashlee hynds',
+  'brianna kinsman',
+  'candy mcclernan',
+  'cecelia costin',
+  'crystal fussell',
+  'currie istre',
+  'jamie hensley',
+  'jasmine pollack',
+  'jodie lehmann',
+  'kim mchale',
+  'lani evans',
+  'logan canale',
+  'misti lee',
+  'nadya gutierrez',
+  'nicole pierre',
+  'rosa carroll',
+  'shannon boney',
+  'shannon johnson',
+]);
 
 export function buildHistoricalTeamSeedData(): Team[] {
   const teamsByName = new Map<string, Team>();
@@ -119,7 +142,7 @@ export function buildHistoricalPlayerSeedData(): Player[] {
         teamId: '',
         pdgaNumber: record.pdgaNumber,
         pdgaRating: record.pdgaRating,
-        gender: 'Unknown',
+        gender: HISTORICAL_FEMALE_PLAYERS.has(playerKey) ? 'Female' : 'Male',
         active: true,
         createdAt: HISTORICAL_IMPORTED_AT,
         updatedAt: HISTORICAL_IMPORTED_AT,

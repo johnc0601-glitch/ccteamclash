@@ -38,6 +38,12 @@ function formatDate(date: string): string {
   });
 }
 
+function formatGender(gender: string): string {
+  if (gender === 'Female') return 'F';
+  if (gender === 'Male') return 'M';
+  return '-';
+}
+
 function normalizeSearchText(value: string): string {
   return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 }
@@ -99,7 +105,7 @@ export function PublicPlayerDirectory({
             </summary>
             <div className={styles.details}>
               <div className={styles.identity}>
-                <span>{player.gender}</span>
+                <span>{formatGender(player.gender)}</span>
                 {player.pdgaNumber ? <span>PDGA #{player.pdgaNumber}</span> : null}
                 {player.pdgaRating ? <span>Rating {player.pdgaRating}</span> : null}
               </div>
