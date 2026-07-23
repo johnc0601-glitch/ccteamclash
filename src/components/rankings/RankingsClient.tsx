@@ -13,6 +13,7 @@ export type HistoricalRankingEntry = {
 };
 
 type RankingTableProps = {
+  id: string;
   title: string;
   entries: HistoricalRankingEntry[];
   interactive?: boolean;
@@ -40,7 +41,7 @@ function formatPoints(summary: HistoricalPlayerSeasonSummary): string {
   return (summary.overallRecord.wins + summary.overallRecord.ties * 0.5).toFixed(1);
 }
 
-function RankingTable({title, entries, interactive = false, fullWidth = false, onOpen}: RankingTableProps) {
+function RankingTable({id, title, entries, interactive = false, fullWidth = false, onOpen}: RankingTableProps) {
   function handleRowKeyDown(event: KeyboardEvent<HTMLTableRowElement>, entry: HistoricalRankingEntry) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
@@ -49,7 +50,7 @@ function RankingTable({title, entries, interactive = false, fullWidth = false, o
   }
 
   return (
-    <section className={`${styles.rankingPanel} ${fullWidth ? styles.rankingPanelFull : ''}`}>
+    <section id={id} className={`${styles.rankingPanel} ${fullWidth ? styles.rankingPanelFull : ''}`}>
       <header>
         <span>Imported last season</span>
         <h2>{title}</h2>
@@ -107,9 +108,9 @@ export function RankingsClient({overall, women, total}: RankingsClientProps) {
   return (
     <>
       <div className={styles.rankingsGrid}>
-        <RankingTable title="Overall Top 25" entries={overall} interactive onOpen={openEntry} />
-        <RankingTable title="Women's Top 10" entries={women} interactive onOpen={openEntry} />
-        <RankingTable title="Total Rankings" entries={total} fullWidth onOpen={openEntry} />
+        <RankingTable id="top-25" title="Overall Top 25" entries={overall} interactive onOpen={openEntry} />
+        <RankingTable id="women" title="Women's Top 10" entries={women} interactive onOpen={openEntry} />
+        <RankingTable id="all" title="Total Rankings" entries={total} fullWidth onOpen={openEntry} />
       </div>
 
       {selectedEntry ? (

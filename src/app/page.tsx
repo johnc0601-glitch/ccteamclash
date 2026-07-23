@@ -2,7 +2,6 @@ import Link from 'next/link';
 import type {ReactNode} from 'react';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {RotatingMatchCard} from '@/components/RotatingMatchCard';
-import {getLatestHistoricalPlayerSeasonSummaries} from '@/data/historicalSeed';
 import {matches, teams} from '@/lib-data';
 import {getStoredTeams} from '@/services/teams/TeamStore';
 import {getStories} from '@/services/stories/StoryService';
@@ -13,7 +12,6 @@ export default async function Home() {
   const stories = await getStories();
   const lead = stories[0];
   const topTeams = teams.slice(0, 3);
-  const topPlayers = getLatestHistoricalPlayerSeasonSummaries().slice(0, 3);
   const teamLogos = await getStoredTeams();
 
   return (
@@ -39,25 +37,6 @@ export default async function Home() {
 
         <article className="dark-panel story-home-card">
           <div>
-            <span className="panel-title">Leaderboard</span>
-            <h2>Rankings</h2>
-          </div>
-          <div className="ranking-mini-head"><span>#</span><span>Player</span><span>Win %</span></div>
-          {topPlayers.map((entry, index) => (
-            <div className="ranking-mini-row" key={entry.playerId}>
-              <span>{index + 1}</span>
-              <span>
-                <strong>{entry.playerName}</strong>
-                <small>{entry.teamName} · {formatRecord(entry.overallRecord)}</small>
-              </span>
-              <b>{entry.winPercentage.toFixed(1)}%</b>
-            </div>
-          ))}
-          <Link href="/rankings" className="gold-link">Open rankings -&gt;</Link>
-        </article>
-
-        <article className="dark-panel story-home-card">
-          <div>
             <span className="panel-title">Current</span>
             <h2>Standings</h2>
           </div>
@@ -70,6 +49,18 @@ export default async function Home() {
             </div>
           ))}
           <Link href="/standings" className="gold-link">Full standings -&gt;</Link>
+        </article>
+
+        <article className="dark-panel story-home-card">
+          <div>
+            <span className="panel-title">Players</span>
+            <h2>Rankings</h2>
+          </div>
+          <div className="ranking-link-list">
+            <Link href="/rankings#top-25">Top 25</Link>
+            <Link href="/rankings#women">Top 10 Women</Link>
+            <Link href="/rankings#all">All</Link>
+          </div>
         </article>
       </section>
 
@@ -97,10 +88,6 @@ export default async function Home() {
       <Footer />
     </main>
   );
-}
-
-function formatRecord(record: {wins: number; losses: number; ties: number}): string {
-  return record.ties ? `${record.wins}-${record.losses}-${record.ties}` : `${record.wins}-${record.losses}`;
 }
 
 function StoryPhoto({className, image, children}: {className: string; image: string; children?: ReactNode}) {

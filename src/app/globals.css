@@ -720,6 +720,35 @@ td,
   text-align: right;
 }
 
+.ranking-link-list {
+  display: grid;
+  gap: 12px;
+}
+
+.ranking-link-list a {
+  min-height: 48px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.ranking-link-list a::after {
+  content: "->";
+  color: var(--cc-bronze);
+}
+
+.ranking-link-list a:hover {
+  border-color: var(--cc-bronze);
+  color: var(--cc-gold);
+}
+
 .match-card-footer {
   display: flex;
   align-items: center;
@@ -778,6 +807,16 @@ td,
 :root:not([data-theme="dark"]) .ranking-mini-row strong,
 :root:not([data-theme="dark"]) .ranking-mini-row b {
   color: var(--cc-heading);
+}
+
+:root:not([data-theme="dark"]) .ranking-link-list a {
+  border-color: var(--cc-card-border);
+  color: var(--cc-heading);
+}
+
+:root:not([data-theme="dark"]) .ranking-link-list a:hover {
+  border-color: var(--cc-bronze);
+  color: var(--cc-teal);
 }
 
 :root:not([data-theme="dark"]) .team-shield,
