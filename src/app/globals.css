@@ -877,12 +877,33 @@ td,
 
 @media (max-width: 800px) {
   .nav-wrap {
-    min-height: 132px;
-    padding: 14px 0 16px;
+    min-height: 118px;
+    padding: 12px 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
+  }
+
+  .brand {
+    min-width: 0;
+  }
+
+  .brand-mark {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 auto;
+  }
+
+  .brand strong {
+    font-size: 20px;
+  }
+
+  .brand small {
+    max-width: 230px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .site-header nav {
@@ -915,7 +936,8 @@ td,
   .site-header nav a:nth-child(2),
   .site-header nav a:nth-child(3),
   .site-header nav a:nth-child(4),
-  .site-header nav a:nth-child(8) {
+  .site-header nav a:nth-child(8),
+  .site-header nav a:nth-child(9) {
     display: none;
   }
 
@@ -923,7 +945,8 @@ td,
     position: static;
     grid-column: 2;
     grid-row: 1;
-    min-height: 44px;
+    min-height: 42px;
+    padding: 0 14px;
   }
 
   .dashboard-shell {
@@ -939,7 +962,50 @@ td,
   }
 
   .story-matchup {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .match-team-link {
+    min-width: 0;
+    padding: 6px 4px;
+  }
+
+  .match-logo-frame {
+    width: 76px;
+    height: 76px;
+  }
+
+  .match-team-link strong {
+    font-size: 13px;
+    line-height: 1.12;
+  }
+}
+
+@media (max-width: 430px) {
+  .shell {
+    width: min(100% - 28px, 1180px);
+  }
+
+  .brand {
+    gap: 10px;
+  }
+
+  .brand strong {
+    font-size: 18px;
+  }
+
+  .brand small {
+    max-width: 190px;
+    font-size: 9px;
+  }
+
+  .site-header nav a {
+    padding: 0 10px;
+  }
+
+  .story-home-stack {
+    width: min(100% - 28px, 1180px);
   }
 }
 
