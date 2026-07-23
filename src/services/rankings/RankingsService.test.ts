@@ -84,3 +84,14 @@ test('RankingsService limits the womens list to female players', async () => {
 
   assert.deepEqual(rankings.map((entry) => entry.player.id), ['player-c', 'player-a']);
 });
+
+test('RankingsService can return the full ranked list', async () => {
+  const service = new RankingsService(new TestPlayerProvider(), new TestStatisticsProvider());
+  const rankings = await service.getTotalRankings('season-1');
+
+  assert.deepEqual(rankings.map((entry) => entry.player.id), [
+    'player-b',
+    'player-c',
+    'player-a',
+  ]);
+});

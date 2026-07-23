@@ -37,7 +37,7 @@ export const OFFICE_SECTIONS = {
   },
   imports: {
     title: 'Imports',
-    description: 'Validate and apply official match results from the scoring application.',
+    description: 'Import historical team and player summary records.',
     href: '/office/imports',
   },
   standings: {

@@ -28,7 +28,7 @@ function getInitialValues(player?: Player): PlayerInput {
     teamId: '',
     pdgaNumber: '',
     pdgaRating: null,
-    gender: 'Male',
+    gender: 'Unknown',
   };
 }
 
@@ -67,19 +67,19 @@ export function PlayerFormDialog({
             {fieldErrors.name ? <small>{fieldErrors.name}</small> : null}
           </label>
           <label>
-            <span>Current team</span>
+            <span>Current team (optional)</span>
             <select
               value={values.teamId}
               onChange={(event) => setValues((current) => ({...current, teamId: event.target.value}))}
               aria-invalid={Boolean(fieldErrors.teamId)}
             >
-              <option value="">Select team</option>
+              <option value="">Unassigned</option>
               {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
             </select>
             {fieldErrors.teamId ? <small>{fieldErrors.teamId}</small> : null}
           </label>
           <label>
-            <span>Male or female</span>
+            <span>Gender</span>
             <select
               value={values.gender}
               onChange={(event) => setValues((current) => ({
@@ -90,6 +90,7 @@ export function PlayerFormDialog({
             >
               <option value="Male">Male</option>
               <option value="Female">Female</option>
+              <option value="Unknown">Unknown</option>
             </select>
             {fieldErrors.gender ? <small>{fieldErrors.gender}</small> : null}
           </label>

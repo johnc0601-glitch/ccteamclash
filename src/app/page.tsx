@@ -1,62 +1,105 @@
 import Link from 'next/link';
-import {stories,teams,matches} from '@/lib-data';
-import {SiteHeader,Footer} from '@/components/SiteHeader';
+import type {ReactNode} from 'react';
+import {Footer, SiteHeader} from '@/components/SiteHeader';
+import {RotatingMatchCard} from '@/components/RotatingMatchCard';
+import {matches, teams} from '@/lib-data';
+import {getStoredTeams} from '@/services/teams/TeamStore';
+import {getStories} from '@/services/stories/StoryService';
 
-export default function Home(){
-  const lead=stories[0];
-  return <main className="home-page">
-    <SiteHeader/>
-    <section className="feature-hero">
-      <div className="hero-photo" aria-label="Featured disc golf story image">
-        <div className="hero-shade"/>
-        <div className="shell hero-content">
-          <div className="hero-copy">
-            <span className="eyebrow light">Featured story</span>
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const stories = await getStories();
+  const lead = stories[0];
+  const topTeams = teams.slice(0, 3);
+  const teamLogos = await getStoredTeams();
+
+  return (
+    <main className="home-page">
+      <SiteHeader />
+
+      {lead ? (
+        <section className="story-home-hero">
+          <StoryPhoto className="story-home-photo" image={lead.image} />
+          <div className="story-home-content">
+            <span className="eyebrow">Featured story</span>
             <h1>{lead.title}</h1>
             <p>{lead.excerpt}</p>
-            <Link href={`/stories/${lead.slug}`} className="button gold-button">Read story <span>→</span></Link>
+            <div className="home-actions">
+              <Link href={`/stories/${lead.slug}`} className="button gold-button">Read story <span>-&gt;</span></Link>
+            </div>
           </div>
-          <div className="hero-dots" aria-hidden="true"><b/><i/><i/><i/></div>
-        </div>
-      </div>
-    </section>
+        </section>
+      ) : null}
 
-    <section className="dashboard-shell shell">
-      <article className="dark-panel next-match-card">
-        <span className="panel-title">Upcoming match</span>
-        <div className="matchup-logos">
-          <div><span className="team-shield">♞</span><strong>{matches[0].home}</strong></div>
-          <b>VS</b>
-          <div><span className="team-shield ninja">N</span><strong>{matches[0].away}</strong></div>
-        </div>
-        <div className="match-details">
-          <p><span>▣</span>{matches[0].date}</p><p><span>◷</span>{matches[0].time}</p><p><span>⌖</span>{matches[0].course}</p>
-        </div>
-        <Link href="/schedule" className="outline-button">View schedule</Link>
-      </article>
+      <section className="shell story-home-stack">
+        <RotatingMatchCard matches={matches} teams={teamLogos} />
 
-      <section className="dark-panel latest-panel">
-        <div className="panel-heading"><span className="panel-title">Latest stories</span><Link href="/stories">View all</Link></div>
-        <div className="compact-story-grid">
-          {stories.map(s=><article className="compact-story" key={s.slug}>
-            <div className={`compact-photo ${s.image}`}><span>Replace with photo</span></div>
-            <div><small>{s.date}</small><h3>{s.title}</h3><Link href={`/stories/${s.slug}`}>Read more →</Link></div>
-          </article>)}
-        </div>
+        <article className="dark-panel story-home-card">
+          <div>
+            <span className="panel-title">Current</span>
+            <h2>Standings</h2>
+          </div>
+          <div className="mini-table-head"><span>Team</span><span>W-L</span><span>Pts %</span></div>
+          {topTeams.map((team, index) => (
+            <div className="mini-standing" key={team.name}>
+              <span><b>{index + 1}</b>{team.name}</span>
+              <span>{team.record}</span>
+              <span>{team.diff}</span>
+            </div>
+          ))}
+          <Link href="/standings" className="gold-link">Full standings -&gt;</Link>
+        </article>
+
+        <article className="dark-panel story-home-card">
+          <div>
+            <span className="panel-title">Players</span>
+            <h2>Rankings</h2>
+          </div>
+          <div className="ranking-link-list">
+            <Link href="/rankings#top-25">Top 25</Link>
+            <Link href="/rankings#women">Top 10 Women</Link>
+            <Link href="/rankings#all">All</Link>
+          </div>
+        </article>
       </section>
 
-      <aside className="dark-panel compact-standings">
-        <div className="panel-heading"><span className="panel-title">Current standings</span></div>
-        <div className="mini-table-head"><span>Team</span><span>W-L</span><span>Diff</span></div>
-        {teams.map((t,i)=><div className="mini-standing" key={t.name}><span><b>{i+1}</b>{t.name}</span><span>{t.record}</span><span>{t.diff}</span></div>)}
-        <Link href="/standings" className="gold-link">Full standings →</Link>
-      </aside>
-    </section>
+      <section className="shell story-home-bottom">
+        <section className="dark-panel latest-panel">
+          <div className="panel-heading">
+            <span className="panel-title">Latest stories</span>
+            <Link href="/stories">View all -&gt;</Link>
+          </div>
+          <div className="compact-story-grid">
+            {stories.slice(0, 2).map((story) => (
+              <article className="compact-story" key={story.slug}>
+                <StoryPhoto className="compact-photo" image={story.image}><span>League story</span></StoryPhoto>
+                <div>
+                  <small>{story.date}</small>
+                  <h3>{story.title}</h3>
+                  <Link href={`/stories/${story.slug}`}>Read more -&gt;</Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </section>
 
-    <section className="shell section simple-publishing">
-      <div><span className="eyebrow">Simple publishing</span><h2>Post in minutes.<br/>No code required.</h2><p>Upload a photo, paste your Facebook story, add links, preview it, and save a ready-to-publish post.</p><Link href="/admin" className="button">Open post editor</Link></div>
-      <div className="workflow-card"><div className="workflow-top"><span>New story</span><small>Draft saved automatically</small></div><div className="fake-upload">＋<strong>Drop, paste, or choose a photo</strong></div><div className="fake-input">Match headline</div><div className="fake-story">Paste your story here…</div><div className="fake-actions"><span>Preview</span><b>Publish</b></div></div>
-    </section>
-    <Footer/>
-  </main>
+      <Footer />
+    </main>
+  );
+}
+
+function StoryPhoto({className, image, children}: {className: string; image: string; children?: ReactNode}) {
+  const isUrl = image.startsWith('http://') || image.startsWith('https://') || image.startsWith('/');
+
+  return (
+    <div
+      className={isUrl ? className : `${className} ${image}`}
+      style={isUrl ? {backgroundImage: `url(${image})`} : undefined}
+      aria-hidden={!children}
+    >
+      {children}
+    </div>
+  );
 }

@@ -1,5 +1,8 @@
-import {useState, type FormEvent} from 'react';
+import {useRef, useState, type ChangeEvent, type FormEvent} from 'react';
+import type {Course} from '@/domain/course/Course';
 import type {TeamFieldErrors, TeamInput} from '@/types/team';
+import {TeamLogo} from '@/components/teams/TeamLogo';
+import {createTeamLogoUrl} from '@/shared/utils';
 import styles from './TeamManagement.module.css';
 
 type TeamFormProps = {
@@ -7,6 +10,7 @@ type TeamFormProps = {
   fieldErrors: TeamFieldErrors;
   submitLabel: string;
   submitting: boolean;
+  courses: Course[];
   onSubmit: (values: TeamInput) => void;
   onCancel: () => void;
 };
@@ -16,13 +20,40 @@ export function TeamForm({
   fieldErrors,
   submitLabel,
   submitting,
+  courses,
   onSubmit,
   onCancel,
 }: TeamFormProps) {
   const [values, setValues] = useState<TeamInput>(initialValues);
+  const [logoError, setLogoError] = useState('');
+  const [logoUploading, setLogoUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function setField(field: keyof TeamInput, value: string) {
     setValues((current) => ({...current, [field]: value}));
+  }
+
+  async function handleLogoUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setLogoUploading(true);
+      const logo = await createTeamLogoUrl(file, values.name || values.shortName || file.name);
+      setField('logo', logo);
+      setLogoError('');
+    } catch (error) {
+      setLogoError(error instanceof Error ? error.message : 'Logo could not be loaded.');
+    } finally {
+      setLogoUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
+  function clearLogo() {
+    setField('logo', '');
+    setLogoError('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -71,12 +102,39 @@ export function TeamForm({
         </label>
         <label>
           <span>Home course</span>
-          <input name="homeCourse" value={values.homeCourse} onChange={(event) => setField('homeCourse', event.target.value)} />
+          <select name="homeCourse" value={values.homeCourse} onChange={(event) => setField('homeCourse', event.target.value)}>
+            <option value="">To be announced</option>
+            {courses.map((course) => (
+              <option key={course.id} value={course.name}>{course.name}</option>
+            ))}
+          </select>
         </label>
-        <label className={styles.fullField}>
-          <span>Logo URL</span>
-          <input name="logo" type="url" value={values.logo} onChange={(event) => setField('logo', event.target.value)} />
-        </label>
+        <div className={`${styles.fullField} ${styles.logoUploadField}`}>
+          <span>Logo</span>
+          <div className={styles.logoUploadControl}>
+            <TeamLogo
+              team={{
+                id: 'logo-preview',
+                active: true,
+                createdAt: '',
+                updatedAt: '',
+                ...values,
+              }}
+              large
+            />
+            <div className={styles.logoUploadActions}>
+              <input name="logo" type="url" value={values.logo} onChange={(event) => setField('logo', event.target.value)} placeholder="Logo URL or uploaded image" />
+              <div className={styles.logoButtons}>
+                <button type="button" className={styles.secondaryButton} onClick={() => fileInputRef.current?.click()} disabled={logoUploading}>
+                  {logoUploading ? 'Uploading...' : 'Upload logo'}
+                </button>
+                {values.logo ? <button type="button" className={styles.secondaryButton} onClick={clearLogo}>Clear</button> : null}
+              </div>
+              <input ref={fileInputRef} className={styles.srOnly} type="file" accept="image/*" onChange={handleLogoUpload} />
+              {logoError ? <small className={styles.fieldError}>{logoError}</small> : null}
+            </div>
+          </div>
+        </div>
         <label>
           <span>Primary color</span>
           <span className={styles.colorControl}>
@@ -106,7 +164,7 @@ export function TeamForm({
       </div>
       <div className={styles.dialogActions}>
         <button type="button" className={styles.secondaryButton} onClick={onCancel}>Cancel</button>
-        <button type="submit" className={styles.primaryButton} disabled={submitting}>
+        <button type="submit" className={styles.primaryButton} disabled={submitting || logoUploading}>
           {submitting ? 'Saving...' : submitLabel}
         </button>
       </div>

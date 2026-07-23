@@ -67,3 +67,78 @@ test('PlayerService creates and filters active players', async () => {
   assert.equal(players.length, 1);
   assert.equal(players[0].gender, 'Female');
 });
+
+test('PlayerService allows unassigned players with unknown gender', async () => {
+  const service = new PlayerService(new TestPlayerRepository(), teams);
+  const created = await service.create({
+    name: 'Historical Player',
+    teamId: '',
+    pdgaNumber: '',
+    pdgaRating: null,
+    gender: 'Unknown',
+  });
+
+  assert.equal(created.ok, true);
+  if (created.ok) {
+    assert.equal(created.data.teamId, '');
+    assert.equal(created.data.gender, 'Unknown');
+  }
+});
+
+test('PlayerService blocks duplicate player names', async () => {
+  const repository = new TestPlayerRepository();
+  const service = new PlayerService(repository, teams);
+  await service.create({
+    name: 'Test Player',
+    teamId: 'team-1',
+    pdgaNumber: '12345',
+    pdgaRating: 950,
+    gender: 'Female',
+  });
+
+  const duplicate = await service.create({
+    name: ' test player ',
+    teamId: 'team-1',
+    pdgaNumber: '67890',
+    pdgaRating: 930,
+    gender: 'Male',
+  });
+
+  assert.equal(duplicate.ok, false);
+  if (!duplicate.ok) assert.equal(duplicate.fieldErrors?.name, 'This player name already exists.');
+});
+
+test('PlayerService sorts players by rating and update date', async () => {
+  const repository = new TestPlayerRepository();
+  repository.players = [
+    {
+      id: 'player-a',
+      name: 'Alpha Player',
+      teamId: 'team-1',
+      pdgaNumber: '100',
+      pdgaRating: 910,
+      gender: 'Male',
+      active: true,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-02T00:00:00.000Z',
+    },
+    {
+      id: 'player-b',
+      name: 'Beta Player',
+      teamId: 'team-1',
+      pdgaNumber: '101',
+      pdgaRating: 980,
+      gender: 'Female',
+      active: true,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-03T00:00:00.000Z',
+    },
+  ];
+  const service = new PlayerService(repository, teams);
+
+  const ratingSorted = await service.getAll({sort: 'rating'});
+  const updatedSorted = await service.getAll({sort: 'recently-updated'});
+
+  assert.deepEqual(ratingSorted.map((player) => player.id), ['player-b', 'player-a']);
+  assert.deepEqual(updatedSorted.map((player) => player.id), ['player-b', 'player-a']);
+});
