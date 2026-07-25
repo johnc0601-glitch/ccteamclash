@@ -1,6 +1,7 @@
 import {createServerClient} from '@supabase/ssr';
 import {NextResponse, type NextRequest} from 'next/server';
 import {getSupabaseConfig, hasSupabaseConfig} from '@/lib/supabase/config';
+import type {Database} from '@/lib/supabase/database';
 
 export async function proxy(request: NextRequest) {
   if (!hasSupabaseConfig()) return NextResponse.next({request});
@@ -8,7 +9,7 @@ export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({request});
   const {url, publishableKey} = getSupabaseConfig();
 
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database>(
     url,
     publishableKey,
     {
