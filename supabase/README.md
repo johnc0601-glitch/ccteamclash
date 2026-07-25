@@ -21,3 +21,11 @@ Phase 1 uses 8 namespaced tables. The `launch_` prefix avoids colliding with old
 - `launch_event_rosters`
 - `launch_event_roster_players`
 - `launch_event_posts`
+
+Generate the repeatable launch data seed with:
+
+```text
+npm run seed:launch:sql
+```
+
+The generated SQL is written to `supabase/seed/launch_seed.sql` and loads imported historical teams and players into `launch_teams` and `launch_players`.
