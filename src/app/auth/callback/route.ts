@@ -1,4 +1,5 @@
 import {NextResponse} from 'next/server';
+import {ensureLaunchSignupProfile} from '@/domain/launch/LaunchAccountSetup';
 import {createClient} from '@/lib/supabase/server';
 
 export async function GET(request: Request) {
@@ -12,6 +13,13 @@ export async function GET(request: Request) {
     if (error) {
       const message = encodeURIComponent('That sign-in link is expired or invalid. Request a new email link.');
       return NextResponse.redirect(new URL(`/account?error=${message}`, requestUrl.origin));
+    }
+    const {data} = await supabase.auth.getUser();
+    if (data.user) {
+      const setupError = await ensureLaunchSignupProfile(supabase, data.user);
+      if (setupError) {
+        return NextResponse.redirect(new URL(`/account?error=${encodeURIComponent(setupError)}`, requestUrl.origin));
+      }
     }
   }
 

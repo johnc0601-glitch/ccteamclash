@@ -4,7 +4,7 @@ import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository
 import type {LaunchPlayer, LaunchProfile, PlayerClaim} from '@/domain/launch/LaunchData';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
-import {createPendingProfile, requestMagicLink, signOut, submitPlayerClaim} from './actions';
+import {createLeagueAccount, createPendingProfile, signInWithPassword, signOut, submitPlayerClaim} from './actions';
 import styles from './Account.module.css';
 
 type AccountPageProps = {
@@ -30,23 +30,29 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
 
   const supabase = await createClient();
   const {data: {user}} = await supabase.auth.getUser();
+  const repository = new SupabaseLaunchRepository(supabase);
 
   if (!user) {
+    const players = await repository.getPlayers();
+
     return (
       <main>
         <SiteHeader />
         <AccountShell notice={notice} error={error}>
           <section className={styles.grid} aria-label="Sign in options">
             <article className={styles.panel}>
-              <span className={styles.eyebrow}>Email link</span>
-              <h2>Email</h2>
-              <p>Yahoo, Outlook, and regular email addresses can sign in with a secure link.</p>
-              <form className={styles.form} action={requestMagicLink}>
-                <label htmlFor="email">Email address</label>
-                <input id="email" name="email" type="email" autoComplete="email" required />
-                <button className={styles.primaryButton} type="submit">Send sign-in link</button>
+              <span className={styles.eyebrow}>Returning player</span>
+              <h2>Sign in</h2>
+              <p>Use the password you created with your league account.</p>
+              <form className={styles.form} action={signInWithPassword}>
+                <label htmlFor="signinEmail">Email address</label>
+                <input id="signinEmail" name="email" type="email" autoComplete="email" required />
+                <label htmlFor="signinPassword">Password</label>
+                <input id="signinPassword" name="password" type="password" autoComplete="current-password" required />
+                <button className={styles.primaryButton} type="submit">Sign in</button>
               </form>
             </article>
+            <CreateAccountForm players={players} />
           </section>
         </AccountShell>
         <Footer />
@@ -54,7 +60,6 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
     );
   }
 
-  const repository = new SupabaseLaunchRepository(supabase);
   const [profile, claims, players] = await Promise.all([
     repository.getProfileByUserId(user.id),
     repository.getPlayerClaims(),
@@ -83,6 +88,39 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
       </AccountShell>
       <Footer />
     </main>
+  );
+}
+
+function CreateAccountForm({players}: {players: LaunchPlayer[]}) {
+  return (
+    <article className={styles.panel}>
+      <span className={styles.eyebrow}>New player</span>
+      <h2>Create account</h2>
+      <p>Select your imported player record and create a password for future sign-ins.</p>
+      <form className={styles.form} action={createLeagueAccount}>
+        <label htmlFor="signupEmail">Email address</label>
+        <input id="signupEmail" name="email" type="email" autoComplete="email" required />
+        <label htmlFor="requestedPlayerId">Player record</label>
+        <select id="requestedPlayerId" name="requestedPlayerId" defaultValue="" required>
+          <option value="" disabled>Select your player record</option>
+          {players.map((player) => (
+            <option key={player.id} value={player.id}>
+              {player.name}{player.pdgaNumber ? ` - PDGA ${player.pdgaNumber}` : ''}
+            </option>
+          ))}
+        </select>
+        <label htmlFor="signupPassword">Password</label>
+        <input
+          id="signupPassword"
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          minLength={8}
+          required
+        />
+        <button className={styles.primaryButton} type="submit">Create account</button>
+      </form>
+    </article>
   );
 }
 
