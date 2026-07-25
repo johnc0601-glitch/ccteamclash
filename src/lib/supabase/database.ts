@@ -104,14 +104,14 @@ type TableDefinition<Row> = {
 export type Database = {
   public: {
     Tables: {
-      profiles: TableDefinition<ProfileRow>;
-      player_claims: TableDefinition<PlayerClaimRow>;
-      players: TableDefinition<PlayerRow>;
-      teams: TableDefinition<TeamRow>;
-      events: TableDefinition<EventRow>;
-      event_rosters: TableDefinition<EventRosterRow>;
-      event_roster_players: TableDefinition<EventRosterPlayerRow>;
-      event_posts: TableDefinition<EventPostRow>;
+      launch_profiles: TableDefinition<ProfileRow>;
+      launch_player_claims: TableDefinition<PlayerClaimRow>;
+      launch_players: TableDefinition<PlayerRow>;
+      launch_teams: TableDefinition<TeamRow>;
+      launch_events: TableDefinition<EventRow>;
+      launch_event_rosters: TableDefinition<EventRosterRow>;
+      launch_event_roster_players: TableDefinition<EventRosterPlayerRow>;
+      launch_event_posts: TableDefinition<EventPostRow>;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

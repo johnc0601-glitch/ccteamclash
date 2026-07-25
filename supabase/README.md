@@ -11,13 +11,13 @@ NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ```
 
-Phase 1 uses 8 tables:
+Phase 1 uses 8 namespaced tables. The `launch_` prefix avoids colliding with older empty league tables already present in the Team Clash Supabase project.
 
-- `profiles`
-- `player_claims`
-- `players`
-- `teams`
-- `events`
-- `event_rosters`
-- `event_roster_players`
-- `event_posts`
+- `launch_profiles`
+- `launch_player_claims`
+- `launch_players`
+- `launch_teams`
+- `launch_events`
+- `launch_event_rosters`
+- `launch_event_roster_players`
+- `launch_event_posts`

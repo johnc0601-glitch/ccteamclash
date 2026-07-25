@@ -14,14 +14,14 @@ import type {Database} from '@/lib/supabase/database';
 
 type LaunchSupabaseClient = SupabaseClient<Database>;
 type Tables = Database['public']['Tables'];
-type ProfileRow = Tables['profiles']['Row'];
-type PlayerClaimRow = Tables['player_claims']['Row'];
-type PlayerRow = Tables['players']['Row'];
-type TeamRow = Tables['teams']['Row'];
-type EventRow = Tables['events']['Row'];
-type EventRosterRow = Tables['event_rosters']['Row'];
-type EventRosterPlayerRow = Tables['event_roster_players']['Row'];
-type EventPostRow = Tables['event_posts']['Row'];
+type ProfileRow = Tables['launch_profiles']['Row'];
+type PlayerClaimRow = Tables['launch_player_claims']['Row'];
+type PlayerRow = Tables['launch_players']['Row'];
+type TeamRow = Tables['launch_teams']['Row'];
+type EventRow = Tables['launch_events']['Row'];
+type EventRosterRow = Tables['launch_event_rosters']['Row'];
+type EventRosterPlayerRow = Tables['launch_event_roster_players']['Row'];
+type EventPostRow = Tables['launch_event_posts']['Row'];
 
 export class SupabaseLaunchRepository implements LaunchRepository {
   private readonly supabase: LaunchSupabaseClient;
@@ -31,85 +31,85 @@ export class SupabaseLaunchRepository implements LaunchRepository {
   }
 
   async getProfiles(): Promise<LaunchProfile[]> {
-    const {data, error} = await this.supabase.from('profiles').select('*').order('display_name');
+    const {data, error} = await this.supabase.from('launch_profiles').select('*').order('display_name');
     if (error) throw error;
     return data.map(toProfile);
   }
 
   async getProfile(id: string): Promise<LaunchProfile | undefined> {
-    const {data, error} = await this.supabase.from('profiles').select('*').eq('id', id).maybeSingle();
+    const {data, error} = await this.supabase.from('launch_profiles').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data ? toProfile(data) : undefined;
   }
 
   async getProfileByUserId(userId: string): Promise<LaunchProfile | undefined> {
-    const {data, error} = await this.supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle();
+    const {data, error} = await this.supabase.from('launch_profiles').select('*').eq('user_id', userId).maybeSingle();
     if (error) throw error;
     return data ? toProfile(data) : undefined;
   }
 
   async saveProfile(profile: LaunchProfile): Promise<LaunchProfile> {
-    const {data, error} = await this.supabase.from('profiles').upsert(fromProfile(profile)).select().single();
+    const {data, error} = await this.supabase.from('launch_profiles').upsert(fromProfile(profile)).select().single();
     if (error) throw error;
     return toProfile(data);
   }
 
   async getPlayerClaims(): Promise<PlayerClaim[]> {
-    const {data, error} = await this.supabase.from('player_claims').select('*').order('created_at');
+    const {data, error} = await this.supabase.from('launch_player_claims').select('*').order('created_at');
     if (error) throw error;
     return data.map(toPlayerClaim);
   }
 
   async getPlayerClaim(id: string): Promise<PlayerClaim | undefined> {
-    const {data, error} = await this.supabase.from('player_claims').select('*').eq('id', id).maybeSingle();
+    const {data, error} = await this.supabase.from('launch_player_claims').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data ? toPlayerClaim(data) : undefined;
   }
 
   async savePlayerClaim(claim: PlayerClaim): Promise<PlayerClaim> {
-    const {data, error} = await this.supabase.from('player_claims').upsert(fromPlayerClaim(claim)).select().single();
+    const {data, error} = await this.supabase.from('launch_player_claims').upsert(fromPlayerClaim(claim)).select().single();
     if (error) throw error;
     return toPlayerClaim(data);
   }
 
   async getPlayers(): Promise<LaunchPlayer[]> {
-    const {data, error} = await this.supabase.from('players').select('*').order('name');
+    const {data, error} = await this.supabase.from('launch_players').select('*').order('name');
     if (error) throw error;
     return data.map(toPlayer);
   }
 
   async getPlayer(id: string): Promise<LaunchPlayer | undefined> {
-    const {data, error} = await this.supabase.from('players').select('*').eq('id', id).maybeSingle();
+    const {data, error} = await this.supabase.from('launch_players').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data ? toPlayer(data) : undefined;
   }
 
   async getTeams(): Promise<LaunchTeam[]> {
-    const {data, error} = await this.supabase.from('teams').select('*').order('name');
+    const {data, error} = await this.supabase.from('launch_teams').select('*').order('name');
     if (error) throw error;
     return data.map(toTeam);
   }
 
   async getTeam(id: string): Promise<LaunchTeam | undefined> {
-    const {data, error} = await this.supabase.from('teams').select('*').eq('id', id).maybeSingle();
+    const {data, error} = await this.supabase.from('launch_teams').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data ? toTeam(data) : undefined;
   }
 
   async getEvents(): Promise<LaunchEvent[]> {
-    const {data, error} = await this.supabase.from('events').select('*').order('date');
+    const {data, error} = await this.supabase.from('launch_events').select('*').order('date');
     if (error) throw error;
     return data.map(toEvent);
   }
 
   async getEvent(id: string): Promise<LaunchEvent | undefined> {
-    const {data, error} = await this.supabase.from('events').select('*').eq('id', id).maybeSingle();
+    const {data, error} = await this.supabase.from('launch_events').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data ? toEvent(data) : undefined;
   }
 
   async getEventRosters(eventId?: string): Promise<EventRoster[]> {
-    let query = this.supabase.from('event_rosters').select('*');
+    let query = this.supabase.from('launch_event_rosters').select('*');
     if (eventId) query = query.eq('event_id', eventId);
 
     const {data, error} = await query.order('created_at');
@@ -118,14 +118,14 @@ export class SupabaseLaunchRepository implements LaunchRepository {
   }
 
   async getEventRoster(id: string): Promise<EventRoster | undefined> {
-    const {data, error} = await this.supabase.from('event_rosters').select('*').eq('id', id).maybeSingle();
+    const {data, error} = await this.supabase.from('launch_event_rosters').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data ? toEventRoster(data) : undefined;
   }
 
   async getEventRosterByEventAndTeam(eventId: string, teamId: string): Promise<EventRoster | undefined> {
     const {data, error} = await this.supabase
-      .from('event_rosters')
+      .from('launch_event_rosters')
       .select('*')
       .eq('event_id', eventId)
       .eq('team_id', teamId)
@@ -135,14 +135,14 @@ export class SupabaseLaunchRepository implements LaunchRepository {
   }
 
   async saveEventRoster(roster: EventRoster): Promise<EventRoster> {
-    const {data, error} = await this.supabase.from('event_rosters').upsert(fromEventRoster(roster)).select().single();
+    const {data, error} = await this.supabase.from('launch_event_rosters').upsert(fromEventRoster(roster)).select().single();
     if (error) throw error;
     return toEventRoster(data);
   }
 
   async getEventRosterPlayers(eventRosterId: string): Promise<EventRosterPlayer[]> {
     const {data, error} = await this.supabase
-      .from('event_roster_players')
+      .from('launch_event_roster_players')
       .select('*')
       .eq('event_roster_id', eventRosterId)
       .order('created_at');
@@ -155,14 +155,14 @@ export class SupabaseLaunchRepository implements LaunchRepository {
     players: EventRosterPlayer[],
   ): Promise<EventRosterPlayer[]> {
     const deleteResult = await this.supabase
-      .from('event_roster_players')
+      .from('launch_event_roster_players')
       .delete()
       .eq('event_roster_id', eventRosterId);
     if (deleteResult.error) throw deleteResult.error;
     if (!players.length) return [];
 
     const {data, error} = await this.supabase
-      .from('event_roster_players')
+      .from('launch_event_roster_players')
       .insert(players.map(fromEventRosterPlayer))
       .select();
     if (error) throw error;
@@ -171,7 +171,7 @@ export class SupabaseLaunchRepository implements LaunchRepository {
 
   async getEventPosts(eventId: string): Promise<EventPost[]> {
     const {data, error} = await this.supabase
-      .from('event_posts')
+      .from('launch_event_posts')
       .select('*')
       .eq('event_id', eventId)
       .order('created_at');
@@ -180,13 +180,13 @@ export class SupabaseLaunchRepository implements LaunchRepository {
   }
 
   async getEventPost(id: string): Promise<EventPost | undefined> {
-    const {data, error} = await this.supabase.from('event_posts').select('*').eq('id', id).maybeSingle();
+    const {data, error} = await this.supabase.from('launch_event_posts').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data ? toEventPost(data) : undefined;
   }
 
   async saveEventPost(post: EventPost): Promise<EventPost> {
-    const {data, error} = await this.supabase.from('event_posts').upsert(fromEventPost(post)).select().single();
+    const {data, error} = await this.supabase.from('launch_event_posts').upsert(fromEventPost(post)).select().single();
     if (error) throw error;
     return toEventPost(data);
   }
