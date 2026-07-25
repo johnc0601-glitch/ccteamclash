@@ -49,7 +49,11 @@ export class SupabaseLaunchRepository implements LaunchRepository {
   }
 
   async saveProfile(profile: LaunchProfile): Promise<LaunchProfile> {
-    const {data, error} = await this.supabase.from('launch_profiles').upsert(fromProfile(profile)).select().single();
+    const existingProfile = await this.getProfile(profile.id);
+    const query = existingProfile
+      ? this.supabase.from('launch_profiles').update(fromProfile(profile)).eq('id', profile.id)
+      : this.supabase.from('launch_profiles').insert(fromProfile(profile));
+    const {data, error} = await query.select().single();
     if (error) throw error;
     return toProfile(data);
   }
@@ -67,7 +71,11 @@ export class SupabaseLaunchRepository implements LaunchRepository {
   }
 
   async savePlayerClaim(claim: PlayerClaim): Promise<PlayerClaim> {
-    const {data, error} = await this.supabase.from('launch_player_claims').upsert(fromPlayerClaim(claim)).select().single();
+    const existingClaim = await this.getPlayerClaim(claim.id);
+    const query = existingClaim
+      ? this.supabase.from('launch_player_claims').update(fromPlayerClaim(claim)).eq('id', claim.id)
+      : this.supabase.from('launch_player_claims').insert(fromPlayerClaim(claim));
+    const {data, error} = await query.select().single();
     if (error) throw error;
     return toPlayerClaim(data);
   }

@@ -72,14 +72,20 @@ export class LaunchService {
     };
   }
 
-  async approvePlayerClaim(claimId: string, commissionerProfileId: string): Promise<LaunchServiceResult<PlayerClaim>> {
+  async approvePlayerClaim(
+    claimId: string,
+    commissionerProfileId: string,
+    selectedPlayerId?: string | null,
+  ): Promise<LaunchServiceResult<PlayerClaim>> {
     const commissioner = await this.requireCommissioner(commissionerProfileId);
     if (!commissioner.ok) return commissioner;
 
     const claim = await this.repository.getPlayerClaim(claimId);
     if (!claim) return failure('Player claim not found.');
     if (claim.status !== 'Pending') return failure('Only pending claims can be approved.');
-    if (!claim.requestedPlayerId) return failure('Select an existing player before approval.');
+    const requestedPlayerId = selectedPlayerId || claim.requestedPlayerId;
+    if (!requestedPlayerId) return failure('Select an existing player before approval.');
+    if (!await this.repository.getPlayer(requestedPlayerId)) return failure('Player not found.');
 
     const profile = await this.repository.getProfile(claim.profileId);
     if (!profile) return failure('Profile not found.');
@@ -88,7 +94,7 @@ export class LaunchService {
     await this.repository.saveProfile({
       ...profile,
       status: 'Approved',
-      playerId: claim.requestedPlayerId,
+      playerId: requestedPlayerId,
       updatedAt: timestamp,
     });
 
@@ -96,9 +102,53 @@ export class LaunchService {
       ok: true,
       data: await this.repository.savePlayerClaim({
         ...claim,
+        requestedPlayerId,
         status: 'Approved',
         reviewedAt: timestamp,
         reviewedBy: commissioner.data.id,
+      }),
+    };
+  }
+
+  async rejectPlayerClaim(claimId: string, commissionerProfileId: string): Promise<LaunchServiceResult<PlayerClaim>> {
+    const commissioner = await this.requireCommissioner(commissionerProfileId);
+    if (!commissioner.ok) return commissioner;
+
+    const claim = await this.repository.getPlayerClaim(claimId);
+    if (!claim) return failure('Player claim not found.');
+    if (claim.status !== 'Pending') return failure('Only pending claims can be rejected.');
+
+    return {
+      ok: true,
+      data: await this.repository.savePlayerClaim({
+        ...claim,
+        status: 'Rejected',
+        reviewedAt: now(),
+        reviewedBy: commissioner.data.id,
+      }),
+    };
+  }
+
+  async setProfileStatus(
+    profileId: string,
+    status: 'Approved' | 'Rejected' | 'Suspended',
+    commissionerProfileId: string,
+  ): Promise<LaunchServiceResult<LaunchProfile>> {
+    const commissioner = await this.requireCommissioner(commissionerProfileId);
+    if (!commissioner.ok) return commissioner;
+
+    const profile = await this.repository.getProfile(profileId);
+    if (!profile) return failure('Profile not found.');
+    if (profile.id === commissionerProfileId && status !== 'Approved') {
+      return failure('The active commissioner profile must stay approved.');
+    }
+
+    return {
+      ok: true,
+      data: await this.repository.saveProfile({
+        ...profile,
+        status,
+        updatedAt: now(),
       }),
     };
   }
