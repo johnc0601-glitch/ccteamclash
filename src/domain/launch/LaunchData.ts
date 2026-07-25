@@ -108,6 +108,37 @@ export type EventPost = {
   removedBy: string | null;
 };
 
+export type LaunchServiceResult<T> =
+  | {ok: true; data: T}
+  | {ok: false; message: string};
+
+export type CreatePendingProfileInput = {
+  userId: string;
+  displayName: string;
+};
+
+export type SubmitPlayerClaimInput = {
+  profileId: string;
+  requestedPlayerId: string | null;
+  submittedName: string;
+  submittedPdgaNumber: string;
+};
+
+export type SubmitEventRosterInput = {
+  eventId: string;
+  teamId: string;
+  submittedByProfileId: string;
+  playerIds: string[];
+};
+
+export type AddEventPostInput = {
+  eventId: string;
+  type: EventPostType;
+  authorName: string;
+  body: string;
+  imageUrl?: string | null;
+};
+
 export type LaunchSeedData = {
   profiles: LaunchProfile[];
   playerClaims: PlayerClaim[];
