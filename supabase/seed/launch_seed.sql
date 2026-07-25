@@ -18,6 +18,9 @@ on conflict (id) do update set
   active = excluded.active,
   updated_at = excluded.updated_at;
 
+delete from public.launch_players
+where id in ('ariel-cosmo', 'cecilia-costin', 'chad-hessenflow', 'isaac-kotson', 'jodie-lehmann', 'joshua-matheson');
+
 insert into public.launch_players (id, name, gender, pdga_number, pdga_rating, current_team_id, home_area, active, created_at, updated_at) values
 ('abby-bertone', 'Abby Bertone', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('abel-jimenez', 'Abel Jimenez', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
@@ -38,8 +41,7 @@ insert into public.launch_players (id, name, gender, pdga_number, pdga_rating, c
 ('angel-mabee', 'Angel Mabee', 'Female', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('anthony-hardee', 'Anthony Hardee', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('anthony-markowski', 'Anthony Markowski', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
-('ariel-cosimo', 'Ariel Cosimo', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
-('ariel-cosmo', 'Ariel Cosmo', 'Female', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
+('ariel-cosimo', 'Ariel Cosimo', 'Female', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('ashlee-hynds', 'Ashlee Hynds', 'Female', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('austin-gratton', 'Austin Gratton', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('bailey-nichols', 'Bailey Nichols', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
@@ -72,11 +74,9 @@ insert into public.launch_players (id, name, gender, pdga_number, pdga_rating, c
 ('candy-mcclernan', 'Candy McClernan', 'Female', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('carson-ham', 'Carson Ham', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('cecelia-costin', 'CeCelia Costin', 'Female', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
-('cecilia-costin', 'Cecilia Costin', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('chad-crom', 'Chad Crom', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('chad-hassenflow', 'Chad Hassenflow', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('chad-heacock', 'Chad Heacock', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
-('chad-hessenflow', 'Chad Hessenflow', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('chad-johnson', 'Chad Johnson', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('chad-sullivan', 'Chad Sullivan', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('charley-sears', 'Charley Sears', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
@@ -135,7 +135,6 @@ insert into public.launch_players (id, name, gender, pdga_number, pdga_rating, c
 ('ian-roberts', 'Ian Roberts', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('ilya-batazhan', 'Ilya Batazhan', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('isaac-cotson', 'Isaac Cotson', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
-('isaac-kotson', 'Isaac Kotson', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('j-baus', 'J Baus', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('jackie-brown-alcott', 'Jackie Brown-Alcott', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('jake-harrison', 'Jake Harrison', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
@@ -158,8 +157,7 @@ insert into public.launch_players (id, name, gender, pdga_number, pdga_rating, c
 ('jeremy-lewis', 'Jeremy Lewis', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('jesse-smelik', 'Jesse Smelik', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('jimbo-lemire', 'Jimbo Lemire', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
-('jodie-lehman', 'Jodie Lehman', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
-('jodie-lehmann', 'Jodie Lehmann', 'Female', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
+('jodie-lehman', 'Jodie Lehman', 'Female', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('joe-barker', 'Joe Barker', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('joe-bertone', 'Joe Bertone', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('joe-truett', 'Joe Truett', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
@@ -179,7 +177,6 @@ insert into public.launch_players (id, name, gender, pdga_number, pdga_rating, c
 ('josh-beardsley', 'Josh Beardsley', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('josh-beasley', 'Josh Beasley', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('josh-matheson', 'Josh Matheson', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
-('joshua-matheson', 'Joshua Matheson', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('julie-nassisi', 'Julie Nassisi', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('justin-jro-roach', 'Justin (JRo) Roach', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
 ('justin-istre', 'Justin Istre', 'Male', '', null, null, '', true, '2026-07-19T00:00:00.000Z', '2026-07-19T00:00:00.000Z'),
