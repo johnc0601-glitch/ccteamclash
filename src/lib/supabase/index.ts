@@ -1,0 +1,1 @@
+export {hasSupabaseConfig} from './config';
