@@ -25,8 +25,8 @@ export function SiteHeader() {
           <Link className="post-nav" href="/admin">Create post</Link>
           <Link href="/account">Account</Link>
         </nav>
+        <Link className="mobile-sign-in" href="/account">Sign in</Link>
         <div className="mobile-header-actions">
-          <Link className="mobile-sign-in" href="/account">Sign in</Link>
           <details className="mobile-nav">
             <summary>Menu</summary>
             <nav>

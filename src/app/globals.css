@@ -138,7 +138,8 @@ body {
   justify-content: flex-end;
 }
 
-.mobile-header-actions {
+.mobile-header-actions,
+.mobile-sign-in {
   display: none;
 }
 
@@ -926,7 +927,6 @@ td,
   .mobile-nav summary {
     min-height: 38px;
     padding: 0 14px;
-    display: inline-flex;
     align-items: center;
     border: 1px solid rgba(255,255,255,.24);
     border-radius: 4px;
@@ -938,8 +938,12 @@ td,
   }
 
   .mobile-sign-in {
+    display: inline-flex;
     border-color: var(--cc-bronze);
     color: var(--cc-bronze);
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
   }
 
   .mobile-nav {
@@ -949,6 +953,7 @@ td,
   }
 
   .mobile-nav summary {
+    display: inline-flex;
     cursor: pointer;
     list-style: none;
   }
@@ -1000,8 +1005,9 @@ td,
   .theme-toggle {
     position: static;
     grid-column: 2;
-    grid-row: 1;
-    min-height: 42px;
+    grid-row: 2;
+    justify-self: end;
+    min-height: 38px;
     padding: 0 14px;
   }
 
