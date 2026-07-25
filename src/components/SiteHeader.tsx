@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import {ThemeToggle} from '@/components/ThemeToggle';
 import {BRAND_LOGO, BRAND_NAME, BRAND_TAGLINE, FOOTER_COPY} from '@/shared/constants';
 
 export function SiteHeader() {
@@ -41,7 +40,6 @@ export function SiteHeader() {
             </nav>
           </details>
         </div>
-        <ThemeToggle />
       </div>
     </header>
   );

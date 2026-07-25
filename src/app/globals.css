@@ -163,10 +163,10 @@ body {
 .theme-toggle {
   min-height: 36px;
   padding: 0 12px;
-  border: 1px solid rgba(255,255,255,.24);
+  border: 1px solid var(--cc-card-border);
   border-radius: 4px;
-  background: rgba(255,255,255,.06);
-  color: #fff;
+  background: var(--cc-card-bg-soft);
+  color: var(--cc-heading);
   font: inherit;
   font-size: 10px;
   font-weight: 950;
@@ -177,7 +177,7 @@ body {
 
 .theme-toggle:hover {
   border-color: var(--cc-bronze);
-  color: var(--cc-gold);
+  color: var(--cc-teal);
 }
 
 .page-shell {
@@ -1003,16 +1003,6 @@ td,
   .mobile-nav nav a:focus-visible {
     background: rgba(255,255,255,.08);
     color: var(--cc-bronze);
-  }
-
-  .theme-toggle {
-    position: fixed;
-    right: 14px;
-    bottom: 18px;
-    z-index: 45;
-    min-height: 38px;
-    padding: 0 14px;
-    box-shadow: 0 14px 34px rgba(0,0,0,.28);
   }
 
   .dashboard-shell {

@@ -1,4 +1,5 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
+import {ThemeToggle} from '@/components/ThemeToggle';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import type {LaunchPlayer, LaunchProfile, PlayerClaim} from '@/domain/launch/LaunchData';
 import {hasSupabaseConfig} from '@/lib/supabase';
@@ -187,6 +188,15 @@ function MemberProfile({
         ) : (
           <p className={styles.muted}>The commissioner needs to review this claim before another one is submitted.</p>
         )}
+      </article>
+
+      <article className={styles.panel}>
+        <span className={styles.eyebrow}>Display</span>
+        <h2>Theme</h2>
+        <p>Choose how Team Clash looks on this device.</p>
+        <div className={styles.themeAction}>
+          <ThemeToggle />
+        </div>
       </article>
     </section>
   );

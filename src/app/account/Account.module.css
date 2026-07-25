@@ -179,6 +179,14 @@
   background: var(--cc-card-bg-soft);
 }
 
+.themeAction {
+  margin-top: 18px;
+}
+
+.themeAction :global(.theme-toggle) {
+  min-width: 120px;
+}
+
 @media (max-width: 760px) {
   .shell {
     padding: 48px 0 68px;
