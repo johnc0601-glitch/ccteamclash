@@ -25,20 +25,22 @@ export function SiteHeader() {
           <Link className="post-nav" href="/admin">Create post</Link>
           <Link href="/account">Account</Link>
         </nav>
-        <details className="mobile-nav">
-          <summary>Menu</summary>
-          <nav>
-            <Link href="/">Home</Link>
-            <Link href="/account">Account</Link>
-            <Link href="/rankings">Rankings</Link>
-            <Link href="/teams">Teams</Link>
-            <Link href="/players">Players</Link>
-            <Link href="/courses">Courses</Link>
-            <Link href="/schedule">Schedule</Link>
-            <Link href="/standings">Standings</Link>
-            <Link href="/stories">Stories</Link>
-          </nav>
-        </details>
+        <div className="mobile-header-actions">
+          <Link className="mobile-sign-in" href="/account">Sign in</Link>
+          <details className="mobile-nav">
+            <summary>Menu</summary>
+            <nav>
+              <Link href="/">Home</Link>
+              <Link href="/rankings">Rankings</Link>
+              <Link href="/teams">Teams</Link>
+              <Link href="/players">Players</Link>
+              <Link href="/courses">Courses</Link>
+              <Link href="/schedule">Schedule</Link>
+              <Link href="/standings">Standings</Link>
+              <Link href="/stories">Stories</Link>
+            </nav>
+          </details>
+        </div>
         <ThemeToggle />
       </div>
     </header>
