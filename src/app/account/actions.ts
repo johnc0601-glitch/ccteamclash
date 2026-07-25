@@ -94,7 +94,16 @@ async function getLaunchServiceForUser() {
 
 async function getOrigin(): Promise<string> {
   const headerStore = await headers();
-  return headerStore.get('origin') ?? 'http://localhost:3000';
+  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (configuredUrl) return configuredUrl;
+
+  const origin = headerStore.get('origin');
+  if (origin) return origin;
+
+  const host = headerStore.get('x-forwarded-host') ?? headerStore.get('host');
+  const protocol = headerStore.get('x-forwarded-proto') ?? (host?.includes('localhost') ? 'http' : 'https');
+
+  return host ? `${protocol}://${host}` : 'https://www.ccteamclash.com';
 }
 
 function readFormValue(formData: FormData, key: string): string {
