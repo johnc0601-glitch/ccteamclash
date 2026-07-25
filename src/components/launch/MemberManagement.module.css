@@ -21,6 +21,21 @@
   font-weight: 900;
 }
 
+.notice p,
+.error p {
+  margin: 0;
+}
+
+.error a {
+  display: inline-flex;
+  margin-top: 12px;
+  color: #111516;
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  text-decoration: underline;
+}
+
 .notice {
   border-left: 4px solid #56701c;
 }

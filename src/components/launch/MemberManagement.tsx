@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type {LaunchPlayer, LaunchProfile, LaunchTeam, PlayerClaim} from '@/domain/launch/LaunchData';
 import {approveClaim, approveProfile, rejectClaim, rejectProfile, suspendProfile} from '@/app/office/members/actions';
 import styles from './MemberManagement.module.css';
@@ -28,7 +29,12 @@ export function MemberManagement({
   return (
     <section aria-label="Member workflow">
       {notice ? <p className={styles.notice}>{notice}</p> : null}
-      {error ? <p className={styles.error}>{error}</p> : null}
+      {error ? (
+        <div className={styles.error}>
+          <p>{error}</p>
+          {error.includes('Sign in') ? <Link href="/account">Open account sign in</Link> : null}
+        </div>
+      ) : null}
 
       <div className={styles.summaryGrid}>
         <SummaryCard label="Pending claims" value={pendingClaims.length} />
