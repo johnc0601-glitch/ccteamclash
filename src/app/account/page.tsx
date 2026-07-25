@@ -3,7 +3,7 @@ import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository
 import type {LaunchPlayer, LaunchProfile, PlayerClaim} from '@/domain/launch/LaunchData';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
-import {createPendingProfile, requestMagicLink, signInWithGoogle, signOut, submitPlayerClaim} from './actions';
+import {createPendingProfile, requestMagicLink, signOut, submitPlayerClaim} from './actions';
 import styles from './Account.module.css';
 
 type AccountPageProps = {
@@ -36,14 +36,6 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
         <SiteHeader />
         <AccountShell notice={notice} error={error}>
           <section className={styles.grid} aria-label="Sign in options">
-            <article className={styles.panel}>
-              <span className={styles.eyebrow}>Quick sign in</span>
-              <h2>Google</h2>
-              <p>Use this if your league email is tied to a Google account.</p>
-              <form action={signInWithGoogle}>
-                <button className={styles.primaryButton} type="submit">Continue with Google</button>
-              </form>
-            </article>
             <article className={styles.panel}>
               <span className={styles.eyebrow}>Email link</span>
               <h2>Email</h2>
