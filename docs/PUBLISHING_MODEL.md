@@ -182,4 +182,5 @@ Every publish action should eventually record:
 
 ## Related Documents
 
+- `docs/AUTH_MODEL.md`
 - `docs/ROSTER_MODEL.md`

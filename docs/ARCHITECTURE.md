@@ -15,11 +15,13 @@ Presentation Layer
   - Public Website
   - Commissioner Office
   - Captain Portal
+  - League Signup
 
         |
         v
 
 Application Layer
+  - Auth Service
   - Team Service
   - Player Service
   - Season Service
@@ -82,6 +84,13 @@ docs/
 - Add Player
 - Submitted Rosters
 
+### League Signup
+
+- Google Login
+- Email Magic Link
+- Player Claiming
+- Pending Approval
+
 ### Public Site
 
 - Home
@@ -130,6 +139,7 @@ Commissioner edits data
 
 ## Future Services
 
+- `AuthService`
 - `TeamService`
 - `PlayerService`
 - `SeasonService`
@@ -159,6 +169,7 @@ Commissioner edits data
 13. Public Website Automation
 14. Captain Portal
 15. Event Pages
+16. League Signup
 
 ## Development Rules
 

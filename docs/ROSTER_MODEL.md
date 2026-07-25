@@ -61,6 +61,8 @@ Captains can:
 - add a basic new player record
 - update their own submitted roster while open
 
+Captains must be authenticated users assigned to a team through the auth model.
+
 Captains cannot:
 
 - edit another team's roster
@@ -193,3 +195,7 @@ Do not build roster business logic inside React components.
 Roster rules belong in a future `RosterService`.
 
 Public event pages should read published/locked roster data through services.
+
+## Related Documents
+
+- `docs/AUTH_MODEL.md`
