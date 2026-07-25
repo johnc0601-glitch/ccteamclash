@@ -8,7 +8,11 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const {error} = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      const message = encodeURIComponent('That sign-in link is expired or invalid. Request a new email link.');
+      return NextResponse.redirect(new URL(`/account?error=${message}`, requestUrl.origin));
+    }
   }
 
   return NextResponse.redirect(new URL(next, requestUrl.origin));

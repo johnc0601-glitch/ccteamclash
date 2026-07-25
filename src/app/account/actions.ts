@@ -20,7 +20,7 @@ export async function requestMagicLink(formData: FormData) {
     },
   });
 
-  if (error) redirect(`/account?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/account?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
   redirect('/account?notice=Check your email for the sign-in link.');
 }
 
@@ -109,4 +109,11 @@ async function getOrigin(): Promise<string> {
 function readFormValue(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function getAuthErrorMessage(error: {message?: string; code?: string; status?: number}): string {
+  const message = error.message?.trim();
+  if (message && message !== '{}') return message;
+  if (error.code === 'over_email_send_rate_limit') return 'Email rate limit exceeded. Wait a few minutes before requesting another sign-in link.';
+  return 'The sign-in email could not be sent. Check the Supabase email sender settings.';
 }
