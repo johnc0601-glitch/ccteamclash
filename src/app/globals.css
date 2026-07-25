@@ -952,10 +952,10 @@ td,
     top: calc(100% + 8px);
     left: 0;
     z-index: 40;
-    width: min(260px, calc(100vw - 28px));
-    padding: 8px;
+    width: min(210px, calc(100vw - 28px));
+    padding: 7px;
     display: grid;
-    gap: 6px;
+    gap: 3px;
     border: 1px solid rgba(255,255,255,.18);
     border-radius: 6px;
     background: #090b0c;
@@ -963,13 +963,14 @@ td,
   }
 
   .mobile-nav nav a {
-    min-height: 38px;
-    padding: 0 12px;
+    min-height: 34px;
+    padding: 0 10px;
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     border-radius: 4px;
     color: #fff;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 950;
     letter-spacing: .06em;
     text-transform: uppercase;
