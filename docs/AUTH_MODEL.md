@@ -273,6 +273,8 @@ Commissioner
 
 ## Launch Scope
 
+Phase 1 is governed by `docs/LAUNCH_ARCHITECTURE.md`.
+
 Build first:
 
 1. Supabase Auth setup.
@@ -302,5 +304,6 @@ Defer:
 
 ## Related Documents
 
+- `docs/LAUNCH_ARCHITECTURE.md`
 - `docs/ROSTER_MODEL.md`
 - `docs/PUBLISHING_MODEL.md`

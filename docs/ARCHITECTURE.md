@@ -171,6 +171,8 @@ Commissioner edits data
 15. Event Pages
 16. League Signup
 
+For the reduced launch sequence, use `docs/LAUNCH_ARCHITECTURE.md`.
+
 ## Development Rules
 
 Before writing code:

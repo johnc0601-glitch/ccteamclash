@@ -181,6 +181,8 @@ The event page should show:
 
 ## Implementation Order
 
+Phase 1 is governed by `docs/LAUNCH_ARCHITECTURE.md`.
+
 1. Database schema for players, teams, events, rosters, and roster players.
 2. Captain authentication and team assignment.
 3. Captain roster submission screen.
@@ -198,4 +200,5 @@ Public event pages should read published/locked roster data through services.
 
 ## Related Documents
 
+- `docs/LAUNCH_ARCHITECTURE.md`
 - `docs/AUTH_MODEL.md`

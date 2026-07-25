@@ -127,6 +127,12 @@ The public site should store image URLs in the database and render from those UR
 
 ## Database Migration Order
 
+Phase 1 deliberately does not migrate every content type.
+
+See `docs/LAUNCH_ARCHITECTURE.md` for the reduced launch build.
+
+Full migration order after launch:
+
 1. Stories and media
 2. Teams and courses
 3. Players
@@ -183,4 +189,5 @@ Every publish action should eventually record:
 ## Related Documents
 
 - `docs/AUTH_MODEL.md`
+- `docs/LAUNCH_ARCHITECTURE.md`
 - `docs/ROSTER_MODEL.md`
