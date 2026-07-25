@@ -175,6 +175,8 @@ For the reduced launch sequence, use `docs/LAUNCH_ARCHITECTURE.md`.
 
 For the smallest Phase 1 implementation spine, use `docs/IMPLEMENTATION_RETHINK.md`.
 
+For the active build order and commit sequence, use `docs/BUILD_SEQUENCE.md`.
+
 ## Development Rules
 
 Before writing code:

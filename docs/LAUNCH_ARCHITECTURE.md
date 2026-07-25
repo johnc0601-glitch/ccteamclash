@@ -250,6 +250,7 @@ After Phase 1 is stable:
 ## Related Documents
 
 - `docs/AUTH_MODEL.md`
+- `docs/BUILD_SEQUENCE.md`
 - `docs/IMPLEMENTATION_RETHINK.md`
 - `docs/ROSTER_MODEL.md`
 - `docs/PUBLISHING_MODEL.md`
