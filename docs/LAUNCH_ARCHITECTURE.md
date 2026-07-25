@@ -60,20 +60,20 @@ Building only that path avoids rewriting stable public pages before the league n
 
 ## Phase 1 Tables
 
-Build only these tables first:
+Build only the simplified Phase 1 tables first:
 
 ```text
 profiles
 player_claims
 players
 teams
-team_captains
 events
 event_rosters
 event_roster_players
-event_photos
-event_comments
+event_posts
 ```
+
+See `docs/IMPLEMENTATION_RETHINK.md` for the reduced implementation spine.
 
 ## Temporary Static Data
 
@@ -143,6 +143,8 @@ Removed
 Visible
 Removed
 ```
+
+Implementation note: Phase 1 stores both photos and comments in `event_posts` with `type: Comment | Photo`.
 
 No draft status for rosters.
 
@@ -218,7 +220,7 @@ Do not add a separate location section or location photo.
 ## Phase 1 Implementation Order
 
 1. Create Supabase project and environment configuration.
-2. Add database schema migration for Phase 1 tables.
+2. Add database schema migration for the 8 Phase 1 tables.
 3. Add Supabase server/client utilities.
 4. Add login/signup pages with Google and magic link.
 5. Add profile creation after login.
@@ -248,5 +250,6 @@ After Phase 1 is stable:
 ## Related Documents
 
 - `docs/AUTH_MODEL.md`
+- `docs/IMPLEMENTATION_RETHINK.md`
 - `docs/ROSTER_MODEL.md`
 - `docs/PUBLISHING_MODEL.md`

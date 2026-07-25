@@ -108,7 +108,9 @@ updatedAt
 
 ### team_captains
 
-Connects users to teams they can manage.
+Long-term table for connecting users to teams they can manage.
+
+Phase 1 does not require this table. Use `profiles.captainTeamId` for launch.
 
 ```text
 id
@@ -144,12 +146,13 @@ Players selected for a roster.
 id
 eventRosterId
 playerId
-source
 createdAt
 updatedAt
 ```
 
-Allowed source values:
+Phase 1 does not track source. Add source later only if it becomes operationally useful.
+
+Future allowed source values:
 
 ```text
 Team
@@ -200,5 +203,6 @@ Public event pages should read published/locked roster data through services.
 
 ## Related Documents
 
+- `docs/IMPLEMENTATION_RETHINK.md`
 - `docs/LAUNCH_ARCHITECTURE.md`
 - `docs/AUTH_MODEL.md`

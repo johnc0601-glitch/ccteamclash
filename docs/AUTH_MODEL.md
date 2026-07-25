@@ -119,6 +119,7 @@ displayName
 role
 status
 playerId
+captainTeamId
 createdAt
 updatedAt
 ```
@@ -251,25 +252,23 @@ Actions:
 
 ## Captain Assignment
 
-Captains are assigned through a team relationship.
+Phase 1 assigns captains directly on the profile.
 
 ```text
-team_captains
-- id
-- teamId
-- userId
-- active
-- createdAt
-- updatedAt
+profiles.captainTeamId
 ```
+
+This assumes one captain profile manages one team at launch.
 
 A user can be:
 
 ```text
 Player
-Captain of one or more teams
+Captain of one team
 Commissioner
 ```
+
+If the league later needs multiple captains per team or one user managing multiple teams, add a `team_captains` table in Phase 2.
 
 ## Launch Scope
 
@@ -304,6 +303,7 @@ Defer:
 
 ## Related Documents
 
+- `docs/IMPLEMENTATION_RETHINK.md`
 - `docs/LAUNCH_ARCHITECTURE.md`
 - `docs/ROSTER_MODEL.md`
 - `docs/PUBLISHING_MODEL.md`

@@ -173,6 +173,8 @@ Commissioner edits data
 
 For the reduced launch sequence, use `docs/LAUNCH_ARCHITECTURE.md`.
 
+For the smallest Phase 1 implementation spine, use `docs/IMPLEMENTATION_RETHINK.md`.
+
 ## Development Rules
 
 Before writing code:
