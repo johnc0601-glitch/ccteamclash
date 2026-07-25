@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import {MobileAccountLink} from '@/components/MobileAccountLink';
 import {BRAND_LOGO, BRAND_NAME, BRAND_TAGLINE, FOOTER_COPY} from '@/shared/constants';
 
 export function SiteHeader() {
@@ -24,7 +25,7 @@ export function SiteHeader() {
           <Link className="post-nav" href="/admin">Create post</Link>
           <Link href="/account">Account</Link>
         </nav>
-        <Link className="mobile-sign-in" href="/account">Sign in</Link>
+        <MobileAccountLink />
         <div className="mobile-header-actions">
           <details className="mobile-nav">
             <summary>Menu</summary>
