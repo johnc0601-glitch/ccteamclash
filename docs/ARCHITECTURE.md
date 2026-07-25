@@ -14,6 +14,7 @@ Users never edit public pages directly.
 Presentation Layer
   - Public Website
   - Commissioner Office
+  - Captain Portal
 
         |
         v
@@ -27,6 +28,7 @@ Application Layer
   - Standings Service
   - Story Service
   - Course Service
+  - Roster Service
 
         |
         v
@@ -72,12 +74,21 @@ docs/
 - Media
 - Settings
 
+### Captain Portal
+
+- Upcoming Events
+- Submit Roster
+- Search Player Pool
+- Add Player
+- Submitted Rosters
+
 ### Public Site
 
 - Home
 - Teams
 - Players
 - Schedule
+- Events
 - Results
 - Standings
 - Stories
@@ -129,6 +140,7 @@ Commissioner edits data
 - `StoryService`
 - `CourseService`
 - `MediaService`
+- `RosterService`
 
 ## Build Order
 
@@ -145,6 +157,8 @@ Commissioner edits data
 11. Media Library
 12. Settings
 13. Public Website Automation
+14. Captain Portal
+15. Event Pages
 
 ## Development Rules
 

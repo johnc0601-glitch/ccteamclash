@@ -67,7 +67,9 @@ Players are permanent people records.
 Active -> Archived
 ```
 
-Current team assignment should come from season/roster records, not the base player record.
+Players may have a default/current team for display convenience.
+
+Actual match participation comes from event rosters and match results, not the base player record.
 
 ### Courses
 
@@ -98,6 +100,18 @@ Imported -> Validated -> Previewed -> Applied -> Published
 ```
 
 Results should update standings, rankings, and player history only after they are applied and published.
+
+### Event Rosters
+
+Captains select rosters for each scheduled event.
+
+```text
+Open -> Submitted -> Locked
+```
+
+There is no Draft status for rosters.
+
+Captains can edit rosters while they are Open or Submitted. Locked rosters require Commissioner action to reopen.
 
 ## Storage Plan
 
@@ -165,3 +179,7 @@ Every publish action should eventually record:
 - previous status
 - new status
 - source import, when applicable
+
+## Related Documents
+
+- `docs/ROSTER_MODEL.md`
