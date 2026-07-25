@@ -11,10 +11,14 @@ import type {
   SubmitEventRosterInput,
   SubmitPlayerClaimInput,
 } from '@/domain/launch/LaunchData';
-import {createSlug} from '@/shared/utils';
+import {createSlug} from '@/shared/utils/slug';
 
 export class LaunchService {
-  constructor(private readonly repository: LaunchRepository) {}
+  private readonly repository: LaunchRepository;
+
+  constructor(repository: LaunchRepository) {
+    this.repository = repository;
+  }
 
   async createPendingProfile(input: CreatePendingProfileInput): Promise<LaunchServiceResult<LaunchProfile>> {
     const displayName = input.displayName.trim();
