@@ -124,3 +124,88 @@ alter table public.launch_events enable row level security;
 alter table public.launch_event_rosters enable row level security;
 alter table public.launch_event_roster_players enable row level security;
 alter table public.launch_event_posts enable row level security;
+
+grant usage on schema public to authenticated;
+grant select on public.launch_players to authenticated;
+grant select on public.launch_teams to authenticated;
+grant select, insert, update on public.launch_profiles to authenticated;
+grant select, insert on public.launch_player_claims to authenticated;
+
+drop policy if exists "launch users read own profile" on public.launch_profiles;
+create policy "launch users read own profile"
+on public.launch_profiles
+for select
+to authenticated
+using ((select auth.uid()) = user_id);
+
+drop policy if exists "launch users create pending profile" on public.launch_profiles;
+create policy "launch users create pending profile"
+on public.launch_profiles
+for insert
+to authenticated
+with check (
+  (select auth.uid()) = user_id
+  and role = 'Player'
+  and status = 'Pending'
+  and player_id is null
+  and captain_team_id is null
+);
+
+drop policy if exists "launch users update own pending profile" on public.launch_profiles;
+create policy "launch users update own pending profile"
+on public.launch_profiles
+for update
+to authenticated
+using ((select auth.uid()) = user_id and status = 'Pending')
+with check (
+  (select auth.uid()) = user_id
+  and role = 'Player'
+  and status = 'Pending'
+  and player_id is null
+  and captain_team_id is null
+);
+
+drop policy if exists "launch users read active players" on public.launch_players;
+create policy "launch users read active players"
+on public.launch_players
+for select
+to authenticated
+using (active = true);
+
+drop policy if exists "launch users read active teams" on public.launch_teams;
+create policy "launch users read active teams"
+on public.launch_teams
+for select
+to authenticated
+using (active = true);
+
+drop policy if exists "launch users read own claims" on public.launch_player_claims;
+create policy "launch users read own claims"
+on public.launch_player_claims
+for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.launch_profiles profile
+    where profile.id = launch_player_claims.profile_id
+      and profile.user_id = (select auth.uid())
+  )
+);
+
+drop policy if exists "launch users create own claims" on public.launch_player_claims;
+create policy "launch users create own claims"
+on public.launch_player_claims
+for insert
+to authenticated
+with check (
+  status = 'Pending'
+  and reviewed_at is null
+  and reviewed_by is null
+  and exists (
+    select 1
+    from public.launch_profiles profile
+    where profile.id = launch_player_claims.profile_id
+      and profile.user_id = (select auth.uid())
+  )
+);

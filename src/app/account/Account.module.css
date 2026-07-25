@@ -1,0 +1,199 @@
+.shell {
+  min-height: 70vh;
+  padding: 72px 0 96px;
+}
+
+.header {
+  max-width: 760px;
+  margin-bottom: 30px;
+}
+
+.eyebrow {
+  color: var(--cc-teal);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.header h1 {
+  margin: 10px 0 16px;
+  color: var(--cc-heading);
+  font-family: var(--cc-font-display);
+  font-size: clamp(46px, 7vw, 82px);
+  font-style: italic;
+  letter-spacing: -.04em;
+  line-height: .94;
+  text-transform: uppercase;
+}
+
+.header p,
+.panel p,
+.muted {
+  color: var(--cc-body-text);
+  line-height: 1.6;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.panel,
+.accountBar,
+.notice,
+.error {
+  border: 1px solid var(--cc-card-border);
+  border-radius: 8px;
+  background: var(--cc-card-bg);
+  box-shadow: var(--cc-card-shadow);
+}
+
+.panel {
+  padding: 26px;
+}
+
+.panel h2 {
+  margin: 10px 0 12px;
+  color: var(--cc-heading);
+  font-family: var(--cc-font-display);
+  font-size: 31px;
+  font-style: italic;
+  letter-spacing: -.03em;
+  text-transform: uppercase;
+}
+
+.form {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.form label {
+  color: var(--cc-heading);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.form input,
+.form select {
+  min-height: 46px;
+  width: 100%;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 5px;
+  background: var(--cc-surface);
+  color: var(--cc-heading);
+  font: inherit;
+  padding: 0 13px;
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: 46px;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.primaryButton {
+  border: 1px solid var(--cc-bronze);
+  background: var(--cc-bronze);
+  color: #fff;
+}
+
+.secondaryButton {
+  border: 1px solid var(--cc-card-border);
+  background: transparent;
+  color: var(--cc-heading);
+  padding: 0 16px;
+}
+
+.accountBar {
+  margin-bottom: 18px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.accountBar strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--cc-heading);
+}
+
+.notice,
+.error {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  font-weight: 800;
+}
+
+.notice {
+  border-left: 4px solid var(--cc-teal);
+}
+
+.error {
+  border-left: 4px solid #b43b3b;
+}
+
+.statusList {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0 0;
+}
+
+.statusList div {
+  padding-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  border-top: 1px solid var(--cc-card-border);
+}
+
+.statusList dt {
+  color: var(--cc-muted);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.statusList dd {
+  margin: 0;
+  color: var(--cc-heading);
+  font-weight: 900;
+  text-align: right;
+}
+
+.claimState {
+  padding: 12px 14px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 5px;
+  background: var(--cc-card-bg-soft);
+}
+
+@media (max-width: 760px) {
+  .shell {
+    padding: 48px 0 68px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .accountBar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .secondaryButton {
+    width: 100%;
+  }
+}

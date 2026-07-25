@@ -23,6 +23,7 @@ export function SiteHeader() {
           <Link href="/players">Players</Link>
           <Link href="/courses">Courses</Link>
           <Link className="post-nav" href="/admin">Create post</Link>
+          <Link href="/account">Account</Link>
         </nav>
         <ThemeToggle />
       </div>
