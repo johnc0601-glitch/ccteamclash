@@ -13,7 +13,7 @@ export function SiteHeader() {
           </span>
           <span><strong>{BRAND_NAME}</strong><small>{BRAND_TAGLINE}</small></span>
         </Link>
-        <nav>
+        <nav className="desktop-nav">
           <Link href="/">Home</Link>
           <Link href="/stories">Stories</Link>
           <Link href="/schedule">Schedule</Link>
@@ -25,6 +25,20 @@ export function SiteHeader() {
           <Link className="post-nav" href="/admin">Create post</Link>
           <Link href="/account">Account</Link>
         </nav>
+        <details className="mobile-nav">
+          <summary>Menu</summary>
+          <nav>
+            <Link href="/">Home</Link>
+            <Link href="/account">Account</Link>
+            <Link href="/rankings">Rankings</Link>
+            <Link href="/teams">Teams</Link>
+            <Link href="/players">Players</Link>
+            <Link href="/courses">Courses</Link>
+            <Link href="/schedule">Schedule</Link>
+            <Link href="/standings">Standings</Link>
+            <Link href="/stories">Stories</Link>
+          </nav>
+        </details>
         <ThemeToggle />
       </div>
     </header>
