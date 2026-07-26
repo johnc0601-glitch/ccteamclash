@@ -4,11 +4,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {useEffect, useState} from 'react';
 import type {Team} from '@/models/Team';
-import type {Match} from '@/shared/types';
 import {createSlug} from '@/shared/utils';
+import type {PublicEvent} from '@/services/matches/EventService';
 
 type RotatingMatchCardProps = {
-  matches: Match[];
+  matches: PublicEvent[];
   teams: Team[];
 };
 
@@ -49,8 +49,8 @@ export function RotatingMatchCard({matches, teams}: RotatingMatchCardProps) {
   return (
     <article className="dark-panel story-home-card next-match-card">
       <div>
-        <span className="panel-title">Upcoming</span>
-        <h2>Next match</h2>
+        <span className="panel-title">{match.bucket === 'upcoming' ? 'Upcoming' : 'Recent'}</span>
+        <h2>{match.bucket === 'upcoming' ? 'Next match' : 'Latest match'}</h2>
       </div>
       <div className="story-matchup">
         <Link className="match-team-link" href={`/teams/${createSlug(match.home)}`}>
@@ -69,7 +69,7 @@ export function RotatingMatchCard({matches, teams}: RotatingMatchCardProps) {
         <p><span>COURSE</span>{match.course}</p>
       </div>
       <div className="match-card-footer">
-        <Link href="/schedule" className="gold-link">Full schedule -&gt;</Link>
+        <Link href={match.href} className="gold-link">Match page -&gt;</Link>
         {matches.length > 1 ? <span>{matchIndex + 1} / {matches.length}</span> : null}
       </div>
     </article>

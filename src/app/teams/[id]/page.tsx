@@ -5,9 +5,11 @@ import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
 import {services} from '@/core/ServiceContainer';
 import {getHistoricalTeamSeasonSummaries, getHistoricalTeamSeedSummary} from '@/data/historicalSeed';
+import {getTeamEvents, getTeamNextEvent, type TeamEvent} from '@/services/matches/EventService';
 import {getStoredCourses} from '@/services/courses/CourseStore';
 import {getStoredTeamById, getStoredTeams} from '@/services/teams/TeamStore';
 import type {RecordSummary} from '@/services/statistics';
+import {createSlug} from '@/shared/utils';
 import styles from './TeamDetail.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -51,9 +53,12 @@ export default async function TeamPage({params}: TeamPageProps) {
   const displayStatistics = historicalStatistics ?? currentStatistics;
   const historicalHistory = getHistoricalTeamSeasonSummaries(team.id);
   const history = seasonStatistics.filter(({statistics}) => statistics.matchesPlayed > 0);
+  const nextMatch = getTeamNextEvent(team.name);
+  const teamEvents = getTeamEvents(team.name);
   const homeCourses = courses.filter((course) =>
     team.homeCourse && sameCourse(team.homeCourse, course.name));
   const displayedHomeCourseName = homeCourses[0]?.name ?? team.homeCourse;
+  const courseDirections = new Map(courses.map((course) => [createSlug(course.name), course.mapUrl]));
 
   return (
     <>
@@ -92,6 +97,15 @@ export default async function TeamPage({params}: TeamPageProps) {
           </section>
 
           {team.description ? <p className={styles.description}>{team.description}</p> : null}
+
+          <section className={styles.section}>
+            <header className={styles.sectionHeader}>
+              <span>Team schedule</span>
+              <h2>Matchdays</h2>
+            </header>
+            {nextMatch ? <NextMatchCard event={nextMatch} courseDirections={courseDirections} /> : null}
+            <TeamSchedule events={teamEvents} courseDirections={courseDirections} />
+          </section>
 
           <section className={styles.section}>
             <header className={styles.sectionHeader}>
@@ -149,4 +163,69 @@ export default async function TeamPage({params}: TeamPageProps) {
 
 function sameCourse(left: string, right: string): boolean {
   return left.trim().toLocaleLowerCase() === right.trim().toLocaleLowerCase();
+}
+
+function findDirections(courseName: string, courseDirections: Map<string, string>): string | undefined {
+  const courseSlug = createSlug(courseName);
+  const exact = courseDirections.get(courseSlug);
+  if (exact) return exact;
+
+  for (const [candidate, directions] of courseDirections) {
+    const sharedWords = candidate
+      .split('-')
+      .filter((word) => word.length > 3 && courseSlug.includes(word));
+    if (sharedWords.length >= 2) return directions;
+  }
+
+  return undefined;
+}
+
+function NextMatchCard({event, courseDirections}: {
+  event: TeamEvent;
+  courseDirections: Map<string, string>;
+}) {
+  const directions = findDirections(event.course, courseDirections);
+
+  return (
+    <div className={styles.nextMatch}>
+      <div>
+        <span>Next match</span>
+        <h3>{event.isHome ? 'Home vs' : 'Away at'} {event.opponent}</h3>
+        <p>
+          {event.date} / {event.time} /{' '}
+          {directions ? <a href={directions} target="_blank" rel="noreferrer">{event.course}</a> : event.course}
+        </p>
+      </div>
+      <Link href={event.href}>Match page</Link>
+    </div>
+  );
+}
+
+function TeamSchedule({events, courseDirections}: {
+  events: TeamEvent[];
+  courseDirections: Map<string, string>;
+}) {
+  if (!events.length) {
+    return <p className={styles.empty}>No scheduled matchdays have been posted for this team yet.</p>;
+  }
+
+  return (
+    <div className={styles.matchHistoryWrap}>
+      <table>
+        <thead><tr><th>Date</th><th>Opponent</th><th>Course</th><th>Status</th><th>Page</th></tr></thead>
+        <tbody>{events.map((event) => {
+          const directions = findDirections(event.course, courseDirections);
+          return (
+            <tr key={event.id}>
+              <td><strong>{event.date}</strong><small>{event.time}</small></td>
+              <td>{event.isHome ? 'vs' : 'at'} {event.opponent}</td>
+              <td>{directions ? <a href={directions} target="_blank" rel="noreferrer">{event.course}</a> : event.course}</td>
+              <td>{event.status}</td>
+              <td><Link href={event.href}>Open</Link></td>
+            </tr>
+          );
+        })}</tbody>
+      </table>
+    </div>
+  );
 }

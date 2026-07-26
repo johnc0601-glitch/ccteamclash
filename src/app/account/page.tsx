@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ThemeToggle} from '@/components/ThemeToggle';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
@@ -213,6 +214,12 @@ function MemberProfile({
             <dd>{linkedPlayer?.name ?? 'Not linked yet'}</dd>
           </div>
         </dl>
+        {profile.role === 'Captain' ? (
+          <Link className={styles.actionLink} href="/captain">Open Captain Home</Link>
+        ) : null}
+        {profile.role === 'Commissioner' ? (
+          <Link className={styles.actionLink} href="/office">Open Commissioner Office</Link>
+        ) : null}
       </article>
 
       <article className={styles.panel}>

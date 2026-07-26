@@ -1,5 +1,6 @@
 import {OfficePage} from '@/components/commissioner/OfficePage';
 import {LaunchPlayerManagement} from '@/components/launch/LaunchPlayerManagement';
+import {MemberManagement} from '@/components/launch/MemberManagement';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
@@ -41,14 +42,24 @@ export default async function OfficePlayersPage({searchParams}: OfficePlayersPag
     );
   }
 
-  const [players, teams] = await Promise.all([
+  const [players, teams, profiles, claims] = await Promise.all([
     repository.getPlayers(),
     repository.getTeams(),
+    repository.getProfiles(),
+    repository.getPlayerClaims(),
   ]);
 
   return (
     <OfficePage sectionId="players">
       <LaunchPlayerManagement error={error} notice={notice} players={players} teams={teams} />
+      <MemberManagement
+        claims={claims}
+        commissionerProfileId={commissionerProfile.id}
+        players={players}
+        profiles={profiles}
+        showMessages={false}
+        teams={teams}
+      />
     </OfficePage>
   );
 }

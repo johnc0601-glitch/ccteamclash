@@ -114,6 +114,23 @@
   padding: 0 16px;
 }
 
+.actionLink {
+  min-height: 46px;
+  margin-top: 18px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--cc-bronze);
+  border-radius: 4px;
+  background: var(--cc-bronze);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
 .accountBar {
   margin-bottom: 18px;
   padding: 18px 20px;

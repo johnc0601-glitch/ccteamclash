@@ -1239,3 +1239,32 @@ td,
     width: 100%;
   }
 }
+
+.schedule-group {
+  border-bottom: 1px solid var(--cc-card-border);
+}
+
+.schedule-group:last-child {
+  border-bottom: 0;
+}
+
+.schedule-group h2 {
+  margin: 0;
+  padding: 16px 25px;
+  border-bottom: 1px solid var(--cc-card-border);
+  background: var(--cc-table-head-bg);
+  color: var(--cc-table-head-text);
+  font-family: var(--cc-font-display);
+  font-size: 22px;
+  font-style: italic;
+  letter-spacing: -.03em;
+  text-transform: uppercase;
+}
+
+.schedule-group small a {
+  color: #006f71;
+  font-weight: 900;
+  text-decoration: underline;
+  text-decoration-color: #a27752;
+  text-underline-offset: 3px;
+}

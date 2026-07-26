@@ -17,13 +17,8 @@ export const OFFICE_SECTIONS = {
   },
   players: {
     title: 'Players',
-    description: 'Maintain the league player directory and team associations.',
+    description: 'Maintain players, account approvals, player claims, and captain access.',
     href: '/office/players',
-  },
-  members: {
-    title: 'Members',
-    description: 'Approve league accounts, link player claims, and assign captain access.',
-    href: '/office/members',
   },
   seasons: {
     title: 'Seasons',

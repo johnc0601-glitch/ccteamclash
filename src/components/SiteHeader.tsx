@@ -1,9 +1,16 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import {MobileAccountLink} from '@/components/MobileAccountLink';
+import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
+import {hasSupabaseConfig} from '@/lib/supabase';
+import {createClient} from '@/lib/supabase/server';
 import {BRAND_LOGO, BRAND_NAME, BRAND_TAGLINE, FOOTER_COPY} from '@/shared/constants';
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const headerAccess = await getHeaderAccess();
+  const canOpenOffice = headerAccess === 'commissioner';
+  const canOpenCaptain = headerAccess === 'captain';
+
   return (
     <header className="site-header">
       <div className="shell nav-wrap">
@@ -23,6 +30,8 @@ export function SiteHeader() {
           <Link href="/players">Players</Link>
           <Link href="/courses">Courses</Link>
           <Link className="post-nav" href="/admin">Create post</Link>
+          {canOpenOffice ? <Link href="/office">Office</Link> : null}
+          {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
           <Link href="/account">Account</Link>
         </nav>
         <MobileAccountLink />
@@ -38,12 +47,32 @@ export function SiteHeader() {
               <Link href="/schedule">Schedule</Link>
               <Link href="/standings">Standings</Link>
               <Link href="/stories">Stories</Link>
+              {canOpenOffice ? <Link href="/office">Office</Link> : null}
+              {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
             </nav>
           </details>
         </div>
       </div>
     </header>
   );
+}
+
+async function getHeaderAccess(): Promise<'commissioner' | 'captain' | null> {
+  if (!hasSupabaseConfig()) return null;
+
+  try {
+    const supabase = await createClient();
+    const {data: {user}} = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const repository = new SupabaseLaunchRepository(supabase);
+    const profile = await repository.getProfileByUserId(user.id);
+    if (profile?.role === 'Commissioner' && profile.status === 'Approved') return 'commissioner';
+    if (profile?.role === 'Captain' && profile.status === 'Approved') return 'captain';
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 export function Footer() {

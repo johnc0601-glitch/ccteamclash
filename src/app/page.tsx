@@ -2,7 +2,8 @@ import Link from 'next/link';
 import type {ReactNode} from 'react';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {RotatingMatchCard} from '@/components/RotatingMatchCard';
-import {matches, teams} from '@/lib-data';
+import {teams} from '@/lib-data';
+import {getHomePageEvents} from '@/services/matches/EventService';
 import {getStoredTeams} from '@/services/teams/TeamStore';
 import {getStories} from '@/services/stories/StoryService';
 
@@ -13,6 +14,7 @@ export default async function Home() {
   const lead = stories[0];
   const topTeams = teams.slice(0, 3);
   const teamLogos = await getStoredTeams();
+  const homeEvents = getHomePageEvents();
 
   return (
     <main className="home-page">
@@ -33,7 +35,7 @@ export default async function Home() {
       ) : null}
 
       <section className="shell story-home-stack">
-        <RotatingMatchCard matches={matches} teams={teamLogos} />
+        <RotatingMatchCard matches={homeEvents} teams={teamLogos} />
 
         <article className="dark-panel story-home-card">
           <div>

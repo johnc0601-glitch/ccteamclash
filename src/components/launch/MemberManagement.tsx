@@ -7,7 +7,7 @@ import {
   rejectClaim,
   rejectProfile,
   suspendProfile,
-} from '@/app/office/members/actions';
+} from '@/app/office/players/actions';
 import styles from './MemberManagement.module.css';
 
 type MemberManagementProps = {
@@ -17,6 +17,7 @@ type MemberManagementProps = {
   notice?: string;
   players?: LaunchPlayer[];
   profiles?: LaunchProfile[];
+  showMessages?: boolean;
   teams?: LaunchTeam[];
 };
 
@@ -27,6 +28,7 @@ export function MemberManagement({
   notice,
   players = [],
   profiles = [],
+  showMessages = true,
   teams = [],
 }: MemberManagementProps) {
   const pendingClaims = claims.filter((claim) => claim.status === 'Pending');
@@ -34,14 +36,20 @@ export function MemberManagement({
   const captainProfiles = profiles.filter((profile) => profile.role === 'Captain');
 
   return (
-    <section aria-label="Member workflow">
-      {notice ? <p className={styles.notice}>{notice}</p> : null}
-      {error ? (
+    <section className={styles.management} aria-label="League account workflow">
+      {showMessages && notice ? <p className={styles.notice}>{notice}</p> : null}
+      {showMessages && error ? (
         <div className={styles.error}>
           <p>{error}</p>
           {error.includes('Sign in') ? <Link href="/account">Open account sign in</Link> : null}
         </div>
       ) : null}
+
+      <header className={styles.sectionIntro}>
+        <span>League accounts</span>
+        <h2>Claims and access</h2>
+        <p>Approve account requests, connect accounts to player records, and assign captain team access.</p>
+      </header>
 
       <div className={styles.summaryGrid}>
         <SummaryCard label="Pending claims" value={pendingClaims.length} />
