@@ -92,6 +92,12 @@ export class SupabaseLaunchRepository implements LaunchRepository {
     return data ? toPlayer(data) : undefined;
   }
 
+  async savePlayer(player: LaunchPlayer): Promise<LaunchPlayer> {
+    const {data, error} = await this.supabase.from('launch_players').upsert(fromPlayer(player)).select().single();
+    if (error) throw error;
+    return toPlayer(data);
+  }
+
   async getTeams(): Promise<LaunchTeam[]> {
     const {data, error} = await this.supabase.from('launch_teams').select('*').order('name');
     if (error) throw error;
@@ -268,6 +274,21 @@ function toPlayer(row: PlayerRow): LaunchPlayer {
     active: row.active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function fromPlayer(player: LaunchPlayer): PlayerRow {
+  return {
+    id: player.id,
+    name: player.name,
+    gender: player.gender,
+    pdga_number: player.pdgaNumber,
+    pdga_rating: player.pdgaRating,
+    current_team_id: player.currentTeamId,
+    home_area: player.homeArea,
+    active: player.active,
+    created_at: player.createdAt,
+    updated_at: player.updatedAt,
   };
 }
 

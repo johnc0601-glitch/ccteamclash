@@ -20,6 +20,7 @@ export interface LaunchRepository {
   savePlayerClaim(claim: PlayerClaim): Promise<PlayerClaim>;
   getPlayers(): Promise<LaunchPlayer[]>;
   getPlayer(id: string): Promise<LaunchPlayer | undefined>;
+  savePlayer(player: LaunchPlayer): Promise<LaunchPlayer>;
   getTeams(): Promise<LaunchTeam[]>;
   getTeam(id: string): Promise<LaunchTeam | undefined>;
   getEvents(): Promise<LaunchEvent[]>;
@@ -92,6 +93,11 @@ export class MockLaunchRepository implements LaunchRepository {
 
   async getPlayer(id: string): Promise<LaunchPlayer | undefined> {
     return cloneFound(this.players.find((player) => player.id === id));
+  }
+
+  async savePlayer(player: LaunchPlayer): Promise<LaunchPlayer> {
+    this.players = upsert(this.players, player);
+    return clone(player);
   }
 
   async getTeams(): Promise<LaunchTeam[]> {

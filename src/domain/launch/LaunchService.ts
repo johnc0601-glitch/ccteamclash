@@ -6,8 +6,10 @@ import type {
   EventRoster,
   EventRosterPlayer,
   LaunchProfile,
+  LaunchPlayer,
   LaunchServiceResult,
   PlayerClaim,
+  SaveLaunchPlayerInput,
   SubmitEventRosterInput,
   SubmitPlayerClaimInput,
 } from '@/domain/launch/LaunchData';
@@ -106,6 +108,44 @@ export class LaunchService {
         status: 'Approved',
         reviewedAt: timestamp,
         reviewedBy: commissioner.data.id,
+      }),
+    };
+  }
+
+  async savePlayer(
+    input: SaveLaunchPlayerInput,
+    commissionerProfileId: string,
+  ): Promise<LaunchServiceResult<LaunchPlayer>> {
+    const commissioner = await this.requireCommissioner(commissionerProfileId);
+    if (!commissioner.ok) return commissioner;
+
+    const name = input.name.trim();
+    if (!name) return failure('Player name is required.');
+    if (!['Male', 'Female', 'Unknown'].includes(input.gender)) return failure('Gender is invalid.');
+    if (input.pdgaRating !== null && (input.pdgaRating < 0 || input.pdgaRating > 1200)) {
+      return failure('PDGA rating must be between 0 and 1200.');
+    }
+    if (input.currentTeamId && !await this.repository.getTeam(input.currentTeamId)) {
+      return failure('Team not found.');
+    }
+
+    const existingPlayer = input.playerId ? await this.repository.getPlayer(input.playerId) : undefined;
+    if (input.playerId && !existingPlayer) return failure('Player not found.');
+
+    const timestamp = now();
+    return {
+      ok: true,
+      data: await this.repository.savePlayer({
+        id: existingPlayer?.id ?? createId('player', name),
+        name,
+        gender: input.gender,
+        pdgaNumber: input.pdgaNumber.trim(),
+        pdgaRating: input.pdgaRating,
+        currentTeamId: input.currentTeamId,
+        homeArea: existingPlayer?.homeArea ?? '',
+        active: input.active,
+        createdAt: existingPlayer?.createdAt ?? timestamp,
+        updatedAt: timestamp,
       }),
     };
   }

@@ -117,6 +117,16 @@ export type CreatePendingProfileInput = {
   displayName: string;
 };
 
+export type SaveLaunchPlayerInput = {
+  playerId?: string;
+  name: string;
+  gender: LaunchPlayer['gender'];
+  pdgaNumber: string;
+  pdgaRating: number | null;
+  currentTeamId: string | null;
+  active: boolean;
+};
+
 export type SubmitPlayerClaimInput = {
   profileId: string;
   requestedPlayerId: string | null;
