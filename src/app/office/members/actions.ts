@@ -43,6 +43,19 @@ export async function suspendProfile(formData: FormData) {
   await setProfileStatus(formData, 'Suspended', 'Profile suspended.');
 }
 
+export async function assignCaptain(formData: FormData) {
+  const {commissionerProfileId, service} = await getCommissionerService();
+  const profileId = readFormValue(formData, 'profileId');
+  const teamId = readFormValue(formData, 'teamId') || null;
+  if (!profileId) redirect('/office/members?error=Profile is required.');
+
+  const result = await service.assignCaptainTeam(profileId, teamId, commissionerProfileId);
+  if (!result.ok) redirect(`/office/members?error=${encodeURIComponent(result.message)}`);
+
+  revalidatePath('/office/members');
+  redirect(`/office/members?notice=${encodeURIComponent(teamId ? 'Captain access updated.' : 'Captain access removed.')}`);
+}
+
 async function setProfileStatus(formData: FormData, status: 'Approved' | 'Rejected' | 'Suspended', notice: string) {
   const {commissionerProfileId, service} = await getCommissionerService();
   const profileId = readFormValue(formData, 'profileId');

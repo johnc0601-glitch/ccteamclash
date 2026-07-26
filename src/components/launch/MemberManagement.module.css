@@ -147,14 +147,16 @@
   gap: 10px;
 }
 
-.reviewForm label {
+.reviewForm label,
+.captainForm label {
   color: #111516;
   font-size: 11px;
   font-weight: 950;
   text-transform: uppercase;
 }
 
-.reviewForm select {
+.reviewForm select,
+.captainForm select {
   width: 100%;
   min-height: 42px;
   border: 1px solid #cfd4ce;
@@ -162,6 +164,20 @@
   background: #fff;
   color: #111516;
   font: inherit;
+}
+
+.captainForm {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid #eceee8;
+}
+
+.captainForm div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
 }
 
 .actions {

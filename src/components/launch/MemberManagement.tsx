@@ -1,6 +1,13 @@
 import Link from 'next/link';
 import type {LaunchPlayer, LaunchProfile, LaunchTeam, PlayerClaim} from '@/domain/launch/LaunchData';
-import {approveClaim, approveProfile, rejectClaim, rejectProfile, suspendProfile} from '@/app/office/members/actions';
+import {
+  approveClaim,
+  approveProfile,
+  assignCaptain,
+  rejectClaim,
+  rejectProfile,
+  suspendProfile,
+} from '@/app/office/members/actions';
 import styles from './MemberManagement.module.css';
 
 type MemberManagementProps = {
@@ -98,6 +105,9 @@ export function MemberManagement({
                   {getPlayerSummary(players, profile.playerId)}
                 </span>
                 <span className={styles.muted}>{getTeamSummary(teams, profile.captainTeamId)}</span>
+                {profile.status === 'Approved' && profile.id !== commissionerProfileId ? (
+                  <CaptainAssignment profile={profile} teams={teams} />
+                ) : null}
                 <div className={styles.actions}>
                   {profile.status !== 'Approved' ? (
                     <ProfileAction action={approveProfile} label="Approve" profileId={profile.id} />
@@ -126,6 +136,24 @@ function SummaryCard({label, value}: {label: string; value: number}) {
       <span>{label}</span>
       <strong>{value}</strong>
     </article>
+  );
+}
+
+function CaptainAssignment({profile, teams}: {profile: LaunchProfile; teams: LaunchTeam[]}) {
+  return (
+    <form className={styles.captainForm} action={assignCaptain}>
+      <input name="profileId" type="hidden" value={profile.id} />
+      <label htmlFor={`captain-team-${profile.id}`}>Captain access</label>
+      <div>
+        <select id={`captain-team-${profile.id}`} name="teamId" defaultValue={profile.captainTeamId ?? ''}>
+          <option value="">Player only</option>
+          {teams.map((team) => (
+            <option key={team.id} value={team.id}>{team.name}</option>
+          ))}
+        </select>
+        <button className={styles.primaryButton} type="submit">Save</button>
+      </div>
+    </form>
   );
 }
 
