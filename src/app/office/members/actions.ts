@@ -2,6 +2,7 @@ export {
   approveClaim,
   approveProfile,
   assignCaptain,
+  linkProfileToPlayer,
   rejectClaim,
   rejectProfile,
   suspendProfile,

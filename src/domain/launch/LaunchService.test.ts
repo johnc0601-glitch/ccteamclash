@@ -182,6 +182,22 @@ test('LaunchService uses submitted player spelling when a claim is approved', as
   assert.equal((await repository.getProfile('pending-1'))?.displayName, 'Stephen Ajoy');
 });
 
+test('LaunchService lets commissioners link an unclaimed account to a player', async () => {
+  const {repository, service} = createService();
+
+  const linked = await service.linkProfileToPlayer('pending-1', 'player-2', 'commissioner-1');
+
+  assert.equal(linked.ok, true);
+  if (!linked.ok) return;
+
+  assert.equal(linked.data.status, 'Approved');
+  assert.equal(linked.data.playerId, 'player-2');
+  assert.equal((await repository.getPlayer('player-2'))?.name, 'Pending Player');
+
+  const blockedDuplicate = await service.linkProfileToPlayer('captain-1', 'player-2', 'commissioner-1');
+  assert.equal(blockedDuplicate.ok, false);
+});
+
 test('LaunchService assigns one captain team from commissioner approval', async () => {
   const {service} = createService();
 

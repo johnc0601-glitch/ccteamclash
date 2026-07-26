@@ -85,6 +85,21 @@ export async function assignCaptain(formData: FormData) {
   redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent(teamId ? 'Captain access updated.' : 'Captain access removed.')}`);
 }
 
+export async function linkProfileToPlayer(formData: FormData) {
+  const {commissionerProfileId, service} = await getCommissionerService();
+  const profileId = readFormValue(formData, 'profileId');
+  const playerId = readFormValue(formData, 'playerId');
+  const useProfileName = readFormValue(formData, 'useProfileName') === 'true';
+  if (!profileId) redirect(`${PLAYERS_PATH}?error=Profile is required.`);
+  if (!playerId) redirect(`${PLAYERS_PATH}?error=Player is required.`);
+
+  const result = await service.linkProfileToPlayer(profileId, playerId, commissionerProfileId, useProfileName);
+  if (!result.ok) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(result.message)}`);
+
+  revalidatePeoplePages();
+  redirect(`${PLAYERS_PATH}?notice=Account linked to player record.`);
+}
+
 async function setProfileStatus(formData: FormData, status: 'Approved' | 'Rejected' | 'Suspended', notice: string) {
   const {commissionerProfileId, service} = await getCommissionerService();
   const profileId = readFormValue(formData, 'profileId');

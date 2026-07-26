@@ -235,6 +235,50 @@ export class LaunchService {
     };
   }
 
+  async linkProfileToPlayer(
+    profileId: string,
+    playerId: string,
+    commissionerProfileId: string,
+    useProfileName = true,
+  ): Promise<LaunchServiceResult<LaunchProfile>> {
+    const commissioner = await this.requireCommissioner(commissionerProfileId);
+    if (!commissioner.ok) return commissioner;
+
+    const profile = await this.repository.getProfile(profileId);
+    if (!profile) return failure('Profile not found.');
+    if (profile.role === 'Commissioner') return failure('Commissioner accounts are not linked to player records here.');
+    if (profile.status === 'Rejected' || profile.status === 'Suspended') {
+      return failure('Only pending or approved accounts can be linked.');
+    }
+
+    const player = await this.repository.getPlayer(playerId);
+    if (!player) return failure('Player not found.');
+
+    const profiles = await this.repository.getProfiles();
+    const existingLinkedProfile = profiles.find((candidate) => (
+      candidate.id !== profile.id
+      && candidate.playerId === playerId
+      && candidate.status !== 'Rejected'
+      && candidate.status !== 'Suspended'
+    ));
+    if (existingLinkedProfile) {
+      return failure(`${player.name} is already linked to ${existingLinkedProfile.displayName}.`);
+    }
+
+    const timestamp = now();
+    if (useProfileName) await this.updateClaimedPlayerName(player, profile.displayName, timestamp);
+
+    return {
+      ok: true,
+      data: await this.repository.saveProfile({
+        ...profile,
+        status: 'Approved',
+        playerId,
+        updatedAt: timestamp,
+      }),
+    };
+  }
+
   async assignCaptainTeam(
     profileId: string,
     teamId: string | null,

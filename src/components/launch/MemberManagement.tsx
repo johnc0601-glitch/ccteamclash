@@ -4,6 +4,7 @@ import {
   approveClaim,
   approveProfile,
   assignCaptain,
+  linkProfileToPlayer,
   rejectClaim,
   rejectProfile,
   suspendProfile,
@@ -33,9 +34,17 @@ export function MemberManagement({
   teams = [],
 }: MemberManagementProps) {
   const pendingClaims = claims.filter((claim) => claim.status === 'Pending');
+  const profileIdsWithPendingClaims = new Set(pendingClaims.map((claim) => claim.profileId));
   const captainReadyClaims = pendingClaims.filter((claim) => getClaimTeam(players, teams, claim));
   const approvedProfiles = profiles.filter((profile) => profile.status === 'Approved');
   const captainProfiles = profiles.filter((profile) => profile.role === 'Captain');
+  const unlinkedProfiles = profiles.filter((profile) => (
+    profile.role !== 'Commissioner'
+    && !profile.playerId
+    && !profileIdsWithPendingClaims.has(profile.id)
+    && profile.status !== 'Rejected'
+    && profile.status !== 'Suspended'
+  ));
 
   return (
     <section className={styles.management} aria-label="League account workflow">
@@ -55,10 +64,49 @@ export function MemberManagement({
 
       <div className={styles.summaryGrid}>
         <SummaryCard label="Pending claims" value={pendingClaims.length} />
+        <SummaryCard label="Unlinked accounts" value={unlinkedProfiles.length} />
         <SummaryCard label="Captain queue" value={captainReadyClaims.length} />
         <SummaryCard label="Approved members" value={approvedProfiles.length} />
         <SummaryCard label="Captains" value={captainProfiles.length} />
       </div>
+
+      <section className={styles.panel} aria-labelledby="unlinked-accounts-title">
+        <header className={styles.panelHeader}>
+          <span className={styles.panelEyebrow}>Commissioner assist</span>
+          <h2 id="unlinked-accounts-title">Unlinked accounts</h2>
+        </header>
+        <div className={styles.claimList}>
+          {unlinkedProfiles.length ? unlinkedProfiles.map((profile) => (
+            <article className={styles.claimRow} key={profile.id}>
+              <div className={styles.memberPrimary}>
+                <strong>{profile.displayName}</strong>
+                <span className={styles.badge}>{profile.status}</span>
+              </div>
+              <span className={styles.claimMeta}>{profile.role}</span>
+              <span className={styles.muted}>This account exists, but it is not connected to an imported player record.</span>
+              <form className={styles.reviewForm} action={linkProfileToPlayer}>
+                <input name="profileId" type="hidden" value={profile.id} />
+                <label htmlFor={`link-player-${profile.id}`}>Player record</label>
+                <PlayerRecordSelect
+                  id={`link-player-${profile.id}`}
+                  name="playerId"
+                  players={players}
+                  required
+                />
+                <label className={styles.checkboxLabel}>
+                  <input name="useProfileName" type="checkbox" value="true" defaultChecked />
+                  <span>Use account name on player record</span>
+                </label>
+                <div className={styles.actions}>
+                  <button className={styles.primaryButton} type="submit">Link account</button>
+                </div>
+              </form>
+            </article>
+          )) : (
+            <p className={styles.emptyState}>No unlinked player accounts.</p>
+          )}
+        </div>
+      </section>
 
       <div className={styles.grid}>
         <section className={styles.panel} aria-labelledby="member-claims-title">
