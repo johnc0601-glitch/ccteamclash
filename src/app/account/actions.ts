@@ -80,6 +80,39 @@ export async function signInWithPassword(formData: FormData) {
   redirect('/account?notice=You are signed in.');
 }
 
+export async function requestPasswordReset(formData: FormData) {
+  const email = readFormValue(formData, 'email');
+  if (!email) redirect('/account?error=Enter your email address.');
+
+  const supabase = await createClient();
+  const origin = await getOrigin();
+  const {error} = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback?next=/account/reset-password`,
+  });
+
+  if (error) redirect(`/account?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
+  redirect('/account?notice=Check your email for the password reset link.');
+}
+
+export async function updatePassword(formData: FormData) {
+  const password = readFormValue(formData, 'password');
+  const confirmPassword = readFormValue(formData, 'confirmPassword');
+  if (password.length < 8) redirect('/account/reset-password?error=Password must be at least 8 characters.');
+  if (password !== confirmPassword) redirect('/account/reset-password?error=Passwords do not match.');
+
+  const supabase = await createClient();
+  const {data, error: userError} = await supabase.auth.getUser();
+  if (userError || !data.user) {
+    redirect('/account?error=Request a new password reset link before changing your password.');
+  }
+
+  const {error} = await supabase.auth.updateUser({password});
+  if (error) redirect(`/account/reset-password?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
+
+  revalidatePath('/account');
+  redirect('/account?notice=Password updated. You are signed in.');
+}
+
 export async function signInWithGoogle() {
   const supabase = await createClient();
   const origin = await getOrigin();
@@ -169,6 +202,7 @@ function readFormValue(formData: FormData, key: string): string {
 
 function getAuthErrorMessage(error: {message?: string; code?: string; status?: number}): string {
   const message = error.message?.trim();
+  if (message === 'Invalid login credentials') return 'Email or password is wrong. Use password reset if needed.';
   if (message && message !== '{}') return message;
   if (error.code === 'over_email_send_rate_limit') return 'Email rate limit exceeded. Wait a few minutes before requesting another sign-in link.';
   return 'The sign-in email could not be sent. Check the Supabase email sender settings.';

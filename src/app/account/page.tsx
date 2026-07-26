@@ -4,7 +4,14 @@ import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository
 import type {LaunchPlayer, LaunchProfile, PlayerClaim} from '@/domain/launch/LaunchData';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
-import {createLeagueAccount, createPendingProfile, signInWithPassword, signOut, submitPlayerClaim} from './actions';
+import {
+  createLeagueAccount,
+  createPendingProfile,
+  requestPasswordReset,
+  signInWithPassword,
+  signOut,
+  submitPlayerClaim,
+} from './actions';
 import styles from './Account.module.css';
 
 type AccountPageProps = {
@@ -50,6 +57,16 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
                 <label htmlFor="signinPassword">Password</label>
                 <input id="signinPassword" name="password" type="password" autoComplete="current-password" required />
                 <button className={styles.primaryButton} type="submit">Sign in</button>
+              </form>
+            </article>
+            <article className={styles.panel}>
+              <span className={styles.eyebrow}>Forgot password</span>
+              <h2>Reset</h2>
+              <p>Send yourself a reset link, then choose a new password.</p>
+              <form className={styles.form} action={requestPasswordReset}>
+                <label htmlFor="resetEmail">Email address</label>
+                <input id="resetEmail" name="email" type="email" autoComplete="email" required />
+                <button className={styles.secondaryButton} type="submit">Send reset link</button>
               </form>
             </article>
             <CreateAccountForm players={players} />
