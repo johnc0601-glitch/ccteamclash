@@ -74,7 +74,7 @@
 
 .summaryGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 18px;
 }
@@ -149,6 +149,40 @@
   text-decoration: underline;
   text-decoration-color: #a27752;
   text-underline-offset: 4px;
+}
+
+.notice,
+.error {
+  margin: 0 0 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 8px;
+  background: var(--cc-card-bg);
+  color: var(--cc-heading);
+  font-weight: 950;
+}
+
+.notice {
+  border-left: 4px solid #56701c;
+}
+
+.error {
+  border-left: 4px solid #b64040;
+}
+
+.primaryButton {
+  width: fit-content;
+  min-height: 36px;
+  border: 1px solid #111516;
+  border-radius: 4px;
+  padding: 0 14px;
+  background: #111516;
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  cursor: pointer;
 }
 
 .rosterRow {

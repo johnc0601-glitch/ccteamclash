@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
+import {PlayerRecordSelect} from '@/components/launch/PlayerRecordSelect';
 import {ThemeToggle} from '@/components/ThemeToggle';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import type {LaunchPlayer, LaunchProfile, PlayerClaim} from '@/domain/launch/LaunchData';
@@ -99,7 +100,11 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
         </section>
 
         {profile ? (
-          <MemberProfile profile={profile} claims={claims} players={players} />
+          <MemberProfile
+            profile={profile}
+            claims={claims.filter((claim) => claim.profileId === profile.id).slice().reverse()}
+            players={players}
+          />
         ) : (
           <CreateProfileForm fallbackName={getDisplayName(user.email, user.user_metadata?.name)} />
         )}
@@ -119,14 +124,15 @@ function CreateAccountForm({players}: {players: LaunchPlayer[]}) {
         <label htmlFor="signupEmail">Email address</label>
         <input id="signupEmail" name="email" type="email" autoComplete="email" required />
         <label htmlFor="requestedPlayerId">Player record</label>
-        <select id="requestedPlayerId" name="requestedPlayerId" defaultValue="" required>
-          <option value="" disabled>Select your player record</option>
-          {players.map((player) => (
-            <option key={player.id} value={player.id}>
-              {player.name}{player.pdgaNumber ? ` - PDGA ${player.pdgaNumber}` : ''}
-            </option>
-          ))}
-        </select>
+        <PlayerRecordSelect
+          emptyLabel="Select your player record"
+          id="requestedPlayerId"
+          name="requestedPlayerId"
+          players={players}
+          required
+        />
+        <label htmlFor="submittedName">Your player name</label>
+        <input id="submittedName" name="submittedName" placeholder="Use the spelling you want shown" autoComplete="name" required />
         <label htmlFor="signupPassword">Password</label>
         <input
           id="signupPassword"
@@ -233,14 +239,12 @@ function MemberProfile({
         {canSubmitClaim ? (
           <form className={styles.form} action={submitPlayerClaim}>
             <label htmlFor="requestedPlayerId">Imported player record</label>
-            <select id="requestedPlayerId" name="requestedPlayerId" defaultValue="">
-              <option value="">I do not see myself yet</option>
-              {players.map((player) => (
-                <option key={player.id} value={player.id}>
-                  {player.name}{player.pdgaNumber ? ` - PDGA ${player.pdgaNumber}` : ''}
-                </option>
-              ))}
-            </select>
+            <PlayerRecordSelect
+              emptyLabel="I do not see myself yet"
+              id="requestedPlayerId"
+              name="requestedPlayerId"
+              players={players}
+            />
             <label htmlFor="submittedName">Your player name</label>
             <input id="submittedName" name="submittedName" defaultValue={profile.displayName} required />
             <label htmlFor="submittedPdgaNumber">PDGA number</label>

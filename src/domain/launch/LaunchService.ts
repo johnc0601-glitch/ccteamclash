@@ -87,14 +87,17 @@ export class LaunchService {
     if (claim.status !== 'Pending') return failure('Only pending claims can be approved.');
     const requestedPlayerId = selectedPlayerId || claim.requestedPlayerId;
     if (!requestedPlayerId) return failure('Select an existing player before approval.');
-    if (!await this.repository.getPlayer(requestedPlayerId)) return failure('Player not found.');
+    const player = await this.repository.getPlayer(requestedPlayerId);
+    if (!player) return failure('Player not found.');
 
     const profile = await this.repository.getProfile(claim.profileId);
     if (!profile) return failure('Profile not found.');
 
     const timestamp = now();
+    await this.updateClaimedPlayerName(player, claim.submittedName, timestamp);
     await this.repository.saveProfile({
       ...profile,
+      displayName: claim.submittedName,
       status: 'Approved',
       playerId: requestedPlayerId,
       updatedAt: timestamp,
@@ -108,6 +111,45 @@ export class LaunchService {
         status: 'Approved',
         reviewedAt: timestamp,
         reviewedBy: commissioner.data.id,
+      }),
+    };
+  }
+
+  async confirmTeamPlayerClaim(
+    claimId: string,
+    captainProfileId: string,
+  ): Promise<LaunchServiceResult<PlayerClaim>> {
+    const claim = await this.repository.getPlayerClaim(claimId);
+    if (!claim) return failure('Player claim not found.');
+    if (claim.status !== 'Pending') return failure('Only pending claims can be confirmed.');
+    if (!claim.requestedPlayerId) return failure('A selected player record is required.');
+
+    const player = await this.repository.getPlayer(claim.requestedPlayerId);
+    if (!player?.currentTeamId) return failure('The player must be assigned to a team before captain confirmation.');
+
+    const captain = await this.requireTeamAccess(captainProfileId, player.currentTeamId);
+    if (!captain.ok) return captain;
+
+    const profile = await this.repository.getProfile(claim.profileId);
+    if (!profile) return failure('Profile not found.');
+
+    const timestamp = now();
+    await this.updateClaimedPlayerName(player, claim.submittedName, timestamp);
+    await this.repository.saveProfile({
+      ...profile,
+      displayName: claim.submittedName,
+      status: 'Approved',
+      playerId: player.id,
+      updatedAt: timestamp,
+    });
+
+    return {
+      ok: true,
+      data: await this.repository.savePlayerClaim({
+        ...claim,
+        status: 'Approved',
+        reviewedAt: timestamp,
+        reviewedBy: captain.data.id,
       }),
     };
   }
@@ -340,6 +382,16 @@ export class LaunchService {
     if (profile.role === 'Commissioner') return {ok: true, data: profile};
     if (profile.role !== 'Captain' || profile.captainTeamId !== teamId) return failure('Captain team access is required.');
     return {ok: true, data: profile};
+  }
+
+  private async updateClaimedPlayerName(player: LaunchPlayer, submittedName: string, timestamp: string): Promise<void> {
+    const name = submittedName.trim();
+    if (!name || name === player.name) return;
+    await this.repository.savePlayer({
+      ...player,
+      name,
+      updatedAt: timestamp,
+    });
   }
 }
 

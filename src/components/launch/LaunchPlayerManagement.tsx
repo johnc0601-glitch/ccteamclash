@@ -1,3 +1,6 @@
+'use client';
+
+import {useMemo, useState} from 'react';
 import type {LaunchPlayer, LaunchTeam} from '@/domain/launch/LaunchData';
 import {savePlayer} from '@/app/office/players/actions';
 import styles from './LaunchPlayerManagement.module.css';
@@ -15,8 +18,23 @@ export function LaunchPlayerManagement({
   players = [],
   teams = [],
 }: LaunchPlayerManagementProps) {
+  const [search, setSearch] = useState('');
   const activePlayers = players.filter((player) => player.active);
   const assignedPlayers = players.filter((player) => player.currentTeamId);
+  const visiblePlayers = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return players;
+    return players.filter((player) => {
+      const searchable = [
+        player.name,
+        player.pdgaNumber,
+        player.pdgaRating,
+        getTeamName(teams, player.currentTeamId),
+        player.gender,
+      ].join(' ').toLowerCase();
+      return searchable.includes(query);
+    });
+  }, [players, search, teams]);
 
   return (
     <section className={styles.management} aria-label="Player control">
@@ -46,8 +64,18 @@ export function LaunchPlayerManagement({
             <h2 id="player-directory-title">Player records</h2>
             <p>Assign teams, update ratings, and mark roster availability.</p>
           </header>
+          <div className={styles.searchBox}>
+            <label htmlFor="playerDirectorySearch">Search players</label>
+            <input
+              id="playerDirectorySearch"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search name, team, PDGA, rating"
+              type="search"
+              value={search}
+            />
+          </div>
           <div className={styles.playerList}>
-            {players.length ? players.map((player) => (
+            {visiblePlayers.length ? visiblePlayers.map((player) => (
               <article className={styles.playerRow} key={player.id}>
                 <div className={styles.playerPrimary}>
                   <div>
@@ -65,7 +93,7 @@ export function LaunchPlayerManagement({
                 </details>
               </article>
             )) : (
-              <p className={styles.emptyState}>No player records yet.</p>
+              <p className={styles.emptyState}>{players.length ? 'No matching players.' : 'No player records yet.'}</p>
             )}
           </div>
         </section>

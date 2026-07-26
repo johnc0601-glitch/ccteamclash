@@ -51,15 +51,16 @@ export default async function OfficePlayersPage({searchParams}: OfficePlayersPag
 
   return (
     <OfficePage sectionId="players">
-      <LaunchPlayerManagement error={error} notice={notice} players={players} teams={teams} />
       <MemberManagement
         claims={claims}
         commissionerProfileId={commissionerProfile.id}
+        error={error}
+        notice={notice}
         players={players}
         profiles={profiles}
-        showMessages={false}
         teams={teams}
       />
+      <LaunchPlayerManagement players={players} teams={teams} />
     </OfficePage>
   );
 }

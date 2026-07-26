@@ -145,7 +145,7 @@ test('LaunchService approves player claims through commissioner only', async () 
   const claim = await service.submitPlayerClaim({
     profileId: 'pending-1',
     requestedPlayerId: 'player-2',
-    submittedName: 'Player Two',
+    submittedName: 'Corrected Player Two',
     submittedPdgaNumber: '1002',
   });
 
@@ -161,6 +161,25 @@ test('LaunchService approves player claims through commissioner only', async () 
     assert.equal(approved.data.status, 'Approved');
     assert.equal(approved.data.reviewedBy, 'commissioner-1');
   }
+});
+
+test('LaunchService uses submitted player spelling when a claim is approved', async () => {
+  const {repository, service} = createService();
+  const claim = await service.submitPlayerClaim({
+    profileId: 'pending-1',
+    requestedPlayerId: 'player-2',
+    submittedName: 'Stephen Ajoy',
+    submittedPdgaNumber: '1002',
+  });
+
+  assert.equal(claim.ok, true);
+  if (!claim.ok) return;
+
+  const approved = await service.approvePlayerClaim(claim.data.id, 'commissioner-1');
+
+  assert.equal(approved.ok, true);
+  assert.equal((await repository.getPlayer('player-2'))?.name, 'Stephen Ajoy');
+  assert.equal((await repository.getProfile('pending-1'))?.displayName, 'Stephen Ajoy');
 });
 
 test('LaunchService assigns one captain team from commissioner approval', async () => {

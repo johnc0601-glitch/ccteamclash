@@ -187,10 +187,12 @@
   text-transform: uppercase;
 }
 
+.reviewForm input,
 .reviewForm select,
 .captainForm select {
   width: 100%;
   min-height: 42px;
+  padding: 0 11px;
   border: 1px solid #cfd4ce;
   border-radius: 4px;
   background: #fff;

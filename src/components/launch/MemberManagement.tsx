@@ -8,6 +8,7 @@ import {
   rejectProfile,
   suspendProfile,
 } from '@/app/office/players/actions';
+import {PlayerRecordSelect} from './PlayerRecordSelect';
 import styles from './MemberManagement.module.css';
 
 type MemberManagementProps = {
@@ -32,6 +33,7 @@ export function MemberManagement({
   teams = [],
 }: MemberManagementProps) {
   const pendingClaims = claims.filter((claim) => claim.status === 'Pending');
+  const captainReadyClaims = pendingClaims.filter((claim) => getClaimTeam(players, teams, claim));
   const approvedProfiles = profiles.filter((profile) => profile.status === 'Approved');
   const captainProfiles = profiles.filter((profile) => profile.role === 'Captain');
 
@@ -53,9 +55,9 @@ export function MemberManagement({
 
       <div className={styles.summaryGrid}>
         <SummaryCard label="Pending claims" value={pendingClaims.length} />
+        <SummaryCard label="Captain queue" value={captainReadyClaims.length} />
         <SummaryCard label="Approved members" value={approvedProfiles.length} />
         <SummaryCard label="Captains" value={captainProfiles.length} />
-        <SummaryCard label="Suspended" value={profiles.filter((profile) => profile.status === 'Suspended').length} />
       </div>
 
       <div className={styles.grid}>
@@ -73,17 +75,17 @@ export function MemberManagement({
                 </div>
                 <span className={styles.claimMeta}>{getClaimMeta(claim)}</span>
                 <span className={styles.muted}>{getProfileName(profiles, claim.profileId)} submitted this claim.</span>
+                <span className={styles.muted}>{getClaimRouting(players, teams, claim)}</span>
                 <form className={styles.reviewForm} action={approveClaim}>
                   <input name="claimId" type="hidden" value={claim.id} />
                   <label htmlFor={`player-${claim.id}`}>Imported player record</label>
-                  <select id={`player-${claim.id}`} name="playerId" defaultValue={claim.requestedPlayerId ?? ''} required>
-                    <option value="">Select player</option>
-                    {players.map((player) => (
-                      <option key={player.id} value={player.id}>
-                        {player.name}{player.pdgaNumber ? ` - PDGA ${player.pdgaNumber}` : ''}
-                      </option>
-                    ))}
-                  </select>
+                  <PlayerRecordSelect
+                    defaultValue={claim.requestedPlayerId ?? ''}
+                    id={`player-${claim.id}`}
+                    name="playerId"
+                    players={players}
+                    required
+                  />
                   <div className={styles.actions}>
                     <button className={styles.primaryButton} type="submit">Approve and link</button>
                     <button className={styles.secondaryButton} formAction={rejectClaim} type="submit">Reject</button>
@@ -190,6 +192,18 @@ function getClaimMeta(claim: PlayerClaim): string {
 
 function getProfileName(profiles: LaunchProfile[], profileId: string): string {
   return profiles.find((profile) => profile.id === profileId)?.displayName ?? 'A league member';
+}
+
+function getClaimRouting(players: LaunchPlayer[], teams: LaunchTeam[], claim: PlayerClaim): string {
+  const team = getClaimTeam(players, teams, claim);
+  if (team) return `Captain confirmation: ${team.name}`;
+  if (claim.requestedPlayerId) return 'Commissioner assist needed: selected player has no current team.';
+  return 'Commissioner assist needed: no player record selected.';
+}
+
+function getClaimTeam(players: LaunchPlayer[], teams: LaunchTeam[], claim: PlayerClaim): LaunchTeam | undefined {
+  const player = claim.requestedPlayerId ? players.find((candidate) => candidate.id === claim.requestedPlayerId) : undefined;
+  return player?.currentTeamId ? teams.find((team) => team.id === player.currentTeamId) : undefined;
 }
 
 function getPlayerSummary(players: LaunchPlayer[], playerId: string | null): string {

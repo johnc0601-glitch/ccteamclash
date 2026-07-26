@@ -29,9 +29,11 @@ export async function createLeagueAccount(formData: FormData) {
   const email = readFormValue(formData, 'email');
   const password = readFormValue(formData, 'password');
   const requestedPlayerId = readFormValue(formData, 'requestedPlayerId');
+  const submittedName = readFormValue(formData, 'submittedName');
   if (!email) redirect('/account?error=Enter your email address.');
   if (password.length < 8) redirect('/account?error=Password must be at least 8 characters.');
   if (!requestedPlayerId) redirect('/account?error=Select your player record.');
+  if (!submittedName) redirect('/account?error=Enter your player name.');
 
   const supabase = await createClient();
   const repository = new SupabaseLaunchRepository(supabase);
@@ -39,9 +41,9 @@ export async function createLeagueAccount(formData: FormData) {
   if (!selectedPlayer) redirect('/account?error=Select a valid player record.');
 
   const signupInput = {
-    displayName: selectedPlayer.name,
+    displayName: submittedName,
     requestedPlayerId: selectedPlayer.id,
-    submittedName: selectedPlayer.name,
+    submittedName,
     submittedPdgaNumber: selectedPlayer.pdgaNumber,
   };
   const origin = await getOrigin();
