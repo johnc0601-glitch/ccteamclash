@@ -15,6 +15,7 @@ export type HistoricalRankingEntry = {
 type RankingTableProps = {
   id: string;
   title: string;
+  sourceLabel: string;
   entries: HistoricalRankingEntry[];
   interactive?: boolean;
   fullWidth?: boolean;
@@ -25,6 +26,8 @@ type RankingsClientProps = {
   overall: HistoricalRankingEntry[];
   women: HistoricalRankingEntry[];
   total: HistoricalRankingEntry[];
+  sourceLabel?: string;
+  idPrefix?: string;
 };
 
 function formatRecordSummary(record: HistoricalPlayerSeasonSummary['overallRecord']): string {
@@ -41,7 +44,7 @@ function formatPoints(summary: HistoricalPlayerSeasonSummary): string {
   return (summary.overallRecord.wins + summary.overallRecord.ties * 0.5).toFixed(1);
 }
 
-function RankingTable({id, title, entries, interactive = false, fullWidth = false, onOpen}: RankingTableProps) {
+function RankingTable({id, title, sourceLabel, entries, interactive = false, fullWidth = false, onOpen}: RankingTableProps) {
   function handleRowKeyDown(event: KeyboardEvent<HTMLTableRowElement>, entry: HistoricalRankingEntry) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
@@ -52,7 +55,7 @@ function RankingTable({id, title, entries, interactive = false, fullWidth = fals
   return (
     <section id={id} className={`${styles.rankingPanel} ${fullWidth ? styles.rankingPanelFull : ''}`}>
       <header>
-        <span>Imported last season</span>
+        <span>{sourceLabel}</span>
         <h2>{title}</h2>
       </header>
       {entries.length ? (
@@ -98,8 +101,15 @@ function RankingTable({id, title, entries, interactive = false, fullWidth = fals
   );
 }
 
-export function RankingsClient({overall, women, total}: RankingsClientProps) {
+export function RankingsClient({
+  overall,
+  women,
+  total,
+  sourceLabel = 'Imported season',
+  idPrefix = '',
+}: RankingsClientProps) {
   const [selectedEntry, setSelectedEntry] = useState<HistoricalRankingEntry | null>(null);
+  const prefixedId = (id: string) => idPrefix ? `${idPrefix}-${id}` : id;
 
   function openEntry(entry: HistoricalRankingEntry) {
     setSelectedEntry(entry);
@@ -108,9 +118,9 @@ export function RankingsClient({overall, women, total}: RankingsClientProps) {
   return (
     <>
       <div className={styles.rankingsGrid}>
-        <RankingTable id="top-25" title="Overall Top 25" entries={overall} interactive onOpen={openEntry} />
-        <RankingTable id="women" title="Women's Top 10" entries={women} interactive onOpen={openEntry} />
-        <RankingTable id="all" title="Total Rankings" entries={total} fullWidth onOpen={openEntry} />
+        <RankingTable id={prefixedId('top-25')} title="Overall Top 25" sourceLabel={sourceLabel} entries={overall} interactive onOpen={openEntry} />
+        <RankingTable id={prefixedId('women')} title="Women's Top 10" sourceLabel={sourceLabel} entries={women} interactive onOpen={openEntry} />
+        <RankingTable id={prefixedId('all')} title="All Rankings" sourceLabel={sourceLabel} entries={total} fullWidth onOpen={openEntry} />
       </div>
 
       {selectedEntry ? (

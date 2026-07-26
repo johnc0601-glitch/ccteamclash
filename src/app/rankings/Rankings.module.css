@@ -9,6 +9,24 @@
   align-items: start;
 }
 
+.currentSeason {
+  margin-top: 20px;
+}
+
+.previousSeason {
+  margin-top: 64px;
+}
+
+.currentSeason > h2,
+.previousSeason > h2 {
+  margin: 8px 0 24px;
+  font-family: var(--cc-font-display);
+  font-size: clamp(36px, 6vw, 68px);
+  font-style: italic;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
 .rankingPanel {
   min-width: 0;
   border: 1px solid #263839;

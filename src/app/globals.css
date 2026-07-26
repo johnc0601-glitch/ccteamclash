@@ -390,6 +390,24 @@ footer {
   color: var(--cc-bronze);
 }
 
+.season-archive {
+  margin-top: 56px;
+}
+
+.season-archive-current {
+  margin-top: 20px;
+}
+
+.season-archive h2 {
+  margin: 8px 0 20px;
+  color: var(--cc-heading);
+  font-family: var(--cc-font-display);
+  font-size: clamp(34px, 6vw, 64px);
+  font-style: italic;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
 .match-row em {
   color: var(--cc-teal);
   font-weight: 950;

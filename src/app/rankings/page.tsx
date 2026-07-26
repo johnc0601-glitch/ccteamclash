@@ -4,28 +4,42 @@ import {
   getLatestHistoricalPlayerSeasonSummaries,
   getLatestHistoricalSeasonName,
   isHistoricalFemalePlayer,
+  type HistoricalPlayerSeasonSummary,
 } from '@/data/historicalSeed';
 import styles from './Rankings.module.css';
 
 export default async function RankingsPage() {
-  const lastSeasonName = getLatestHistoricalSeasonName();
-  const total = getLatestHistoricalPlayerSeasonSummaries()
-    .map((summary, index) => ({summary, rank: index + 1}));
+  const currentSeasonName = getLatestHistoricalSeasonName();
+  const currentRankings = buildRankings(getLatestHistoricalPlayerSeasonSummaries());
+
+  return (
+    <>
+      <SiteHeader />
+      <main className={`shell page-shell ${styles.rankingsPage}`}>
+        <h1>Player Rankings</h1>
+        <section className={styles.currentSeason}>
+          <span className="eyebrow">Current season</span>
+          <h2>{currentSeasonName}</h2>
+          <RankingsClient
+            overall={currentRankings.overall}
+            women={currentRankings.women}
+            total={currentRankings.total}
+            sourceLabel={currentSeasonName}
+          />
+        </section>
+      </main>
+      <Footer />
+    </>
+  );
+}
+
+function buildRankings(summaries: HistoricalPlayerSeasonSummary[]) {
+  const total = summaries.map((summary, index) => ({summary, rank: index + 1}));
   const overall = total.slice(0, 25);
   const women = total
     .filter(({summary}) => isHistoricalFemalePlayer(summary.playerName))
     .slice(0, 10)
     .map((entry, index) => ({...entry, rank: index + 1}));
 
-  return (
-    <>
-      <SiteHeader />
-      <main className={`shell page-shell ${styles.rankingsPage}`}>
-        <span className="eyebrow">{lastSeasonName}</span>
-        <h1>Player Rankings</h1>
-        <RankingsClient overall={overall} women={women} total={total} />
-      </main>
-      <Footer />
-    </>
-  );
+  return {overall, women, total};
 }

@@ -43,12 +43,23 @@ export type HistoricalTeamSeasonStanding = HistoricalTeamSeedSummary & {
   rank: number;
 };
 
+export type HistoricalSeasonArchive = {
+  seasonId: string;
+  seasonName: string;
+  sourceFilename: string;
+  championTeamId?: string;
+  championTeamName?: string;
+  standings: HistoricalTeamSeasonStanding[];
+  playerSummaries: HistoricalPlayerSeasonSummary[];
+};
+
 const HISTORICAL_IMPORTED_AT = '2026-07-19T00:00:00.000Z';
 const HISTORICAL_TEAM_DESCRIPTION = 'Imported from historical Coastal Clash records.';
 const HISTORICAL_TEAM_CITY = 'Wilmington';
 const HISTORICAL_TEAM_STATE = 'NC';
 const HISTORICAL_PRIMARY_COLOR = '#121814';
 const HISTORICAL_SECONDARY_COLOR = '#f4f6f2';
+const PREVIOUS_COMPLETED_HISTORICAL_SEASON_ID = 'coastal-clash-2024-2025';
 const HISTORICAL_TEAM_LOGOS: Record<string, string> = {
   'cougar-country': '/team-logos/cougar-country.jpg',
   'hayneous-og-s': '/team-logos/hayneous-ogs.jpg',
@@ -67,10 +78,28 @@ const HISTORICAL_TEAM_HOME_COURSES: Record<string, string> = {
   riptide: 'Splinter City',
   'wild-turkey': 'Wild Turkey',
 };
+const HISTORICAL_PLAYER_NAME_CANONICALS: Record<string, string> = {
+  'ariel cosmo': 'Ariel Cosimo',
+  'ariel cosimo': 'Ariel Cosimo',
+  'cecelia costin': 'CeCelia Costin',
+  'cecilia costin': 'CeCelia Costin',
+  'chad hassenflow': 'Chad Hassenflow',
+  'chad hessenflow': 'Chad Hassenflow',
+  'isaac cotson': 'Isaac Cotson',
+  'isaac kotson': 'Isaac Cotson',
+  'jodie lehman': 'Jodie Lehman',
+  'jodie lehmann': 'Jodie Lehman',
+  'josh matheson': 'Josh Matheson',
+  'joshua matheson': 'Josh Matheson',
+};
+const HISTORICAL_SEASON_CHAMPIONS: Record<string, string> = {
+  'coastal-clash-2024-2025': 'dark-knights',
+  'coastal-clash-2025-2026': 'riptide',
+};
 const HISTORICAL_FEMALE_PLAYERS = new Set([
   'alisica fussell',
   'angel mabee',
-  'ariel cosmo',
+  'ariel cosimo',
   'ashlee hynds',
   'brianna kinsman',
   'candy mcclernan',
@@ -79,7 +108,7 @@ const HISTORICAL_FEMALE_PLAYERS = new Set([
   'currie istre',
   'jamie hensley',
   'jasmine pollack',
-  'jodie lehmann',
+  'jodie lehman',
   'kim mchale',
   'lani evans',
   'logan canale',
@@ -132,7 +161,7 @@ export function buildHistoricalPlayerSeedData(): Player[] {
 
   for (const source of HISTORICAL_RECORD_SOURCES) {
     for (const record of source.playerRecords) {
-      const playerName = normalizeDisplayName(record.playerName);
+      const playerName = getCanonicalPlayerName(record.playerName);
       const playerKey = normalize(playerName);
       if (playersByName.has(playerKey)) continue;
 
@@ -154,7 +183,7 @@ export function buildHistoricalPlayerSeedData(): Player[] {
 }
 
 export function isHistoricalFemalePlayer(playerName: string): boolean {
-  return HISTORICAL_FEMALE_PLAYERS.has(normalize(playerName));
+  return HISTORICAL_FEMALE_PLAYERS.has(normalize(getCanonicalPlayerName(playerName)));
 }
 
 export function getHistoricalTeamSeedSummary(teamId: string): HistoricalTeamSeedSummary | undefined {
@@ -207,9 +236,14 @@ export function getHistoricalTeamSeasonSummaries(teamId: string): HistoricalTeam
       })));
 }
 
+export function getHistoricalTeamSeasonTitles(teamId: string): HistoricalTeamSeedSummary[] {
+  return getHistoricalTeamSeasonSummaries(teamId)
+    .filter((summary) => HISTORICAL_SEASON_CHAMPIONS[summary.seasonId] === teamId);
+}
+
 export function getHistoricalPlayerSeedSummary(playerId: string): HistoricalPlayerSeedSummary | undefined {
   const records = HISTORICAL_RECORD_SOURCES.flatMap((source) =>
-    source.playerRecords.filter((record) => createSlug(record.playerName) === playerId));
+    source.playerRecords.filter((record) => createSlug(getCanonicalPlayerName(record.playerName)) === playerId));
   if (!records.length) return undefined;
 
   const singlesRecord = records.reduce((summary, record) => addRecords(summary, record.singles), emptyRecord());
@@ -232,14 +266,54 @@ export function getLatestHistoricalSeasonName(): string {
 
 export function getLatestHistoricalTeamStandings(): HistoricalTeamSeasonStanding[] {
   const latestSeason = getLatestHistoricalSeason();
-  if (!latestSeason) return [];
+  return latestSeason ? buildTeamStandingsForSeason(latestSeason) : [];
+}
 
-  return latestSeason.teamRecords
+export function getPreviousHistoricalSeasonName(): string {
+  return getPreviousCompletedHistoricalSeason()?.name ?? 'Previous season';
+}
+
+export function getPreviousHistoricalTeamStandings(): HistoricalTeamSeasonStanding[] {
+  const previousSeason = getPreviousCompletedHistoricalSeason();
+  return previousSeason ? buildTeamStandingsForSeason(previousSeason) : [];
+}
+
+export function getLatestHistoricalPlayerSeasonSummaries(): HistoricalPlayerSeasonSummary[] {
+  const latestSeason = getLatestHistoricalSeason();
+  return latestSeason ? buildPlayerSummariesForSeason(latestSeason) : [];
+}
+
+export function getPreviousHistoricalPlayerSeasonSummaries(): HistoricalPlayerSeasonSummary[] {
+  const previousSeason = getPreviousCompletedHistoricalSeason();
+  return previousSeason ? buildPlayerSummariesForSeason(previousSeason) : [];
+}
+
+export function getHistoricalSeasonArchives(): HistoricalSeasonArchive[] {
+  return [...HISTORICAL_RECORD_SOURCES]
+    .reverse()
+    .map((source) => {
+      const championTeamId = HISTORICAL_SEASON_CHAMPIONS[source.id];
+      return {
+        seasonId: source.id,
+        seasonName: source.name,
+        sourceFilename: source.sourceFilename,
+        championTeamId,
+        championTeamName: source.teamRecords.find((record) => createSlug(record.teamName) === championTeamId)?.teamName,
+        standings: buildTeamStandingsForSeason(source),
+        playerSummaries: buildPlayerSummariesForSeason(source),
+      };
+    });
+}
+
+function buildTeamStandingsForSeason(
+  season: typeof HISTORICAL_RECORD_SOURCES[number],
+): HistoricalTeamSeasonStanding[] {
+  return season.teamRecords
     .map((record) => ({
       teamId: createSlug(record.teamName),
       teamName: record.teamName,
-      seasonId: latestSeason.id,
-      seasonName: latestSeason.name,
+      seasonId: season.id,
+      seasonName: season.name,
       matchesPlayed: record.matchesPlayed,
       record: {
         wins: record.wins,
@@ -260,14 +334,14 @@ export function getLatestHistoricalTeamStandings(): HistoricalTeamSeasonStanding
     .map((standing, index) => ({...standing, rank: index + 1}));
 }
 
-export function getLatestHistoricalPlayerSeasonSummaries(): HistoricalPlayerSeasonSummary[] {
-  const latestSeason = getLatestHistoricalSeason();
-  if (!latestSeason) return [];
-
+function buildPlayerSummariesForSeason(
+  season: typeof HISTORICAL_RECORD_SOURCES[number],
+): HistoricalPlayerSeasonSummary[] {
   const summariesByPlayer = new Map<string, HistoricalPlayerSeasonSummary>();
 
-  for (const record of latestSeason.playerRecords) {
-    const playerId = createSlug(record.playerName);
+  for (const record of season.playerRecords) {
+    const playerName = getCanonicalPlayerName(record.playerName);
+    const playerId = createSlug(playerName);
     const existingSummary = summariesByPlayer.get(playerId);
     const singlesRecord = existingSummary
       ? addRecords(existingSummary.singlesRecord, record.singles)
@@ -279,11 +353,11 @@ export function getLatestHistoricalPlayerSeasonSummaries(): HistoricalPlayerSeas
 
     summariesByPlayer.set(playerId, {
       playerId,
-      playerName: record.playerName,
+      playerName,
       teamId: createSlug(record.teamName),
       teamName: record.teamName,
-      seasonId: latestSeason.id,
-      seasonName: latestSeason.name,
+      seasonId: season.id,
+      seasonName: season.name,
       matchesPlayed: countMatches(overallRecord),
       singlesRecord,
       doublesRecord,
@@ -305,6 +379,10 @@ function getLatestHistoricalSeason() {
   return HISTORICAL_RECORD_SOURCES[HISTORICAL_RECORD_SOURCES.length - 1];
 }
 
+function getPreviousCompletedHistoricalSeason() {
+  return HISTORICAL_RECORD_SOURCES.find((source) => source.id === PREVIOUS_COMPLETED_HISTORICAL_SEASON_ID);
+}
+
 function getCaptainByTeam(
   sources: ReadonlyArray<{playerRecords: ReadonlyArray<HistoricalPlayerRecordInput>}>,
 ): Map<string, string> {
@@ -313,7 +391,7 @@ function getCaptainByTeam(
     for (const record of source.playerRecords) {
       const teamKey = normalize(record.teamName);
       if (!captainByTeam.has(teamKey)) {
-        captainByTeam.set(teamKey, record.playerName);
+        captainByTeam.set(teamKey, getCanonicalPlayerName(record.playerName));
       }
     }
   }
@@ -338,6 +416,11 @@ function createShortName(teamName: string, usedShortNames: Set<string>): string 
 
 function normalize(value: string): string {
   return normalizeDisplayName(value).toLocaleLowerCase();
+}
+
+function getCanonicalPlayerName(value: string): string {
+  const normalizedName = normalizeDisplayName(value);
+  return HISTORICAL_PLAYER_NAME_CANONICALS[normalizedName.toLocaleLowerCase()] ?? normalizedName;
 }
 
 function normalizeDisplayName(value: string): string {

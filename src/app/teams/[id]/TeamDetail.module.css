@@ -1,5 +1,9 @@
 .page { padding: 54px 0 100px; background: linear-gradient(180deg, rgba(0,111,113,.04), transparent 260px); }
 .back { display: inline-block; margin-bottom: 18px; color: #006f71; font-size: 11px; font-weight: 950; text-transform: uppercase; }
+.championBanner { margin: 18px 0; padding: 18px 22px; display: grid; gap: 4px; border: 1px solid #a27752; border-radius: 8px; background: linear-gradient(135deg, rgba(162,119,82,.2), rgba(0,111,113,.12)); box-shadow: var(--cc-card-shadow); }
+.championBanner span { color: #a27752; font-size: 10px; font-weight: 950; letter-spacing: .12em; text-transform: uppercase; }
+.championBanner strong { color: var(--cc-heading); font-family: var(--cc-font-display); font-size: 30px; font-style: italic; letter-spacing: 0; line-height: 1; text-transform: uppercase; }
+.championBanner small { color: var(--cc-muted); font-size: 12px; font-weight: 800; }
 .overview { display: grid; grid-template-columns: 190px minmax(280px, 1fr) minmax(220px, .8fr); align-items: stretch; border: 1px solid var(--cc-card-border); border-top: 0; background: var(--cc-card-bg); box-shadow: var(--cc-card-shadow); }
 .recordBlock { padding: 24px; display: grid; align-content: center; background: linear-gradient(145deg, #101820, #061f24); color: #fff; }
 .recordBlock span, .recordBlock small { color: #b8c6c3; font-size: 9px; font-weight: 950; text-transform: uppercase; }

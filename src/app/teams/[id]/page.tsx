@@ -4,7 +4,11 @@ import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory'
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
 import {services} from '@/core/ServiceContainer';
-import {getHistoricalTeamSeasonSummaries, getHistoricalTeamSeedSummary} from '@/data/historicalSeed';
+import {
+  getHistoricalTeamSeasonSummaries,
+  getHistoricalTeamSeasonTitles,
+  getHistoricalTeamSeedSummary,
+} from '@/data/historicalSeed';
 import {getTeamEvents, getTeamNextEvent, type TeamEvent} from '@/services/matches/EventService';
 import {getStoredCourses} from '@/services/courses/CourseStore';
 import {getStoredTeamById, getStoredTeams} from '@/services/teams/TeamStore';
@@ -52,6 +56,7 @@ export default async function TeamPage({params}: TeamPageProps) {
   const historicalStatistics = getHistoricalTeamSeedSummary(team.id);
   const displayStatistics = historicalStatistics ?? currentStatistics;
   const historicalHistory = getHistoricalTeamSeasonSummaries(team.id);
+  const seasonTitles = getHistoricalTeamSeasonTitles(team.id);
   const history = seasonStatistics.filter(({statistics}) => statistics.matchesPlayed > 0);
   const nextMatch = getTeamNextEvent(team.name);
   const teamEvents = getTeamEvents(team.name);
@@ -67,6 +72,14 @@ export default async function TeamPage({params}: TeamPageProps) {
         <div className="shell">
           <Link className={styles.back} href="/teams">Back to teams</Link>
           <ClientTeamBanner initialTeam={team} />
+
+          {seasonTitles.length ? (
+            <section className={styles.championBanner} aria-label="Season championships">
+              <span>Season champion</span>
+              <strong>{seasonTitles.map((title) => title.seasonName.replace('Coastal Clash Match Play ', '')).join(' / ')}</strong>
+              <small>{team.name} won {seasonTitles.length === 1 ? 'this season' : 'these seasons'}.</small>
+            </section>
+          ) : null}
 
           <section className={styles.overview}>
             <div className={styles.recordBlock}>
