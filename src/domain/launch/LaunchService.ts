@@ -205,9 +205,7 @@ export class LaunchService {
     if (input.playerId && !existingPlayer) return failure('Player not found.');
 
     const timestamp = now();
-    return {
-      ok: true,
-      data: await this.repository.savePlayer({
+    const savedPlayer = await this.repository.savePlayer({
         id: existingPlayer?.id ?? createId('player', name),
         name,
         gender: input.gender,
@@ -218,7 +216,21 @@ export class LaunchService {
         active: input.active,
         createdAt: existingPlayer?.createdAt ?? timestamp,
         updatedAt: timestamp,
-      }),
+      });
+
+    if (existingPlayer && existingPlayer.name !== name) {
+      const linkedProfiles = (await this.repository.getProfiles())
+        .filter((profile) => profile.playerId === savedPlayer.id);
+      await Promise.all(linkedProfiles.map((profile) => this.repository.saveProfile({
+        ...profile,
+        displayName: name,
+        updatedAt: timestamp,
+      })));
+    }
+
+    return {
+      ok: true,
+      data: savedPlayer,
     };
   }
 

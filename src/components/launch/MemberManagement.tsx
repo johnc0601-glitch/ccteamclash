@@ -19,6 +19,7 @@ type MemberManagementProps = {
   notice?: string;
   players?: LaunchPlayer[];
   profiles?: LaunchProfile[];
+  showDirectory?: boolean;
   showMessages?: boolean;
   teams?: LaunchTeam[];
 };
@@ -30,6 +31,7 @@ export function MemberManagement({
   notice,
   players = [],
   profiles = [],
+  showDirectory = true,
   showMessages = true,
   teams = [],
 }: MemberManagementProps) {
@@ -57,17 +59,17 @@ export function MemberManagement({
       ) : null}
 
       <header className={styles.sectionIntro}>
-        <span>League accounts</span>
-        <h2>Claims and access</h2>
-        <p>Approve account requests, connect accounts to player records, and assign captain team access.</p>
+        <span>Account requests</span>
+        <h2>Needs attention</h2>
+        <p>Resolve new or unlinked accounts here. All established players are managed in the player directory below.</p>
       </header>
 
       <div className={styles.summaryGrid}>
         <SummaryCard label="Pending claims" value={pendingClaims.length} />
         <SummaryCard label="Unlinked accounts" value={unlinkedProfiles.length} />
-        <SummaryCard label="Captain queue" value={captainReadyClaims.length} />
-        <SummaryCard label="Approved members" value={approvedProfiles.length} />
-        <SummaryCard label="Captains" value={captainProfiles.length} />
+        {showDirectory ? <SummaryCard label="Captain queue" value={captainReadyClaims.length} /> : null}
+        {showDirectory ? <SummaryCard label="Approved members" value={approvedProfiles.length} /> : null}
+        {showDirectory ? <SummaryCard label="Captains" value={captainProfiles.length} /> : null}
       </div>
 
       <section className={styles.panel} aria-labelledby="unlinked-accounts-title">
@@ -108,7 +110,7 @@ export function MemberManagement({
         </div>
       </section>
 
-      <div className={styles.grid}>
+      <div className={showDirectory ? styles.grid : styles.singleGrid}>
         <section className={styles.panel} aria-labelledby="member-claims-title">
           <header className={styles.panelHeader}>
             <span className={styles.panelEyebrow}>Approval queue</span>
@@ -146,7 +148,7 @@ export function MemberManagement({
           </div>
         </section>
 
-        <section className={styles.panel} aria-labelledby="member-directory-title">
+        {showDirectory ? <section className={styles.panel} aria-labelledby="member-directory-title">
           <header className={styles.panelHeader}>
             <span className={styles.panelEyebrow}>Access</span>
             <h2 id="member-directory-title">Members</h2>
@@ -182,7 +184,7 @@ export function MemberManagement({
               <p className={styles.emptyState}>No league profiles yet.</p>
             )}
           </div>
-        </section>
+        </section> : null}
       </div>
     </section>
   );

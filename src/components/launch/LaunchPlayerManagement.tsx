@@ -1,14 +1,22 @@
 'use client';
 
 import {useMemo, useState} from 'react';
-import type {LaunchPlayer, LaunchTeam} from '@/domain/launch/LaunchData';
-import {savePlayer} from '@/app/office/players/actions';
+import type {LaunchPlayer, LaunchProfile, LaunchTeam} from '@/domain/launch/LaunchData';
+import {
+  approveProfile,
+  assignCaptain,
+  rejectProfile,
+  savePlayer,
+  suspendProfile,
+} from '@/app/office/players/actions';
 import styles from './LaunchPlayerManagement.module.css';
 
 type LaunchPlayerManagementProps = {
   error?: string;
   notice?: string;
   players?: LaunchPlayer[];
+  profiles?: LaunchProfile[];
+  commissionerProfileId?: string;
   teams?: LaunchTeam[];
 };
 
@@ -16,6 +24,8 @@ export function LaunchPlayerManagement({
   error,
   notice,
   players = [],
+  profiles = [],
+  commissionerProfileId,
   teams = [],
 }: LaunchPlayerManagementProps) {
   const [search, setSearch] = useState('');
@@ -31,10 +41,12 @@ export function LaunchPlayerManagement({
         player.pdgaRating,
         getTeamName(teams, player.currentTeamId),
         player.gender,
+        getLinkedProfile(profiles, player.id)?.displayName,
+        getLinkedProfile(profiles, player.id)?.status,
       ].join(' ').toLowerCase();
       return searchable.includes(query);
     });
-  }, [players, search, teams]);
+  }, [players, profiles, search, teams]);
 
   return (
     <section className={styles.management} aria-label="Player control">
@@ -77,20 +89,42 @@ export function LaunchPlayerManagement({
           <div className={styles.playerList}>
             {visiblePlayers.length ? visiblePlayers.map((player) => (
               <article className={styles.playerRow} key={player.id}>
+                {(() => {
+                  const profile = getLinkedProfile(profiles, player.id);
+                  return (
+                    <>
                 <div className={styles.playerPrimary}>
                   <div>
                     <strong>{player.name}</strong>
                     <span>{getPlayerMeta(player)}</span>
                   </div>
-                  <span className={player.active ? styles.activeBadge : styles.inactiveBadge}>
-                    {player.active ? 'Active' : 'Inactive'}
-                  </span>
+                  <div className={styles.badges}>
+                    <label className={styles.memberCheck}>
+                      <input checked={Boolean(profile)} disabled type="checkbox" />
+                      <span>Member</span>
+                    </label>
+                    <span className={player.active ? styles.activeBadge : styles.inactiveBadge}>
+                      {player.active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
                 </div>
                 <p className={styles.muted}>Team: {getTeamName(teams, player.currentTeamId)}</p>
                 <details className={styles.editBox}>
                   <summary>Edit player</summary>
                   <PlayerForm player={player} teams={teams} />
+                  {profile ? (
+                    <AccountAccess
+                      commissionerProfileId={commissionerProfileId}
+                      profile={profile}
+                      teams={teams}
+                    />
+                  ) : (
+                    <p className={styles.accountNote}>No website account is linked to this player.</p>
+                  )}
                 </details>
+                    </>
+                  );
+                })()}
               </article>
             )) : (
               <p className={styles.emptyState}>{players.length ? 'No matching players.' : 'No player records yet.'}</p>
@@ -99,6 +133,66 @@ export function LaunchPlayerManagement({
         </section>
       </div>
     </section>
+  );
+}
+
+function AccountAccess({
+  commissionerProfileId,
+  profile,
+  teams,
+}: {
+  commissionerProfileId?: string;
+  profile: LaunchProfile;
+  teams: LaunchTeam[];
+}) {
+  return (
+    <section className={styles.accountAccess}>
+      <div>
+        <strong>Member account</strong>
+        <span>{profile.status} / {profile.role}</span>
+      </div>
+      {profile.status === 'Approved' && profile.id !== commissionerProfileId ? (
+        <form className={styles.captainForm} action={assignCaptain}>
+          <input name="profileId" type="hidden" value={profile.id} />
+          <label>
+            <span>Access</span>
+            <select name="teamId" defaultValue={profile.captainTeamId ?? ''}>
+              <option value="">Player only</option>
+              {teams.map((team) => (
+                <option key={team.id} value={team.id}>Captain: {team.name}</option>
+              ))}
+            </select>
+          </label>
+          <button className={styles.primaryButton} type="submit">Save access</button>
+        </form>
+      ) : null}
+      <div className={styles.accountActions}>
+        {profile.status !== 'Approved' ? <ProfileAction action={approveProfile} label="Approve member" profileId={profile.id} /> : null}
+        {profile.status !== 'Rejected' ? <ProfileAction action={rejectProfile} label="Reject" profileId={profile.id} secondary /> : null}
+        {profile.status !== 'Suspended' && profile.id !== commissionerProfileId ? (
+          <ProfileAction action={suspendProfile} label="Suspend" profileId={profile.id} secondary />
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function ProfileAction({
+  action,
+  label,
+  profileId,
+  secondary = false,
+}: {
+  action: (formData: FormData) => Promise<void>;
+  label: string;
+  profileId: string;
+  secondary?: boolean;
+}) {
+  return (
+    <form action={action}>
+      <input name="profileId" type="hidden" value={profileId} />
+      <button className={secondary ? styles.secondaryButton : styles.primaryButton} type="submit">{label}</button>
+    </form>
   );
 }
 
@@ -172,4 +266,8 @@ function getPlayerMeta(player: LaunchPlayer): string {
 function getTeamName(teams: LaunchTeam[], teamId: string | null): string {
   if (!teamId) return 'Unassigned';
   return teams.find((team) => team.id === teamId)?.name ?? 'Unknown team';
+}
+
+function getLinkedProfile(profiles: LaunchProfile[], playerId: string): LaunchProfile | undefined {
+  return profiles.find((profile) => profile.playerId === playerId);
 }

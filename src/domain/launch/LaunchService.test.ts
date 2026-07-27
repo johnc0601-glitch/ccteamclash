@@ -159,6 +159,23 @@ test('LaunchService keeps a linked player name in sync with their profile', asyn
   assert.equal((await repository.getPlayer('player-1'))?.name, 'Captain Corrected');
 });
 
+test('LaunchService keeps a linked member name in sync when a commissioner edits the player', async () => {
+  const repository = new MockLaunchRepository(createSeed());
+  const service = new LaunchService(repository);
+  const result = await service.savePlayer({
+    playerId: 'player-1',
+    name: 'Corrected Player',
+    gender: 'Male',
+    pdgaNumber: '12345',
+    pdgaRating: 950,
+    currentTeamId: 'team-1',
+    active: true,
+  }, 'commissioner-1');
+
+  assert.equal(result.ok, true);
+  assert.equal((await repository.getProfile('captain-1'))?.displayName, 'Corrected Player');
+});
+
 test('LaunchService approves player claims through commissioner only', async () => {
   const {service} = createService();
   const claim = await service.submitPlayerClaim({

@@ -58,9 +58,15 @@ export default async function OfficePlayersPage({searchParams}: OfficePlayersPag
         notice={notice}
         players={players}
         profiles={profiles}
+        showDirectory={false}
         teams={teams}
       />
-      <LaunchPlayerManagement players={players} teams={teams} />
+      <LaunchPlayerManagement
+        commissionerProfileId={commissionerProfile.id}
+        players={players}
+        profiles={profiles}
+        teams={teams}
+      />
     </OfficePage>
   );
 }

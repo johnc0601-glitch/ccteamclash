@@ -189,6 +189,30 @@
   text-transform: uppercase;
 }
 
+.badges {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.memberCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #111516;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.memberCheck input {
+  width: 16px;
+  height: 16px;
+  accent-color: #56701c;
+}
+
 .activeBadge {
   border-color: #b9c69a;
   background: #f4f8eb;
@@ -218,6 +242,80 @@
   background: #f8f9f6;
 }
 
+.accountAccess,
+.accountNote {
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid #e1e4de;
+  border-radius: 5px;
+  background: #f8f9f6;
+}
+
+.accountAccess {
+  display: grid;
+  gap: 12px;
+}
+
+.accountAccess > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.accountAccess strong {
+  color: #111516;
+  text-transform: uppercase;
+}
+
+.accountAccess span,
+.accountNote {
+  color: #647174;
+  font-size: 12px;
+}
+
+.captainForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.captainForm label {
+  display: grid;
+  gap: 6px;
+}
+
+.captainForm select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid #cfd4ce;
+  border-radius: 4px;
+  background: #fff;
+  color: #111516;
+  font: inherit;
+}
+
+.accountActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.secondaryButton {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #cfd4ce;
+  border-radius: 4px;
+  background: #fff;
+  color: #111516;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
 .emptyState {
   padding: 24px 22px;
   color: #647174;
@@ -232,7 +330,8 @@
 
 @media (max-width: 560px) {
   .formGrid,
-  .playerPrimary {
+  .playerPrimary,
+  .captainForm {
     grid-template-columns: 1fr;
   }
 
