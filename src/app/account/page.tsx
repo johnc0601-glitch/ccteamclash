@@ -13,6 +13,7 @@ import {
   signInWithPassword,
   signOut,
   submitPlayerClaim,
+  updateProfileName,
 } from './actions';
 import styles from './Account.module.css';
 
@@ -106,7 +107,10 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
             players={players}
           />
         ) : (
-          <CreateProfileForm fallbackName={getDisplayName(user.email, user.user_metadata?.name)} />
+          <CreateProfileForm
+            fallbackName={getDisplayName(user.email, user.user_metadata?.name)}
+            players={players}
+          />
         )}
       </AccountShell>
       <Footer />
@@ -119,20 +123,25 @@ function CreateAccountForm({players}: {players: LaunchPlayer[]}) {
     <article className={styles.panel}>
       <span className={styles.eyebrow}>New player</span>
       <h2>Create account</h2>
-      <p>Select your imported player record and create a password for future sign-ins.</p>
+      <p>Connect your past Team Clash results while creating your account.</p>
+      <p className={styles.linkingNote}>
+        First, choose the name you played under before. This restores your results, rankings, and team history.
+      </p>
       <form className={styles.form} action={createLeagueAccount}>
         <label htmlFor="signupEmail">Email address</label>
         <input id="signupEmail" name="email" type="email" autoComplete="email" required />
-        <label htmlFor="requestedPlayerId">Player record</label>
+        <label htmlFor="requestedPlayerId">What name did you play under before?</label>
         <PlayerRecordSelect
-          emptyLabel="Select your player record"
+          emptyLabel="Choose your previous league name"
           id="requestedPlayerId"
           name="requestedPlayerId"
           players={players}
+          searchLabel="Search previous league names"
+          searchPlaceholder="Type your old name"
           required
         />
-        <label htmlFor="submittedName">Your player name</label>
-        <input id="submittedName" name="submittedName" placeholder="Use the spelling you want shown" autoComplete="name" required />
+        <label htmlFor="submittedName">What name should we show now?</label>
+        <input id="submittedName" name="submittedName" placeholder="Enter the correct spelling" autoComplete="name" required />
         <label htmlFor="signupPassword">Password</label>
         <input
           id="signupPassword"
@@ -163,7 +172,7 @@ function AccountShell({
         <header className={styles.header}>
           <span className={styles.eyebrow}>League account</span>
           <h1>Join Team Clash</h1>
-          <p>Sign in, create your league profile, and claim your player record for commissioner approval.</p>
+          <p>Sign in or create an account and connect your previous Team Clash history.</p>
         </header>
         {notice ? <p className={styles.notice}>{notice}</p> : null}
         {error ? <p className={styles.error}>{error}</p> : null}
@@ -173,16 +182,28 @@ function AccountShell({
   );
 }
 
-function CreateProfileForm({fallbackName}: {fallbackName: string}) {
+function CreateProfileForm({fallbackName, players}: {fallbackName: string; players: LaunchPlayer[]}) {
   return (
     <article className={styles.panel}>
-      <span className={styles.eyebrow}>Step 1</span>
-      <h2>Create profile</h2>
-      <p>This is your website account record. The commissioner will approve it before league tools unlock.</p>
+      <span className={styles.eyebrow}>Finish account setup</span>
+      <h2>Connect your history</h2>
+      <p className={styles.linkingNote}>
+        Choose the name you used in previous seasons. This connects your wins, losses, rankings, and team history.
+      </p>
       <form className={styles.form} action={createPendingProfile}>
-        <label htmlFor="displayName">Your name</label>
+        <label htmlFor="profileRequestedPlayerId">What name did you play under before?</label>
+        <PlayerRecordSelect
+          emptyLabel="Choose your previous league name"
+          id="profileRequestedPlayerId"
+          name="requestedPlayerId"
+          players={players}
+          searchLabel="Search previous league names"
+          searchPlaceholder="Type your old name"
+          required
+        />
+        <label htmlFor="displayName">What name should we show now?</label>
         <input id="displayName" name="displayName" defaultValue={fallbackName} autoComplete="name" required />
-        <button className={styles.primaryButton} type="submit">Create league profile</button>
+        <button className={styles.primaryButton} type="submit">Connect my league history</button>
       </form>
     </article>
   );
@@ -220,6 +241,17 @@ function MemberProfile({
             <dd>{linkedPlayer?.name ?? 'Not linked yet'}</dd>
           </div>
         </dl>
+        <form className={styles.form} action={updateProfileName}>
+          <label htmlFor="profileDisplayName">Display name</label>
+          <input
+            id="profileDisplayName"
+            name="displayName"
+            defaultValue={profile.displayName}
+            autoComplete="name"
+            required
+          />
+          <button className={styles.secondaryButton} type="submit">Save profile</button>
+        </form>
         {profile.role === 'Captain' ? (
           <Link className={styles.actionLink} href="/captain">Open Captain Home</Link>
         ) : null}
@@ -229,31 +261,50 @@ function MemberProfile({
       </article>
 
       <article className={styles.panel}>
-        <span className={styles.eyebrow}>Step 2</span>
-        <h2>Claim player</h2>
-        {latestClaim ? (
-          <p className={styles.claimState}>Latest claim: <strong>{latestClaim.submittedName}</strong> is {latestClaim.status}.</p>
+        {linkedPlayer ? (
+          <>
+            <span className={styles.eyebrow}>League history</span>
+            <h2>History connected</h2>
+            <div className={styles.connected}>
+              <strong>{linkedPlayer.name}</strong>
+              Your past results, rankings, and team history are connected to this account.
+            </div>
+          </>
         ) : (
-          <p>Choose your imported player record or send your name for commissioner matching.</p>
+          <>
+            <span className={styles.eyebrow}>Required setup</span>
+            <h2>Connect your history</h2>
+            <p className={styles.linkingNote}>
+              Choose the name you played under before. This restores your past results, rankings, and team history.
+            </p>
+            {latestClaim ? (
+              <p className={styles.claimState}>
+                Your request to connect <strong>{latestClaim.submittedName}</strong> is {latestClaim.status}.
+              </p>
+            ) : null}
+          </>
         )}
-        {canSubmitClaim ? (
+        {!linkedPlayer && canSubmitClaim ? (
           <form className={styles.form} action={submitPlayerClaim}>
-            <label htmlFor="requestedPlayerId">Imported player record</label>
+            <label htmlFor="requestedPlayerId">What name did you play under before?</label>
             <PlayerRecordSelect
-              emptyLabel="I do not see myself yet"
+              emptyLabel="Choose your previous league name"
               id="requestedPlayerId"
               name="requestedPlayerId"
               players={players}
+              searchLabel="Search previous league names"
+              searchPlaceholder="Type your old name"
+              required
             />
-            <label htmlFor="submittedName">Your player name</label>
+            <label htmlFor="submittedName">What name should we show now?</label>
             <input id="submittedName" name="submittedName" defaultValue={profile.displayName} required />
             <label htmlFor="submittedPdgaNumber">PDGA number</label>
             <input id="submittedPdgaNumber" name="submittedPdgaNumber" inputMode="numeric" />
-            <button className={styles.primaryButton} type="submit">Send claim</button>
+            <button className={styles.primaryButton} type="submit">Connect my league history</button>
           </form>
-        ) : (
+        ) : !linkedPlayer ? (
           <p className={styles.muted}>The commissioner needs to review this claim before another one is submitted.</p>
-        )}
+        ) : null}
       </article>
 
       <article className={styles.panel}>

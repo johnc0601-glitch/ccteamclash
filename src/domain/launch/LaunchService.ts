@@ -47,6 +47,36 @@ export class LaunchService {
     };
   }
 
+  async updateOwnProfileName(
+    userId: string,
+    displayNameInput: string,
+  ): Promise<LaunchServiceResult<LaunchProfile>> {
+    const displayName = displayNameInput.trim();
+    if (!displayName) return failure('Display name is required.');
+
+    const profile = await this.repository.getProfileByUserId(userId);
+    if (!profile) return failure('Profile not found.');
+
+    if (profile.playerId) {
+      const player = await this.repository.getPlayer(profile.playerId);
+      if (!player) return failure('Linked player record not found.');
+      await this.repository.savePlayer({
+        ...player,
+        name: displayName,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    return {
+      ok: true,
+      data: await this.repository.saveProfile({
+        ...profile,
+        displayName,
+        updatedAt: new Date().toISOString(),
+      }),
+    };
+  }
+
   async submitPlayerClaim(input: SubmitPlayerClaimInput): Promise<LaunchServiceResult<PlayerClaim>> {
     const profile = await this.repository.getProfile(input.profileId);
     if (!profile) return failure('Profile not found.');

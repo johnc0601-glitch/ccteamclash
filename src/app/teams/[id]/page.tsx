@@ -4,6 +4,7 @@ import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory'
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
 import {services} from '@/core/ServiceContainer';
+import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {
   getHistoricalTeamSeasonSummaries,
   getHistoricalTeamSeasonTitles,
@@ -12,8 +13,11 @@ import {
 import {getTeamEvents, getTeamNextEvent, type TeamEvent} from '@/services/matches/EventService';
 import {getStoredCourses} from '@/services/courses/CourseStore';
 import {getStoredTeamById, getStoredTeams} from '@/services/teams/TeamStore';
+import {buildPublicTeamRoster} from '@/services/public/PublicRosterService';
 import type {RecordSummary} from '@/services/statistics';
 import {createSlug} from '@/shared/utils';
+import {hasSupabaseConfig} from '@/lib/supabase';
+import {createClient} from '@/lib/supabase/server';
 import styles from './TeamDetail.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -38,12 +42,22 @@ export default async function TeamPage({params}: TeamPageProps) {
   const team = await getStoredTeamById(id);
   if (!team?.active) notFound();
 
-  const [activeSeason, seasons, roster, courses] = await Promise.all([
+  const [activeSeason, seasons, historicalPlayers, courses, launchPlayers] = await Promise.all([
     services.seasons.getActive(),
     services.seasons.getAll(),
-    services.publicPlayers.getAll(team.id),
+    services.publicPlayers.getAll(),
     getStoredCourses({status: 'active'}),
+    getLaunchPlayers(),
   ]);
+  const roster = launchPlayers
+    ? buildPublicTeamRoster(
+      launchPlayers,
+      historicalPlayers,
+      team.id,
+      team.name,
+      activeSeason?.name ?? 'Current season',
+    )
+    : historicalPlayers.filter(({player}) => player.teamId === team.id);
   const publishedSeasons = seasons.filter((season) => season.published);
   const seasonStatistics = await Promise.all(publishedSeasons.map(async (season) => ({
     season,
@@ -172,6 +186,17 @@ export default async function TeamPage({params}: TeamPageProps) {
       <Footer />
     </>
   );
+}
+
+async function getLaunchPlayers() {
+  if (!hasSupabaseConfig()) return null;
+
+  try {
+    const supabase = await createClient();
+    return await new SupabaseLaunchRepository(supabase).getPlayers();
+  } catch {
+    return null;
+  }
 }
 
 function sameCourse(left: string, right: string): boolean {

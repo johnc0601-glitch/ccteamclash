@@ -140,6 +140,25 @@ test('LaunchService creates a pending profile once per auth user', async () => {
   }
 });
 
+test('LaunchService lets a member update their own profile name', async () => {
+  const {repository, service} = createService();
+
+  const result = await service.updateOwnProfileName('user-pending', '  Stephen Ajoy  ');
+
+  assert.equal(result.ok, true);
+  assert.equal((await repository.getProfileByUserId('user-pending'))?.displayName, 'Stephen Ajoy');
+});
+
+test('LaunchService keeps a linked player name in sync with their profile', async () => {
+  const {repository, service} = createService();
+
+  const result = await service.updateOwnProfileName('user-captain', 'Captain Corrected');
+
+  assert.equal(result.ok, true);
+  assert.equal((await repository.getProfileByUserId('user-captain'))?.displayName, 'Captain Corrected');
+  assert.equal((await repository.getPlayer('player-1'))?.name, 'Captain Corrected');
+});
+
 test('LaunchService approves player claims through commissioner only', async () => {
   const {service} = createService();
   const claim = await service.submitPlayerClaim({

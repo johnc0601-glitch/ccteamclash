@@ -196,6 +196,31 @@
   background: var(--cc-card-bg-soft);
 }
 
+.linkingNote {
+  margin: 18px 0 4px;
+  padding: 14px 16px;
+  border-left: 4px solid var(--cc-bronze);
+  border-radius: 4px;
+  background: var(--cc-card-bg-soft);
+  color: var(--cc-heading);
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.connected {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--cc-teal);
+  border-radius: 5px;
+  background: var(--cc-card-bg-soft);
+}
+
+.connected strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--cc-heading);
+}
+
 .themeAction {
   margin-top: 18px;
 }

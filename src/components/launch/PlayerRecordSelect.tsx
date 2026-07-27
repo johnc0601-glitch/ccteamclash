@@ -10,6 +10,8 @@ type PlayerRecordSelectProps = {
   defaultValue?: string;
   includeEmptyOption?: boolean;
   emptyLabel?: string;
+  searchLabel?: string;
+  searchPlaceholder?: string;
   required?: boolean;
 };
 
@@ -20,6 +22,8 @@ export function PlayerRecordSelect({
   includeEmptyOption = true,
   name,
   players,
+  searchLabel = 'Search player records',
+  searchPlaceholder = 'Search player records',
   required = false,
 }: PlayerRecordSelectProps) {
   const [search, setSearch] = useState('');
@@ -35,9 +39,9 @@ export function PlayerRecordSelect({
   return (
     <>
       <input
-        aria-label="Search player records"
+        aria-label={searchLabel}
         onChange={(event) => setSearch(event.target.value)}
-        placeholder="Search player records"
+        placeholder={searchPlaceholder}
         type="search"
         value={search}
       />
