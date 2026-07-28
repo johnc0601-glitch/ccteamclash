@@ -577,7 +577,7 @@ td,
 }
 
 .home-matches-section {
-  max-width: 980px;
+  max-width: 1180px;
   margin-top: -42px;
   position: relative;
   z-index: 2;
@@ -599,25 +599,54 @@ td,
 
 .home-match-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .home-match-card {
-  min-height: 390px;
+  min-height: 310px;
+  padding: 18px;
 }
 
 .home-match-card .story-matchup {
-  margin-top: 0;
+  margin: 0 0 12px;
+  gap: 8px;
+}
+
+.home-match-card .match-logo-frame {
+  width: 66px;
+  height: 66px;
+  border-radius: 10px;
+  font-size: 21px;
+}
+
+.home-match-card .match-team-link {
+  padding: 5px 2px;
+}
+
+.home-match-card .match-team-link strong {
+  font-size: 12px;
+  line-height: 1.15;
 }
 
 .home-match-card .match-details {
-  margin-top: 10px;
+  margin-top: 4px;
+  padding-top: 12px;
+}
+
+.home-match-card .match-details p {
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.home-match-card .match-details span {
+  min-width: 52px;
+  font-size: 10px;
 }
 
 .home-match-card .match-card-footer {
   justify-content: center;
-  padding-top: 8px;
+  padding-top: 4px;
 }
 
 .story-home-card {
@@ -933,6 +962,10 @@ td,
     margin-top: -34px;
   }
 
+  .home-match-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .story-home-bottom .compact-story-grid {
     grid-template-columns: 1fr;
   }
@@ -949,6 +982,15 @@ td,
 @media (max-width: 680px) {
   .home-match-grid {
     grid-template-columns: 1fr;
+  }
+
+  .home-match-card {
+    min-height: 300px;
+  }
+
+  .home-match-card .match-logo-frame {
+    width: 76px;
+    height: 76px;
   }
 }
 
