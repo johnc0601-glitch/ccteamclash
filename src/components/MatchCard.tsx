@@ -2,56 +2,21 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import {useEffect, useState} from 'react';
 import type {Team} from '@/models/Team';
 import {createSlug} from '@/shared/utils';
 import type {PublicEvent} from '@/services/matches/EventService';
 
-type RotatingMatchCardProps = {
-  matches: PublicEvent[];
+type MatchCardProps = {
+  match: PublicEvent;
   teams: Team[];
 };
 
-export function RotatingMatchCard({matches, teams}: RotatingMatchCardProps) {
-  const [matchIndex, setMatchIndex] = useState(0);
-
-  useEffect(() => {
-    if (matches.length < 2) return undefined;
-    const firstPick = window.setTimeout(() => {
-      setMatchIndex(Math.floor(Math.random() * matches.length));
-    }, 0);
-    const timer = window.setInterval(() => {
-      setMatchIndex((current) => (current + 1) % matches.length);
-    }, 7000);
-    return () => {
-      window.clearTimeout(firstPick);
-      window.clearInterval(timer);
-    };
-  }, [matches.length]);
-
-  const match = matches[matchIndex] ?? matches[0];
+export function MatchCard({match, teams}: MatchCardProps) {
   const homeTeam = findTeam(teams, match?.home);
   const awayTeam = findTeam(teams, match?.away);
 
-  if (!match) {
-    return (
-      <article className="dark-panel story-home-card next-match-card">
-        <div>
-          <span className="panel-title">Upcoming</span>
-          <h2>Next match</h2>
-        </div>
-        <p>No upcoming matches have been posted yet.</p>
-        <Link href="/schedule" className="gold-link">Full schedule -&gt;</Link>
-      </article>
-    );
-  }
-
   return (
-    <article className="dark-panel story-home-card next-match-card">
-      <div>
-        <span className="panel-title">{match.bucket === 'upcoming' ? 'Upcoming' : 'Recent'}</span>
-        <h2>{match.bucket === 'upcoming' ? 'Next match' : 'Latest match'}</h2>
-      </div>
+    <article className="dark-panel story-home-card home-match-card">
       <div className="story-matchup">
         <Link className="match-team-link" href={`/teams/${createSlug(match.home)}`}>
           <TeamMatchLogo name={match.home} logo={homeTeam?.logo} />
@@ -69,8 +34,7 @@ export function RotatingMatchCard({matches, teams}: RotatingMatchCardProps) {
         <p><span>COURSE</span>{match.course}</p>
       </div>
       <div className="match-card-footer">
-        <Link href={match.href} className="gold-link">Match page -&gt;</Link>
-        {matches.length > 1 ? <span>{matchIndex + 1} / {matches.length}</span> : null}
+        <Link href={match.href} className="gold-link">View match -&gt;</Link>
       </div>
     </article>
   );

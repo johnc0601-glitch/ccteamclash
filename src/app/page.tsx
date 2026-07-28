@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import type {ReactNode} from 'react';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
-import {RotatingMatchCard} from '@/components/RotatingMatchCard';
-import {teams} from '@/lib-data';
+import {MatchCard} from '@/components/MatchCard';
 import {getHomePageEvents} from '@/services/matches/EventService';
 import {getStoredTeams} from '@/services/teams/TeamStore';
 import {getStories} from '@/services/stories/StoryService';
@@ -12,9 +11,8 @@ export const dynamic = 'force-dynamic';
 export default async function Home() {
   const stories = await getStories();
   const lead = stories[0];
-  const topTeams = teams.slice(0, 3);
   const teamLogos = await getStoredTeams();
-  const homeEvents = getHomePageEvents();
+  const homeEvents = getHomePageEvents().slice(0, 4);
 
   return (
     <main className="home-page">
@@ -34,36 +32,16 @@ export default async function Home() {
         </section>
       ) : null}
 
-      <section className="shell story-home-stack">
-        <RotatingMatchCard matches={homeEvents} teams={teamLogos} />
-
-        <article className="dark-panel story-home-card">
-          <div>
-            <span className="panel-title">Current</span>
-            <h2>Standings</h2>
-          </div>
-          <div className="mini-table-head"><span>Team</span><span>W-L</span><span>Pts %</span></div>
-          {topTeams.map((team, index) => (
-            <div className="mini-standing" key={team.name}>
-              <span><b>{index + 1}</b>{team.name}</span>
-              <span>{team.record}</span>
-              <span>{team.diff}</span>
-            </div>
+      <section className="shell home-matches-section">
+        <div className="home-matches-heading">
+          <span className="panel-title">League schedule</span>
+          <h2>This month&apos;s matches</h2>
+        </div>
+        <div className="home-match-grid">
+          {homeEvents.map((match) => (
+            <MatchCard key={match.id} match={match} teams={teamLogos} />
           ))}
-          <Link href="/standings" className="gold-link">Full standings -&gt;</Link>
-        </article>
-
-        <article className="dark-panel story-home-card">
-          <div>
-            <span className="panel-title">Players</span>
-            <h2>Rankings</h2>
-          </div>
-          <div className="ranking-link-list">
-            <Link href="/rankings#top-25">Top 25</Link>
-            <Link href="/rankings#women">Top 10 Women</Link>
-            <Link href="/rankings#all">All</Link>
-          </div>
-        </article>
+        </div>
       </section>
 
       <section className="shell story-home-bottom">
