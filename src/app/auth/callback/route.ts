@@ -11,8 +11,12 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const {error} = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
-      const message = encodeURIComponent('That sign-in link is expired or invalid. Request a new email link.');
-      return NextResponse.redirect(new URL(`/account?error=${message}`, requestUrl.origin));
+      const resetFlow = next === '/account/reset-password';
+      const message = encodeURIComponent(resetFlow
+        ? 'That reset link is expired or invalid. Request a new one.'
+        : 'That confirmation link is expired or invalid. Sign in or create a new account.');
+      const destination = resetFlow ? '/account/forgot-password' : '/account';
+      return NextResponse.redirect(new URL(`${destination}?error=${message}`, requestUrl.origin));
     }
     const {data} = await supabase.auth.getUser();
     if (data.user) {

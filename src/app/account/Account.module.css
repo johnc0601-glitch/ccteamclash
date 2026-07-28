@@ -20,11 +20,19 @@
   margin: 10px 0 16px;
   color: var(--cc-heading);
   font-family: var(--cc-font-display);
-  font-size: clamp(46px, 7vw, 82px);
+  font-size: 64px;
   font-style: italic;
-  letter-spacing: -.04em;
+  letter-spacing: 0;
   line-height: .94;
   text-transform: uppercase;
+}
+
+.narrowShell {
+  max-width: 620px;
+}
+
+.narrowShell .header h1 {
+  font-size: 54px;
 }
 
 .header p,
@@ -60,7 +68,7 @@
   font-family: var(--cc-font-display);
   font-size: 31px;
   font-style: italic;
-  letter-spacing: -.03em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -101,6 +109,12 @@
   text-transform: uppercase;
 }
 
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
 .primaryButton {
   border: 1px solid var(--cc-bronze);
   background: var(--cc-bronze);
@@ -129,6 +143,82 @@
   font-weight: 950;
   letter-spacing: .06em;
   text-transform: uppercase;
+}
+
+.forgotLink {
+  width: fit-content;
+  color: var(--cc-teal);
+  font-size: 13px;
+  font-weight: 850;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.accountPrompt {
+  margin-top: 24px;
+  padding-top: 20px;
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--cc-card-border);
+  color: var(--cc-body-text);
+  text-align: center;
+}
+
+.secondaryActionLink {
+  min-height: 46px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 4px;
+  color: var(--cc-heading);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.authAlternative {
+  margin: 22px 0 0;
+  color: var(--cc-body-text);
+  text-align: center;
+}
+
+.authAlternative a {
+  color: var(--cc-teal);
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.passwordField {
+  display: grid;
+  gap: 8px;
+}
+
+.passwordLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.passwordToggle {
+  border: 0;
+  background: transparent;
+  color: var(--cc-teal);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.fieldHint {
+  color: var(--cc-muted);
+  font-size: 12px;
 }
 
 .accountBar {
@@ -236,6 +326,11 @@
 
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .header h1,
+  .narrowShell .header h1 {
+    font-size: 44px;
   }
 
   .accountBar {

@@ -14,9 +14,9 @@ type LaunchSignupMetadata = {
 
 export type LaunchSignupInput = {
   displayName: string;
-  requestedPlayerId: string;
-  submittedName: string;
-  submittedPdgaNumber: string;
+  requestedPlayerId?: string;
+  submittedName?: string;
+  submittedPdgaNumber?: string;
 };
 
 export async function ensureLaunchSignupProfile(
@@ -25,7 +25,7 @@ export async function ensureLaunchSignupProfile(
   input?: LaunchSignupInput,
 ): Promise<string | null> {
   const metadata = input ?? readMetadata(user.user_metadata);
-  if (!metadata?.displayName || !metadata.requestedPlayerId || !metadata.submittedName) return null;
+  if (!metadata?.displayName) return null;
 
   const repository = new SupabaseLaunchRepository(supabase);
   const service = new LaunchService(repository);
@@ -34,6 +34,7 @@ export async function ensureLaunchSignupProfile(
     displayName: metadata.displayName,
   });
   if (!profileResult.ok) return profileResult.message;
+  if (!metadata.requestedPlayerId || !metadata.submittedName) return null;
 
   const existingClaims = await repository.getPlayerClaims();
   const alreadyClaimed = existingClaims.some((claim) => claim.profileId === profileResult.data.id);
@@ -43,7 +44,7 @@ export async function ensureLaunchSignupProfile(
     profileId: profileResult.data.id,
     requestedPlayerId: metadata.requestedPlayerId,
     submittedName: metadata.submittedName,
-    submittedPdgaNumber: metadata.submittedPdgaNumber,
+    submittedPdgaNumber: metadata.submittedPdgaNumber ?? '',
   });
 
   return claimResult.ok ? null : claimResult.message;
@@ -53,12 +54,12 @@ function readMetadata(metadata: LaunchSignupMetadata): LaunchSignupInput | null 
   const displayName = readString(metadata.displayName);
   const requestedPlayerId = readString(metadata.requestedPlayerId);
   const submittedName = readString(metadata.submittedName);
-  if (!displayName || !requestedPlayerId || !submittedName) return null;
+  if (!displayName) return null;
 
   return {
     displayName,
-    requestedPlayerId,
-    submittedName,
+    requestedPlayerId: requestedPlayerId || undefined,
+    submittedName: submittedName || undefined,
     submittedPdgaNumber: readString(metadata.submittedPdgaNumber),
   };
 }

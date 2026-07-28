@@ -237,6 +237,9 @@ test('LaunchService lets commissioners link an unclaimed account to a player', a
 test('LaunchService assigns one captain team from commissioner approval', async () => {
   const {service} = createService();
 
+  const approved = await service.setProfileStatus('pending-1', 'Approved', 'commissioner-1');
+  assert.equal(approved.ok, true);
+
   const assigned = await service.assignCaptainTeam('pending-1', 'team-2', 'commissioner-1');
 
   assert.equal(assigned.ok, true);
@@ -244,6 +247,24 @@ test('LaunchService assigns one captain team from commissioner approval', async 
     assert.equal(assigned.data.role, 'Captain');
     assert.equal(assigned.data.captainTeamId, 'team-2');
   }
+});
+
+test('LaunchService grants commissioner access and clears captain team access', async () => {
+  const {repository, service} = createService();
+
+  const assigned = await service.assignCommissioner('captain-1', 'commissioner-1');
+
+  assert.equal(assigned.ok, true);
+  assert.equal((await repository.getProfile('captain-1'))?.role, 'Commissioner');
+  assert.equal((await repository.getProfile('captain-1'))?.captainTeamId, null);
+});
+
+test('LaunchService prevents a commissioner from removing their own access', async () => {
+  const {service} = createService();
+
+  const result = await service.assignCaptainTeam('commissioner-1', null, 'commissioner-1');
+
+  assert.equal(result.ok, false);
 });
 
 test('LaunchService submits and locks captain rosters', async () => {

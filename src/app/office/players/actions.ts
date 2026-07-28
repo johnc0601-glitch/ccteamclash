@@ -72,6 +72,27 @@ export async function suspendProfile(formData: FormData) {
   await setProfileStatus(formData, 'Suspended', 'Profile suspended.');
 }
 
+export async function assignAccess(formData: FormData) {
+  const {commissionerProfileId, service} = await getCommissionerService();
+  const profileId = readFormValue(formData, 'profileId');
+  const access = readFormValue(formData, 'access');
+  if (!profileId) redirect(`${PLAYERS_PATH}?error=Profile is required.`);
+
+  const result = access === 'commissioner'
+    ? await service.assignCommissioner(profileId, commissionerProfileId)
+    : await service.assignCaptainTeam(
+      profileId,
+      access.startsWith('captain:') ? access.slice('captain:'.length) : null,
+      commissionerProfileId,
+    );
+  if (!result.ok) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(result.message)}`);
+
+  revalidatePeoplePages();
+  redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent(
+    access === 'commissioner' ? 'Commissioner access granted.' : 'Member access updated.',
+  )}`);
+}
+
 export async function assignCaptain(formData: FormData) {
   const {commissionerProfileId, service} = await getCommissionerService();
   const profileId = readFormValue(formData, 'profileId');

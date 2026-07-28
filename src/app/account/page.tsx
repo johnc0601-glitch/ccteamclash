@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {PlayerRecordSelect} from '@/components/launch/PlayerRecordSelect';
 import {ThemeToggle} from '@/components/ThemeToggle';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
@@ -7,14 +6,14 @@ import type {LaunchPlayer, LaunchProfile, PlayerClaim} from '@/domain/launch/Lau
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
 import {
-  createLeagueAccount,
   createPendingProfile,
-  requestPasswordReset,
   signInWithPassword,
   signOut,
   submitPlayerClaim,
   updateProfileName,
 } from './actions';
+import {AccountPageLayout, readAccountParam} from './AccountPageLayout';
+import {PasswordField, SubmitButton} from './AuthFormControls';
 import styles from './Account.module.css';
 
 type AccountPageProps = {
@@ -23,18 +22,20 @@ type AccountPageProps = {
 
 export default async function AccountPage({searchParams}: AccountPageProps) {
   const params = searchParams ? await searchParams : {};
-  const notice = readParam(params.notice);
-  const error = readParam(params.error);
+  const notice = readAccountParam(params.notice);
+  const error = readAccountParam(params.error);
 
   if (!hasSupabaseConfig()) {
     return (
-      <main>
-        <SiteHeader />
-        <AccountShell notice={notice} error="Supabase is not configured for this environment.">
-          <p className={styles.muted}>Add the Team Clash Supabase URL and publishable key before using league accounts.</p>
-        </AccountShell>
-        <Footer />
-      </main>
+      <AccountPageLayout
+        description="Sign in to manage your Team Clash account."
+        error="Supabase is not configured for this environment."
+        narrow
+        notice={notice}
+        title="Sign in"
+      >
+        <p className={styles.muted}>Add the Team Clash Supabase URL and publishable key before using league accounts.</p>
+      </AccountPageLayout>
     );
   }
 
@@ -43,40 +44,33 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
   const repository = new SupabaseLaunchRepository(supabase);
 
   if (!user) {
-    const players = await repository.getPlayers();
-
     return (
-      <main>
-        <SiteHeader />
-        <AccountShell notice={notice} error={error}>
-          <section className={styles.grid} aria-label="Sign in options">
-            <article className={styles.panel}>
-              <span className={styles.eyebrow}>Returning player</span>
-              <h2>Sign in</h2>
-              <p>Use the password you created with your league account.</p>
-              <form className={styles.form} action={signInWithPassword}>
-                <label htmlFor="signinEmail">Email address</label>
-                <input id="signinEmail" name="email" type="email" autoComplete="email" required />
-                <label htmlFor="signinPassword">Password</label>
-                <input id="signinPassword" name="password" type="password" autoComplete="current-password" required />
-                <button className={styles.primaryButton} type="submit">Sign in</button>
-              </form>
-            </article>
-            <article className={styles.panel}>
-              <span className={styles.eyebrow}>Forgot password</span>
-              <h2>Reset</h2>
-              <p>Send yourself a reset link, then choose a new password.</p>
-              <form className={styles.form} action={requestPasswordReset}>
-                <label htmlFor="resetEmail">Email address</label>
-                <input id="resetEmail" name="email" type="email" autoComplete="email" required />
-                <button className={styles.secondaryButton} type="submit">Send reset link</button>
-              </form>
-            </article>
-            <CreateAccountForm players={players} />
-          </section>
-        </AccountShell>
-        <Footer />
-      </main>
+      <AccountPageLayout
+        description="Use your email and password to open your league account."
+        error={error}
+        narrow
+        notice={notice}
+        title="Sign in"
+      >
+        <article className={styles.panel}>
+          <form className={styles.form} action={signInWithPassword}>
+            <label htmlFor="signinEmail">Email address</label>
+            <input id="signinEmail" name="email" type="email" autoComplete="email" required />
+            <PasswordField
+              autoComplete="current-password"
+              id="signinPassword"
+              label="Password"
+              name="password"
+            />
+            <Link className={styles.forgotLink} href="/account/forgot-password">Forgot password?</Link>
+            <SubmitButton pendingLabel="Signing in...">Sign in</SubmitButton>
+          </form>
+          <div className={styles.accountPrompt}>
+            <span>New to Team Clash?</span>
+            <Link className={styles.secondaryActionLink} href="/account/create">Create an account</Link>
+          </div>
+        </article>
+      </AccountPageLayout>
     );
   }
 
@@ -87,9 +81,12 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
   ]);
 
   return (
-    <main>
-      <SiteHeader />
-      <AccountShell notice={notice} error={error}>
+    <AccountPageLayout
+      description="Manage your profile, league history, and access."
+      error={error}
+      notice={notice}
+      title="My account"
+    >
         <section className={styles.accountBar} aria-label="Signed in account">
           <div>
             <span className={styles.eyebrow}>Signed in</span>
@@ -112,73 +109,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
             players={players}
           />
         )}
-      </AccountShell>
-      <Footer />
-    </main>
-  );
-}
-
-function CreateAccountForm({players}: {players: LaunchPlayer[]}) {
-  return (
-    <article className={styles.panel}>
-      <span className={styles.eyebrow}>New player</span>
-      <h2>Create account</h2>
-      <p>Connect your past Team Clash results while creating your account.</p>
-      <p className={styles.linkingNote}>
-        First, choose the name you played under before. This restores your results, rankings, and team history.
-      </p>
-      <form className={styles.form} action={createLeagueAccount}>
-        <label htmlFor="signupEmail">Email address</label>
-        <input id="signupEmail" name="email" type="email" autoComplete="email" required />
-        <label htmlFor="requestedPlayerId">What name did you play under before?</label>
-        <PlayerRecordSelect
-          emptyLabel="Choose your previous league name"
-          id="requestedPlayerId"
-          name="requestedPlayerId"
-          players={players}
-          searchLabel="Search previous league names"
-          searchPlaceholder="Type your old name"
-          required
-        />
-        <label htmlFor="submittedName">What name should we show now?</label>
-        <input id="submittedName" name="submittedName" placeholder="Enter the correct spelling" autoComplete="name" required />
-        <label htmlFor="signupPassword">Password</label>
-        <input
-          id="signupPassword"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          minLength={8}
-          required
-        />
-        <button className={styles.primaryButton} type="submit">Create account</button>
-      </form>
-    </article>
-  );
-}
-
-function AccountShell({
-  children,
-  error,
-  notice,
-}: {
-  children: React.ReactNode;
-  error?: string;
-  notice?: string;
-}) {
-  return (
-    <section className={styles.shell}>
-      <div className="shell">
-        <header className={styles.header}>
-          <span className={styles.eyebrow}>League account</span>
-          <h1>Join Team Clash</h1>
-          <p>Sign in or create an account and connect your previous Team Clash history.</p>
-        </header>
-        {notice ? <p className={styles.notice}>{notice}</p> : null}
-        {error ? <p className={styles.error}>{error}</p> : null}
-        {children}
-      </div>
-    </section>
+    </AccountPageLayout>
   );
 }
 
@@ -272,11 +203,12 @@ function MemberProfile({
           </>
         ) : (
           <>
-            <span className={styles.eyebrow}>Required setup</span>
+            <span className={styles.eyebrow}>Previous player</span>
             <h2>Connect your history</h2>
             <p className={styles.linkingNote}>
-              Choose the name you played under before. This restores your past results, rankings, and team history.
+              Played in Team Clash before? Choose your previous name to restore your results, rankings, and team history.
             </p>
+            <p className={styles.muted}>First season? No action is needed here. A commissioner can add you to the league directory.</p>
             {latestClaim ? (
               <p className={styles.claimState}>
                 Your request to connect <strong>{latestClaim.submittedName}</strong> is {latestClaim.status}.
@@ -317,11 +249,6 @@ function MemberProfile({
       </article>
     </section>
   );
-}
-
-function readParam(value: string | string[] | undefined): string | undefined {
-  if (Array.isArray(value)) return value[0];
-  return value;
 }
 
 function getDisplayName(email: string | undefined, metadataName: unknown): string {

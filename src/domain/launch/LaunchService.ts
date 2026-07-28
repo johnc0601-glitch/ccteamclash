@@ -331,6 +331,10 @@ export class LaunchService {
 
     const profile = await this.repository.getProfile(profileId);
     if (!profile) return failure('Profile not found.');
+    if (profile.id === commissionerProfileId) {
+      return failure('You cannot remove your own commissioner access.');
+    }
+    if (profile.status !== 'Approved') return failure('Only approved accounts can receive access.');
     if (teamId && !await this.repository.getTeam(teamId)) return failure('Team not found.');
 
     return {
@@ -339,6 +343,28 @@ export class LaunchService {
         ...profile,
         role: teamId ? 'Captain' : 'Player',
         captainTeamId: teamId,
+        updatedAt: now(),
+      }),
+    };
+  }
+
+  async assignCommissioner(
+    profileId: string,
+    commissionerProfileId: string,
+  ): Promise<LaunchServiceResult<LaunchProfile>> {
+    const commissioner = await this.requireCommissioner(commissionerProfileId);
+    if (!commissioner.ok) return commissioner;
+
+    const profile = await this.repository.getProfile(profileId);
+    if (!profile) return failure('Profile not found.');
+    if (profile.status !== 'Approved') return failure('Only approved accounts can become commissioners.');
+
+    return {
+      ok: true,
+      data: await this.repository.saveProfile({
+        ...profile,
+        role: 'Commissioner',
+        captainTeamId: null,
         updatedAt: now(),
       }),
     };

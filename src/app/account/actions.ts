@@ -28,24 +28,15 @@ export async function requestMagicLink(formData: FormData) {
 export async function createLeagueAccount(formData: FormData) {
   const email = readFormValue(formData, 'email');
   const password = readFormValue(formData, 'password');
-  const requestedPlayerId = readFormValue(formData, 'requestedPlayerId');
-  const submittedName = readFormValue(formData, 'submittedName');
-  if (!email) redirect('/account?error=Enter your email address.');
-  if (password.length < 8) redirect('/account?error=Password must be at least 8 characters.');
-  if (!requestedPlayerId) redirect('/account?error=Select your player record.');
-  if (!submittedName) redirect('/account?error=Enter your player name.');
+  const confirmPassword = readFormValue(formData, 'confirmPassword');
+  const displayName = readFormValue(formData, 'displayName');
+  if (!displayName) redirect('/account/create?error=Enter your name.');
+  if (!email) redirect('/account/create?error=Enter your email address.');
+  if (password.length < 8) redirect('/account/create?error=Password must be at least 8 characters.');
+  if (password !== confirmPassword) redirect('/account/create?error=Passwords do not match.');
 
   const supabase = await createClient();
-  const repository = new SupabaseLaunchRepository(supabase);
-  const selectedPlayer = await repository.getPlayer(requestedPlayerId);
-  if (!selectedPlayer) redirect('/account?error=Select a valid player record.');
-
-  const signupInput = {
-    displayName: submittedName,
-    requestedPlayerId: selectedPlayer.id,
-    submittedName,
-    submittedPdgaNumber: selectedPlayer.pdgaNumber,
-  };
+  const signupInput = {displayName};
   const origin = await getOrigin();
   const {data, error} = await supabase.auth.signUp({
     email,
@@ -56,16 +47,16 @@ export async function createLeagueAccount(formData: FormData) {
     },
   });
 
-  if (error) redirect(`/account?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
+  if (error) redirect(`/account/create?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
 
   if (data.user && data.session) {
     const setupError = await ensureLaunchSignupProfile(supabase, data.user, signupInput);
-    if (setupError) redirect(`/account?error=${encodeURIComponent(setupError)}`);
+    if (setupError) redirect(`/account/create?error=${encodeURIComponent(setupError)}`);
     revalidatePath('/account');
-    redirect('/account?notice=Your account is ready. The commissioner can review your player claim.');
+    redirect('/account?notice=Your account is ready. Connect your previous league history if you played before.');
   }
 
-  redirect('/account?notice=Account created. Check your email, confirm the account, then sign in here with your password.');
+  redirect('/account?notice=Account created. Check your email to confirm it, then sign in.');
 }
 
 export async function signInWithPassword(formData: FormData) {
@@ -84,7 +75,7 @@ export async function signInWithPassword(formData: FormData) {
 
 export async function requestPasswordReset(formData: FormData) {
   const email = readFormValue(formData, 'email');
-  if (!email) redirect('/account?error=Enter your email address.');
+  if (!email) redirect('/account/forgot-password?error=Enter your email address.');
 
   const supabase = await createClient();
   const origin = await getOrigin();
@@ -92,8 +83,8 @@ export async function requestPasswordReset(formData: FormData) {
     redirectTo: `${origin}/auth/callback?next=/account/reset-password`,
   });
 
-  if (error) redirect(`/account?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
-  redirect('/account?notice=Check your email for the password reset link.');
+  if (error) redirect(`/account/forgot-password?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
+  redirect('/account/forgot-password?notice=If an account exists for that email, a reset link has been sent.');
 }
 
 export async function updatePassword(formData: FormData) {

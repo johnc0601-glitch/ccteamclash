@@ -4,7 +4,7 @@ import {useMemo, useState} from 'react';
 import type {LaunchPlayer, LaunchProfile, LaunchTeam} from '@/domain/launch/LaunchData';
 import {
   approveProfile,
-  assignCaptain,
+  assignAccess,
   rejectProfile,
   savePlayer,
   suspendProfile,
@@ -152,15 +152,23 @@ function AccountAccess({
         <span>{profile.status} / {profile.role}</span>
       </div>
       {profile.status === 'Approved' && profile.id !== commissionerProfileId ? (
-        <form className={styles.captainForm} action={assignCaptain}>
+        <form className={styles.captainForm} action={assignAccess}>
           <input name="profileId" type="hidden" value={profile.id} />
           <label>
             <span>Access</span>
-            <select name="teamId" defaultValue={profile.captainTeamId ?? ''}>
-              <option value="">Player only</option>
+            <select
+              name="access"
+              defaultValue={profile.role === 'Commissioner'
+                ? 'commissioner'
+                : profile.captainTeamId
+                  ? `captain:${profile.captainTeamId}`
+                  : 'player'}
+            >
+              <option value="player">Player only</option>
               {teams.map((team) => (
-                <option key={team.id} value={team.id}>Captain: {team.name}</option>
+                <option key={team.id} value={`captain:${team.id}`}>Captain: {team.name}</option>
               ))}
+              <option value="commissioner">Commissioner</option>
             </select>
           </label>
           <button className={styles.primaryButton} type="submit">Save access</button>
