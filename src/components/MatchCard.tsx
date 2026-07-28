@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import {useState} from 'react';
 import type {Team} from '@/models/Team';
 import {createSlug} from '@/shared/utils';
 import type {PublicEvent} from '@/services/matches/EventService';
@@ -41,15 +42,18 @@ export function MatchCard({match, teams}: MatchCardProps) {
 }
 
 function TeamMatchLogo({name, logo}: {name: string; logo?: string}) {
+  const [imageFailed, setImageFailed] = useState(false);
+
   return (
     <span className="team-shield match-logo-frame">
-      {logo ? (
+      {logo && !imageFailed ? (
         <Image
           src={logo}
           alt={`${name} logo`}
           width={88}
           height={88}
           className="match-team-logo"
+          onError={() => setImageFailed(true)}
         />
       ) : initials(name)}
     </span>
