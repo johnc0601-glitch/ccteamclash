@@ -1,7 +1,11 @@
 import type {Metadata} from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import {redirect} from 'next/navigation';
 import {OfficeNav} from '@/components/commissioner/OfficeNav';
+import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
+import {hasSupabaseConfig} from '@/lib/supabase';
+import {createClient} from '@/lib/supabase/server';
 import {BRAND_LOGO, BRAND_NAME} from '@/shared/constants';
 import './office.css';
 
@@ -10,7 +14,9 @@ export const metadata: Metadata = {
   description: 'League administration for CC Team Clash commissioners.',
 };
 
-export default function CommissionerOfficeLayout({children}: Readonly<{children: React.ReactNode}>) {
+export default async function CommissionerOfficeLayout({children}: Readonly<{children: React.ReactNode}>) {
+  await requireCommissionerAccess();
+
   return (
     <div className="commissioner-office">
       <header className="office-topbar">
@@ -34,4 +40,24 @@ export default function CommissionerOfficeLayout({children}: Readonly<{children:
       </div>
     </div>
   );
+}
+
+async function requireCommissionerAccess() {
+  if (!hasSupabaseConfig()) {
+    redirect('/account?error=Commissioner%20Office%20is%20not%20configured.');
+  }
+
+  const supabase = await createClient();
+  const {data: {user}} = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/account?error=Sign%20in%20with%20an%20approved%20commissioner%20account.');
+  }
+
+  const repository = new SupabaseLaunchRepository(supabase);
+  const profile = await repository.getProfileByUserId(user.id);
+
+  if (profile?.role !== 'Commissioner' || profile.status !== 'Approved') {
+    redirect('/account?error=Approved%20commissioner%20access%20is%20required.');
+  }
 }
