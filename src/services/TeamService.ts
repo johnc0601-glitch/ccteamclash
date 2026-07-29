@@ -114,6 +114,21 @@ export class TeamService {
       : this.notFoundResult();
   }
 
+  async activate(id: string): Promise<TeamServiceResult<Team>> {
+    const team = await this.repository.getById(id);
+    if (!team) return this.notFoundResult();
+    if (team.active) return {ok: true, data: team};
+
+    const activatedTeam = await this.repository.update({
+      ...team,
+      active: true,
+      updatedAt: new Date().toISOString(),
+    });
+    return activatedTeam
+      ? {ok: true, data: activatedTeam}
+      : this.notFoundResult();
+  }
+
   async delete(id: string): Promise<TeamServiceResult<string>> {
     const team = await this.repository.getById(id);
     if (!team) return this.notFoundResult();

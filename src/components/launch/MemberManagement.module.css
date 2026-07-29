@@ -1,0 +1,269 @@
+.management {
+  margin-top: 26px;
+  display: grid;
+  gap: 18px;
+}
+
+.sectionIntro {
+  display: grid;
+  gap: 5px;
+}
+
+.sectionIntro span {
+  color: #56701c;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.sectionIntro h2 {
+  margin: 0;
+  color: #111516;
+  font-size: 28px;
+  font-style: italic;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.sectionIntro p {
+  margin: 0;
+  color: #647174;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summaryCard,
+.panel,
+.notice,
+.error {
+  border: 1px solid #dfe2db;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.notice,
+.error {
+  margin: 0 0 18px;
+  padding: 16px 18px;
+  font-weight: 900;
+}
+
+.notice p,
+.error p {
+  margin: 0;
+}
+
+.error a {
+  display: inline-flex;
+  margin-top: 12px;
+  color: #111516;
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  text-decoration: underline;
+}
+
+.notice {
+  border-left: 4px solid #56701c;
+}
+
+.error {
+  border-left: 4px solid #b64040;
+}
+
+.summaryCard {
+  padding: 18px;
+}
+
+.summaryCard span,
+.panelEyebrow,
+.memberMeta,
+.claimMeta {
+  color: #647174;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.summaryCard strong {
+  display: block;
+  margin-top: 8px;
+  color: #111516;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.singleGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.panel {
+  overflow: hidden;
+}
+
+.panelHeader {
+  padding: 20px 22px;
+  border-bottom: 1px solid #e3e5df;
+}
+
+.panelHeader h2 {
+  margin: 7px 0 0;
+  font-size: 22px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.memberList,
+.claimList {
+  display: grid;
+}
+
+.memberRow,
+.claimRow {
+  padding: 18px 22px;
+  display: grid;
+  gap: 8px;
+  border-bottom: 1px solid #eceee8;
+}
+
+.memberRow:last-child,
+.claimRow:last-child {
+  border-bottom: 0;
+}
+
+.memberPrimary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.memberPrimary strong,
+.claimRow strong {
+  color: #111516;
+  font-size: 15px;
+  text-transform: uppercase;
+}
+
+.badge {
+  width: fit-content;
+  padding: 5px 8px;
+  border: 1px solid #b9c69a;
+  border-radius: 999px;
+  background: #f4f8eb;
+  color: #56701c;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.muted {
+  color: #647174;
+}
+
+.emptyState {
+  padding: 24px 22px;
+  color: #647174;
+}
+
+.reviewForm {
+  display: grid;
+  gap: 10px;
+}
+
+.reviewForm label,
+.captainForm label {
+  color: #111516;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+}
+
+.reviewForm input,
+.reviewForm select,
+.captainForm select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid #cfd4ce;
+  border-radius: 4px;
+  background: #fff;
+  color: #111516;
+  font: inherit;
+}
+
+.reviewForm .checkboxLabel input {
+  width: auto;
+  min-height: auto;
+}
+
+.captainForm {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid #eceee8;
+}
+
+.captainForm div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: 36px;
+  border-radius: 4px;
+  padding: 0 14px;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.primaryButton {
+  border: 1px solid #111516;
+  background: #111516;
+  color: #fff;
+}
+
+.secondaryButton {
+  border: 1px solid #cfd4ce;
+  background: #fff;
+  color: #111516;
+}
+
+@media (max-width: 900px) {
+  .summaryGrid,
+  .grid,
+  .singleGrid {
+    grid-template-columns: 1fr;
+  }
+}

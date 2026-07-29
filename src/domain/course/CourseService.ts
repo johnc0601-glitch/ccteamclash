@@ -1,6 +1,8 @@
 import type {
   Course,
   CourseFieldErrors,
+  CourseImportInput,
+  CourseImportResult,
   CourseInput,
   CourseQuery,
   CourseServiceResult,
@@ -87,6 +89,50 @@ export class CourseService {
     return this.changeStatus(id, true);
   }
 
+  async importCourses(inputs: CourseImportInput[]): Promise<CourseImportResult> {
+    const result: CourseImportResult = {created: [], updated: [], skipped: []};
+
+    for (const [index, input] of inputs.entries()) {
+      const row = index + 1;
+      const existing = await this.findExistingCourse(input);
+      const validated = await this.validate(input, existing?.id);
+
+      if (this.hasErrors(validated.fieldErrors)) {
+        result.skipped.push({
+          row,
+          message: 'Review the highlighted course fields.',
+          fieldErrors: validated.fieldErrors,
+        });
+        continue;
+      }
+
+      const timestamp = new Date().toISOString();
+      const active = input.active ?? existing?.active ?? true;
+
+      if (existing) {
+        const updated = await this.repository.update({
+          ...existing,
+          ...validated.input,
+          active,
+          updatedAt: timestamp,
+        });
+        if (updated) result.updated.push(updated);
+        continue;
+      }
+
+      const created = await this.repository.create({
+        ...validated.input,
+        id: this.createId(validated.input.name),
+        active,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      });
+      result.created.push(created);
+    }
+
+    return result;
+  }
+
   private async changeStatus(id: string, active: boolean): Promise<CourseServiceResult<Course>> {
     const existing = await this.repository.getById(id);
     if (!existing) return this.notFoundResult();
@@ -109,6 +155,9 @@ export class CourseService {
       address: input.address.trim(),
       mapUrl: input.mapUrl.trim(),
       udiscUrl: input.udiscUrl.trim(),
+      photoUrl: input.photoUrl.trim(),
+      description: input.description.trim(),
+      homeTeamId: input.homeTeamId?.trim() || undefined,
     };
     const fieldErrors: CourseFieldErrors = {};
 
@@ -122,6 +171,9 @@ export class CourseService {
     }
     if (normalizedInput.udiscUrl && !isWebUrl(normalizedInput.udiscUrl)) {
       fieldErrors.udiscUrl = 'Enter a valid web link.';
+    }
+    if (normalizedInput.photoUrl && !isWebUrl(normalizedInput.photoUrl)) {
+      fieldErrors.photoUrl = 'Enter a valid web link.';
     }
 
     const courses = await this.repository.getAll();
@@ -150,5 +202,12 @@ export class CourseService {
 
   private notFoundResult<T>(): CourseServiceResult<T> {
     return {ok: false, message: 'Course not found.'};
+  }
+
+  private async findExistingCourse(input: CourseImportInput): Promise<Course | undefined> {
+    const courses = await this.repository.getAll();
+    return courses.find((course) =>
+      normalize(course.name) === normalize(input.name)
+      && normalize(course.city) === normalize(input.city));
   }
 }

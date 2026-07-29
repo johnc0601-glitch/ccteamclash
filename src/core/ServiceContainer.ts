@@ -1,5 +1,7 @@
 import {MockCourseRepository} from '@/domain/course/CourseRepository';
 import {CourseService} from '@/domain/course/CourseService';
+import {MockHistoricalImportRepository} from '@/domain/history/HistoricalImportRepository';
+import {HistoricalImportService} from '@/domain/history/HistoricalImportService';
 import {MockImportRepository} from '@/domain/import/ImportRepository';
 import {ImportService} from '@/domain/import/ImportService';
 import {MockScheduleRepository} from '@/domain/schedule/ScheduleRepository';
@@ -21,6 +23,7 @@ const repositories = {
   seasons: new MockSeasonRepository(),
   schedules: new MockScheduleRepository(),
   courses: new MockCourseRepository(),
+  historicalImports: new MockHistoricalImportRepository(),
   imports: new MockImportRepository(),
   statistics: new MockStatisticsRepository(),
 };
@@ -44,6 +47,7 @@ export const services = {
   players,
   seasons,
   courses,
+  historicalImports: new HistoricalImportService(repositories.historicalImports, teams, players),
   schedules,
   imports: new ImportService(
     repositories.imports,

@@ -17,6 +17,7 @@
 .searchBar input,
 .selectControl select,
 .teamForm input,
+.teamForm select,
 .teamForm textarea {
   width: 100%;
   border: 1px solid #cfd4cc;
@@ -493,6 +494,7 @@
 }
 
 .teamForm input,
+.teamForm select,
 .teamForm textarea {
   min-height: 42px;
   padding: 10px 12px;
@@ -519,6 +521,38 @@
 
 .colorControl input[type="color"] {
   padding: 3px;
+}
+
+.logoUploadField {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.logoUploadField > span:first-child {
+  color: #657068;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.logoUploadControl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.logoUploadActions {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.logoButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .fieldError {

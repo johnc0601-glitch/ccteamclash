@@ -2,10 +2,25 @@ import Link from 'next/link';
 import {notFound} from 'next/navigation';
 import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
-import {TeamBanner} from '@/components/teams/TeamBanner';
+import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
 import {services} from '@/core/ServiceContainer';
+import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
+import {
+  getHistoricalTeamSeasonSummaries,
+  getHistoricalTeamSeasonTitles,
+  getHistoricalTeamSeedSummary,
+} from '@/data/historicalSeed';
+import {getTeamEvents, getTeamNextEvent, type TeamEvent} from '@/services/matches/EventService';
+import {getStoredCourses} from '@/services/courses/CourseStore';
+import {getStoredTeamById, getStoredTeams} from '@/services/teams/TeamStore';
+import {buildPublicTeamRoster} from '@/services/public/PublicRosterService';
 import type {RecordSummary} from '@/services/statistics';
+import {createSlug} from '@/shared/utils';
+import {hasSupabaseConfig} from '@/lib/supabase';
+import {createClient} from '@/lib/supabase/server';
 import styles from './TeamDetail.module.css';
+
+export const dynamic = 'force-dynamic';
 
 type TeamPageProps = {
   params: Promise<{id: string}>;
@@ -18,21 +33,31 @@ function formatRecord(record: RecordSummary): string {
 }
 
 export async function generateStaticParams() {
-  const teams = await services.teams.getAll({status: 'active'});
+  const teams = await getStoredTeams({status: 'active'});
   return teams.map((team) => ({id: team.id}));
 }
 
 export default async function TeamPage({params}: TeamPageProps) {
   const {id} = await params;
-  const team = await services.teams.getById(id);
+  const team = await getStoredTeamById(id);
   if (!team?.active) notFound();
 
-  const [activeSeason, seasons, roster, courses] = await Promise.all([
+  const [activeSeason, seasons, historicalPlayers, courses, launchPlayers] = await Promise.all([
     services.seasons.getActive(),
     services.seasons.getAll(),
-    services.publicPlayers.getAll(team.id),
-    services.courses.getAll({status: 'active'}),
+    services.publicPlayers.getAll(),
+    getStoredCourses({status: 'active'}),
+    getLaunchPlayers(),
   ]);
+  const roster = launchPlayers
+    ? buildPublicTeamRoster(
+      launchPlayers,
+      historicalPlayers,
+      team.id,
+      team.name,
+      activeSeason?.name ?? 'Current season',
+    )
+    : historicalPlayers.filter(({player}) => player.teamId === team.id);
   const publishedSeasons = seasons.filter((season) => season.published);
   const seasonStatistics = await Promise.all(publishedSeasons.map(async (season) => ({
     season,
@@ -42,8 +67,17 @@ export default async function TeamPage({params}: TeamPageProps) {
     ? seasonStatistics.find(({season}) => season.id === activeSeason.id)?.statistics
       ?? await services.statistics.getTeamStatistics(team.id, activeSeason.id)
     : undefined;
+  const historicalStatistics = getHistoricalTeamSeedSummary(team.id);
+  const displayStatistics = historicalStatistics ?? currentStatistics;
+  const historicalHistory = getHistoricalTeamSeasonSummaries(team.id);
+  const seasonTitles = getHistoricalTeamSeasonTitles(team.id);
   const history = seasonStatistics.filter(({statistics}) => statistics.matchesPlayed > 0);
-  const homeCourse = courses.find((course) => course.name === team.homeCourse);
+  const nextMatch = getTeamNextEvent(team.name);
+  const teamEvents = getTeamEvents(team.name);
+  const homeCourses = courses.filter((course) =>
+    team.homeCourse && sameCourse(team.homeCourse, course.name));
+  const displayedHomeCourseName = homeCourses[0]?.name ?? team.homeCourse;
+  const courseDirections = new Map(courses.map((course) => [createSlug(course.name), course.mapUrl]));
 
   return (
     <>
@@ -51,27 +85,54 @@ export default async function TeamPage({params}: TeamPageProps) {
       <main className={styles.page}>
         <div className="shell">
           <Link className={styles.back} href="/teams">Back to teams</Link>
-          <TeamBanner team={team} />
+          <ClientTeamBanner initialTeam={team} />
+
+          {seasonTitles.length ? (
+            <section className={styles.championBanner} aria-label="Season championships">
+              <span>Season champion</span>
+              <strong>{seasonTitles.map((title) => title.seasonName.replace('Coastal Clash Match Play ', '')).join(' / ')}</strong>
+              <small>{team.name} won {seasonTitles.length === 1 ? 'this season' : 'these seasons'}.</small>
+            </section>
+          ) : null}
 
           <section className={styles.overview}>
             <div className={styles.recordBlock}>
-              <span>{activeSeason?.name ?? 'Current season'}</span>
-              <strong>{currentStatistics ? formatRecord(currentStatistics.record) : '0-0'}</strong>
-              <small>Current record</small>
+              <span>{historicalStatistics?.seasonName ?? activeSeason?.name ?? 'Current season'}</span>
+              <strong>{displayStatistics ? formatRecord(displayStatistics.record) : '0-0'}</strong>
+              <small>{historicalStatistics ? 'All-time record' : 'Current record'}</small>
             </div>
             <dl>
-              <div><dt>Matches</dt><dd>{currentStatistics?.matchesPlayed ?? 0}</dd></div>
-              <div><dt>Points %</dt><dd>{(currentStatistics?.pointsPercentage ?? 0).toFixed(1)}%</dd></div>
-              <div><dt>Streak</dt><dd>{currentStatistics?.currentStreak ?? '--'}</dd></div>
+              <div><dt>Matches</dt><dd>{displayStatistics?.matchesPlayed ?? 0}</dd></div>
+              <div><dt>Points %</dt><dd>{(displayStatistics?.pointsPercentage ?? 0).toFixed(1)}%</dd></div>
+              <div><dt>Streak</dt><dd>{historicalStatistics ? '--' : currentStatistics?.currentStreak ?? '--'}</dd></div>
             </dl>
             <div className={styles.teamInfo}>
               <p><span>Captain</span><strong>{team.captain || 'To be announced'}</strong></p>
-              <p><span>Home course</span><strong>{team.homeCourse || 'To be announced'}</strong></p>
-              {homeCourse ? <a href={homeCourse.mapUrl} target="_blank" rel="noreferrer">Open directions</a> : null}
+              <p><span>Home course</span><strong>{displayedHomeCourseName || 'To be announced'}</strong></p>
+              {homeCourses.length ? (
+                <div className={styles.courseLinks}>
+                  {homeCourses.map((course) => (
+                    <div key={course.id}>
+                      {homeCourses.length > 1 ? <small>{course.name}</small> : null}
+                      <a href={course.mapUrl} target="_blank" rel="noreferrer">Directions</a>
+                      {course.udiscUrl ? <a href={course.udiscUrl} target="_blank" rel="noreferrer">UDisc</a> : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </section>
 
           {team.description ? <p className={styles.description}>{team.description}</p> : null}
+
+          <section className={styles.section}>
+            <header className={styles.sectionHeader}>
+              <span>Team schedule</span>
+              <h2>Matchdays</h2>
+            </header>
+            {nextMatch ? <NextMatchCard event={nextMatch} courseDirections={courseDirections} /> : null}
+            <TeamSchedule events={teamEvents} courseDirections={courseDirections} />
+          </section>
 
           <section className={styles.section}>
             <header className={styles.sectionHeader}>
@@ -81,7 +142,6 @@ export default async function TeamPage({params}: TeamPageProps) {
             </header>
             <PublicPlayerDirectory
               players={roster}
-              teams={[{id: team.id, name: team.name}]}
               showFilters={false}
             />
           </section>
@@ -91,7 +151,21 @@ export default async function TeamPage({params}: TeamPageProps) {
               <span>League record</span>
               <h2>Season history</h2>
             </header>
-            {history.length ? (
+            {historicalHistory.length ? (
+              <div className={styles.historyWrap}>
+                <table>
+                  <thead><tr><th>Season</th><th>Matches</th><th>Record</th><th>Points %</th></tr></thead>
+                  <tbody>{historicalHistory.map((entry) => (
+                    <tr key={entry.seasonId}>
+                      <td><strong>{entry.seasonName}</strong></td>
+                      <td>{entry.matchesPlayed}</td>
+                      <td>{formatRecord(entry.record)}</td>
+                      <td>{entry.pointsPercentage.toFixed(1)}%</td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            ) : history.length ? (
               <div className={styles.historyWrap}>
                 <table>
                   <thead><tr><th>Season</th><th>Matches</th><th>Record</th><th>Points %</th></tr></thead>
@@ -111,5 +185,85 @@ export default async function TeamPage({params}: TeamPageProps) {
       </main>
       <Footer />
     </>
+  );
+}
+
+async function getLaunchPlayers() {
+  if (!hasSupabaseConfig()) return null;
+
+  try {
+    const supabase = await createClient();
+    return await new SupabaseLaunchRepository(supabase).getPlayers();
+  } catch {
+    return null;
+  }
+}
+
+function sameCourse(left: string, right: string): boolean {
+  return left.trim().toLocaleLowerCase() === right.trim().toLocaleLowerCase();
+}
+
+function findDirections(courseName: string, courseDirections: Map<string, string>): string | undefined {
+  const courseSlug = createSlug(courseName);
+  const exact = courseDirections.get(courseSlug);
+  if (exact) return exact;
+
+  for (const [candidate, directions] of courseDirections) {
+    const sharedWords = candidate
+      .split('-')
+      .filter((word) => word.length > 3 && courseSlug.includes(word));
+    if (sharedWords.length >= 2) return directions;
+  }
+
+  return undefined;
+}
+
+function NextMatchCard({event, courseDirections}: {
+  event: TeamEvent;
+  courseDirections: Map<string, string>;
+}) {
+  const directions = findDirections(event.course, courseDirections);
+
+  return (
+    <div className={styles.nextMatch}>
+      <div>
+        <span>Next match</span>
+        <h3>{event.isHome ? 'Home vs' : 'Away at'} {event.opponent}</h3>
+        <p>
+          {event.date} / {event.time} /{' '}
+          {directions ? <a href={directions} target="_blank" rel="noreferrer">{event.course}</a> : event.course}
+        </p>
+      </div>
+      <Link href={event.href}>Match page</Link>
+    </div>
+  );
+}
+
+function TeamSchedule({events, courseDirections}: {
+  events: TeamEvent[];
+  courseDirections: Map<string, string>;
+}) {
+  if (!events.length) {
+    return <p className={styles.empty}>No scheduled matchdays have been posted for this team yet.</p>;
+  }
+
+  return (
+    <div className={styles.matchHistoryWrap}>
+      <table>
+        <thead><tr><th>Date</th><th>Opponent</th><th>Course</th><th>Status</th><th>Page</th></tr></thead>
+        <tbody>{events.map((event) => {
+          const directions = findDirections(event.course, courseDirections);
+          return (
+            <tr key={event.id}>
+              <td><strong>{event.date}</strong><small>{event.time}</small></td>
+              <td>{event.isHome ? 'vs' : 'at'} {event.opponent}</td>
+              <td>{directions ? <a href={directions} target="_blank" rel="noreferrer">{event.course}</a> : event.course}</td>
+              <td>{event.status}</td>
+              <td><Link href={event.href}>Open</Link></td>
+            </tr>
+          );
+        })}</tbody>
+      </table>
+    </div>
   );
 }

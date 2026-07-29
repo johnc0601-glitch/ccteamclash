@@ -13,6 +13,7 @@ const DEFAULT_QUERY: PlayerQuery = {
   search: '',
   teamId: 'all',
   status: 'all',
+  sort: 'alphabetical',
 };
 
 type PlayerTeamProvider = Pick<TeamService, 'getById'>;
@@ -40,10 +41,16 @@ export class PlayerService {
         if (resolvedQuery.status === 'active' && !player.active) return false;
         if (resolvedQuery.status === 'archived' && player.active) return false;
         if (resolvedQuery.teamId !== 'all' && player.teamId !== resolvedQuery.teamId) return false;
-        return !normalizedSearch || [player.name, player.pdgaNumber]
+        return !normalizedSearch || [
+          player.name,
+          player.pdgaNumber,
+          player.teamId,
+          player.gender,
+          player.pdgaRating?.toString() ?? '',
+        ]
           .some((value) => normalizeForComparison(value).includes(normalizedSearch));
       })
-      .sort((left, right) => left.name.localeCompare(right.name, undefined, {sensitivity: 'base'}));
+      .sort((left, right) => this.sortPlayers(left, right, resolvedQuery.sort));
   }
 
   async getById(id: string): Promise<Player | undefined> {
@@ -111,12 +118,10 @@ export class PlayerService {
     const fieldErrors: PlayerFieldErrors = {};
 
     if (!normalizedInput.name) fieldErrors.name = 'Player name is required.';
-    if (normalizedInput.gender !== 'Male' && normalizedInput.gender !== 'Female') {
-      fieldErrors.gender = 'Select male or female.';
+    if (!['Male', 'Female', 'Unknown'].includes(normalizedInput.gender)) {
+      fieldErrors.gender = 'Select male, female, or unknown.';
     }
-    if (!normalizedInput.teamId) {
-      fieldErrors.teamId = 'Current team is required.';
-    } else if (!await this.teams.getById(normalizedInput.teamId)) {
+    if (normalizedInput.teamId && !await this.teams.getById(normalizedInput.teamId)) {
       fieldErrors.teamId = 'Select a valid team.';
     }
 
@@ -129,8 +134,14 @@ export class PlayerService {
       fieldErrors.pdgaRating = 'PDGA rating must be a positive whole number.';
     }
 
+    const players = await this.repository.getAll();
+    const duplicateName = players.some((player) =>
+      player.id !== currentId
+      && normalizeForComparison(player.name) === normalizeForComparison(normalizedInput.name),
+    );
+    if (duplicateName) fieldErrors.name = 'This player name already exists.';
+
     if (normalizedInput.pdgaNumber) {
-      const players = await this.repository.getAll();
       const duplicate = players.some((player) =>
         player.id !== currentId && player.pdgaNumber === normalizedInput.pdgaNumber,
       );
@@ -144,6 +155,28 @@ export class PlayerService {
     const slug = createSlug(name);
     const uniquePart = globalThis.crypto?.randomUUID?.() ?? Date.now().toString(36);
     return `${slug || 'player'}-${uniquePart}`;
+  }
+
+  private sortPlayers(left: Player, right: Player, sort: PlayerQuery['sort']): number {
+    const byName = left.name.localeCompare(right.name, undefined, {sensitivity: 'base'});
+
+    if (sort === 'recently-updated') {
+      return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime() || byName;
+    }
+
+    if (sort === 'team') {
+      return left.teamId.localeCompare(right.teamId, undefined, {sensitivity: 'base'}) || byName;
+    }
+
+    if (sort === 'rating') {
+      return (right.pdgaRating ?? 0) - (left.pdgaRating ?? 0) || byName;
+    }
+
+    if (sort === 'status') {
+      return Number(right.active) - Number(left.active) || byName;
+    }
+
+    return byName;
   }
 
   private hasErrors(fieldErrors: PlayerFieldErrors): boolean {

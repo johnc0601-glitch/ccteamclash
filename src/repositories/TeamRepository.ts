@@ -1,6 +1,8 @@
 import {TEAM_MOCK_DATA} from '@/data/teams';
 import type {Team} from '@/models/Team';
 
+const TEAM_STORAGE_KEY = 'cc-team-clash:teams';
+
 export interface TeamRepository {
   getAll(): Promise<Team[]>;
   getById(id: string): Promise<Team | undefined>;
@@ -15,8 +17,36 @@ function cloneTeam(team: Team): Team {
   return {...team};
 }
 
+function canUseBrowserStorage(): boolean {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+}
+
+function loadStoredTeams(): Team[] | undefined {
+  if (!canUseBrowserStorage()) return undefined;
+
+  try {
+    const storedTeams = window.localStorage.getItem(TEAM_STORAGE_KEY);
+    if (!storedTeams) return undefined;
+    const parsedTeams = JSON.parse(storedTeams);
+    if (!Array.isArray(parsedTeams)) return undefined;
+    return parsedTeams.map(cloneTeam);
+  } catch {
+    return undefined;
+  }
+}
+
+function saveStoredTeams(teams: Team[]): void {
+  if (!canUseBrowserStorage()) return;
+
+  try {
+    window.localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(teams));
+  } catch {
+    // The mock repository should keep working even when browser storage is full or unavailable.
+  }
+}
+
 export class MockTeamRepository implements TeamRepository {
-  private teams: Team[] = TEAM_MOCK_DATA.map(cloneTeam);
+  private teams: Team[] = loadStoredTeams() ?? TEAM_MOCK_DATA.map(cloneTeam);
 
   async getAll(): Promise<Team[]> {
     return this.teams.map(cloneTeam);
@@ -41,6 +71,7 @@ export class MockTeamRepository implements TeamRepository {
   async create(team: Team): Promise<Team> {
     const storedTeam = cloneTeam(team);
     this.teams.push(storedTeam);
+    saveStoredTeams(this.teams);
     return cloneTeam(storedTeam);
   }
 
@@ -49,6 +80,7 @@ export class MockTeamRepository implements TeamRepository {
     if (index === -1) return undefined;
 
     this.teams[index] = cloneTeam(team);
+    saveStoredTeams(this.teams);
     return cloneTeam(this.teams[index]);
   }
 
@@ -58,12 +90,15 @@ export class MockTeamRepository implements TeamRepository {
 
     team.active = false;
     team.updatedAt = new Date().toISOString();
+    saveStoredTeams(this.teams);
     return cloneTeam(team);
   }
 
   async delete(id: string): Promise<boolean> {
     const initialLength = this.teams.length;
     this.teams = this.teams.filter((team) => team.id !== id);
-    return this.teams.length < initialLength;
+    const deleted = this.teams.length < initialLength;
+    if (deleted) saveStoredTeams(this.teams);
+    return deleted;
   }
 }

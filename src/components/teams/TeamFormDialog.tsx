@@ -1,3 +1,4 @@
+import type {Course} from '@/domain/course/Course';
 import type {Team} from '@/models/Team';
 import type {TeamFieldErrors, TeamInput} from '@/types/team';
 import {DialogShell} from '@/components/teams/DialogShell';
@@ -8,11 +9,12 @@ type TeamFormDialogProps = {
   team?: Team;
   fieldErrors: TeamFieldErrors;
   submitting: boolean;
+  courses: Course[];
   onSubmit: (values: TeamInput) => void;
   onClose: () => void;
 };
 
-export function TeamFormDialog({team, fieldErrors, submitting, onSubmit, onClose}: TeamFormDialogProps) {
+export function TeamFormDialog({team, fieldErrors, submitting, courses, onSubmit, onClose}: TeamFormDialogProps) {
   const initialValues = team ? teamToFormValues(team) : EMPTY_TEAM_INPUT;
 
   return (
@@ -28,6 +30,7 @@ export function TeamFormDialog({team, fieldErrors, submitting, onSubmit, onClose
         fieldErrors={fieldErrors}
         submitLabel={team ? 'Save changes' : 'Create team'}
         submitting={submitting}
+        courses={courses}
         onSubmit={onSubmit}
         onCancel={onClose}
       />

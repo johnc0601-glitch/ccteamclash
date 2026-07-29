@@ -41,6 +41,7 @@
 .importForm label > span:first-child,
 .uploadDropzone > span,
 .dashboard span,
+.applySummary span,
 .validationSummary span,
 .previewPanel header span,
 .expectedUpdates > span,
@@ -138,7 +139,8 @@
   gap: 12px;
 }
 
-.dashboard div {
+.dashboard div,
+.applySummary div {
   min-height: 96px;
   padding: 18px;
   display: grid;
@@ -149,10 +151,17 @@
   background: #fff;
 }
 
-.dashboard strong {
+.dashboard strong,
+.applySummary strong {
   color: #121814;
   font-size: 28px;
   line-height: 1;
+}
+
+.applySummary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .listHeader {
@@ -457,11 +466,134 @@
   background: #f8f9f6;
 }
 
+.previewHeader,
+.playerPreviewHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.previewHeader p {
+  max-width: 520px;
+  margin: 0;
+  color: #667067;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .previewPanel h3 {
   margin: 5px 0 0;
   color: #121814;
   font-size: 19px;
   text-transform: uppercase;
+}
+
+.sourceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.sourceCard,
+.sourceCardActive {
+  min-width: 0;
+  min-height: 160px;
+  padding: 18px;
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  gap: 9px;
+  border: 1px solid #dfe2db;
+  border-radius: 6px;
+  background: #fff;
+  color: #121814;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sourceCardActive {
+  border-color: #56701c;
+  box-shadow: 0 0 0 2px rgba(86, 112, 28, .12);
+}
+
+.sourceCard span,
+.sourceCardActive span,
+.playerPreviewHeader span,
+.searchControl > span {
+  color: #657068;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.sourceCard strong,
+.sourceCardActive strong {
+  font-size: 20px;
+  text-transform: uppercase;
+}
+
+.sourceCard small,
+.sourceCardActive small {
+  color: #667067;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.historyImportTable {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+}
+
+.historyImportTable th,
+.historyImportTable td {
+  padding: 14px;
+  border-bottom: 1px solid #e8eae5;
+  color: #333b36;
+  font-size: 13px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.historyImportTable th {
+  background: #f7f8f5;
+  color: #69726c;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.historyImportTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.playerPreviewHeader {
+  margin-top: 26px;
+}
+
+.playerPreviewHeader h2 {
+  margin: 5px 0 0;
+  font-size: 25px;
+  text-transform: uppercase;
+}
+
+.searchControl {
+  min-width: min(100%, 320px);
+  display: grid;
+  gap: 6px;
+}
+
+.searchControl input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 13px;
+  border: 1px solid #cfd4cc;
+  border-radius: 4px;
+  background: #fff;
+  color: #121814;
+  font: inherit;
 }
 
 .expectedUpdates {
@@ -565,6 +697,30 @@
     grid-template-columns: 1fr;
   }
 
+  .applySummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sourceGrid,
+  .previewHeader,
+  .playerPreviewHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .sourceGrid {
+    display: grid;
+  }
+
+  .previewHeader,
+  .playerPreviewHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .searchControl {
+    width: 100%;
+  }
+
   .listHeader,
   .detailsHeader {
     align-items: flex-start;
@@ -602,4 +758,3 @@
     flex-direction: column-reverse;
   }
 }
-

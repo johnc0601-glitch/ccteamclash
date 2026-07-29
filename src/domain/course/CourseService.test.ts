@@ -12,6 +12,8 @@ test('CourseService creates, searches, archives, and restores courses', async ()
     address: '100 Test Lane',
     mapUrl: 'https://maps.google.com/?q=test',
     udiscUrl: '',
+    photoUrl: '',
+    description: '',
   });
 
   assert.equal(created.ok, true);
@@ -36,6 +38,8 @@ test('CourseService validates map links and duplicate courses', async () => {
     address: '',
     mapUrl: 'not-a-link',
     udiscUrl: '',
+    photoUrl: '',
+    description: '',
   });
   assert.equal(invalid.ok, false);
   if (!invalid.ok) assert.equal(invalid.fieldErrors?.mapUrl, 'Enter a valid web link.');
@@ -47,6 +51,8 @@ test('CourseService validates map links and duplicate courses', async () => {
     address: '',
     mapUrl: 'https://maps.google.com/?q=arrowhead',
     udiscUrl: '',
+    photoUrl: '',
+    description: '',
   });
   assert.equal(duplicate.ok, false);
 });

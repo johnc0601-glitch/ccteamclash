@@ -1,0 +1,341 @@
+.management {
+  display: grid;
+  gap: 18px;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summaryCard,
+.panel,
+.notice,
+.error {
+  border: 1px solid #dfe2db;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.summaryCard {
+  padding: 18px;
+}
+
+.summaryCard span,
+.panelHeader span,
+.form span {
+  color: #647174;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.summaryCard strong {
+  display: block;
+  margin-top: 8px;
+  color: #111516;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.notice,
+.error {
+  margin: 0;
+  padding: 16px 18px;
+  font-weight: 900;
+}
+
+.notice {
+  border-left: 4px solid #56701c;
+}
+
+.error {
+  border-left: 4px solid #b64040;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(280px, .82fr) minmax(0, 1.18fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.panel {
+  overflow: hidden;
+}
+
+.panelHeader {
+  padding: 20px 22px;
+  border-bottom: 1px solid #e3e5df;
+}
+
+.panelHeader h2 {
+  margin: 7px 0 8px;
+  color: #111516;
+  font-size: 22px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.panelHeader p,
+.muted {
+  margin: 0;
+  color: #647174;
+}
+
+.searchBox {
+  padding: 16px 22px;
+  display: grid;
+  gap: 7px;
+  border-bottom: 1px solid #e3e5df;
+  background: #f8f9f6;
+}
+
+.searchBox label {
+  color: #111516;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.form {
+  padding: 20px 22px;
+  display: grid;
+  gap: 12px;
+}
+
+.form label {
+  display: grid;
+  gap: 6px;
+}
+
+.form input,
+.searchBox input,
+.form select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid #cfd4ce;
+  border-radius: 4px;
+  background: #fff;
+  color: #111516;
+  font: inherit;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.primaryButton {
+  min-height: 40px;
+  border: 1px solid #111516;
+  border-radius: 4px;
+  background: #111516;
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.playerList {
+  display: grid;
+}
+
+.playerRow {
+  padding: 18px 22px;
+  display: grid;
+  gap: 10px;
+  border-bottom: 1px solid #eceee8;
+}
+
+.playerRow:last-child {
+  border-bottom: 0;
+}
+
+.playerPrimary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.playerPrimary strong {
+  display: block;
+  color: #111516;
+  font-size: 15px;
+  text-transform: uppercase;
+}
+
+.playerPrimary span {
+  display: block;
+  margin-top: 4px;
+  color: #647174;
+  font-size: 12px;
+}
+
+.activeBadge,
+.inactiveBadge {
+  width: fit-content;
+  padding: 5px 8px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.badges {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.memberCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #111516;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.memberCheck input {
+  width: 16px;
+  height: 16px;
+  accent-color: #56701c;
+}
+
+.activeBadge {
+  border-color: #b9c69a;
+  background: #f4f8eb;
+  color: #56701c;
+}
+
+.inactiveBadge {
+  border-color: #cfd4ce;
+  background: #f1f3f0;
+  color: #647174;
+}
+
+.editBox summary {
+  width: fit-content;
+  color: #111516;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.editBox .form {
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid #e1e4de;
+  border-radius: 5px;
+  background: #f8f9f6;
+}
+
+.accountAccess,
+.accountNote {
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid #e1e4de;
+  border-radius: 5px;
+  background: #f8f9f6;
+}
+
+.accountAccess {
+  display: grid;
+  gap: 12px;
+}
+
+.accountAccess > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.accountAccess strong {
+  color: #111516;
+  text-transform: uppercase;
+}
+
+.accountAccess span,
+.accountNote {
+  color: #647174;
+  font-size: 12px;
+}
+
+.captainForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.captainForm label {
+  display: grid;
+  gap: 6px;
+}
+
+.captainForm select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid #cfd4ce;
+  border-radius: 4px;
+  background: #fff;
+  color: #111516;
+  font: inherit;
+}
+
+.accountActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.secondaryButton {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #cfd4ce;
+  border-radius: 4px;
+  background: #fff;
+  color: #111516;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.emptyState {
+  padding: 24px 22px;
+  color: #647174;
+}
+
+@media (max-width: 900px) {
+  .summaryGrid,
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .formGrid,
+  .playerPrimary,
+  .captainForm {
+    grid-template-columns: 1fr;
+  }
+
+  .playerPrimary {
+    display: grid;
+  }
+}

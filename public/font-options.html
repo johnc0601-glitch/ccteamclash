@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CC Team Clash Font Options</title>
+  <style>
+    :root {
+      --teal: #006f71;
+      --teal-bright: #16c8c6;
+      --navy: #061f24;
+      --ink: #101820;
+      --bronze: #a27752;
+      --gold: #fcc200;
+      --foam: #f5f2ea;
+      --line: #263839;
+      --muted: #9cafaa;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 80% 0, rgba(0,111,113,.22), transparent 28rem),
+        linear-gradient(180deg, #05090a, #071112 38rem, #05090a);
+      color: #eef6f4;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: auto;
+    }
+
+    header {
+      padding: 38px 0 22px;
+    }
+
+    header span {
+      color: var(--bronze);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    header h1 {
+      max-width: 860px;
+      margin: 12px 0;
+      font-size: clamp(40px, 7vw, 82px);
+      line-height: .9;
+      text-transform: uppercase;
+    }
+
+    header p {
+      max-width: 720px;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .grid {
+      padding: 20px 0 60px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .option {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background:
+        radial-gradient(circle at 100% 0, rgba(0,111,113,.16), transparent 14rem),
+        #0f1618;
+      box-shadow: 0 18px 46px rgba(0,0,0,.34);
+    }
+
+    .option header {
+      padding: 20px 22px;
+      border-bottom: 3px solid var(--bronze);
+      background: linear-gradient(145deg, #101820, #061f24);
+    }
+
+    .option header b {
+      display: block;
+      color: var(--bronze);
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .option header h2 {
+      margin: 7px 0 0;
+      color: #fff;
+      font-size: 34px;
+      line-height: .95;
+      text-transform: uppercase;
+    }
+
+    .sample {
+      padding: 22px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .hero {
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: linear-gradient(135deg, rgba(0,111,113,.22), rgba(162,119,82,.11));
+    }
+
+    .hero small {
+      color: var(--teal-bright);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .hero h3 {
+      margin: 10px 0;
+      color: #fff;
+      font-size: 46px;
+      line-height: .9;
+      text-transform: uppercase;
+    }
+
+    .hero p {
+      max-width: 520px;
+      margin: 0;
+      color: #c7d5d2;
+      line-height: 1.55;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
+    th {
+      color: #a7b7b4;
+      background: #151d20;
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    td:first-child strong {
+      min-width: 30px;
+      min-height: 30px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 4px;
+      background: linear-gradient(135deg, #8a613e, var(--bronze));
+      color: #fff;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,.03);
+    }
+
+    .card b {
+      display: block;
+      color: #fff;
+      font-size: 19px;
+      text-transform: uppercase;
+    }
+
+    .card span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .option-1 { font-family: Arial, Helvetica, sans-serif; }
+    .option-1 h1, .option-1 h2, .option-1 h3, .option-1 .card b { font-family: Arial Black, Arial, Helvetica, sans-serif; font-style: italic; letter-spacing: -.04em; }
+
+    .option-2 { font-family: "Trebuchet MS", Arial, sans-serif; }
+    .option-2 h1, .option-2 h2, .option-2 h3, .option-2 .card b { font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif; letter-spacing: .01em; }
+
+    .option-3 { font-family: "Segoe UI", Arial, sans-serif; }
+    .option-3 h1, .option-3 h2, .option-3 h3, .option-3 .card b { font-family: "Segoe UI Black", "Arial Black", Arial, sans-serif; font-style: italic; letter-spacing: -.03em; }
+
+    .option-4 { font-family: Georgia, "Times New Roman", serif; }
+    .option-4 h1, .option-4 h2, .option-4 h3, .option-4 .card b { font-family: Georgia, "Times New Roman", serif; font-style: italic; letter-spacing: -.04em; }
+
+    .option-5 { font-family: Verdana, Geneva, sans-serif; }
+    .option-5 h1, .option-5 h2, .option-5 h3, .option-5 .card b { font-family: "Arial Black", Verdana, sans-serif; letter-spacing: -.02em; }
+
+    .option-6 { font-family: "Courier New", Courier, monospace; }
+    .option-6 h1, .option-6 h2, .option-6 h3, .option-6 .card b { font-family: "Courier New", Courier, monospace; font-weight: 900; letter-spacing: -.05em; }
+
+    @media (max-width: 880px) {
+      .grid { grid-template-columns: 1fr; }
+      .cards { grid-template-columns: 1fr; }
+      .hero h3 { font-size: 38px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <span>CC Team Clash</span>
+      <h1>Font Direction Preview</h1>
+      <p>Six font systems using the same coastal-athletic layout. These use system fonts so they work locally and on your phone without loading external font files.</p>
+    </header>
+
+    <section class="grid">
+      <article class="option option-1">
+        <header><b>Option 1</b><h2>Athletic Italic</h2></header>
+        <div class="sample">
+          <div class="hero"><small>Featured story</small><h3>Compete. Connect. Clash.</h3><p>Bold, familiar sports-web typography. Strong for headings, readable for tables.</p></div>
+          <table><thead><tr><th>Rank</th><th>Player</th><th>Record</th><th>Win %</th></tr></thead><tbody><tr><td><strong>1</strong></td><td>Jimbo Lemire</td><td>9-2</td><td>81.8%</td></tr><tr><td><strong>2</strong></td><td>Will Deering</td><td>8-4</td><td>66.7%</td></tr></tbody></table>
+          <div class="cards"><div class="card"><b>Dark Knights</b><span>Captain Alex Wetherell</span></div><div class="card"><b>Riptide</b><span>Historical record 4-1</span></div></div>
+        </div>
+      </article>
+
+      <article class="option option-2">
+        <header><b>Option 2</b><h2>Condensed Scoreboard</h2></header>
+        <div class="sample">
+          <div class="hero"><small>Featured story</small><h3>Compete. Connect. Clash.</h3><p>Most aggressive sports look. Great for rankings and results, less refined for long copy.</p></div>
+          <table><thead><tr><th>Rank</th><th>Player</th><th>Record</th><th>Win %</th></tr></thead><tbody><tr><td><strong>1</strong></td><td>Jimbo Lemire</td><td>9-2</td><td>81.8%</td></tr><tr><td><strong>2</strong></td><td>Will Deering</td><td>8-4</td><td>66.7%</td></tr></tbody></table>
+          <div class="cards"><div class="card"><b>Dark Knights</b><span>Captain Alex Wetherell</span></div><div class="card"><b>Riptide</b><span>Historical record 4-1</span></div></div>
+        </div>
+      </article>
+
+      <article class="option option-3">
+        <header><b>Option 3</b><h2>Modern League</h2></header>
+        <div class="sample">
+          <div class="hero"><small>Featured story</small><h3>Compete. Connect. Clash.</h3><p>Cleanest all-around option. Still athletic, but more polished and readable across pages.</p></div>
+          <table><thead><tr><th>Rank</th><th>Player</th><th>Record</th><th>Win %</th></tr></thead><tbody><tr><td><strong>1</strong></td><td>Jimbo Lemire</td><td>9-2</td><td>81.8%</td></tr><tr><td><strong>2</strong></td><td>Will Deering</td><td>8-4</td><td>66.7%</td></tr></tbody></table>
+          <div class="cards"><div class="card"><b>Dark Knights</b><span>Captain Alex Wetherell</span></div><div class="card"><b>Riptide</b><span>Historical record 4-1</span></div></div>
+        </div>
+      </article>
+
+      <article class="option option-4">
+        <header><b>Option 4</b><h2>Club Classic</h2></header>
+        <div class="sample">
+          <div class="hero"><small>Featured story</small><h3>Compete. Connect. Clash.</h3><p>More editorial and traditional. Better for stories, weaker for sports dashboards.</p></div>
+          <table><thead><tr><th>Rank</th><th>Player</th><th>Record</th><th>Win %</th></tr></thead><tbody><tr><td><strong>1</strong></td><td>Jimbo Lemire</td><td>9-2</td><td>81.8%</td></tr><tr><td><strong>2</strong></td><td>Will Deering</td><td>8-4</td><td>66.7%</td></tr></tbody></table>
+          <div class="cards"><div class="card"><b>Dark Knights</b><span>Captain Alex Wetherell</span></div><div class="card"><b>Riptide</b><span>Historical record 4-1</span></div></div>
+        </div>
+      </article>
+
+      <article class="option option-5">
+        <header><b>Option 5</b><h2>Utility Sans</h2></header>
+        <div class="sample">
+          <div class="hero"><small>Featured story</small><h3>Compete. Connect. Clash.</h3><p>Very readable and practical. Less personality, but strong for commissioner/data-heavy pages.</p></div>
+          <table><thead><tr><th>Rank</th><th>Player</th><th>Record</th><th>Win %</th></tr></thead><tbody><tr><td><strong>1</strong></td><td>Jimbo Lemire</td><td>9-2</td><td>81.8%</td></tr><tr><td><strong>2</strong></td><td>Will Deering</td><td>8-4</td><td>66.7%</td></tr></tbody></table>
+          <div class="cards"><div class="card"><b>Dark Knights</b><span>Captain Alex Wetherell</span></div><div class="card"><b>Riptide</b><span>Historical record 4-1</span></div></div>
+        </div>
+      </article>
+
+      <article class="option option-6">
+        <header><b>Option 6</b><h2>Technical Scorecard</h2></header>
+        <div class="sample">
+          <div class="hero"><small>Featured story</small><h3>Compete. Connect. Clash.</h3><p>A scorecard/data feel. Distinct, but likely too niche for the full public website.</p></div>
+          <table><thead><tr><th>Rank</th><th>Player</th><th>Record</th><th>Win %</th></tr></thead><tbody><tr><td><strong>1</strong></td><td>Jimbo Lemire</td><td>9-2</td><td>81.8%</td></tr><tr><td><strong>2</strong></td><td>Will Deering</td><td>8-4</td><td>66.7%</td></tr></tbody></table>
+          <div class="cards"><div class="card"><b>Dark Knights</b><span>Captain Alex Wetherell</span></div><div class="card"><b>Riptide</b><span>Historical record 4-1</span></div></div>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

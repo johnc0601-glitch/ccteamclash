@@ -1,0 +1,344 @@
+.shell {
+  min-height: 70vh;
+  padding: 72px 0 96px;
+}
+
+.header {
+  max-width: 760px;
+  margin-bottom: 30px;
+}
+
+.eyebrow {
+  color: var(--cc-teal);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.header h1 {
+  margin: 10px 0 16px;
+  color: var(--cc-heading);
+  font-family: var(--cc-font-display);
+  font-size: 64px;
+  font-style: italic;
+  letter-spacing: 0;
+  line-height: .94;
+  text-transform: uppercase;
+}
+
+.narrowShell {
+  max-width: 620px;
+}
+
+.narrowShell .header h1 {
+  font-size: 54px;
+}
+
+.header p,
+.panel p,
+.muted {
+  color: var(--cc-body-text);
+  line-height: 1.6;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.panel,
+.accountBar,
+.notice,
+.error {
+  border: 1px solid var(--cc-card-border);
+  border-radius: 8px;
+  background: var(--cc-card-bg);
+  box-shadow: var(--cc-card-shadow);
+}
+
+.panel {
+  padding: 26px;
+}
+
+.panel h2 {
+  margin: 10px 0 12px;
+  color: var(--cc-heading);
+  font-family: var(--cc-font-display);
+  font-size: 31px;
+  font-style: italic;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.form {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.form label {
+  color: var(--cc-heading);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.form input,
+.form select {
+  min-height: 46px;
+  width: 100%;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 5px;
+  background: var(--cc-surface);
+  color: var(--cc-heading);
+  font: inherit;
+  padding: 0 13px;
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: 46px;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.primaryButton {
+  border: 1px solid var(--cc-bronze);
+  background: var(--cc-bronze);
+  color: #fff;
+}
+
+.secondaryButton {
+  border: 1px solid var(--cc-card-border);
+  background: transparent;
+  color: var(--cc-heading);
+  padding: 0 16px;
+}
+
+.actionLink {
+  min-height: 46px;
+  margin-top: 18px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--cc-bronze);
+  border-radius: 4px;
+  background: var(--cc-bronze);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.forgotLink {
+  width: fit-content;
+  color: var(--cc-teal);
+  font-size: 13px;
+  font-weight: 850;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.accountPrompt {
+  margin-top: 24px;
+  padding-top: 20px;
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--cc-card-border);
+  color: var(--cc-body-text);
+  text-align: center;
+}
+
+.secondaryActionLink {
+  min-height: 46px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 4px;
+  color: var(--cc-heading);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.authAlternative {
+  margin: 22px 0 0;
+  color: var(--cc-body-text);
+  text-align: center;
+}
+
+.authAlternative a {
+  color: var(--cc-teal);
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.passwordField {
+  display: grid;
+  gap: 8px;
+}
+
+.passwordLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.passwordToggle {
+  border: 0;
+  background: transparent;
+  color: var(--cc-teal);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.fieldHint {
+  color: var(--cc-muted);
+  font-size: 12px;
+}
+
+.accountBar {
+  margin-bottom: 18px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.accountBar strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--cc-heading);
+}
+
+.notice,
+.error {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  font-weight: 800;
+}
+
+.notice {
+  border-left: 4px solid var(--cc-teal);
+}
+
+.error {
+  border-left: 4px solid #b43b3b;
+}
+
+.statusList {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0 0;
+}
+
+.statusList div {
+  padding-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  border-top: 1px solid var(--cc-card-border);
+}
+
+.statusList dt {
+  color: var(--cc-muted);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.statusList dd {
+  margin: 0;
+  color: var(--cc-heading);
+  font-weight: 900;
+  text-align: right;
+}
+
+.claimState {
+  padding: 12px 14px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 5px;
+  background: var(--cc-card-bg-soft);
+}
+
+.linkingNote {
+  margin: 18px 0 4px;
+  padding: 14px 16px;
+  border-left: 4px solid var(--cc-bronze);
+  border-radius: 4px;
+  background: var(--cc-card-bg-soft);
+  color: var(--cc-heading);
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.connected {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--cc-teal);
+  border-radius: 5px;
+  background: var(--cc-card-bg-soft);
+}
+
+.connected strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--cc-heading);
+}
+
+.themeAction {
+  margin-top: 18px;
+}
+
+.themeAction :global(.theme-toggle) {
+  min-width: 120px;
+}
+
+@media (max-width: 760px) {
+  .shell {
+    padding: 48px 0 68px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .header h1,
+  .narrowShell .header h1 {
+    font-size: 44px;
+  }
+
+  .accountBar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .secondaryButton {
+    width: 100%;
+  }
+}

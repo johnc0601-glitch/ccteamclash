@@ -6,13 +6,29 @@ export type Course = {
   address: string;
   mapUrl: string;
   udiscUrl: string;
+  photoUrl: string;
+  description: string;
   homeTeamId?: string;
   active: boolean;
   createdAt: string;
   updatedAt: string;
 };
 
-export type CourseInput = Pick<Course, 'name' | 'city' | 'state' | 'address' | 'mapUrl' | 'udiscUrl'>;
+export type CourseInput = Pick<Course, 'name' | 'city' | 'state' | 'address' | 'mapUrl' | 'udiscUrl' | 'photoUrl' | 'description' | 'homeTeamId'>;
+
+export type CourseImportInput = CourseInput & {
+  active?: boolean;
+};
+
+export type CourseImportResult = {
+  created: Course[];
+  updated: Course[];
+  skipped: Array<{
+    row: number;
+    message: string;
+    fieldErrors?: CourseFieldErrors;
+  }>;
+};
 
 export type CourseStatusFilter = 'all' | 'active' | 'archived';
 

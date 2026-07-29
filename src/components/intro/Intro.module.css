@@ -1,0 +1,167 @@
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow: hidden;
+  background: #000;
+  opacity: 1;
+  isolation: isolate;
+  transform: translateZ(0);
+  transition: opacity var(--exit-duration) ease-in-out;
+  will-change: opacity;
+}
+
+.sceneImage,
+.logoScene {
+  position: absolute;
+  inset: 0;
+}
+
+.sceneImage {
+  opacity: 0;
+  transform: translateZ(0);
+  transition:
+    opacity var(--scene-duration) ease-in-out,
+    transform var(--scene-duration) ease-out;
+  will-change: opacity, transform;
+}
+
+.image {
+  object-fit: cover;
+  object-position: center;
+}
+
+.dawn {
+  transform: translateZ(0) scale(.98);
+}
+
+.disc {
+  transform: translateZ(0) scale(.98);
+}
+
+.intro[data-phase='dawn'] .dawn {
+  opacity: 1;
+  transform: translateZ(0) scale(1);
+}
+
+.intro[data-phase='disc'] .dawn {
+  opacity: 0;
+  transform: translateZ(0) scale(1);
+}
+
+.intro[data-phase='disc'] .disc {
+  opacity: 1;
+  transform: translateZ(0) scale(1);
+}
+
+.intro[data-phase='blackout'] .disc {
+  opacity: 0;
+  transform: translateZ(0) scale(1);
+  transition-duration: var(--blackout-duration);
+}
+
+.logoScene {
+  display: grid;
+  place-items: center;
+  padding: clamp(28px, 6vw, 72px);
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.logoLockup {
+  width: min(58vw, 440px);
+  display: grid;
+  justify-items: center;
+  gap: clamp(18px, 3vh, 30px);
+  opacity: 0;
+  transform: translateZ(0) scale(.96);
+  transition:
+    opacity var(--logo-duration) ease-out,
+    transform var(--logo-duration) ease-out;
+  will-change: opacity, transform;
+}
+
+.logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 62vh;
+  object-fit: contain;
+  filter: invert(1);
+}
+
+.welcome {
+  margin: 0 0 -8px;
+  color: #fff;
+  font-family: var(--cc-font-display);
+  font-size: clamp(20px, 3vw, 34px);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.motto {
+  margin: 0;
+  color: #fff;
+  font-family: var(--cc-font-body);
+  font-size: clamp(11px, 1.3vw, 15px);
+  font-weight: 800;
+  letter-spacing: clamp(.18em, .6vw, .34em);
+  line-height: 1.5;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity var(--motto-duration) ease-out var(--motto-delay);
+}
+
+.intro[data-phase='logo'] .logoScene,
+.intro[data-phase='exit'] .logoScene {
+  opacity: 1;
+}
+
+.intro[data-phase='logo'] .logoLockup,
+.intro[data-phase='exit'] .logoLockup {
+  opacity: 1;
+  transform: translateZ(0) scale(1);
+}
+
+.intro[data-phase='logo'] .motto,
+.intro[data-phase='exit'] .motto {
+  opacity: 1;
+}
+
+.intro[data-phase='exit'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.intro[data-reduced-motion='true'] {
+  transition: none;
+}
+
+.intro[data-reduced-motion='true'] .logoLockup,
+.intro[data-reduced-motion='true'] .motto {
+  transition: none;
+}
+
+@media (max-width: 520px) {
+  .logoLockup {
+    width: min(78vw, 360px);
+  }
+
+  .motto {
+    letter-spacing: .16em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro,
+  .sceneImage,
+  .logoLockup,
+  .motto {
+    transition: none;
+  }
+}

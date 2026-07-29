@@ -2,8 +2,11 @@
 
 import {useEffect, useState} from 'react';
 import {PlayerFormDialog} from '@/components/players/PlayerFormDialog';
+import {PlayerCard} from '@/components/players/PlayerCard';
+import {PlayerDetailsDialog} from '@/components/players/PlayerDetailsDialog';
+import {PlayerRow} from '@/components/players/PlayerRow';
+import {PlayerToolbar} from '@/components/players/PlayerToolbar';
 import {ConfirmationDialog} from '@/components/teams/ConfirmationDialog';
-import {SearchBar} from '@/components/teams/SearchBar';
 import {services} from '@/core/ServiceContainer';
 import type {Player} from '@/models/Player';
 import type {Team} from '@/models/Team';
@@ -11,7 +14,9 @@ import type {PlayerStatistics} from '@/services/statistics';
 import type {
   PlayerFieldErrors,
   PlayerInput,
+  PlayerSortOption,
   PlayerStatusFilter,
+  PlayerViewMode,
 } from '@/types/player';
 import styles from './PlayerManagement.module.css';
 
@@ -26,7 +31,10 @@ export function PlayerManagement() {
   const [search, setSearch] = useState('');
   const [teamId, setTeamId] = useState('all');
   const [status, setStatus] = useState<PlayerStatusFilter>('all');
+  const [sort, setSort] = useState<PlayerSortOption>('alphabetical');
+  const [view, setView] = useState<PlayerViewMode>('table');
   const [editor, setEditor] = useState<EditorState>(null);
+  const [detailsPlayer, setDetailsPlayer] = useState<Player | null>(null);
   const [confirmation, setConfirmation] = useState<ConfirmationState>(null);
   const [fieldErrors, setFieldErrors] = useState<PlayerFieldErrors>({});
   const [message, setMessage] = useState<{type: 'success' | 'error'; text: string} | null>(null);
@@ -48,7 +56,7 @@ export function PlayerManagement() {
       try {
         setLoading(true);
         const [nextPlayers, activeSeason] = await Promise.all([
-          services.players.getAll({search, teamId, status}),
+          services.players.getAll({search, teamId, status, sort}),
           services.seasons.getActive(),
         ]);
         const playerStatistics = activeSeason
@@ -71,7 +79,7 @@ export function PlayerManagement() {
     }
     loadPlayers();
     return () => { cancelled = true; };
-  }, [revision, search, status, teamId]);
+  }, [revision, search, sort, status, teamId]);
 
   const teamNames = new Map(teams.map((team) => [team.id, team.name]));
 
@@ -124,30 +132,45 @@ export function PlayerManagement() {
   function openEdit(player: Player) {
     setFieldErrors({});
     setMessage(null);
+    setDetailsPlayer(null);
     setEditor({mode: 'edit', player});
   }
 
+  function getPlayerStats(player: Player) {
+    const statistics = statisticsByPlayer.get(player.id);
+    return {
+      matchesPlayed: statistics?.matchesPlayed ?? 0,
+      finalsQualified: Boolean(statistics?.finalsQualified),
+    };
+  }
+
+  function getPlayerTeamName(player: Player): string {
+    return player.teamId ? teamNames.get(player.teamId) ?? player.teamId : 'Unassigned';
+  }
+
+  const actionProps = {
+    onView: setDetailsPlayer,
+    onEdit: openEdit,
+    onArchive: (player: Player) => setConfirmation({action: 'archive', player}),
+    onDelete: (player: Player) => setConfirmation({action: 'delete', player}),
+  };
+
   return (
     <section className={styles.management}>
-      <div className={styles.toolbar}>
-        <SearchBar value={search} onChange={setSearch} label="Search players" placeholder="Search name or PDGA number" />
-        <label>
-          <span>Team</span>
-          <select value={teamId} onChange={(event) => setTeamId(event.target.value)}>
-            <option value="all">All teams</option>
-            {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
-          </select>
-        </label>
-        <label>
-          <span>Status</span>
-          <select value={status} onChange={(event) => setStatus(event.target.value as PlayerStatusFilter)}>
-            <option value="all">All</option>
-            <option value="active">Active</option>
-            <option value="archived">Archived</option>
-          </select>
-        </label>
-        <button type="button" className={styles.primaryButton} onClick={openCreate}>Add player</button>
-      </div>
+      <PlayerToolbar
+        search={search}
+        teamId={teamId}
+        status={status}
+        sort={sort}
+        view={view}
+        teams={teams}
+        onSearchChange={setSearch}
+        onTeamChange={setTeamId}
+        onStatusChange={setStatus}
+        onSortChange={setSort}
+        onViewChange={setView}
+        onCreate={openCreate}
+      />
 
       {message ? (
         <div className={message.type === 'success' ? styles.successMessage : styles.errorMessage} role={message.type === 'error' ? 'alert' : 'status'}>
@@ -164,9 +187,14 @@ export function PlayerManagement() {
       </div>
 
       {loading ? <div className={styles.state}>Loading players...</div> : null}
-      {!loading && players.length === 0 ? <div className={styles.state}>No players found.</div> : null}
+      {!loading && players.length === 0 ? (
+        <div className={styles.emptyState}>
+          <h3>No players found</h3>
+          <p>Adjust the current search, team, or status filter.</p>
+        </div>
+      ) : null}
 
-      {!loading && players.length ? (
+      {!loading && players.length > 0 && view === 'table' ? (
         <div className={styles.tableWrap}>
           <table className={styles.playerTable}>
             <thead>
@@ -182,33 +210,38 @@ export function PlayerManagement() {
             </thead>
             <tbody>
               {players.map((player) => {
-                const statistics = statisticsByPlayer.get(player.id);
+                const {matchesPlayed, finalsQualified} = getPlayerStats(player);
                 return (
-                  <tr key={player.id}>
-                    <td><strong>{player.name}</strong></td>
-                    <td>{teamNames.get(player.teamId) ?? player.teamId}</td>
-                    <td><strong>{statistics?.matchesPlayed ?? 0}</strong></td>
-                    <td>
-                      {statistics?.finalsQualified ? (
-                        <span className={styles.qualified} title="Played at least two matches">
-                          <span aria-hidden="true">&#10003;</span> Qualified
-                        </span>
-                      ) : <span className={styles.notQualified}>Not yet</span>}
-                    </td>
-                    <td>{player.gender}</td>
-                    <td><span className={player.active ? styles.active : styles.archived}>{player.active ? 'Active' : 'Archived'}</span></td>
-                    <td>
-                      <div className={styles.actions}>
-                        <button type="button" onClick={() => openEdit(player)}>Edit</button>
-                        {player.active ? <button type="button" onClick={() => setConfirmation({action: 'archive', player})}>Archive</button> : null}
-                        <button type="button" className={styles.dangerText} onClick={() => setConfirmation({action: 'delete', player})}>Delete</button>
-                      </div>
-                    </td>
-                  </tr>
+                  <PlayerRow
+                    key={player.id}
+                    player={player}
+                    teamName={getPlayerTeamName(player)}
+                    matchesPlayed={matchesPlayed}
+                    finalsQualified={finalsQualified}
+                    {...actionProps}
+                  />
                 );
               })}
             </tbody>
           </table>
+        </div>
+      ) : null}
+
+      {!loading && players.length > 0 && view === 'cards' ? (
+        <div className={styles.cardGrid}>
+          {players.map((player) => {
+            const {matchesPlayed, finalsQualified} = getPlayerStats(player);
+            return (
+              <PlayerCard
+                key={player.id}
+                player={player}
+                teamName={getPlayerTeamName(player)}
+                matchesPlayed={matchesPlayed}
+                finalsQualified={finalsQualified}
+                {...actionProps}
+              />
+            );
+          })}
         </div>
       ) : null}
 
@@ -222,6 +255,20 @@ export function PlayerManagement() {
           onClose={() => setEditor(null)}
         />
       ) : null}
+
+      {detailsPlayer ? (() => {
+        const {matchesPlayed, finalsQualified} = getPlayerStats(detailsPlayer);
+        return (
+          <PlayerDetailsDialog
+            player={detailsPlayer}
+            teamName={getPlayerTeamName(detailsPlayer)}
+            matchesPlayed={matchesPlayed}
+            finalsQualified={finalsQualified}
+            onEdit={openEdit}
+            onClose={() => setDetailsPlayer(null)}
+          />
+        );
+      })() : null}
 
       {confirmation ? (
         <ConfirmationDialog

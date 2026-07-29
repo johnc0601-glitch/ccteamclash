@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CC Team Clash Design Options</title>
+  <style>
+    :root {
+      --teal: #006f71;
+      --teal-2: #007680;
+      --navy: #002d5b;
+      --ink: #101820;
+      --bronze: #a27752;
+      --gold: #fcc200;
+      --foam: #f5f2ea;
+      --line: #d9dfda;
+      --muted: #66746f;
+      --white: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: #ecefeb;
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: auto; }
+    .preview-header {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: rgba(16, 24, 32, .96);
+      color: #fff;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+    }
+    .preview-header .shell {
+      min-height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .preview-header strong {
+      display: block;
+      font-size: 18px;
+      text-transform: uppercase;
+    }
+    .preview-header small { color: var(--gold); font-weight: 800; }
+    .preview-header nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .preview-header nav a {
+      padding: 9px 11px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 4px;
+    }
+
+    .intro {
+      padding: 46px 0 26px;
+    }
+    .intro h1 {
+      margin: 0 0 10px;
+      font-size: clamp(34px, 5vw, 64px);
+      line-height: .95;
+      text-transform: uppercase;
+    }
+    .intro p {
+      max-width: 760px;
+      margin: 0;
+      color: #4f5c57;
+      font-size: 17px;
+      line-height: 1.55;
+    }
+
+    .option {
+      margin: 28px auto 54px;
+      border: 1px solid #cfd7d1;
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--white);
+      box-shadow: 0 24px 70px rgba(16, 24, 32, .13);
+    }
+    .option-label {
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+    }
+    .option-label span {
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+    .option-label b {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .site-nav {
+      min-height: 68px;
+      padding: 0 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .mark {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      font-weight: 950;
+    }
+    .brand strong, .brand small { display: block; }
+    .brand small { margin-top: 2px; font-size: 10px; letter-spacing: .12em; }
+    .site-nav nav {
+      display: flex;
+      gap: 18px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 360px;
+    }
+    .hero-copy {
+      padding: 44px;
+      align-self: center;
+    }
+    .eyebrow {
+      display: block;
+      margin-bottom: 13px;
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .hero h2 {
+      margin: 0 0 16px;
+      font-size: clamp(40px, 5vw, 70px);
+      line-height: .9;
+      text-transform: uppercase;
+    }
+    .hero p {
+      max-width: 470px;
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .cta-row {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .btn {
+      min-height: 40px;
+      padding: 0 15px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+    .hero-art {
+      position: relative;
+      min-height: 310px;
+      overflow: hidden;
+    }
+    .hero-art:before {
+      content: "";
+      position: absolute;
+      inset: 34px 42px 34px auto;
+      width: 185px;
+      border: 10px solid rgba(255,255,255,.32);
+      border-top: 30px solid rgba(255,255,255,.45);
+      border-radius: 50% 50% 14px 14px;
+      transform: rotate(-7deg);
+    }
+    .hero-art:after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 55%;
+      background: linear-gradient(145deg, transparent, rgba(0,0,0,.28));
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .stat {
+      padding: 18px;
+      border-right: 1px solid var(--line);
+    }
+    .stat:last-child { border-right: 0; }
+    .stat strong {
+      display: block;
+      font-size: 26px;
+    }
+    .stat span {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .content-grid {
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1.35fr .9fr;
+      gap: 20px;
+    }
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .panel header {
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel header h3 {
+      margin: 0;
+      font-size: 21px;
+      text-transform: uppercase;
+    }
+    .panel header a {
+      font-size: 10px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      white-space: nowrap;
+      font-size: 12px;
+    }
+    th {
+      font-size: 9px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+    tbody tr:last-child td { border-bottom: 0; }
+    td:first-child strong {
+      display: inline-grid;
+      place-items: center;
+      min-width: 28px;
+      min-height: 28px;
+      border-radius: 4px;
+    }
+    .team-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .team-card {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-height: 126px;
+    }
+    .team-logo {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      font-weight: 950;
+      margin-bottom: 14px;
+    }
+    .team-card h4 {
+      margin: 0 0 5px;
+      font-size: 17px;
+      text-transform: uppercase;
+    }
+    .team-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .schedule {
+      margin-top: 20px;
+      grid-column: 1 / -1;
+    }
+    .match-row {
+      padding: 15px 18px;
+      display: grid;
+      grid-template-columns: 72px 1fr 96px;
+      gap: 16px;
+      align-items: center;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+    }
+    .match-row:first-of-type { border-top: 0; }
+    .match-row b { text-transform: uppercase; }
+    .match-row span:last-child {
+      text-align: right;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    /* Option 1 */
+    .coastal {
+      background: var(--foam);
+    }
+    .coastal .site-nav {
+      background: var(--teal);
+      color: #fff;
+    }
+    .coastal .mark {
+      border: 2px solid #fff;
+      color: var(--gold);
+    }
+    .coastal .brand small { color: #d6fbf9; }
+    .coastal .hero {
+      background: linear-gradient(90deg, #fff, #eef7f4);
+    }
+    .coastal .eyebrow { color: var(--teal); }
+    .coastal .hero h2 { color: var(--navy); }
+    .coastal .hero p { color: #50605b; }
+    .coastal .hero-art {
+      background:
+        radial-gradient(circle at 74% 34%, rgba(252,194,0,.35), transparent 18%),
+        linear-gradient(145deg, #b9ded8, #e8f3ee 48%, #789b8d);
+    }
+    .coastal .btn:first-child { background: var(--gold); color: #111; }
+    .coastal .btn:last-child { border: 1px solid var(--teal); color: var(--teal); }
+    .coastal td:first-child strong { background: #e6f3ef; color: var(--teal); }
+    .coastal th { background: #f5f8f4; color: #65736d; }
+    .coastal .team-logo { background: var(--teal); color: #fff; }
+
+    /* Option 2 */
+    .dashboard {
+      background: #f1f3ef;
+    }
+    .dashboard .site-nav {
+      background: linear-gradient(90deg, #051f22, #10363a);
+      color: #fff;
+    }
+    .dashboard .mark {
+      background: var(--bronze);
+      color: #fff;
+    }
+    .dashboard .brand small { color: var(--bronze); }
+    .dashboard .hero {
+      color: #fff;
+      background:
+        radial-gradient(circle at 80% 10%, rgba(162,119,82,.32), transparent 24%),
+        linear-gradient(135deg, #061516, #0c3034 55%, #15191d);
+    }
+    .dashboard .eyebrow { color: var(--bronze); }
+    .dashboard .hero p { color: #d2dcda; }
+    .dashboard .hero-art {
+      background:
+        linear-gradient(135deg, rgba(0,111,113,.85), rgba(16,24,32,.95)),
+        repeating-linear-gradient(45deg, transparent 0 18px, rgba(255,255,255,.05) 19px 20px);
+    }
+    .dashboard .btn:first-child { background: var(--bronze); color: #fff; }
+    .dashboard .btn:last-child { border: 1px solid rgba(255,255,255,.35); color: #fff; }
+    .dashboard .stats { background: #101820; color: #fff; border-color: #2a3338; }
+    .dashboard .stat { border-color: #2a3338; }
+    .dashboard .stat span { color: #aeb8b5; }
+    .dashboard td:first-child strong { background: var(--bronze); color: #fff; }
+    .dashboard th { background: #f0f2ee; color: #56635e; }
+    .dashboard .team-logo { background: #101820; color: var(--bronze); border: 1px solid var(--bronze); }
+
+    /* Option 3 */
+    .scoreboard {
+      background: #080b0c;
+      color: #eaf1ef;
+      border-color: #1c2d2e;
+    }
+    .scoreboard .option-label {
+      background: #0e1314;
+      border-color: #1c2d2e;
+    }
+    .scoreboard .option-label b { color: #9fb0ad; }
+    .scoreboard .site-nav {
+      background: #050708;
+      border-bottom: 1px solid #123c3d;
+      color: #fff;
+    }
+    .scoreboard .mark {
+      color: #00c3c7;
+      border: 2px solid #00c3c7;
+    }
+    .scoreboard .brand small { color: #00c3c7; }
+    .scoreboard .hero {
+      background:
+        linear-gradient(90deg, #050708 5%, rgba(5,7,8,.92) 48%, rgba(0,111,113,.22)),
+        radial-gradient(circle at 82% 32%, rgba(0,195,199,.2), transparent 22%);
+    }
+    .scoreboard .eyebrow { color: #00c3c7; }
+    .scoreboard .hero h2 { color: #fff; font-style: italic; }
+    .scoreboard .hero p { color: #b9c5c2; }
+    .scoreboard .hero-art {
+      background:
+        linear-gradient(135deg, rgba(0,195,199,.14), rgba(0,0,0,.4)),
+        linear-gradient(145deg, #111, #203333);
+    }
+    .scoreboard .btn:first-child { background: #00c3c7; color: #041011; }
+    .scoreboard .btn:last-child { border: 1px solid var(--gold); color: var(--gold); }
+    .scoreboard .stats, .scoreboard .panel, .scoreboard .team-card {
+      background: #0f1415;
+      border-color: #263839;
+      color: #eaf1ef;
+    }
+    .scoreboard .stat, .scoreboard .panel header, .scoreboard th, .scoreboard td, .scoreboard .match-row {
+      border-color: #263839;
+    }
+    .scoreboard .stat strong, .scoreboard .record-pop { color: #00c3c7; }
+    .scoreboard .stat span, .scoreboard p, .scoreboard .team-card p { color: #9eb0ad; }
+    .scoreboard th { background: #151b1c; color: #a5b5b2; }
+    .scoreboard td:first-child strong { background: linear-gradient(135deg, #916421, var(--gold)); color: #050708; }
+    .scoreboard .team-logo { background: #051011; color: #00c3c7; border: 1px solid #00c3c7; }
+    .scoreboard .panel header a, .scoreboard .match-row span:last-child { color: #00c3c7; }
+
+    @media (max-width: 850px) {
+      .preview-header .shell, .site-nav { align-items: flex-start; flex-direction: column; padding-top: 16px; padding-bottom: 16px; }
+      .site-nav nav { flex-wrap: wrap; gap: 10px; }
+      .hero, .content-grid { grid-template-columns: 1fr; }
+      .hero-copy { padding: 32px 24px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .team-cards { grid-template-columns: 1fr; }
+      .match-row { grid-template-columns: 1fr; gap: 6px; }
+      .match-row span:last-child { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <header class="preview-header">
+    <div class="shell">
+      <div>
+        <strong>CC Team Clash Design Options</strong>
+        <small>Original coastal-athletic concepts</small>
+      </div>
+      <nav>
+        <a href="#option-1">Option 1</a>
+        <a href="#option-2">Option 2</a>
+        <a href="#option-3">Option 3</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="shell intro">
+    <h1>Three Website Directions</h1>
+    <p>These are original design examples using coastal teal, navy, bronze, gold, and scoreboard patterns. They are not using or copying any school logos, mascots, or wordmarks.</p>
+  </section>
+
+  <section id="option-1" class="shell option coastal">
+    <div class="option-label"><span>Option 1</span><b>Coastal League Site</b></div>
+    <div class="site-nav">
+      <a class="brand" href="#"><span class="mark">CC</span><span><strong>CC Team Clash</strong><small>Disc Golf League</small></span></a>
+      <nav><a>Rankings</a><a>Teams</a><a>Players</a><a>Schedule</a><a>Standings</a></nav>
+    </div>
+    <div class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Cape Fear match play</span>
+        <h2>Compete. Connect. Clash.</h2>
+        <p>A clean public league site built for quick player searches, current standings, team pages, and schedule results.</p>
+        <div class="cta-row"><a class="btn">View standings</a><a class="btn">Search players</a></div>
+      </div>
+      <div class="hero-art"></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><strong>8</strong><span>Teams</span></div>
+      <div class="stat"><strong>96+</strong><span>Players</span></div>
+      <div class="stat"><strong>10</strong><span>Weeks</span></div>
+      <div class="stat"><strong>1</strong><span>Champion</span></div>
+    </div>
+    <div class="content-grid">
+      <section class="panel">
+        <header><h3>Top 25 Rankings</h3><a>Full rankings</a></header>
+        <table><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Record</th><th>Win %</th></tr></thead><tbody>
+          <tr><td><strong>1</strong></td><td>Jimbo Lemire</td><td>KB</td><td>9-2</td><td>81.8%</td></tr>
+          <tr><td><strong>2</strong></td><td>Robert Scribner</td><td>Cougar Country</td><td>8-3</td><td>72.7%</td></tr>
+          <tr><td><strong>3</strong></td><td>Will Deering</td><td>Riptide</td><td>8-4</td><td>66.7%</td></tr>
+        </tbody></table>
+      </section>
+      <section class="team-cards">
+        <article class="team-card"><span class="team-logo">WT</span><h4>Wild Turkey</h4><p>Captain Ben Morrow</p></article>
+        <article class="team-card"><span class="team-logo">DK</span><h4>Dark Knights</h4><p>Captain Alex Wetherell</p></article>
+        <article class="team-card"><span class="team-logo">RIP</span><h4>Riptide</h4><p>Captain Will Deering</p></article>
+        <article class="team-card"><span class="team-logo">KB</span><h4>KB</h4><p>Captain Jimbo Lemire</p></article>
+      </section>
+      <section class="panel schedule">
+        <header><h3>Schedule & Results</h3><a>Full schedule</a></header>
+        <div class="match-row"><b>May 18</b><span>Wild Turkey 22 - 16 Riptide</span><span>Final</span></div>
+        <div class="match-row"><b>May 25</b><span>Dark Knights vs Cougar Country</span><span>11:00 AM</span></div>
+      </section>
+    </div>
+  </section>
+
+  <section id="option-2" class="shell option dashboard">
+    <div class="option-label"><span>Option 2</span><b>Athletic Dashboard</b></div>
+    <div class="site-nav">
+      <a class="brand" href="#"><span class="mark">CC</span><span><strong>CC Team Clash</strong><small>Disc Golf League</small></span></a>
+      <nav><a>Rankings</a><a>Teams</a><a>Players</a><a>Schedule</a><a>Standings</a></nav>
+    </div>
+    <div class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">League command center</span>
+        <h2>Track every team, player, and result.</h2>
+        <p>A more serious sports-data layout with compact panels, stronger hierarchy, and a Commissioner-ready structure.</p>
+        <div class="cta-row"><a class="btn">View rankings</a><a class="btn">Team directory</a></div>
+      </div>
+      <div class="hero-art"></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><strong>8</strong><span>Active teams</span></div>
+      <div class="stat"><strong>378</strong><span>Player records</span></div>
+      <div class="stat"><strong>2</strong><span>Historical seasons</span></div>
+      <div class="stat"><strong>25</strong><span>Ranked players</span></div>
+    </div>
+    <div class="content-grid">
+      <section class="panel">
+        <header><h3>Last Season Top 25</h3><a>Open rankings</a></header>
+        <table><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Record</th><th>Win %</th></tr></thead><tbody>
+          <tr><td><strong>1</strong></td><td>Jimbo Lemire</td><td>KB</td><td>9-2</td><td>81.8%</td></tr>
+          <tr><td><strong>2</strong></td><td>Patrick Kimbrell</td><td>Ninjas</td><td>8-3</td><td>72.7%</td></tr>
+          <tr><td><strong>3</strong></td><td>Alex Wetherell</td><td>Dark Knights</td><td>7-4</td><td>63.6%</td></tr>
+        </tbody></table>
+      </section>
+      <section class="team-cards">
+        <article class="team-card"><span class="team-logo">KB</span><h4>KB</h4><p>8-2 Historical record</p></article>
+        <article class="team-card"><span class="team-logo">DK</span><h4>Dark Knights</h4><p>6-4 Historical record</p></article>
+        <article class="team-card"><span class="team-logo">RIP</span><h4>Riptide</h4><p>4-1 Historical record</p></article>
+        <article class="team-card"><span class="team-logo">NIN</span><h4>Ninjas</h4><p>3-2 Historical record</p></article>
+      </section>
+      <section class="panel schedule">
+        <header><h3>Results Feed</h3><a>Full schedule</a></header>
+        <div class="match-row"><b>Round 5</b><span>KB 21 - 17 Dark Knights</span><span>Final</span></div>
+        <div class="match-row"><b>Round 6</b><span>Riptide vs Wild Turkey</span><span>Next</span></div>
+      </section>
+    </div>
+  </section>
+
+  <section id="option-3" class="shell option scoreboard">
+    <div class="option-label"><span>Option 3</span><b>Scoreboard Night</b></div>
+    <div class="site-nav">
+      <a class="brand" href="#"><span class="mark">CC</span><span><strong>CC Team Clash</strong><small>Disc Golf League</small></span></a>
+      <nav><a>Rankings</a><a>Teams</a><a>Players</a><a>Schedule</a><a>Standings</a></nav>
+    </div>
+    <div class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Scoreboard mode</span>
+        <h2>Big records. Fast scanning.</h2>
+        <p>A high-contrast sports presentation for rankings, standings, match results, and phone viewing.</p>
+        <div class="cta-row"><a class="btn">Top 25</a><a class="btn">Latest results</a></div>
+      </div>
+      <div class="hero-art"></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><strong>8</strong><span>Teams</span></div>
+      <div class="stat"><strong>96+</strong><span>Players</span></div>
+      <div class="stat"><strong>87.5%</strong><span>Best win rate</span></div>
+      <div class="stat"><strong>210</strong><span>Points</span></div>
+    </div>
+    <div class="content-grid">
+      <section class="panel">
+        <header><h3>Top 25 Rankings</h3><a>View all</a></header>
+        <table><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Record</th><th>Win %</th></tr></thead><tbody>
+          <tr><td><strong>1</strong></td><td>Jimbo Lemire</td><td>KB</td><td><span class="record-pop">9-2</span></td><td>81.8%</td></tr>
+          <tr><td><strong>2</strong></td><td>Will Deering</td><td>Riptide</td><td><span class="record-pop">8-4</span></td><td>66.7%</td></tr>
+          <tr><td><strong>3</strong></td><td>Ben Morrow</td><td>Wild Turkey</td><td><span class="record-pop">3-16</span></td><td>15.8%</td></tr>
+        </tbody></table>
+      </section>
+      <section class="team-cards">
+        <article class="team-card"><span class="team-logo">KB</span><h4>KB</h4><p>8-2</p></article>
+        <article class="team-card"><span class="team-logo">RIP</span><h4>Riptide</h4><p>4-1</p></article>
+        <article class="team-card"><span class="team-logo">DK</span><h4>Dark Knights</h4><p>6-4</p></article>
+        <article class="team-card"><span class="team-logo">WT</span><h4>Wild Turkey</h4><p>1-9</p></article>
+      </section>
+      <section class="panel schedule">
+        <header><h3>Latest Results</h3><a>Full schedule</a></header>
+        <div class="match-row"><b>May 18</b><span>Wild Turkey 22 - 16 Riptide</span><span>Final</span></div>
+        <div class="match-row"><b>May 18</b><span>Dark Knights 21 - 18 Chains & Aces</span><span>Final</span></div>
+      </section>
+    </div>
+  </section>
+</body>
+</html>

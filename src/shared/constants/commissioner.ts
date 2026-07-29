@@ -17,7 +17,7 @@ export const OFFICE_SECTIONS = {
   },
   players: {
     title: 'Players',
-    description: 'Maintain the league player directory and team associations.',
+    description: 'Maintain players, account approvals, player claims, and captain access.',
     href: '/office/players',
   },
   seasons: {
@@ -37,7 +37,7 @@ export const OFFICE_SECTIONS = {
   },
   imports: {
     title: 'Imports',
-    description: 'Validate and apply official match results from the scoring application.',
+    description: 'Import historical team and player summary records.',
     href: '/office/imports',
   },
   standings: {
