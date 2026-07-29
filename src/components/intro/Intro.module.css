@@ -75,7 +75,7 @@
   justify-items: center;
   gap: clamp(18px, 3vh, 30px);
   opacity: 0;
-  transform: translateZ(0) scale(.98);
+  transform: translateZ(0) scale(.96);
   transition:
     opacity var(--logo-duration) ease-out,
     transform var(--logo-duration) ease-out;

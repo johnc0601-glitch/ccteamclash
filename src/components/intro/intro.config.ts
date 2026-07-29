@@ -5,7 +5,7 @@ export const INTRO_TIMING = {
   dawnMs: 1600,
   discMs: 2000,
   blackoutMs: 600,
-  logoMs: 2000,
+  logoMs: 4000,
   mottoDelayMs: 400,
   mottoFadeMs: 1000,
   homepageCrossfadeMs: 1200,
