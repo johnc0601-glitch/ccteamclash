@@ -13,6 +13,7 @@
     "test:rankings": "node --loader ./scripts/ts-paths-loader.mjs --test src/services/rankings/RankingsService.test.ts",
     "test:courses": "node --loader ./scripts/ts-paths-loader.mjs --test src/domain/course/CourseService.test.ts",
     "test:launch": "node --loader ./scripts/ts-paths-loader.mjs --test src/domain/launch/LaunchService.test.ts",
+    "test:intro": "node --loader ./scripts/ts-paths-loader.mjs --test src/components/intro/introDecision.test.ts",
     "seed:launch:sql": "node --loader ./scripts/ts-paths-loader.mjs scripts/generate_launch_seed_sql.mjs"
   },
   "dependencies": {

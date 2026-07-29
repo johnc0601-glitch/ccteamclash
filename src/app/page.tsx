@@ -1,5 +1,9 @@
 import Link from 'next/link';
+import {cookies} from 'next/headers';
 import type {ReactNode} from 'react';
+import {Intro} from '@/components/intro/Intro';
+import {INTRO_COOKIE_NAME} from '@/components/intro/intro.config';
+import {parseIntroQuery} from '@/components/intro/introDecision';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchCard} from '@/components/MatchCard';
 import {getHomePageEvents} from '@/services/matches/EventService';
@@ -8,7 +12,12 @@ import {getStories} from '@/services/stories/StoryService';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Home() {
+type HomeProps = {
+  searchParams: Promise<{intro?: string | string[]}>;
+};
+
+export default async function Home({searchParams}: HomeProps) {
+  const [cookieStore, query] = await Promise.all([cookies(), searchParams]);
   const stories = await getStories();
   const lead = stories[0];
   const teamLogos = await getStoredTeams();
@@ -66,6 +75,10 @@ export default async function Home() {
       </section>
 
       <Footer />
+      <Intro
+        hasLoginMarker={cookieStore.get(INTRO_COOKIE_NAME)?.value === '1'}
+        queryOverride={parseIntroQuery(query.intro)}
+      />
     </main>
   );
 }

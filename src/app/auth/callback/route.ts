@@ -1,11 +1,14 @@
 import {NextResponse} from 'next/server';
+import {INTRO_COOKIE_NAME} from '@/components/intro/intro.config';
 import {ensureLaunchSignupProfile} from '@/domain/launch/LaunchAccountSetup';
 import {createClient} from '@/lib/supabase/server';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
-  const next = requestUrl.searchParams.get('next') ?? '/account';
+  const flow = requestUrl.searchParams.get('flow');
+  const next = getSafeDestination(requestUrl.searchParams.get('next'));
+  let magicLinkAuthenticated = false;
 
   if (code) {
     const supabase = await createClient();
@@ -20,6 +23,7 @@ export async function GET(request: Request) {
     }
     const {data} = await supabase.auth.getUser();
     if (data.user) {
+      magicLinkAuthenticated = flow === 'magic-link';
       const setupError = await ensureLaunchSignupProfile(supabase, data.user);
       if (setupError) {
         return NextResponse.redirect(new URL(`/account?error=${encodeURIComponent(setupError)}`, requestUrl.origin));
@@ -27,5 +31,22 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(new URL(next, requestUrl.origin));
+  const response = NextResponse.redirect(new URL(next, requestUrl.origin));
+
+  if (magicLinkAuthenticated) {
+    response.cookies.set(INTRO_COOKIE_NAME, '1', {
+      httpOnly: false,
+      maxAge: 120,
+      path: '/',
+      sameSite: 'lax',
+      secure: requestUrl.protocol === 'https:',
+    });
+  }
+
+  return response;
+}
+
+function getSafeDestination(next: string | null): string {
+  if (!next?.startsWith('/') || next.startsWith('//')) return '/account';
+  return next;
 }
