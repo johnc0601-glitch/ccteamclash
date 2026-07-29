@@ -17,37 +17,6 @@
   inset: 0;
 }
 
-.soundPrompt {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  display: grid;
-  place-items: center;
-  background: #000;
-}
-
-.soundButton {
-  min-height: 48px;
-  padding: 0 22px;
-  border: 1px solid rgba(255, 255, 255, .48);
-  border-radius: 2px;
-  background: transparent;
-  color: #fff;
-  font-family: var(--cc-font-body);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.soundButton:hover,
-.soundButton:focus-visible {
-  border-color: #fff;
-  background: rgba(255, 255, 255, .08);
-  outline: none;
-}
-
 .sceneImage {
   opacity: 0;
   transform: translateZ(0);
@@ -120,6 +89,18 @@
   max-height: 62vh;
   object-fit: contain;
   filter: invert(1);
+}
+
+.welcome {
+  margin: 0 0 -8px;
+  color: #fff;
+  font-family: var(--cc-font-display);
+  font-size: clamp(20px, 3vw, 34px);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .04em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .motto {

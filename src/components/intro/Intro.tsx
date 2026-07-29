@@ -19,13 +19,7 @@ type IntroStyle = CSSProperties & {
 };
 
 export function Intro({hasLoginMarker, queryOverride}: IntroProps) {
-  const {
-    awaitingAudioGesture,
-    beginIntro,
-    isMounted,
-    phase,
-    reducedMotion,
-  } = useIntro({hasLoginMarker, queryOverride});
+  const {isMounted, phase, reducedMotion} = useIntro({hasLoginMarker, queryOverride});
 
   if (!isMounted) return null;
 
@@ -40,15 +34,8 @@ export function Intro({hasLoginMarker, queryOverride}: IntroProps) {
       data-phase={phase}
       data-reduced-motion={reducedMotion ? 'true' : 'false'}
       style={style}
-      aria-label="Team Clash welcome intro"
+      role="presentation"
     >
-      {awaitingAudioGesture ? (
-        <div className={styles.soundPrompt}>
-          <button className={styles.soundButton} onClick={beginIntro} type="button">
-            Play intro with sound
-          </button>
-        </div>
-      ) : null}
       <SceneImage
         alt=""
         className={styles.dawn}

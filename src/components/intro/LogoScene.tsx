@@ -19,6 +19,7 @@ export function LogoScene() {
   return (
     <section className={styles.logoScene} style={style} aria-label="Welcome to Team Clash">
       <div className={styles.logoLockup}>
+        <p className={styles.welcome}>Welcome to</p>
         <Image
           alt="Coastal Carolina Team Clash"
           className={styles.logo}

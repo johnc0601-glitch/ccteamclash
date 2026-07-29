@@ -5,31 +5,11 @@ export const INTRO_TIMING = {
   dawnMs: 1600,
   discMs: 2000,
   blackoutMs: 600,
-  logoMs: 4000,
+  logoMs: 6000,
   mottoDelayMs: 400,
   mottoFadeMs: 1000,
   homepageCrossfadeMs: 1200,
   reducedMotionHoldMs: 1200,
-} as const;
-
-export const INTRO_AUDIO_TIMING = {
-  startLeadMs: 50,
-  breezeFadeInMs: 800,
-  breezeFadeOutMs: 1200,
-  chainDecayMs: 650,
-  chainStaggerMs: 12,
-  bassLeadMs: 600,
-  bassAttackMs: 900,
-  bassReleaseMs: 2200,
-  masterGain: .72,
-  breezeGain: .026,
-  breezeHighpassHz: 90,
-  breezeLowpassHz: 720,
-  chainGain: .045,
-  chainFrequenciesHz: [1320, 1840, 2470, 3210],
-  bassGain: .052,
-  bassStartHz: 48,
-  bassEndHz: 42,
 } as const;
 
 export const INTRO_ASSETS = {
