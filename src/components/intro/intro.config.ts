@@ -2,14 +2,14 @@ export const INTRO_COOKIE_NAME = 'cc-team-clash:intro';
 export const INTRO_SESSION_KEY = 'cc-team-clash:intro-played';
 
 export const INTRO_TIMING = {
-  dawnMs: 800,
-  discMs: 1000,
-  blackoutMs: 300,
-  logoMs: 1000,
-  mottoDelayMs: 200,
-  mottoFadeMs: 500,
-  homepageCrossfadeMs: 600,
-  reducedMotionHoldMs: 600,
+  dawnMs: 1600,
+  discMs: 2000,
+  blackoutMs: 600,
+  logoMs: 2000,
+  mottoDelayMs: 400,
+  mottoFadeMs: 1000,
+  homepageCrossfadeMs: 1200,
+  reducedMotionHoldMs: 1200,
 } as const;
 
 export const INTRO_ASSETS = {
