@@ -1,6 +1,7 @@
 'use client';
 
 import {useCallback, useLayoutEffect, useRef, useState} from 'react';
+import {startIntroAudio} from './AudioManager';
 import {
   INTRO_COOKIE_NAME,
   INTRO_SESSION_KEY,
@@ -28,12 +29,15 @@ export function useIntro({hasLoginMarker, queryOverride}: UseIntroOptions): UseI
   const [reducedMotion, setReducedMotion] = useState(false);
   const timers = useRef<number[]>([]);
   const animationFrame = useRef<number | null>(null);
+  const stopAudio = useRef<() => void>(() => undefined);
 
   const finish = useCallback(() => {
     timers.current.forEach(window.clearTimeout);
     timers.current = [];
     if (animationFrame.current !== null) window.cancelAnimationFrame(animationFrame.current);
     animationFrame.current = null;
+    stopAudio.current();
+    stopAudio.current = () => undefined;
     setIsMounted(false);
   }, []);
 
@@ -58,6 +62,7 @@ export function useIntro({hasLoginMarker, queryOverride}: UseIntroOptions): UseI
     }
 
     window.sessionStorage.setItem(INTRO_SESSION_KEY, '1');
+    stopAudio.current = startIntroAudio({reducedMotion: prefersReducedMotion});
 
     if (prefersReducedMotion) {
       animationFrame.current = window.requestAnimationFrame(() => {
@@ -70,6 +75,8 @@ export function useIntro({hasLoginMarker, queryOverride}: UseIntroOptions): UseI
         timers.current = [];
         if (animationFrame.current !== null) window.cancelAnimationFrame(animationFrame.current);
         animationFrame.current = null;
+        stopAudio.current();
+        stopAudio.current = () => undefined;
       };
     }
 
@@ -94,6 +101,8 @@ export function useIntro({hasLoginMarker, queryOverride}: UseIntroOptions): UseI
       timers.current = [];
       if (animationFrame.current !== null) window.cancelAnimationFrame(animationFrame.current);
       animationFrame.current = null;
+      stopAudio.current();
+      stopAudio.current = () => undefined;
     };
   }, [finish, hasLoginMarker, queryOverride]);
 
