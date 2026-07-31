@@ -10,6 +10,7 @@
     "test:statistics": "node --loader ./scripts/ts-paths-loader.mjs --test src/services/statistics/StatisticsEngine.test.ts",
     "test:standings": "node --loader ./scripts/ts-paths-loader.mjs --test src/services/standings/StandingsService.test.ts",
     "test:players": "node --loader ./scripts/ts-paths-loader.mjs --test src/services/PlayerService.test.ts src/components/players/playerHistoryDisplay.test.ts",
+    "test:player-history": "node --loader ./scripts/ts-paths-loader.mjs --test src/services/playerHistory/PlayerMatchHistoryService.test.ts",
     "test:rankings": "node --loader ./scripts/ts-paths-loader.mjs --test src/services/rankings/RankingsService.test.ts",
     "test:courses": "node --loader ./scripts/ts-paths-loader.mjs --test src/domain/course/CourseService.test.ts",
     "test:schedule": "node --loader ./scripts/ts-paths-loader.mjs --test src/domain/schedule/ScheduleService.test.ts src/domain/schedule/ScheduleIntegration.test.ts src/domain/schedule/ScheduleImportAdapters.test.ts",

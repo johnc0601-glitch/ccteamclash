@@ -74,6 +74,143 @@ export type Database = {
           },
         ]
       }
+      historical_player_matchups: {
+        Row: {
+          deduplication_key: string
+          event_label: string
+          event_month: string
+          event_order: number
+          imported_at: string
+          match_format: string
+          opponent_one_player_id: string
+          opponent_one_player_name: string
+          opponent_team_id: string
+          opponent_team_name: string
+          opponent_two_player_id: string | null
+          opponent_two_player_name: string | null
+          outcome: string
+          partner_player_id: string | null
+          partner_player_name: string | null
+          player_id: string
+          player_name: string
+          player_team_id: string
+          player_team_name: string
+          raw_result: string | null
+          raw_score: string | null
+          season_id: string
+          season_name: string
+          source_row: number
+          source_sheet: string
+          source_workbook: string
+        }
+        Insert: {
+          deduplication_key: string
+          event_label: string
+          event_month: string
+          event_order: number
+          imported_at?: string
+          match_format: string
+          opponent_one_player_id: string
+          opponent_one_player_name: string
+          opponent_team_id: string
+          opponent_team_name: string
+          opponent_two_player_id?: string | null
+          opponent_two_player_name?: string | null
+          outcome: string
+          partner_player_id?: string | null
+          partner_player_name?: string | null
+          player_id: string
+          player_name: string
+          player_team_id: string
+          player_team_name: string
+          raw_result?: string | null
+          raw_score?: string | null
+          season_id: string
+          season_name: string
+          source_row: number
+          source_sheet: string
+          source_workbook: string
+        }
+        Update: {
+          deduplication_key?: string
+          event_label?: string
+          event_month?: string
+          event_order?: number
+          imported_at?: string
+          match_format?: string
+          opponent_one_player_id?: string
+          opponent_one_player_name?: string
+          opponent_team_id?: string
+          opponent_team_name?: string
+          opponent_two_player_id?: string | null
+          opponent_two_player_name?: string | null
+          outcome?: string
+          partner_player_id?: string | null
+          partner_player_name?: string | null
+          player_id?: string
+          player_name?: string
+          player_team_id?: string
+          player_team_name?: string
+          raw_result?: string | null
+          raw_score?: string | null
+          season_id?: string
+          season_name?: string
+          source_row?: number
+          source_sheet?: string
+          source_workbook?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historical_player_matchups_opponent_one_player_id_fkey"
+            columns: ["opponent_one_player_id"]
+            isOneToOne: false
+            referencedRelation: "launch_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historical_player_matchups_opponent_team_id_fkey"
+            columns: ["opponent_team_id"]
+            isOneToOne: false
+            referencedRelation: "launch_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historical_player_matchups_opponent_two_player_id_fkey"
+            columns: ["opponent_two_player_id"]
+            isOneToOne: false
+            referencedRelation: "launch_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historical_player_matchups_partner_player_id_fkey"
+            columns: ["partner_player_id"]
+            isOneToOne: false
+            referencedRelation: "launch_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historical_player_matchups_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "launch_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historical_player_matchups_player_team_id_fkey"
+            columns: ["player_team_id"]
+            isOneToOne: false
+            referencedRelation: "launch_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historical_player_matchups_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "launch_seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_runs: {
         Row: {
           created_at: string
@@ -393,6 +530,33 @@ export type Database = {
           },
         ]
       }
+      launch_leagues: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          short_name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id: string
+          name: string
+          short_name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          short_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       launch_match_results: {
         Row: {
           away_score: number | null
@@ -539,49 +703,103 @@ export type Database = {
           },
         ]
       }
-      launch_leagues: {
+      launch_playoff_brackets: {
         Row: {
-          active: boolean
+          champion_team_id: string | null
           created_at: string
           id: string
-          name: string
-          short_name: string
+          published_at: string | null
+          regular_season_locked_at: string
+          season_id: string
+          status: string
           updated_at: string
         }
         Insert: {
-          active?: boolean
+          champion_team_id?: string | null
           created_at?: string
           id: string
-          name: string
-          short_name: string
+          published_at?: string | null
+          regular_season_locked_at: string
+          season_id: string
+          status?: string
           updated_at?: string
         }
         Update: {
-          active?: boolean
+          champion_team_id?: string | null
           created_at?: string
           id?: string
-          name?: string
-          short_name?: string
+          published_at?: string | null
+          regular_season_locked_at?: string
+          season_id?: string
+          status?: string
           updated_at?: string
         }
-        Relationships: []
-      }
-      launch_playoff_brackets: {
-        Row: { champion_team_id: string | null; created_at: string; id: string; published_at: string | null; regular_season_locked_at: string; season_id: string; status: string; updated_at: string }
-        Insert: { champion_team_id?: string | null; created_at?: string; id: string; published_at?: string | null; regular_season_locked_at: string; season_id: string; status?: string; updated_at?: string }
-        Update: { champion_team_id?: string | null; created_at?: string; id?: string; published_at?: string | null; regular_season_locked_at?: string; season_id?: string; status?: string; updated_at?: string }
         Relationships: [
-          { foreignKeyName: "launch_playoff_brackets_champion_team_id_fkey"; columns: ["champion_team_id"]; isOneToOne: false; referencedRelation: "launch_teams"; referencedColumns: ["id"] },
-          { foreignKeyName: "launch_playoff_brackets_season_id_fkey"; columns: ["season_id"]; isOneToOne: true; referencedRelation: "launch_seasons"; referencedColumns: ["id"] },
+          {
+            foreignKeyName: "launch_playoff_brackets_champion_team_id_fkey"
+            columns: ["champion_team_id"]
+            isOneToOne: false
+            referencedRelation: "launch_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launch_playoff_brackets_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: true
+            referencedRelation: "launch_seasons"
+            referencedColumns: ["id"]
+          },
         ]
       }
       launch_playoff_games: {
-        Row: { away_seed: number | null; bracket_id: string; created_at: string; home_seed: number | null; id: string; match_id: string; position: number; stage: string; updated_at: string }
-        Insert: { away_seed?: number | null; bracket_id: string; created_at?: string; home_seed?: number | null; id: string; match_id: string; position: number; stage: string; updated_at?: string }
-        Update: { away_seed?: number | null; bracket_id?: string; created_at?: string; home_seed?: number | null; id?: string; match_id?: string; position?: number; stage?: string; updated_at?: string }
+        Row: {
+          away_seed: number | null
+          bracket_id: string
+          created_at: string
+          home_seed: number | null
+          id: string
+          match_id: string
+          position: number
+          stage: string
+          updated_at: string
+        }
+        Insert: {
+          away_seed?: number | null
+          bracket_id: string
+          created_at?: string
+          home_seed?: number | null
+          id: string
+          match_id: string
+          position: number
+          stage: string
+          updated_at?: string
+        }
+        Update: {
+          away_seed?: number | null
+          bracket_id?: string
+          created_at?: string
+          home_seed?: number | null
+          id?: string
+          match_id?: string
+          position?: number
+          stage?: string
+          updated_at?: string
+        }
         Relationships: [
-          { foreignKeyName: "launch_playoff_games_bracket_id_fkey"; columns: ["bracket_id"]; isOneToOne: false; referencedRelation: "launch_playoff_brackets"; referencedColumns: ["id"] },
-          { foreignKeyName: "launch_playoff_games_match_id_fkey"; columns: ["match_id"]; isOneToOne: true; referencedRelation: "launch_schedule_matches"; referencedColumns: ["id"] },
+          {
+            foreignKeyName: "launch_playoff_games_bracket_id_fkey"
+            columns: ["bracket_id"]
+            isOneToOne: false
+            referencedRelation: "launch_playoff_brackets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launch_playoff_games_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: true
+            referencedRelation: "launch_schedule_matches"
+            referencedColumns: ["id"]
+          },
         ]
       }
       launch_profiles: {
@@ -861,36 +1079,6 @@ export type Database = {
           },
         ]
       }
-      launch_teams: {
-        Row: {
-          active: boolean
-          created_at: string
-          id: string
-          logo: string
-          name: string
-          short_name: string
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          id: string
-          logo?: string
-          name: string
-          short_name: string
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          id?: string
-          logo?: string
-          name?: string
-          short_name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       launch_team_aliases: {
         Row: {
           alias: string
@@ -922,6 +1110,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      launch_teams: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          logo: string
+          name: string
+          short_name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id: string
+          logo?: string
+          name: string
+          short_name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          logo?: string
+          name?: string
+          short_name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       match_misc_points: {
         Row: {
