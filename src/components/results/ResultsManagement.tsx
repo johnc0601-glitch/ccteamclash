@@ -3,7 +3,16 @@
 import {useMemo, useState} from 'react';
 import {services} from '@/core/ServiceContainer';
 import type {Course} from '@/domain/course/Course';
-import type {MatchResult, ResultsFieldErrors} from '@/domain/results/MatchResult';
+import type {
+  MatchResult,
+  ResultContest,
+  ResultContestFormat,
+  ResultContestInput,
+  ResultContestOutcome,
+  ResultContestSide,
+  ResultsFieldErrors,
+} from '@/domain/results/MatchResult';
+import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import type {Match} from '@/domain/schedule/Match';
 import type {Round} from '@/domain/schedule/Round';
 import type {Schedule} from '@/domain/schedule/Schedule';
@@ -23,6 +32,7 @@ type ResultsManagementProps = {
   initialTeams: Team[];
   initialCourses: Course[];
   initialRoundId: string;
+  initialPlayers: LaunchPlayer[];
 };
 
 export function ResultsManagement({
@@ -33,6 +43,7 @@ export function ResultsManagement({
   initialTeams,
   initialCourses,
   initialRoundId,
+  initialPlayers,
 }: ResultsManagementProps) {
   const [schedules, setSchedules] = useState(initialSchedules);
   const [rounds, setRounds] = useState(initialRounds);
@@ -47,6 +58,7 @@ export function ResultsManagement({
   const [fieldErrors, setFieldErrors] = useState<ResultsFieldErrors>({});
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  const [contests, setContests] = useState<ResultContestInput[]>([]);
 
   async function load(preferredRoundId?: string) {
     const [nextSchedules, nextTeams, nextCourses, nextResults] = await Promise.all([
@@ -80,13 +92,14 @@ export function ResultsManagement({
     setMessage('');
   }
 
-  function openEditor(match: Match) {
+  async function openEditor(match: Match) {
     const result = results.find((candidate) => candidate.matchId === match.id);
     setEditor({match, result});
     setHomeScore(result?.homeScore === null || result?.homeScore === undefined ? '' : String(result.homeScore));
     setAwayScore(result?.awayScore === null || result?.awayScore === undefined ? '' : String(result.awayScore));
     setFieldErrors({});
     setMessage('');
+    setContests((await services.results.getContests(match.id)).map(toContestInput));
   }
 
   async function save(action: 'draft' | 'publish' | 'reopen') {
@@ -96,6 +109,7 @@ export function ResultsManagement({
     const input = {
       homeScore: parseScore(homeScore),
       awayScore: parseScore(awayScore),
+      contests,
     };
     const result = action === 'draft'
       ? await services.results.saveDraft(editor.match.id, input)
@@ -117,6 +131,67 @@ export function ResultsManagement({
   const teamNames = useMemo(() => new Map(teams.map((team) => [team.id, team.name])), [teams]);
   const courseNames = useMemo(() => new Map(courses.map((course) => [course.id, course.name])), [courses]);
   const scheduleNames = useMemo(() => new Map(schedules.map((schedule) => [schedule.id, schedule.name])), [schedules]);
+  const playersByTeam = useMemo(() => {
+    const grouped = new Map<string, LaunchPlayer[]>();
+    for (const player of initialPlayers.filter((candidate) => candidate.active && candidate.currentTeamId)) {
+      const rows = grouped.get(player.currentTeamId!) ?? [];
+      rows.push(player);
+      grouped.set(player.currentTeamId!, rows);
+    }
+    return grouped;
+  }, [initialPlayers]);
+
+  function addContest(format: ResultContestFormat) {
+    if (!editor?.match.homeTeamId || !editor.match.awayTeamId) return;
+    const position = Math.max(0, ...contests.filter((contest) => contest.format === format).map((contest) => contest.position)) + 1;
+    const playerSlots = format === 'Singles' ? [1] as const : [1, 2] as const;
+    setContests([...contests, {
+      id: `${editor.match.id}-${format.toLowerCase()}-${position}`,
+      format,
+      position,
+      homeOutcome: 'T',
+      awayOutcome: 'T',
+      homeScore: null,
+      awayScore: null,
+      players: (['Home', 'Away'] as const).flatMap((side) => playerSlots.map((slot) => ({
+        playerId: '',
+        teamId: side === 'Home' ? editor.match.homeTeamId! : editor.match.awayTeamId!,
+        side,
+        slot,
+      }))),
+    }]);
+  }
+
+  function updateContest(index: number, update: Partial<ResultContestInput>) {
+    setContests(contests.map((contest, contestIndex) => contestIndex === index ? {...contest, ...update} : contest));
+  }
+
+  function updateOutcome(index: number, homeOutcome: ResultContestOutcome) {
+    updateContest(index, {
+      homeOutcome,
+      awayOutcome: homeOutcome === 'W' ? 'L' : homeOutcome === 'L' ? 'W' : 'T',
+    });
+  }
+
+  function updateSinglesScore(index: number, side: ResultContestSide, value: string) {
+    const contest = contests[index];
+    const score = parseScore(value);
+    const homeScore = side === 'Home' ? score : contest.homeScore;
+    const awayScore = side === 'Away' ? score : contest.awayScore;
+    const update: Partial<ResultContestInput> = {homeScore, awayScore};
+    if (homeScore !== null && awayScore !== null) {
+      update.homeOutcome = homeScore > awayScore ? 'W' : homeScore < awayScore ? 'L' : 'T';
+      update.awayOutcome = update.homeOutcome === 'W' ? 'L' : update.homeOutcome === 'L' ? 'W' : 'T';
+    }
+    updateContest(index, update);
+  }
+
+  function updatePlayer(index: number, side: ResultContestSide, slot: 1 | 2, playerId: string) {
+    updateContest(index, {
+      players: contests[index].players.map((player) =>
+        player.side === side && player.slot === slot ? {...player, playerId} : player),
+    });
+  }
 
   return (
     <div className={styles.workspace}>
@@ -142,7 +217,7 @@ export function ResultsManagement({
           const result = results.find((candidate) => candidate.matchId === match.id);
           const status = result?.status === 'Published' ? 'Final' : result ? 'In Progress' : 'Scheduled';
           return (
-            <button className={styles.matchRow} type="button" key={match.id} onClick={() => openEditor(match)}>
+            <button className={styles.matchRow} type="button" key={match.id} onClick={() => void openEditor(match)}>
               <span><small>{formatTime(match.time)}</small><b>{match.courseId ? courseNames.get(match.courseId) ?? match.courseId : 'Course TBD'}</b></span>
               <strong>{match.homeTeamId ? teamNames.get(match.homeTeamId) ?? match.homeTeamId : 'TBD'} <em>vs</em> {match.awayTeamId ? teamNames.get(match.awayTeamId) ?? match.awayTeamId : 'TBD'}</strong>
               <span className={`${styles.status} ${styles[status.replace(' ', '').toLowerCase()]}`}>{status}</span>
@@ -170,6 +245,53 @@ export function ResultsManagement({
               {fieldErrors.awayScore ? <small>{fieldErrors.awayScore}</small> : null}
             </label>
           </div>
+          <section className={styles.contests}>
+            <header>
+              <div><span>Player results</span><h3>Singles and doubles</h3></div>
+              {editor.result?.status !== 'Published' ? <div className={styles.contestButtons}>
+                <button type="button" onClick={() => addContest('Singles')}>Add singles</button>
+                <button type="button" onClick={() => addContest('Doubles')}>Add doubles</button>
+              </div> : null}
+            </header>
+            {contests.length ? contests.map((contest, contestIndex) => (
+              <article className={styles.contest} key={contest.id}>
+                <div className={styles.contestHeading}>
+                  <strong>{contest.format} {contest.position}</strong>
+                  {editor.result?.status !== 'Published' ? <button type="button" onClick={() => setContests(contests.filter((_, index) => index !== contestIndex))}>Remove</button> : null}
+                </div>
+                <div className={styles.playerSides}>
+                  {(['Home', 'Away'] as const).map((side) => {
+                    const teamId = side === 'Home' ? editor.match.homeTeamId : editor.match.awayTeamId;
+                    const slots = contest.format === 'Singles' ? [1] as const : [1, 2] as const;
+                    return <div key={side}>
+                      <b>{side} · {teamId ? teamNames.get(teamId) : 'TBD'}</b>
+                      {slots.map((slot) => <label key={slot}>
+                        <span>{contest.format === 'Doubles' ? `Player ${slot}` : 'Player'}</span>
+                        <select
+                          disabled={editor.result?.status === 'Published'}
+                          value={contest.players.find((player) => player.side === side && player.slot === slot)?.playerId ?? ''}
+                          onChange={(event) => updatePlayer(contestIndex, side, slot, event.target.value)}
+                        >
+                          <option value="">Select player</option>
+                          {(teamId ? playersByTeam.get(teamId) ?? [] : []).map((player) => <option value={player.id} key={player.id}>{player.name}</option>)}
+                        </select>
+                      </label>)}
+                    </div>;
+                  })}
+                </div>
+                {contest.format === 'Singles' ? <div className={styles.contestScores}>
+                  <label><span>Home score</span><input disabled={editor.result?.status === 'Published'} type="number" min="0" step="1" value={contest.homeScore ?? ''} onChange={(event) => updateSinglesScore(contestIndex, 'Home', event.target.value)} /></label>
+                  <label><span>Away score</span><input disabled={editor.result?.status === 'Published'} type="number" min="0" step="1" value={contest.awayScore ?? ''} onChange={(event) => updateSinglesScore(contestIndex, 'Away', event.target.value)} /></label>
+                </div> : <label className={styles.outcome}>
+                  <span>Home outcome</span>
+                  <select disabled={editor.result?.status === 'Published'} value={contest.homeOutcome} onChange={(event) => updateOutcome(contestIndex, event.target.value as ResultContestOutcome)}>
+                    <option value="W">Win</option><option value="L">Loss</option><option value="T">Tie</option>
+                  </select>
+                </label>}
+              </article>
+            )) : <p className={styles.emptyContest}>No player contests entered yet. Team-only results remain supported.</p>}
+            {fieldErrors.contests ? <p className={styles.contestError}>{fieldErrors.contests}</p> : null}
+          </section>
           <p className={styles.review}>
             {editor.result?.status === 'Published'
               ? 'This result is final and locked. Reopen it before making a correction.'
@@ -190,6 +312,19 @@ export function ResultsManagement({
       ) : null}
     </div>
   );
+}
+
+function toContestInput(contest: ResultContest): ResultContestInput {
+  return {
+    id: contest.id,
+    format: contest.format,
+    position: contest.position,
+    homeOutcome: contest.homeOutcome,
+    awayOutcome: contest.awayOutcome,
+    homeScore: contest.homeScore,
+    awayScore: contest.awayScore,
+    players: contest.players.map(({playerId, teamId, side, slot}) => ({playerId, teamId, side, slot})),
+  };
 }
 
 function parseScore(value: string): number | null {

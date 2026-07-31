@@ -1,10 +1,10 @@
 import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
-import {services} from '@/core/ServiceContainer';
+import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import styles from './Players.module.css';
 
 export default async function PlayersPage() {
-  const playerViews = await services.publicPlayers.getAll();
+  const playerViews = await (await createServerPublicPlayerService()).getAll();
 
   return (
     <>

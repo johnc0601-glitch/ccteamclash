@@ -853,6 +853,111 @@ export type Database = {
           },
         ]
       }
+      launch_result_contest_players: {
+        Row: {
+          contest_id: string
+          created_at: string
+          player_id: string
+          player_name: string
+          side: string
+          slot: number
+          team_id: string
+          team_name: string
+          updated_at: string
+        }
+        Insert: {
+          contest_id: string
+          created_at?: string
+          player_id: string
+          player_name: string
+          side: string
+          slot: number
+          team_id: string
+          team_name: string
+          updated_at?: string
+        }
+        Update: {
+          contest_id?: string
+          created_at?: string
+          player_id?: string
+          player_name?: string
+          side?: string
+          slot?: number
+          team_id?: string
+          team_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "launch_result_contest_players_contest_id_fkey"
+            columns: ["contest_id"]
+            isOneToOne: false
+            referencedRelation: "launch_result_contests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launch_result_contest_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "launch_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launch_result_contest_players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "launch_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      launch_result_contests: {
+        Row: {
+          away_outcome: string
+          away_score: number | null
+          created_at: string
+          format: string
+          home_outcome: string
+          home_score: number | null
+          id: string
+          match_id: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          away_outcome: string
+          away_score?: number | null
+          created_at?: string
+          format: string
+          home_outcome: string
+          home_score?: number | null
+          id: string
+          match_id: string
+          position: number
+          updated_at?: string
+        }
+        Update: {
+          away_outcome?: string
+          away_score?: number | null
+          created_at?: string
+          format?: string
+          home_outcome?: string
+          home_score?: number | null
+          id?: string
+          match_id?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "launch_result_contests_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "launch_match_results"
+            referencedColumns: ["match_id"]
+          },
+        ]
+      }
       launch_rounds: {
         Row: {
           created_at: string

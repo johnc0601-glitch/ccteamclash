@@ -27,26 +27,33 @@ type StatisticsProvider = Pick<
   StatisticsEngine,
   | 'getPlayerStatisticsForPlayers'
   | 'getPlayerCareerStatistics'
+  | 'getPlayerCareerStatisticsForPlayers'
   | 'getPlayerMatchHistory'
   | 'getPlayerMatchHistoriesForPlayers'
 >;
+type CompleteHistoryProvider = {
+  getCompleteHistory(playerId: string): Promise<PlayerMatchHistoryEntry[]>;
+};
 
 export class PublicPlayerService {
   private readonly players: PlayerProvider;
   private readonly teams: TeamProvider;
   private readonly seasons: SeasonProvider;
   private readonly statistics: StatisticsProvider;
+  private readonly completeHistory?: CompleteHistoryProvider;
 
   constructor(
     players: PlayerProvider,
     teams: TeamProvider,
     seasons: SeasonProvider,
     statistics: StatisticsProvider,
+    completeHistory?: CompleteHistoryProvider,
   ) {
     this.players = players;
     this.teams = teams;
     this.seasons = seasons;
     this.statistics = statistics;
+    this.completeHistory = completeHistory;
   }
 
   async getAll(teamId = 'all'): Promise<PublicPlayerView[]> {
@@ -72,9 +79,13 @@ export class PublicPlayerService {
       3,
       activeSeason?.id,
     );
+    const careerStatistics = await this.statistics.getPlayerCareerStatisticsForPlayers(
+      players.map((player) => player.id),
+    );
+    const careerStatisticsByPlayer = new Map(careerStatistics.map((entry) => [entry.playerId, entry]));
 
-    return Promise.all(players.map(async (player) => {
-      const careerStatistics = await this.statistics.getPlayerCareerStatistics(player.id);
+    return players.map((player) => {
+      const playerCareerStatistics = careerStatisticsByPlayer.get(player.id)!;
       const history = latestHistoryByPlayer.get(player.id) ?? [];
       const historicalStatistics = getHistoricalPlayerSeedSummary(player.id);
       const activeStatistics = currentStatisticsByPlayer.get(player.id);
@@ -100,19 +111,21 @@ export class PublicPlayerService {
             pointsEarned: historicalStatistics.overallRecord.wins + historicalStatistics.overallRecord.ties * 0.5,
             currentStreak: '--',
           }
-          : careerStatistics,
+          : playerCareerStatistics,
         history: history.map((entry) => ({
           ...entry,
           opponentTeamName: teamNames.get(entry.opponentTeamId) ?? entry.opponentTeamId,
           seasonName: seasonNames.get(entry.seasonId) ?? entry.seasonId,
         })),
       };
-    }));
+    });
   }
 
   async getHistory(playerId: string): Promise<PublicPlayerHistory[]> {
     const [history, teams, seasons] = await Promise.all([
-      this.statistics.getPlayerMatchHistory(playerId),
+      this.completeHistory
+        ? this.completeHistory.getCompleteHistory(playerId)
+        : this.statistics.getPlayerMatchHistory(playerId),
       this.teams.getAll(),
       this.seasons.getAll(),
     ]);

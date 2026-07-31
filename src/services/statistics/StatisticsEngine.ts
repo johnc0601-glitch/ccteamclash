@@ -46,6 +46,11 @@ export class StatisticsEngine {
     return this.playerStatistics.calculateCareer(playerId, results);
   }
 
+  async getPlayerCareerStatisticsForPlayers(playerIds: string[]): Promise<PlayerStatisticsResult[]> {
+    const results = await this.repository.getPublishedChallengeResults();
+    return playerIds.map((playerId) => this.playerStatistics.calculateCareer(playerId, results));
+  }
+
   async getPlayerMatchHistory(playerId: string, limit?: number): Promise<PlayerMatchHistoryEntry[]> {
     const results = await this.repository.getPublishedChallengeResults();
     return this.playerStatistics.getMatchHistory(playerId, results, limit);

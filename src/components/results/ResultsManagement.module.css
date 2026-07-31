@@ -32,9 +32,27 @@
 .primary { border: 1px solid #171a18; background: #171a18; color: #fff; }
 .secondary { border: 1px solid #aeb5aa; background: #fff; color: #313733; }
 .empty { padding: 28px 24px; color: #69716c; }
+.contests { margin: 0 24px 24px; border: 1px solid #e1e4dd; border-radius: 6px; overflow: hidden; }
+.contests > header { padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; background: #f7f8f4; }
+.contests h3 { margin: 4px 0 0; font-size: 17px; text-transform: uppercase; }
+.contestButtons { display: flex; gap: 8px; }
+.contestButtons button, .contestHeading button { border: 1px solid #aeb5aa; border-radius: 4px; background: #fff; color: #313733; min-height: 34px; padding: 0 11px; font-weight: 900; cursor: pointer; }
+.contest { padding: 18px; border-top: 1px solid #e1e4dd; display: grid; gap: 16px; }
+.contestHeading { display: flex; justify-content: space-between; align-items: center; }
+.playerSides, .contestScores { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.playerSides > div { display: grid; gap: 10px; }
+.playerSides label, .contestScores label, .outcome { display: grid; gap: 6px; }
+.playerSides span, .contestScores span, .outcome span { color: #5f6762; font-size: 11px; font-weight: 850; }
+.playerSides select, .contestScores input, .outcome select { min-height: 42px; padding: 0 10px; border: 1px solid #bbc2b7; border-radius: 4px; background: #fff; color: #171b19; }
+.contestScores input { font-weight: 900; }
+.outcome { max-width: 260px; }
+.emptyContest { margin: 0; padding: 20px 18px; border-top: 1px solid #e1e4dd; color: #69716c; }
+.contestError { margin: 0; padding: 0 18px 18px; color: #9d2c22; }
 @media (max-width: 720px) {
   .matchRow { grid-template-columns: 1fr auto; }
   .matchRow > strong { grid-column: 1 / -1; grid-row: 1; }
   .scores { grid-template-columns: 1fr; }
   .scores > b { display: none; }
+  .contests > header, .contestButtons { align-items: stretch; flex-direction: column; }
+  .playerSides, .contestScores { grid-template-columns: 1fr; }
 }
