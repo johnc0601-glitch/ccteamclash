@@ -1,5 +1,6 @@
 export type Season = {
   id: string;
+  leagueId: string;
   name: string;
   year: number;
   description: string;

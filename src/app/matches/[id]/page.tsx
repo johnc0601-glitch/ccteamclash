@@ -3,9 +3,10 @@ import Link from 'next/link';
 import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {services} from '@/core/ServiceContainer';
+import {createServerScheduleService} from '@/core/createServerScheduleService';
+import {createServerResultsService} from '@/core/createServerResultsService';
 import {getStoredCourses} from '@/services/courses/CourseStore';
 import {getStoredTeams} from '@/services/teams/TeamStore';
-import {getEventById, getPublicEvents} from '@/services/matches/EventService';
 import {resolveMatchday} from '@/services/matches/MatchdayService';
 import styles from './Matchday.module.css';
 
@@ -15,13 +16,14 @@ type MatchdayPageProps = {
   params: Promise<{id: string}>;
 };
 
-export async function generateStaticParams() {
-  return getPublicEvents().map((match) => ({id: match.id}));
-}
-
 export default async function MatchdayPage({params}: MatchdayPageProps) {
   const {id} = await params;
-  const match = getEventById(id);
+  const scheduleService = await createServerScheduleService();
+  const resultsService = await createServerResultsService();
+  const [match, publishedResult] = await Promise.all([
+    scheduleService.getPublishedEventById(id),
+    resultsService.getPublishedResult(id),
+  ]);
   if (!match) notFound();
 
   const [teams, players, courses] = await Promise.all([
@@ -80,8 +82,16 @@ export default async function MatchdayPage({params}: MatchdayPageProps) {
           <aside className={styles.sideStack}>
             <section className={styles.sideCard}>
               <span>Scoreboard</span>
-              <h2>Pending</h2>
-              <p>Official results will appear here after the commissioner imports the scoring file.</p>
+              <h2>
+                {publishedResult
+                  ? `${publishedResult.homeScore} – ${publishedResult.awayScore}`
+                  : 'Pending'}
+              </h2>
+              <p>
+                {publishedResult
+                  ? `${matchday.homeTeam.name} vs ${matchday.awayTeam.name} · Final`
+                  : 'Official results will appear here after commissioner review.'}
+              </p>
             </section>
           </aside>
 

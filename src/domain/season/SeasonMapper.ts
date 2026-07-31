@@ -25,10 +25,11 @@ export class SeasonMapper {
     };
   }
 
-  toNewSeason(input: SeasonInput, id: string, timestamp: string): Season {
+  toNewSeason(input: SeasonInput, id: string, leagueId: string, timestamp: string): Season {
     return {
       ...input,
       id,
+      leagueId,
       active: false,
       archived: false,
       createdAt: timestamp,

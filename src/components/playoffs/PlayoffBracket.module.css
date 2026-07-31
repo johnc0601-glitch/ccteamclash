@@ -1,0 +1,14 @@
+.bracket { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 20px; }
+.bracket section { display: grid; gap: 14px; }
+.bracket section > span, .champion span { color: #657519; font-size: 10px; font-weight: 950; text-transform: uppercase; }
+.connector { color: #a58a28; font-size: 32px; }
+.game { padding: 18px; border: 1px solid #dfe2db; border-radius: 6px; background: #fff; }
+.game small { display: block; margin-bottom: 10px; color: #727a75; font-weight: 900; text-transform: uppercase; }
+.game > div { min-height: 42px; display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 10px; border-top: 1px solid #eceee9; }
+.game > div b { color: #7b827e; }
+.game > div span { font-weight: 950; }
+.game a { display: inline-block; margin-top: 12px; color: #56701c; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+.winner { color: #3f5f10; background: #f1f6e8; }
+.champion { padding: 22px; border: 2px solid #d4af37; border-radius: 6px; background: #171a18; color: #fff; text-align: center; }
+.champion strong { display: block; margin-top: 8px; color: #e4c34f; font-size: 24px; text-transform: uppercase; }
+@media (max-width: 760px) { .bracket { grid-template-columns: 1fr; } .connector { transform: rotate(90deg); text-align: center; } }

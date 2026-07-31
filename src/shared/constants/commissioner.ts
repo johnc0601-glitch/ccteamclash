@@ -45,6 +45,11 @@ export const OFFICE_SECTIONS = {
     description: 'Review the competitive order produced by league results.',
     href: '/office/standings',
   },
+  playoffs: {
+    title: 'Playoffs',
+    description: 'Generate, publish, and advance the championship bracket.',
+    href: '/office/playoffs',
+  },
   courses: {
     title: 'Courses',
     description: 'Maintain the course directory used across league operations.',

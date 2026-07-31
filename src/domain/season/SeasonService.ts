@@ -1,4 +1,5 @@
 import {createSlug} from '@/shared/utils';
+import {CCTEAMCLASH_LEAGUE_ID} from '@/domain/league/League';
 import {SeasonMapper} from '@/domain/season/SeasonMapper';
 import type {SeasonRepository} from '@/domain/season/SeasonRepository';
 import {SeasonValidator} from '@/domain/season/SeasonValidator';
@@ -27,7 +28,10 @@ export class SeasonService {
   private readonly mapper = new SeasonMapper();
   private readonly validator = new SeasonValidator();
 
-  constructor(private readonly repository: SeasonRepository) {}
+  constructor(
+    private readonly repository: SeasonRepository,
+    private readonly defaultLeagueId = CCTEAMCLASH_LEAGUE_ID,
+  ) {}
 
   async getAll(query: Partial<SeasonQuery> = {}): Promise<Season[]> {
     const resolvedQuery = {...DEFAULT_QUERY, ...query};
@@ -62,6 +66,7 @@ export class SeasonService {
     const season = this.mapper.toNewSeason(
       normalizedInput,
       this.createId(normalizedInput.name),
+      this.defaultLeagueId,
       timestamp,
     );
 
@@ -146,6 +151,7 @@ export class SeasonService {
     const duplicateSeason = this.mapper.toNewSeason(
       duplicateInput,
       this.createId(duplicateInput.name),
+      source.leagueId,
       timestamp,
     );
 

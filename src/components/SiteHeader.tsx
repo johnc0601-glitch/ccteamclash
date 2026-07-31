@@ -25,6 +25,7 @@ export async function SiteHeader() {
           <Link href="/stories">Stories</Link>
           <Link href="/schedule">Schedule</Link>
           <Link href="/standings">Standings</Link>
+          <Link href="/playoffs">Playoffs</Link>
           <Link href="/rankings">Rankings</Link>
           <Link href="/history">History</Link>
           <Link href="/teams">Teams</Link>
@@ -47,6 +48,7 @@ export async function SiteHeader() {
               <Link href="/courses">Courses</Link>
               <Link href="/schedule">Schedule</Link>
               <Link href="/standings">Standings</Link>
+              <Link href="/playoffs">Playoffs</Link>
               <Link href="/history">History</Link>
               <Link href="/stories">Stories</Link>
               {canOpenOffice ? <Link href="/office">Office</Link> : null}
@@ -91,6 +93,7 @@ export function Footer() {
         <div className="footer-links">
           <Link href="/schedule">Schedule</Link>
           <Link href="/standings">Standings</Link>
+          <Link href="/playoffs">Playoffs</Link>
           <Link href="/rankings">Rankings</Link>
           <Link href="/history">History</Link>
           <Link href="/courses">Courses</Link>

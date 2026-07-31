@@ -1,4 +1,5 @@
 import type {Season} from '@/domain/season/Season';
+import {CCTEAMCLASH_LEAGUE_ID} from '@/domain/league/League';
 
 export interface SeasonRepository {
   getAll(): Promise<Season[]>;
@@ -15,6 +16,7 @@ export interface SeasonRepository {
 const SEASON_MOCK_DATA = [
   {
     id: 'summer-team-clash-2026',
+    leagueId: CCTEAMCLASH_LEAGUE_ID,
     name: 'Summer Team Clash 2026',
     year: 2026,
     description: 'The current championship season for weekly team match play.',
@@ -29,6 +31,7 @@ const SEASON_MOCK_DATA = [
   },
   {
     id: 'spring-team-clash-2026',
+    leagueId: CCTEAMCLASH_LEAGUE_ID,
     name: 'Spring Team Clash 2026',
     year: 2026,
     description: 'A completed spring competition retained for league operations and reporting.',
@@ -43,6 +46,7 @@ const SEASON_MOCK_DATA = [
   },
   {
     id: 'fall-team-clash-2025',
+    leagueId: CCTEAMCLASH_LEAGUE_ID,
     name: 'Fall Team Clash 2025',
     year: 2025,
     description: 'The archived fall season and its historical league record.',
@@ -57,6 +61,7 @@ const SEASON_MOCK_DATA = [
   },
   {
     id: 'team-clash-2027-planning',
+    leagueId: CCTEAMCLASH_LEAGUE_ID,
     name: 'Team Clash 2027 Planning',
     year: 2027,
     description: 'An internal draft for the next league year.',
