@@ -26,26 +26,50 @@ export class PlayerStatistics {
     return this.calculateResults(playerId, 'career', results);
   }
 
-  getMatchHistory(playerId: string, results: ChallengeResult[]): PlayerMatchHistoryEntry[] {
-    return sortByDate(results).reverse().flatMap((result) => {
+  getMatchHistory(
+    playerId: string,
+    results: ChallengeResult[],
+    limit?: number,
+    seasonId?: string,
+  ): PlayerMatchHistoryEntry[] {
+    const eligibleResults = seasonId
+      ? results.filter((result) => result.seasonId === seasonId)
+      : results;
+    const history = sortByDate(eligibleResults).reverse().flatMap((result) => {
       const playerResults = result.playerResults.filter((entry) => entry.playerId === playerId);
       if (!playerResults.length) return [];
 
-      const record = emptyRecord();
-      playerResults.forEach((entry) => recordOutcome(record, entry.outcome));
-      const teamId = playerResults[0].teamId;
+      return playerResults.flatMap((entry): PlayerMatchHistoryEntry[] => {
+        const contestId = entry.contestId ?? entry.format;
+        const participants = result.playerResults.filter((candidate) =>
+          (candidate.contestId ?? candidate.format) === contestId);
+        const opponents = participants.filter((candidate) => candidate.teamId !== entry.teamId);
+        if (!opponents.length) return [];
+        const partners = participants.filter((candidate) =>
+          candidate.teamId === entry.teamId && candidate.playerId !== playerId);
+        if (entry.format === 'Doubles' && (partners.length < 1 || opponents.length < 2)) return [];
+        const opponentScore = opponents.find((candidate) => candidate.score !== undefined)?.score;
 
-      return [{
-        challengeId: result.challengeId,
-        seasonId: result.seasonId,
-        date: result.date,
-        teamId,
-        opponentTeamId: result.homeTeamId === teamId ? result.awayTeamId : result.homeTeamId,
-        record,
-        pointsEarned: playerResults.reduce((total, entry) => total + entry.pointsEarned, 0),
-        formats: [...new Set(playerResults.map((entry) => entry.format))],
-      }];
+        return [{
+          id: entry.id,
+          challengeId: result.challengeId,
+          seasonId: result.seasonId,
+          date: result.date,
+          teamId: entry.teamId,
+          opponentTeamId: result.homeTeamId === entry.teamId
+            ? result.awayTeamId
+            : result.homeTeamId,
+          format: entry.format,
+          outcome: entry.outcome,
+          isHome: result.homeTeamId === entry.teamId,
+          opponentPlayerNames: opponents.map((candidate) => candidate.playerName),
+          partnerPlayerNames: partners.map((candidate) => candidate.playerName),
+          playerScore: entry.score,
+          opponentScore,
+        }];
+      });
     });
+    return limit === undefined ? history : history.slice(0, limit);
   }
 
   private calculateResults(

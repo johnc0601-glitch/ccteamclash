@@ -5,6 +5,7 @@ export type {
   PlayerProfileMatchResult,
 } from './PlayerProfileTypes';
 export {
+  createHistoryItems,
   createProfileFromHistoricalSummary,
   createProfileFromPublicPlayerView,
 } from './PlayerProfileMapper';

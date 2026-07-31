@@ -40,10 +40,18 @@
 .splitStats div { padding-top: 14px; border-top: 1px solid var(--cc-card-border); }
 .splitStats small { display: block; margin-top: 4px; color: var(--cc-muted); font-size: 10px; font-weight: 800; }
 .history { padding-top: 24px; }
+.historyHeading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.historyHeading button { padding: 8px 0; border: 0; background: transparent; color: #006f71; cursor: pointer; font: inherit; font-size: 10px; font-weight: 950; text-transform: uppercase; }
+.historyHeading button:disabled { cursor: wait; opacity: .6; }
+.historyGroups { display: grid; gap: 20px; }
+.historySeason h4 { margin: 0 0 8px; color: var(--cc-muted); font-size: 10px; font-weight: 950; text-transform: uppercase; }
 .matchHistoryList { margin: 0; padding: 0; display: grid; gap: 0; list-style: none; border-top: 1px solid var(--cc-card-border); }
-.matchHistoryList li { padding: 12px 0; display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--cc-card-border); }
+.matchHistoryList li { padding: 12px 0; display: grid; gap: 4px; border-bottom: 1px solid var(--cc-card-border); }
+.historyResult { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; }
+.historyResult strong { color: #006f71; font-size: 13px; }
 .matchHistoryList span { color: var(--cc-heading); font-size: 13px; font-weight: 950; }
-.matchHistoryList small { color: var(--cc-muted); font-size: 11px; font-weight: 800; text-align: right; }
+.matchHistoryList small { color: var(--cc-muted); font-size: 11px; font-weight: 800; }
+.matchHistoryList .partner { color: var(--cc-body-text); }
 .historyTableWrap { max-width: 100%; overflow-x: auto; }
 .history table { width: 100%; min-width: 620px; border-collapse: collapse; }
 .history th, .history td { padding: 12px 10px; border-bottom: 1px solid var(--cc-card-border); text-align: left; font-size: 12px; }
@@ -53,4 +61,4 @@
 .empty h2 { margin: 0; color: var(--cc-heading); font-family: var(--cc-font-display); font-size: 24px; font-style: italic; letter-spacing: -.03em; text-transform: uppercase; }
 .empty p { margin: 0; }
 .empty a { justify-self: center; color: #006f71; font-size: 12px; font-weight: 950; text-transform: uppercase; }
-@media (max-width: 700px) { .filters { grid-template-columns: 1fr; } .rankingsLink { width: 100%; } .player summary { grid-template-columns: minmax(0, 1fr) auto; } .summaryStats { display: none; } .profileStats dl, .statSections dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } .statSections { grid-template-columns: 1fr; } .statSections section { padding: 20px 0; } .statSections section + section { padding-left: 0; border-top: 1px solid #dfe2db; border-left: 0; } .matchHistoryList li { display: grid; } .matchHistoryList small { text-align: left; } }
+@media (max-width: 700px) { .filters { grid-template-columns: 1fr; } .rankingsLink { width: 100%; } .player summary { grid-template-columns: minmax(0, 1fr) auto; } .summaryStats { display: none; } .profileStats dl, .statSections dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } .statSections { grid-template-columns: 1fr; } .statSections section { padding: 20px 0; } .statSections section + section { padding-left: 0; border-top: 1px solid #dfe2db; border-left: 0; } .historyHeading { align-items: flex-start; } }

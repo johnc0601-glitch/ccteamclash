@@ -11,6 +11,8 @@ export type PlayerProfileMatchHistoryItem = {
   date?: string;
   format: PlayerProfileMatchFormat;
   result: PlayerProfileMatchResult | '-';
+  isHome: boolean;
+  teamId: string;
   opponentTeamName?: string;
   opponentPlayerNames: string[];
   partnerPlayerNames: string[];

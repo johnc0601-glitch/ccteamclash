@@ -19,21 +19,25 @@ const CHALLENGE_RESULTS = [
     playerResults: [
       {
         id: 'spring-2026-opener-ch-avery-singles',
+        contestId: 'spring-singles-1',
         playerId: 'avery-mills',
         playerName: 'Avery Mills',
         teamId: 'chain-hawks',
         format: 'Singles',
         outcome: 'Win',
         pointsEarned: 1,
+        score: 7,
       },
       {
         id: 'spring-2026-opener-nj-riley-singles',
+        contestId: 'spring-singles-1',
         playerId: 'riley-carter',
         playerName: 'Riley Carter',
         teamId: 'ninjas',
         format: 'Singles',
         outcome: 'Loss',
         pointsEarned: 0,
+        score: 4,
       },
       {
         id: 'spring-2026-opener-ch-avery-doubles',
@@ -69,21 +73,25 @@ const CHALLENGE_RESULTS = [
     playerResults: [
       {
         id: 'summer-2026-dark-ninjas-joshua-singles',
+        contestId: 'summer-singles-1',
         playerId: 'joshua-matheson',
         playerName: 'Joshua Matheson',
         teamId: 'dark-knights',
         format: 'Singles',
         outcome: 'Win',
         pointsEarned: 1,
+        score: 7,
       },
       {
         id: 'summer-2026-dark-ninjas-william-singles',
+        contestId: 'summer-singles-1',
         playerId: 'william-deering',
         playerName: 'William Deering',
         teamId: 'ninjas',
         format: 'Singles',
         outcome: 'Loss',
         pointsEarned: 0,
+        score: 5,
       },
       {
         id: 'summer-2026-dark-ninjas-joshua-doubles',

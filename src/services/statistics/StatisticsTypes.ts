@@ -12,6 +12,8 @@ export type PlayerResult = {
   format: PlayerResultFormat;
   outcome: PlayerResultOutcome;
   pointsEarned: number;
+  contestId?: string;
+  score?: number;
 };
 
 export type ChallengeResult = {
@@ -65,14 +67,19 @@ export type PlayerStatistics = {
 };
 
 export type PlayerMatchHistoryEntry = {
+  id: string;
   challengeId: string;
   seasonId: string;
   date: string;
   teamId: string;
   opponentTeamId: string;
-  record: RecordSummary;
-  pointsEarned: number;
-  formats: PlayerResultFormat[];
+  format: PlayerResultFormat;
+  outcome: PlayerResultOutcome;
+  isHome: boolean;
+  opponentPlayerNames: string[];
+  partnerPlayerNames: string[];
+  playerScore?: number;
+  opponentScore?: number;
 };
 
 export type SeasonStatistics = {

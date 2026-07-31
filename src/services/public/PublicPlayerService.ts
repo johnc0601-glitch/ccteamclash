@@ -25,7 +25,10 @@ type TeamProvider = Pick<TeamService, 'getAll'>;
 type SeasonProvider = Pick<SeasonService, 'getAll' | 'getActive'>;
 type StatisticsProvider = Pick<
   StatisticsEngine,
-  'getPlayerStatisticsForPlayers' | 'getPlayerCareerStatistics' | 'getPlayerMatchHistory'
+  | 'getPlayerStatisticsForPlayers'
+  | 'getPlayerCareerStatistics'
+  | 'getPlayerMatchHistory'
+  | 'getPlayerMatchHistoriesForPlayers'
 >;
 
 export class PublicPlayerService {
@@ -64,12 +67,15 @@ export class PublicPlayerService {
     const currentStatisticsByPlayer = new Map(
       currentStatistics.map((entry) => [entry.playerId, entry]),
     );
+    const latestHistoryByPlayer = await this.statistics.getPlayerMatchHistoriesForPlayers(
+      players.map((player) => player.id),
+      3,
+      activeSeason?.id,
+    );
 
     return Promise.all(players.map(async (player) => {
-      const [careerStatistics, history] = await Promise.all([
-        this.statistics.getPlayerCareerStatistics(player.id),
-        this.statistics.getPlayerMatchHistory(player.id),
-      ]);
+      const careerStatistics = await this.statistics.getPlayerCareerStatistics(player.id);
+      const history = latestHistoryByPlayer.get(player.id) ?? [];
       const historicalStatistics = getHistoricalPlayerSeedSummary(player.id);
       const activeStatistics = currentStatisticsByPlayer.get(player.id);
       const currentStatistics = activeStatistics?.matchesPlayed ? activeStatistics : undefined;
@@ -101,6 +107,21 @@ export class PublicPlayerService {
           seasonName: seasonNames.get(entry.seasonId) ?? entry.seasonId,
         })),
       };
+    }));
+  }
+
+  async getHistory(playerId: string): Promise<PublicPlayerHistory[]> {
+    const [history, teams, seasons] = await Promise.all([
+      this.statistics.getPlayerMatchHistory(playerId),
+      this.teams.getAll(),
+      this.seasons.getAll(),
+    ]);
+    const teamNames = new Map(teams.map((team) => [team.id, team.name]));
+    const seasonNames = new Map(seasons.map((season) => [season.id, season.name]));
+    return history.map((entry) => ({
+      ...entry,
+      opponentTeamName: teamNames.get(entry.opponentTeamId) ?? entry.opponentTeamId,
+      seasonName: seasonNames.get(entry.seasonId) ?? entry.seasonId,
     }));
   }
 }

@@ -1,6 +1,6 @@
 import {isHistoricalFemalePlayer, type HistoricalPlayerSeasonSummary} from '@/data/historicalSeed';
-import type {PublicPlayerView} from '@/services/public/PublicPlayerService';
-import type {PlayerProfile, PlayerProfileMatchHistoryItem, PlayerProfileMatchResult} from './PlayerProfileTypes';
+import type {PublicPlayerHistory, PublicPlayerView} from '@/services/public/PublicPlayerService';
+import type {PlayerProfile, PlayerProfileMatchHistoryItem} from './PlayerProfileTypes';
 
 export function createProfileFromPublicPlayerView(view: PublicPlayerView): PlayerProfile {
   const statistics = view.currentStatistics ?? view.careerStatistics;
@@ -21,17 +21,25 @@ export function createProfileFromPublicPlayerView(view: PublicPlayerView): Playe
     doublesRecord: statistics.doublesRecord,
     winPercentage: statistics.winPercentage,
     pointsEarned: statistics.pointsEarned,
-    history: view.history.map((entry): PlayerProfileMatchHistoryItem => ({
-      id: `${entry.challengeId}-${view.player.id}`,
+    history: createHistoryItems(view.history),
+  };
+}
+
+export function createHistoryItems(history: PublicPlayerHistory[]): PlayerProfileMatchHistoryItem[] {
+  return history.map((entry): PlayerProfileMatchHistoryItem => ({
+      id: entry.id,
       seasonName: entry.seasonName,
       date: entry.date,
-      format: entry.formats.length === 1 ? entry.formats[0] : 'Team',
-      result: getResultFromRecord(entry.record),
+      format: entry.format,
+      result: entry.outcome === 'Win' ? 'W' : entry.outcome === 'Loss' ? 'L' : 'T',
+      isHome: entry.isHome,
+      teamId: entry.teamId,
       opponentTeamName: entry.opponentTeamName,
-      opponentPlayerNames: [],
-      partnerPlayerNames: [],
-    })),
-  };
+      opponentPlayerNames: entry.opponentPlayerNames,
+      partnerPlayerNames: entry.partnerPlayerNames,
+      playerScore: entry.playerScore,
+      opponentScore: entry.opponentScore,
+  }));
 }
 
 export function createProfileFromHistoricalSummary(summary: HistoricalPlayerSeasonSummary): PlayerProfile {
@@ -53,11 +61,4 @@ export function createProfileFromHistoricalSummary(summary: HistoricalPlayerSeas
     pointsEarned: summary.overallRecord.wins + summary.overallRecord.ties * 0.5,
     history: [],
   };
-}
-
-function getResultFromRecord(record: {wins: number; losses: number; ties: number}): PlayerProfileMatchResult | '-' {
-  if (record.wins > record.losses && record.wins > record.ties) return 'W';
-  if (record.losses > record.wins && record.losses > record.ties) return 'L';
-  if (record.ties) return 'T';
-  return '-';
 }

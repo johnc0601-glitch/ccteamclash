@@ -46,9 +46,21 @@ export class StatisticsEngine {
     return this.playerStatistics.calculateCareer(playerId, results);
   }
 
-  async getPlayerMatchHistory(playerId: string): Promise<PlayerMatchHistoryEntry[]> {
+  async getPlayerMatchHistory(playerId: string, limit?: number): Promise<PlayerMatchHistoryEntry[]> {
     const results = await this.repository.getPublishedChallengeResults();
-    return this.playerStatistics.getMatchHistory(playerId, results);
+    return this.playerStatistics.getMatchHistory(playerId, results, limit);
+  }
+
+  async getPlayerMatchHistoriesForPlayers(
+    playerIds: string[],
+    limit: number,
+    seasonId?: string,
+  ): Promise<Map<string, PlayerMatchHistoryEntry[]>> {
+    const results = await this.repository.getPublishedChallengeResults();
+    return new Map(playerIds.map((playerId) => [
+      playerId,
+      this.playerStatistics.getMatchHistory(playerId, results, limit, seasonId),
+    ]));
   }
 
   async getSeasonStatistics(seasonId: string): Promise<SeasonStatisticsResult> {
