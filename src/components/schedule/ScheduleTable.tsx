@@ -20,9 +20,7 @@ export function ScheduleTable({
   activeSeasonId,
   processingId,
   onView,
-  onEdit,
   onTogglePublication,
-  onDelete,
 }: ScheduleTableProps) {
   return (
     <div className={styles.tableWrap}>
@@ -53,7 +51,6 @@ export function ScheduleTable({
                 <td>
                   <div className={styles.actionRow}>
                     <button type="button" onClick={() => onView(schedule)}>View</button>
-                    {canEdit && !schedule.published ? <button type="button" onClick={() => onEdit(schedule)}>Edit</button> : null}
                     {canEdit ? (
                       <button
                         type="button"
@@ -62,9 +59,6 @@ export function ScheduleTable({
                       >
                         {schedule.published ? 'Unpublish' : 'Publish'}
                       </button>
-                    ) : null}
-                    {canEdit && !schedule.published ? (
-                      <button type="button" className={styles.dangerText} onClick={() => onDelete(schedule)}>Delete</button>
                     ) : null}
                   </div>
                 </td>

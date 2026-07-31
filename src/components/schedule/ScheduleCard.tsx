@@ -18,9 +18,7 @@ export function ScheduleCard({
   canEdit,
   processing,
   onView,
-  onEdit,
   onTogglePublication,
-  onDelete,
 }: ScheduleCardProps) {
   return (
     <article className={styles.scheduleCard}>
@@ -35,14 +33,10 @@ export function ScheduleCard({
       <p className={styles.cardDescription}>{schedule.description || 'No schedule description.'}</p>
       <div className={styles.actionRow}>
         <button type="button" onClick={() => onView(schedule)}>View</button>
-        {canEdit && !schedule.published ? <button type="button" onClick={() => onEdit(schedule)}>Edit</button> : null}
         {canEdit ? (
           <button type="button" disabled={processing} onClick={() => onTogglePublication(schedule)}>
             {schedule.published ? 'Unpublish' : 'Publish'}
           </button>
-        ) : null}
-        {canEdit && !schedule.published ? (
-          <button type="button" className={styles.dangerText} onClick={() => onDelete(schedule)}>Delete</button>
         ) : null}
       </div>
     </article>

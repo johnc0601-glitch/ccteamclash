@@ -8,10 +8,13 @@ import {MatchCard} from '@/components/schedule/MatchCard';
 import {MatchForm} from '@/components/schedule/MatchForm';
 import {MatchTable} from '@/components/schedule/MatchTable';
 import {RoundCard} from '@/components/schedule/RoundCard';
-import {RoundForm} from '@/components/schedule/RoundForm';
+import {RoundForm, type RoundMatchValues} from '@/components/schedule/RoundForm';
 import {RoundTable} from '@/components/schedule/RoundTable';
 import {ScheduleCard} from '@/components/schedule/ScheduleCard';
-import {ScheduleForm} from '@/components/schedule/ScheduleForm';
+import {
+  ScheduleImportDialog,
+  type ScheduleImportData,
+} from '@/components/schedule/ScheduleImportDialog';
 import {ScheduleTable} from '@/components/schedule/ScheduleTable';
 import {ScheduleToolbar} from '@/components/schedule/ScheduleToolbar';
 import {StatusBadge} from '@/components/schedule/StatusBadge';
@@ -30,7 +33,6 @@ import type {Round, RoundInput} from '@/domain/schedule/Round';
 import type {
   Schedule,
   ScheduleFieldErrors,
-  ScheduleInput,
   SchedulePublicationFilter,
   ScheduleViewMode,
 } from '@/domain/schedule/Schedule';
@@ -38,16 +40,13 @@ import type {Team} from '@/models/Team';
 import styles from './ScheduleManagement.module.css';
 
 type EditorState =
-  | {kind: 'schedule'; mode: 'create'}
-  | {kind: 'schedule'; mode: 'edit'; schedule: Schedule}
   | {kind: 'round'; mode: 'create'; schedule: Schedule}
-  | {kind: 'round'; mode: 'edit'; round: Round}
+  | {kind: 'round'; mode: 'edit'; round: Round; matches: Match[]}
   | {kind: 'match'; mode: 'create'; round: Round}
   | {kind: 'match'; mode: 'edit'; match: Match; schedulePublished: boolean}
   | null;
 
 type ConfirmationState =
-  | {kind: 'schedule'; item: Schedule}
   | {kind: 'round'; item: Round}
   | {kind: 'match'; item: Match}
   | null;
@@ -73,6 +72,7 @@ export function ScheduleManagement() {
   const [publication, setPublication] = useState<SchedulePublicationFilter>('all');
   const [view, setView] = useState<ScheduleViewMode>('table');
   const [editor, setEditor] = useState<EditorState>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [confirmation, setConfirmation] = useState<ConfirmationState>(null);
   const [fieldErrors, setFieldErrors] = useState<ScheduleFieldErrors>({});
   const [message, setMessage] = useState<Message>(null);
@@ -91,7 +91,7 @@ export function ScheduleManagement() {
       try {
         const [nextSeasons, nextTeams, nextCourses, nextSchedules] = await Promise.all([
           services.seasons.getAll(),
-          services.teams.getAll(),
+          services.schedules.getTeams(),
           services.schedules.getCourses(),
           services.schedules.getSchedules({search, seasonId, publication}),
         ]);
@@ -180,6 +180,15 @@ export function ScheduleManagement() {
     setEditor(nextEditor);
   }
 
+  async function openRoundEditor(round: Round) {
+    try {
+      const roundMatches = await services.schedules.getMatches(round.id);
+      openEditor({kind: 'round', mode: 'edit', round, matches: roundMatches});
+    } catch {
+      setMessage({type: 'error', text: 'Round matches could not be loaded.'});
+    }
+  }
+
   function selectSchedule(schedule: Schedule) {
     setSelectedSchedule(schedule);
     setSelectedRound(null);
@@ -197,116 +206,163 @@ export function ScheduleManagement() {
     setMatchSearch('');
   }
 
-  async function handleScheduleSubmit(values: ScheduleInput) {
-    if (!editor || editor.kind !== 'schedule') return;
+  async function beginManualSchedule() {
+    if (!activeSeason) return;
     setSubmitting(true);
-    const result = editor.mode === 'create'
-      ? await services.schedules.createSchedule(values)
-      : await services.schedules.updateSchedule(editor.schedule.id, values);
-    setSubmitting(false);
-
-    if (!result.ok) {
-      setFieldErrors(result.fieldErrors ?? {});
-      setMessage({type: 'error', text: result.message});
-      return;
+    try {
+      const result = await services.schedules.ensureSchedule(activeSeason.id);
+      if (!result.ok) {
+        setFieldErrors(result.fieldErrors ?? {});
+        setMessage({type: 'error', text: result.message});
+        return;
+      }
+      setSelectedSchedule(result.data);
+      setSelectedRound(null);
+      setRounds([]);
+      setMatches([]);
+      openEditor({kind: 'round', mode: 'create', schedule: result.data});
+    } catch (error) {
+      setMessage({type: 'error', text: getErrorMessage(error, 'The schedule builder could not be opened.')});
+    } finally {
+      setSubmitting(false);
     }
-    setEditor(null);
-    setSelectedSchedule(result.data);
-    refresh(editor.mode === 'create' ? 'Schedule created as a draft.' : 'Schedule updated.');
   }
 
-  async function handleRoundSubmit(values: RoundInput) {
+  async function handleScheduleImport(data: ScheduleImportData) {
+    setSubmitting(true);
+    try {
+      const result = await services.schedules.importSchedule(data);
+      if (!result.ok) throw new Error(result.message);
+
+      setImportOpen(false);
+      setSelectedSchedule(result.data);
+      setSelectedRound(null);
+      refresh('Schedule imported as a draft.');
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Schedule could not be imported.',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleRoundSubmit(values: RoundInput, roundMatches: RoundMatchValues[]) {
     if (!editor || editor.kind !== 'round') return;
     setSubmitting(true);
-    const result = editor.mode === 'create'
-      ? await services.schedules.createRound(editor.schedule.id, values)
-      : await services.schedules.updateRound(editor.round.id, values);
-    setSubmitting(false);
+    try {
+      if (editor.mode === 'create') {
+        const result = await services.schedules.createRound(editor.schedule.id, values);
+        if (!result.ok) {
+          setFieldErrors(result.fieldErrors ?? {});
+          setMessage({type: 'error', text: result.message});
+          return;
+        }
+        setEditor(null);
+        setSelectedRound(result.data);
+        refresh('Round created.');
+        return;
+      }
 
-    if (!result.ok) {
-      setFieldErrors(result.fieldErrors ?? {});
-      setMessage({type: 'error', text: result.message});
-      return;
+      const result = await services.schedules.updateRoundWithMatches(
+        editor.round.id,
+        values,
+        roundMatches,
+      );
+      if (!result.ok) {
+        setFieldErrors(result.fieldErrors ?? {});
+        setMessage({type: 'error', text: result.message});
+        return;
+      }
+      setEditor(null);
+      setSelectedRound(result.data.round);
+      setMatches(result.data.matches);
+      refresh('Round and matches updated.');
+    } catch (error) {
+      setMessage({type: 'error', text: getErrorMessage(error, 'Round could not be saved.')});
+    } finally {
+      setSubmitting(false);
     }
-    setEditor(null);
-    setSelectedRound(result.data);
-    refresh(editor.mode === 'create' ? 'Round created.' : 'Round updated with matching dates synchronized.');
   }
 
   async function handleMatchSubmit(values: MatchInput) {
     if (!editor || editor.kind !== 'match') return;
     setSubmitting(true);
-    const result = editor.mode === 'create'
-      ? await services.schedules.createMatch(editor.round.id, values)
-      : await services.schedules.updateMatch(editor.match.id, values);
-    setSubmitting(false);
-
-    if (!result.ok) {
-      setFieldErrors(result.fieldErrors ?? {});
-      setMessage({type: 'error', text: result.message});
-      return;
+    try {
+      const result = editor.mode === 'create'
+        ? await services.schedules.createMatch(editor.round.id, values)
+        : await services.schedules.updateMatch(editor.match.id, values);
+      if (!result.ok) {
+        setFieldErrors(result.fieldErrors ?? {});
+        setMessage({type: 'error', text: result.message});
+        return;
+      }
+      setEditor(null);
+      setDetailsMatch(result.data);
+      refresh(editor.mode === 'create' ? 'Match created.' : 'Match updated.');
+    } catch (error) {
+      setMessage({type: 'error', text: getErrorMessage(error, 'Match could not be saved.')});
+    } finally {
+      setSubmitting(false);
     }
-    setEditor(null);
-    setDetailsMatch(result.data);
-    refresh(editor.mode === 'create' ? 'Match created.' : 'Match updated.');
   }
 
   async function handlePublication(schedule: Schedule) {
     setProcessingId(schedule.id);
-    const result = schedule.published
-      ? await services.schedules.unpublishSchedule(schedule.id)
-      : await services.schedules.publishSchedule(schedule.id);
-    setProcessingId(null);
-
-    if (!result.ok) {
-      setMessage({type: 'error', text: result.message});
-      return;
+    try {
+      const result = schedule.published
+        ? await services.schedules.unpublishSchedule(schedule.id)
+        : await services.schedules.publishSchedule(schedule.id);
+      if (!result.ok) {
+        setMessage({type: 'error', text: result.message});
+        return;
+      }
+      if (selectedSchedule?.id === schedule.id) setSelectedSchedule(result.data);
+      refresh(schedule.published ? 'Schedule returned to draft.' : 'Schedule published. All rounds are now visible.');
+    } catch (error) {
+      setMessage({type: 'error', text: getErrorMessage(error, 'Publication status could not be changed.')});
+    } finally {
+      setProcessingId(null);
     }
-    if (selectedSchedule?.id === schedule.id) setSelectedSchedule(result.data);
-    refresh(schedule.published ? 'Schedule returned to draft.' : 'Schedule published. All rounds are now visible.');
   }
 
   async function handleDelete() {
     if (!confirmation) return;
     setSubmitting(true);
-    const result = confirmation.kind === 'schedule'
-      ? await services.schedules.deleteSchedule(confirmation.item.id)
-      : confirmation.kind === 'round'
-        ? await services.schedules.deleteRound(confirmation.item.id)
-        : await services.schedules.deleteMatch(confirmation.item.id);
-    setSubmitting(false);
+    try {
+      const result = confirmation.kind === 'round'
+          ? await services.schedules.deleteRound(confirmation.item.id)
+          : await services.schedules.deleteMatch(confirmation.item.id);
+      if (!result.ok) {
+        setMessage({type: 'error', text: result.message});
+        setConfirmation(null);
+        return;
+      }
 
-    if (!result.ok) {
-      setMessage({type: 'error', text: result.message});
+      if (confirmation.kind === 'round') {
+        setSelectedRound(null);
+        setMatches([]);
+      } else {
+        setDetailsMatch(null);
+      }
+      const label = confirmation.kind === 'round' ? 'Round' : 'Match';
       setConfirmation(null);
-      return;
+      refresh(`${label} deleted.`);
+    } catch (error) {
+      setMessage({type: 'error', text: getErrorMessage(error, 'Item could not be deleted.')});
+    } finally {
+      setSubmitting(false);
     }
-
-    if (confirmation.kind === 'schedule') {
-      setSelectedSchedule(null);
-      setSelectedRound(null);
-      setRounds([]);
-      setMatches([]);
-    } else if (confirmation.kind === 'round') {
-      setSelectedRound(null);
-      setMatches([]);
-    } else {
-      setDetailsMatch(null);
-    }
-    const label = confirmation.kind === 'schedule' ? 'Schedule' : confirmation.kind === 'round' ? 'Round' : 'Match';
-    setConfirmation(null);
-    refresh(`${label} deleted.`);
   }
 
   const scheduleActionProps = {
     onView: selectSchedule,
-    onEdit: (schedule: Schedule) => openEditor({kind: 'schedule', mode: 'edit', schedule}),
     onTogglePublication: handlePublication,
-    onDelete: (schedule: Schedule) => setConfirmation({kind: 'schedule', item: schedule}),
   };
   const roundActionProps = {
     onView: selectRound,
-    onEdit: (round: Round) => openEditor({kind: 'round', mode: 'edit', round}),
+    onEdit: (round: Round) => void openRoundEditor(round),
     onDelete: (round: Round) => setConfirmation({kind: 'round', item: round}),
   };
   const matchActionProps = {
@@ -331,12 +387,15 @@ export function ScheduleManagement() {
         publication={publication}
         view={view}
         seasons={seasons}
-        canCreate={Boolean(activeSeason)}
+        canImport={Boolean(activeSeason)}
         onSearchChange={setSearch}
         onSeasonChange={setSeasonId}
         onPublicationChange={setPublication}
         onViewChange={setView}
-        onCreate={() => openEditor({kind: 'schedule', mode: 'create'})}
+        onImport={() => {
+          setMessage(null);
+          setImportOpen(true);
+        }}
       />
 
       {message ? (
@@ -352,7 +411,20 @@ export function ScheduleManagement() {
 
       {loading ? <div className={styles.loadingState}>Loading schedules...</div> : null}
       {!loading && schedules.length === 0 ? (
-        <div className={styles.emptyState}><h3>No schedules found</h3><p>Adjust the current search or filters.</p></div>
+        <div className={styles.emptyState}>
+          <h3>No schedule found</h3>
+          <p>Import a schedule, or begin adding rounds manually.</p>
+          {activeSeason ? (
+            <button
+              type="button"
+              className={styles.createButton}
+              disabled={submitting}
+              onClick={() => void beginManualSchedule()}
+            >
+              {submitting ? 'Opening...' : 'Build schedule'}
+            </button>
+          ) : null}
+        </div>
       ) : null}
 
       {!loading && schedules.length > 0 && view === 'table' ? (
@@ -392,7 +464,6 @@ export function ScheduleManagement() {
             </div>
             <div className={styles.detailHeaderActions}>
               <StatusBadge status={selectedSchedule.published ? 'Published' : 'Draft'} />
-              {canEditStructure ? <button type="button" className={styles.secondaryButton} onClick={() => openEditor({kind: 'schedule', mode: 'edit', schedule: selectedSchedule})}>Edit schedule</button> : null}
               {canManageSelected ? (
                 <button type="button" className={styles.primaryButton} disabled={processingId === selectedSchedule.id} onClick={() => handlePublication(selectedSchedule)}>
                   {selectedSchedule.published ? 'Unpublish' : 'Publish'}
@@ -427,7 +498,7 @@ export function ScheduleManagement() {
               <p>{matches.length} {matches.length === 1 ? 'match' : 'matches'} in this view</p>
             </div>
             {canEditStructure ? (
-              <button type="button" className={styles.secondaryButton} onClick={() => openEditor({kind: 'round', mode: 'edit', round: selectedRound})}>Edit round</button>
+              <button type="button" className={styles.secondaryButton} onClick={() => void openRoundEditor(selectedRound)}>Edit round</button>
             ) : null}
           </header>
           <div className={styles.subToolbar}>
@@ -464,31 +535,15 @@ export function ScheduleManagement() {
         </section>
       ) : null}
 
-      {editor?.kind === 'schedule' ? (
-        <DialogShell
-          title={editor.mode === 'create' ? 'Create schedule' : 'Edit schedule'}
-          eyebrow="Schedule management"
-          onClose={() => setEditor(null)}
-          size="large"
-        >
-          <ScheduleForm
-            initialValues={editor.mode === 'create' ? {
-              seasonId: activeSeason?.id ?? '',
-              name: '',
-              description: '',
-            } : {
-              seasonId: editor.schedule.seasonId,
-              name: editor.schedule.name,
-              description: editor.schedule.description,
-            }}
-            seasons={seasons.filter((season) => season.active && !season.archived)}
-            fieldErrors={fieldErrors}
-            submitLabel={editor.mode === 'create' ? 'Create schedule' : 'Save schedule'}
-            submitting={submitting}
-            onSubmit={handleScheduleSubmit}
-            onCancel={() => setEditor(null)}
-          />
-        </DialogShell>
+      {importOpen ? (
+        <ScheduleImportDialog
+          seasons={seasons}
+          teams={teams}
+          courses={courses}
+          importing={submitting}
+          onImport={handleScheduleImport}
+          onClose={() => setImportOpen(false)}
+        />
       ) : null}
 
       {editor?.kind === 'round' ? (
@@ -496,6 +551,7 @@ export function ScheduleManagement() {
           title={editor.mode === 'create' ? 'Create round' : 'Edit round'}
           eyebrow="Round management"
           onClose={() => setEditor(null)}
+          size={editor.mode === 'edit' ? 'large' : 'default'}
         >
           <RoundForm
             initialValues={editor.mode === 'create' ? {
@@ -505,8 +561,22 @@ export function ScheduleManagement() {
             } : {
               number: editor.round.number,
               name: editor.round.name,
-              date: editor.round.date,
+              date: editor.round.date ?? '',
             }}
+            initialMatches={editor.mode === 'edit' ? editor.matches.map((match) => ({
+              id: match.id,
+              input: {
+                homeTeamId: match.homeTeamId ?? '',
+                awayTeamId: match.awayTeamId ?? '',
+                courseId: match.courseId ?? '',
+                date: match.date ?? editor.round.date ?? '',
+                time: match.time ?? '',
+                status: match.status,
+                notes: match.notes,
+              },
+            })) : []}
+            teams={teams}
+            courses={courses}
             fieldErrors={fieldErrors}
             submitLabel={editor.mode === 'create' ? 'Create round' : 'Save round'}
             submitting={submitting}
@@ -528,16 +598,16 @@ export function ScheduleManagement() {
               homeTeamId: '',
               awayTeamId: '',
               courseId: '',
-              date: editor.round.date,
+              date: editor.round.date ?? '',
               time: '09:00',
               status: 'Scheduled',
               notes: '',
             } : {
-              homeTeamId: editor.match.homeTeamId,
-              awayTeamId: editor.match.awayTeamId,
-              courseId: editor.match.courseId,
-              date: editor.match.date,
-              time: editor.match.time,
+              homeTeamId: editor.match.homeTeamId ?? '',
+              awayTeamId: editor.match.awayTeamId ?? '',
+              courseId: editor.match.courseId ?? '',
+              date: editor.match.date ?? '',
+              time: editor.match.time ?? '',
               status: editor.match.status,
               notes: editor.match.notes,
             }}
@@ -579,11 +649,9 @@ export function ScheduleManagement() {
       {confirmation ? (
         <ConfirmationDialog
           title={`Delete ${confirmation.kind}?`}
-          message={confirmation.kind === 'schedule'
-            ? `${confirmation.item.name} and all of its rounds and matches will be permanently removed.`
-            : confirmation.kind === 'round'
-              ? `${confirmation.item.name} and all of its matches will be permanently removed.`
-              : `${getTeamName(confirmation.item.homeTeamId, teams)} vs ${getTeamName(confirmation.item.awayTeamId, teams)} will be permanently removed.`}
+          message={confirmation.kind === 'round'
+            ? `${confirmation.item.name} and all of its matches will be permanently removed.`
+            : `${getTeamName(confirmation.item.homeTeamId, teams)} vs ${getTeamName(confirmation.item.awayTeamId, teams)} will be permanently removed.`}
           confirmLabel={`Delete ${confirmation.kind}`}
           destructive
           submitting={submitting}
@@ -593,4 +661,8 @@ export function ScheduleManagement() {
       ) : null}
     </section>
   );
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
 }

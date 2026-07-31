@@ -25,6 +25,7 @@ type MatchValidationContext = {
   scheduleMatches: Match[];
   roundMatches: Match[];
   currentId?: string;
+  requireComplete?: boolean;
 };
 
 function normalizeForComparison(value: string): string {
@@ -64,6 +65,7 @@ export class ScheduleValidator {
     rounds: Round[],
     season: Season,
     currentId?: string,
+    requireComplete = false,
   ): ScheduleFieldErrors {
     const fieldErrors: ScheduleFieldErrors = {};
     const otherRounds = rounds.filter((round) => round.id !== currentId);
@@ -82,9 +84,11 @@ export class ScheduleValidator {
       fieldErrors.name = 'Round names must be unique within a schedule.';
     }
 
-    if (!isValidDate(input.date)) {
+    if (requireComplete && !input.date) {
       fieldErrors.date = 'Enter a valid round date.';
-    } else if (!isWithinSeason(input.date, season)) {
+    } else if (input.date && !isValidDate(input.date)) {
+      fieldErrors.date = 'Enter a valid round date.';
+    } else if (input.date && !isWithinSeason(input.date, season)) {
       fieldErrors.date = 'Round date must fall within the season date range.';
     }
 
@@ -111,21 +115,24 @@ export class ScheduleValidator {
     }
 
     const course = context.courses.find((candidate) => candidate.id === input.courseId);
-    if (!input.courseId) {
+    if (context.requireComplete && !input.courseId) {
       fieldErrors.courseId = 'Course is required.';
-    } else if (!course || !course.active) {
+    } else if (input.courseId && (!course || !course.active)) {
       fieldErrors.courseId = 'Select an active course.';
     }
 
-    if (!isValidDate(input.date)) {
+    if (context.requireComplete && !input.date) {
       fieldErrors.date = 'Enter a valid match date.';
-    } else if (!isWithinSeason(input.date, context.season)) {
+    } else if (input.date && !isValidDate(input.date)) {
+      fieldErrors.date = 'Enter a valid match date.';
+    } else if (input.date && !isWithinSeason(input.date, context.season)) {
       fieldErrors.date = 'Match date must fall within the season date range.';
-    } else if (input.date !== context.round.date) {
+    } else if (input.date && context.round.date && input.date !== context.round.date) {
       fieldErrors.date = 'Match date must equal the parent round date.';
     }
 
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(input.time)) {
+    if ((context.requireComplete && !input.time)
+      || (input.time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(input.time))) {
       fieldErrors.time = 'Enter a valid match time.';
     }
     if (!MATCH_STATUSES.includes(input.status)) {
@@ -135,7 +142,8 @@ export class ScheduleValidator {
     if (!this.rules.allowRepeatedMatchups && input.homeTeamId && input.awayTeamId) {
       const matchupKey = this.getMatchupKey(input.homeTeamId, input.awayTeamId);
       if (otherScheduleMatches.some((match) =>
-        this.getMatchupKey(match.homeTeamId, match.awayTeamId) === matchupKey,
+        match.homeTeamId && match.awayTeamId
+        && this.getMatchupKey(match.homeTeamId, match.awayTeamId) === matchupKey,
       )) {
         fieldErrors.awayTeamId = 'This matchup already exists in the schedule.';
       }
@@ -145,7 +153,8 @@ export class ScheduleValidator {
       && input.homeTeamId && input.awayTeamId) {
       const selectedTeams = new Set([input.homeTeamId, input.awayTeamId]);
       if (otherRoundMatches.some((match) =>
-        selectedTeams.has(match.homeTeamId) || selectedTeams.has(match.awayTeamId),
+        (match.homeTeamId && selectedTeams.has(match.homeTeamId))
+        || (match.awayTeamId && selectedTeams.has(match.awayTeamId)),
       )) {
         fieldErrors.awayTeamId = 'A team may only appear once in a round.';
       }
@@ -176,7 +185,7 @@ export class ScheduleValidator {
 
     for (const round of rounds) {
       errors.push(...Object.values(
-        this.validateRound(round, rounds, season, round.id),
+        this.validateRound(round, rounds, season, round.id, true),
       ).filter((message): message is string => Boolean(message)));
 
       const roundMatches = matches.filter((match) => match.roundId === round.id);
@@ -194,6 +203,7 @@ export class ScheduleValidator {
           scheduleMatches: matches,
           roundMatches,
           currentId: match.id,
+          requireComplete: true,
         })).filter((message): message is string => Boolean(message)));
       }
     }

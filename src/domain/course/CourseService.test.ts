@@ -45,11 +45,11 @@ test('CourseService validates map links and duplicate courses', async () => {
   if (!invalid.ok) assert.equal(invalid.fieldErrors?.mapUrl, 'Enter a valid web link.');
 
   const duplicate = await service.create({
-    name: 'Arrowhead Park',
-    city: 'Wilmington',
+    name: 'Castle Hayne Park',
+    city: 'Castle Hayne',
     state: 'NC',
     address: '',
-    mapUrl: 'https://maps.google.com/?q=arrowhead',
+    mapUrl: 'https://maps.google.com/?q=castle-hayne',
     udiscUrl: '',
     photoUrl: '',
     description: '',

@@ -5,10 +5,10 @@ import Link from 'next/link';
 import {useState} from 'react';
 import type {Team} from '@/models/Team';
 import {createSlug} from '@/shared/utils';
-import type {PublicEvent} from '@/services/matches/EventService';
+import type {PublicScheduleEvent} from '@/domain/schedule/ScheduleService';
 
 type MatchCardProps = {
-  match: PublicEvent;
+  match: PublicScheduleEvent;
   teams: Team[];
 };
 

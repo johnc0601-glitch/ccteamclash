@@ -280,10 +280,22 @@ export class ImportService {
 
   private async getRoundChallenges(schedule: Schedule, round: Round): Promise<ImportChallenge[]> {
     const matches = await this.scheduleService.getMatches(round.id);
-    return matches.map((match) => this.matchToChallenge(schedule, round, match));
+    return matches
+      .filter((match): match is Match & {
+        date: string;
+        homeTeamId: string;
+        awayTeamId: string;
+        courseId: string;
+      } => Boolean(match.date && match.homeTeamId && match.awayTeamId && match.courseId))
+      .map((match) => this.matchToChallenge(schedule, round, match));
   }
 
-  private matchToChallenge(schedule: Schedule, round: Round, match: Match): ImportChallenge {
+  private matchToChallenge(schedule: Schedule, round: Round, match: Match & {
+    date: string;
+    homeTeamId: string;
+    awayTeamId: string;
+    courseId: string;
+  }): ImportChallenge {
     return {
       id: match.id,
       seasonId: match.seasonId,
@@ -293,7 +305,7 @@ export class ImportService {
       roundName: round.name,
       roundNumber: round.number,
       date: match.date,
-      time: match.time,
+      time: match.time ?? '',
       homeTeamId: match.homeTeamId,
       awayTeamId: match.awayTeamId,
       courseId: match.courseId,

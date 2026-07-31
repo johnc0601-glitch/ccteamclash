@@ -4,13 +4,14 @@ import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory'
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
 import {services} from '@/core/ServiceContainer';
+import {createServerScheduleService} from '@/core/createServerScheduleService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {
   getHistoricalTeamSeasonSummaries,
   getHistoricalTeamSeasonTitles,
   getHistoricalTeamSeedSummary,
 } from '@/data/historicalSeed';
-import {getTeamEvents, getTeamNextEvent, type TeamEvent} from '@/services/matches/EventService';
+import type {TeamScheduleEvent} from '@/domain/schedule/ScheduleService';
 import {getStoredCourses} from '@/services/courses/CourseStore';
 import {getStoredTeamById, getStoredTeams} from '@/services/teams/TeamStore';
 import {buildPublicTeamRoster} from '@/services/public/PublicRosterService';
@@ -49,6 +50,11 @@ export default async function TeamPage({params}: TeamPageProps) {
     getStoredCourses({status: 'active'}),
     getLaunchPlayers(),
   ]);
+  const scheduleService = await createServerScheduleService();
+  const [nextMatch, teamEvents] = await Promise.all([
+    scheduleService.getTeamNextEvent(team.id),
+    scheduleService.getTeamEvents(team.id),
+  ]);
   const roster = launchPlayers
     ? buildPublicTeamRoster(
       launchPlayers,
@@ -72,8 +78,6 @@ export default async function TeamPage({params}: TeamPageProps) {
   const historicalHistory = getHistoricalTeamSeasonSummaries(team.id);
   const seasonTitles = getHistoricalTeamSeasonTitles(team.id);
   const history = seasonStatistics.filter(({statistics}) => statistics.matchesPlayed > 0);
-  const nextMatch = getTeamNextEvent(team.name);
-  const teamEvents = getTeamEvents(team.name);
   const homeCourses = courses.filter((course) =>
     team.homeCourse && sameCourse(team.homeCourse, course.name));
   const displayedHomeCourseName = homeCourses[0]?.name ?? team.homeCourse;
@@ -219,7 +223,7 @@ function findDirections(courseName: string, courseDirections: Map<string, string
 }
 
 function NextMatchCard({event, courseDirections}: {
-  event: TeamEvent;
+  event: TeamScheduleEvent;
   courseDirections: Map<string, string>;
 }) {
   const directions = findDirections(event.course, courseDirections);
@@ -240,7 +244,7 @@ function NextMatchCard({event, courseDirections}: {
 }
 
 function TeamSchedule({events, courseDirections}: {
-  events: TeamEvent[];
+  events: TeamScheduleEvent[];
   courseDirections: Map<string, string>;
 }) {
   if (!events.length) {

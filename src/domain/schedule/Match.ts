@@ -12,11 +12,11 @@ export type Match = {
   id: string;
   roundId: string;
   seasonId: string;
-  homeTeamId: string;
-  awayTeamId: string;
-  courseId: string;
-  date: string;
-  time: string;
+  homeTeamId: string | null;
+  awayTeamId: string | null;
+  courseId: string | null;
+  date: string | null;
+  time: string | null;
   status: MatchStatus;
   notes: string;
   createdAt: string;

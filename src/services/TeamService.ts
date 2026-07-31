@@ -1,5 +1,6 @@
 import type {Team} from '@/models/Team';
 import type {TeamRepository} from '@/repositories/TeamRepository';
+import type {TeamAlias} from '@/repositories/TeamRepository';
 import type {
   TeamFieldErrors,
   TeamInput,
@@ -49,6 +50,15 @@ export class TeamService {
 
   async getById(id: string): Promise<Team | undefined> {
     return this.repository.getById(id);
+  }
+
+  async getAliases(): Promise<TeamAlias[]> {
+    return this.repository.getAliases?.() ?? [];
+  }
+
+  async saveAlias(alias: string, teamId: string): Promise<TeamAlias> {
+    if (!this.repository.saveAlias) throw new Error('Team aliases are not available.');
+    return this.repository.saveAlias({alias: alias.trim(), teamId});
   }
 
   async search(text: string, query: Omit<Partial<TeamQuery>, 'search'> = {}): Promise<Team[]> {

@@ -50,7 +50,7 @@ export function MatchForm({
           <select
             autoFocus={!publicFieldsLocked}
             data-initial-focus={publicFieldsLocked ? undefined : true}
-            value={values.homeTeamId}
+            value={values.homeTeamId ?? ''}
             disabled={publicFieldsLocked}
             onChange={(event) => setField('homeTeamId', event.target.value)}
             aria-invalid={Boolean(fieldErrors.homeTeamId)}
@@ -65,7 +65,7 @@ export function MatchForm({
         <label>
           <span>Away team</span>
           <select
-            value={values.awayTeamId}
+            value={values.awayTeamId ?? ''}
             disabled={publicFieldsLocked}
             onChange={(event) => setField('awayTeamId', event.target.value)}
             aria-invalid={Boolean(fieldErrors.awayTeamId)}
@@ -80,7 +80,7 @@ export function MatchForm({
         <label className={styles.fullField}>
           <span>Course</span>
           <select
-            value={values.courseId}
+            value={values.courseId ?? ''}
             disabled={publicFieldsLocked}
             onChange={(event) => setField('courseId', event.target.value)}
             aria-invalid={Boolean(fieldErrors.courseId)}
@@ -94,13 +94,13 @@ export function MatchForm({
         </label>
         <label>
           <span>Date</span>
-          <input type="date" value={values.date} readOnly disabled={publicFieldsLocked} />
+          <input type="date" value={values.date ?? ''} readOnly disabled={publicFieldsLocked} />
         </label>
         <label>
           <span>Time</span>
           <input
             type="time"
-            value={values.time}
+            value={values.time ?? ''}
             disabled={publicFieldsLocked}
             onChange={(event) => setField('time', event.target.value)}
             aria-invalid={Boolean(fieldErrors.time)}

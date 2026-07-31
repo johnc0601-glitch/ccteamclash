@@ -6,9 +6,7 @@ export type ScheduleActionProps = {
   canEdit: boolean;
   processing: boolean;
   onView: (schedule: Schedule) => void;
-  onEdit: (schedule: Schedule) => void;
   onTogglePublication: (schedule: Schedule) => void;
-  onDelete: (schedule: Schedule) => void;
 };
 
 export type RoundActionProps = {

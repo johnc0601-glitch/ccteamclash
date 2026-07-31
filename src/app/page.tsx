@@ -6,7 +6,7 @@ import {INTRO_COOKIE_NAME} from '@/components/intro/intro.config';
 import {parseIntroQuery} from '@/components/intro/introDecision';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchCard} from '@/components/MatchCard';
-import {getHomePageEvents} from '@/services/matches/EventService';
+import {createServerScheduleService} from '@/core/createServerScheduleService';
 import {getStoredTeams} from '@/services/teams/TeamStore';
 import {getStories} from '@/services/stories/StoryService';
 
@@ -18,10 +18,11 @@ type HomeProps = {
 
 export default async function Home({searchParams}: HomeProps) {
   const [cookieStore, query] = await Promise.all([cookies(), searchParams]);
+  const scheduleService = await createServerScheduleService();
   const stories = await getStories();
   const lead = stories[0];
   const teamLogos = await getStoredTeams();
-  const homeEvents = getHomePageEvents().slice(0, 4);
+  const homeEvents = (await scheduleService.getHomePageEvents()).slice(0, 4);
 
   return (
     <main className="home-page">

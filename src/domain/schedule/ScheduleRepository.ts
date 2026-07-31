@@ -18,26 +18,18 @@ export interface ScheduleRepository {
   createMatch(match: Match): Promise<Match>;
   updateMatch(match: Match): Promise<Match | undefined>;
   deleteMatch(id: string): Promise<boolean>;
+  hasRecordedResults?(matchIds: string[]): Promise<boolean>;
 }
 
 const SCHEDULE_MOCK_DATA = [
   {
     id: 'summer-2026-championship',
     seasonId: 'summer-team-clash-2026',
-    name: '2026 Championship Schedule',
-    description: 'Published regular-season rounds for the current Team Clash championship.',
+    name: '2026 Schedule',
+    description: '',
     published: true,
     createdAt: '2026-04-02T14:00:00.000Z',
     updatedAt: '2026-07-10T18:30:00.000Z',
-  },
-  {
-    id: 'summer-2026-playoff-planning',
-    seasonId: 'summer-team-clash-2026',
-    name: '2026 Playoff Planning',
-    description: 'Draft schedule workspace for late-season commissioner planning.',
-    published: false,
-    createdAt: '2026-07-01T15:00:00.000Z',
-    updatedAt: '2026-07-15T20:10:00.000Z',
   },
   {
     id: 'spring-2026-archive',
@@ -75,13 +67,24 @@ const ROUND_MOCK_DATA = [
   },
   {
     id: 'summer-2026-draft-round-1',
-    scheduleId: 'summer-2026-playoff-planning',
+    scheduleId: 'summer-2026-championship',
     seasonId: 'summer-team-clash-2026',
-    number: 1,
-    name: 'Semifinal Planning',
+    number: 3,
+    name: 'Semifinals',
     date: '2026-08-22',
     published: false,
     createdAt: '2026-07-01T15:20:00.000Z',
+    updatedAt: '2026-07-15T20:10:00.000Z',
+  },
+  {
+    id: 'summer-2026-playoff-championship-round',
+    scheduleId: 'summer-2026-championship',
+    seasonId: 'summer-team-clash-2026',
+    number: 4,
+    name: 'Championship',
+    date: '2026-09-26',
+    published: false,
+    createdAt: '2026-07-01T15:25:00.000Z',
     updatedAt: '2026-07-15T20:10:00.000Z',
   },
   {
@@ -104,7 +107,7 @@ const MATCH_MOCK_DATA = [
     seasonId: 'summer-team-clash-2026',
     homeTeamId: 'dark-knights',
     awayTeamId: 'ninjas',
-    courseId: 'castle-hayne',
+    courseId: 'castle-hayne-park',
     date: '2026-07-18',
     time: '09:00',
     status: 'Scheduled',
@@ -118,7 +121,7 @@ const MATCH_MOCK_DATA = [
     seasonId: 'summer-team-clash-2026',
     homeTeamId: 'chain-hawks',
     awayTeamId: 'bogey-men',
-    courseId: 'castle-hayne',
+    courseId: 'castle-hayne-park',
     date: '2026-07-18',
     time: '10:30',
     status: 'Scheduled',
@@ -132,7 +135,7 @@ const MATCH_MOCK_DATA = [
     seasonId: 'summer-team-clash-2026',
     homeTeamId: 'chain-hawks',
     awayTeamId: 'dark-knights',
-    courseId: 'northwest-district',
+    courseId: 'northeast-creek-park',
     date: '2026-07-25',
     time: '09:00',
     status: 'Scheduled',
@@ -146,7 +149,7 @@ const MATCH_MOCK_DATA = [
     seasonId: 'summer-team-clash-2026',
     homeTeamId: 'ninjas',
     awayTeamId: 'bogey-men',
-    courseId: 'northwest-district',
+    courseId: 'northeast-creek-park',
     date: '2026-07-25',
     time: '10:30',
     status: 'Scheduled',
@@ -155,17 +158,45 @@ const MATCH_MOCK_DATA = [
     updatedAt: '2026-07-10T18:30:00.000Z',
   },
   {
-    id: 'summer-2026-draft-semifinal',
+    id: 'summer-2026-playoff-sf1',
     roundId: 'summer-2026-draft-round-1',
     seasonId: 'summer-team-clash-2026',
-    homeTeamId: 'dark-knights',
-    awayTeamId: 'bogey-men',
-    courseId: 'coastal-disc-golf-complex',
-    date: '2026-08-22',
-    time: '09:30',
+    homeTeamId: null,
+    awayTeamId: null,
+    courseId: null,
+    date: null,
+    time: '09:00',
     status: 'Scheduled',
-    notes: 'Draft assignment pending final playoff qualification.',
+    notes: 'Playoff semifinal 1 placeholder.',
     createdAt: '2026-07-01T15:30:00.000Z',
+    updatedAt: '2026-07-15T20:10:00.000Z',
+  },
+  {
+    id: 'summer-2026-playoff-sf2',
+    roundId: 'summer-2026-draft-round-1',
+    seasonId: 'summer-team-clash-2026',
+    homeTeamId: null,
+    awayTeamId: null,
+    courseId: null,
+    date: null,
+    time: '10:30',
+    status: 'Scheduled',
+    notes: 'Playoff semifinal 2 placeholder.',
+    createdAt: '2026-07-01T15:35:00.000Z',
+    updatedAt: '2026-07-15T20:10:00.000Z',
+  },
+  {
+    id: 'summer-2026-playoff-final',
+    roundId: 'summer-2026-playoff-championship-round',
+    seasonId: 'summer-team-clash-2026',
+    homeTeamId: null,
+    awayTeamId: null,
+    courseId: null,
+    date: null,
+    time: '09:00',
+    status: 'Scheduled',
+    notes: 'Playoff championship placeholder.',
+    createdAt: '2026-07-01T15:40:00.000Z',
     updatedAt: '2026-07-15T20:10:00.000Z',
   },
   {
@@ -200,6 +231,7 @@ export class MockScheduleRepository implements ScheduleRepository {
   private schedules: Schedule[] = SCHEDULE_MOCK_DATA.map(cloneSchedule);
   private rounds: Round[] = ROUND_MOCK_DATA.map(cloneRound);
   private matches: Match[] = MATCH_MOCK_DATA.map(cloneMatch);
+  private recordedResultIds = new Set<string>();
 
   async getSchedules(): Promise<Schedule[]> {
     return this.schedules.map(cloneSchedule);
@@ -297,5 +329,13 @@ export class MockScheduleRepository implements ScheduleRepository {
     const initialLength = this.matches.length;
     this.matches = this.matches.filter((match) => match.id !== id);
     return this.matches.length < initialLength;
+  }
+
+  async hasRecordedResults(matchIds: string[]): Promise<boolean> {
+    return matchIds.some((id) => this.recordedResultIds.has(id));
+  }
+
+  markResultRecorded(matchId: string): void {
+    this.recordedResultIds.add(matchId);
   }
 }

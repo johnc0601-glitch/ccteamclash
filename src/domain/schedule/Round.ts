@@ -4,7 +4,7 @@ export type Round = {
   seasonId: string;
   number: number;
   name: string;
-  date: string;
+  date: string | null;
   published: boolean;
   createdAt: string;
   updatedAt: string;

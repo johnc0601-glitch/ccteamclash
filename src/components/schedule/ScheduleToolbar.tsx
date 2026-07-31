@@ -12,12 +12,12 @@ type ScheduleToolbarProps = {
   publication: SchedulePublicationFilter;
   view: ScheduleViewMode;
   seasons: Season[];
-  canCreate: boolean;
+  canImport: boolean;
   onSearchChange: (value: string) => void;
   onSeasonChange: (value: string) => void;
   onPublicationChange: (value: SchedulePublicationFilter) => void;
   onViewChange: (value: ScheduleViewMode) => void;
-  onCreate: () => void;
+  onImport: () => void;
 };
 
 export function ScheduleToolbar({
@@ -26,12 +26,12 @@ export function ScheduleToolbar({
   publication,
   view,
   seasons,
-  canCreate,
+  canImport,
   onSearchChange,
   onSeasonChange,
   onPublicationChange,
   onViewChange,
-  onCreate,
+  onImport,
 }: ScheduleToolbarProps) {
   return (
     <section className={styles.toolbar} aria-label="Schedule list controls">
@@ -82,11 +82,11 @@ export function ScheduleToolbar({
         </div>
         <button
           type="button"
-          className={styles.createButton}
-          disabled={!canCreate}
-          onClick={onCreate}
+          className={styles.secondaryButton}
+          disabled={!canImport}
+          onClick={onImport}
         >
-          Create schedule
+          Import JSON
         </button>
       </div>
     </section>

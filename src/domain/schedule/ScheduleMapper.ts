@@ -15,17 +15,17 @@ export class ScheduleMapper {
     return {
       number: input.number,
       name: input.name.trim(),
-      date: input.date.trim(),
+      date: input.date?.trim() || null,
     };
   }
 
   normalizeMatchInput(input: MatchInput): MatchInput {
     return {
-      homeTeamId: input.homeTeamId.trim(),
-      awayTeamId: input.awayTeamId.trim(),
-      courseId: input.courseId.trim(),
-      date: input.date.trim(),
-      time: input.time.trim(),
+      homeTeamId: input.homeTeamId?.trim() || null,
+      awayTeamId: input.awayTeamId?.trim() || null,
+      courseId: input.courseId?.trim() || null,
+      date: input.date?.trim() || null,
+      time: input.time?.trim() || null,
       status: input.status,
       notes: input.notes.trim(),
     };

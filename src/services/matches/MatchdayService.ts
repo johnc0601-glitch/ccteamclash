@@ -1,10 +1,8 @@
 import type {Course} from '@/domain/course/Course';
+import type {PublicScheduleEvent} from '@/domain/schedule/ScheduleService';
 import type {Team} from '@/models/Team';
 import type {Player} from '@/models/Player';
-import {createMatchId} from '@/services/matches/EventService';
-import type {Match} from '@/shared/types';
 import {createSlug} from '@/shared/utils';
-export {createMatchId} from '@/services/matches/EventService';
 
 export type PublicMatchdayTeam = {
   team: Team | undefined;
@@ -15,15 +13,14 @@ export type PublicMatchdayTeam = {
   roster: Player[];
 };
 
-export type PublicMatchday = Match & {
-  id: string;
+export type PublicMatchday = PublicScheduleEvent & {
   courseDetails: Course | undefined;
   homeTeam: PublicMatchdayTeam;
   awayTeam: PublicMatchdayTeam;
 };
 
 export function resolveMatchday(
-  match: Match,
+  match: PublicScheduleEvent,
   teams: Team[],
   players: Player[],
   courses: Course[],
@@ -34,7 +31,6 @@ export function resolveMatchday(
 
   return {
     ...match,
-    id: createMatchId(match),
     courseDetails: course,
     homeTeam,
     awayTeam,

@@ -11,7 +11,11 @@ export interface TeamRepository {
   update(team: Team): Promise<Team | undefined>;
   archive(id: string): Promise<Team | undefined>;
   delete(id: string): Promise<boolean>;
+  getAliases?(): Promise<TeamAlias[]>;
+  saveAlias?(alias: TeamAlias): Promise<TeamAlias>;
 }
+
+export type TeamAlias = {alias: string; teamId: string};
 
 function cloneTeam(team: Team): Team {
   return {...team};
@@ -100,5 +104,25 @@ export class MockTeamRepository implements TeamRepository {
     const deleted = this.teams.length < initialLength;
     if (deleted) saveStoredTeams(this.teams);
     return deleted;
+  }
+
+  async getAliases(): Promise<TeamAlias[]> {
+    if (!canUseBrowserStorage()) return [];
+    try {
+      return JSON.parse(window.localStorage.getItem('cc-team-clash:team-aliases') ?? '[]') as TeamAlias[];
+    } catch {
+      return [];
+    }
+  }
+
+  async saveAlias(alias: TeamAlias): Promise<TeamAlias> {
+    const aliases = (await this.getAliases()).filter(
+      (candidate) => candidate.alias.toLocaleLowerCase() !== alias.alias.toLocaleLowerCase(),
+    );
+    aliases.push(alias);
+    if (canUseBrowserStorage()) {
+      window.localStorage.setItem('cc-team-clash:team-aliases', JSON.stringify(aliases));
+    }
+    return alias;
   }
 }

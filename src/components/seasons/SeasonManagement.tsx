@@ -79,24 +79,28 @@ export function SeasonManagement() {
     if (!editor) return;
 
     setSubmitting(true);
-    const result = editor.mode === 'create'
-      ? await services.seasons.create(values)
-      : await services.seasons.update(editor.season.id, values);
-    setSubmitting(false);
+    try {
+      const result = editor.mode === 'create'
+        ? await services.seasons.create(values)
+        : await services.seasons.update(editor.season.id, values);
+      if (!result.ok) {
+        setFieldErrors(result.fieldErrors ?? {});
+        setMessage({type: 'error', text: result.message});
+        return;
+      }
 
-    if (!result.ok) {
-      setFieldErrors(result.fieldErrors ?? {});
-      setMessage({type: 'error', text: result.message});
-      return;
+      setEditor(null);
+      setFieldErrors({});
+      setMessage({
+        type: 'success',
+        text: editor.mode === 'create' ? 'Season created.' : 'Season updated.',
+      });
+      setRevision((current) => current + 1);
+    } catch {
+      setMessage({type: 'error', text: 'Season could not be saved.'});
+    } finally {
+      setSubmitting(false);
     }
-
-    setEditor(null);
-    setFieldErrors({});
-    setMessage({
-      type: 'success',
-      text: editor.mode === 'create' ? 'Season created.' : 'Season updated.',
-    });
-    setRevision((current) => current + 1);
   }
 
   async function handleImmediateAction(action: 'activate' | 'duplicate', season: Season) {

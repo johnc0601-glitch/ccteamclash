@@ -26,7 +26,12 @@ export async function buildLaunchSeedData(): Promise<LaunchSeedData> {
     ...EMPTY_LAUNCH_TABLES,
     teams: TEAM_MOCK_DATA.map(toLaunchTeam),
     players: PLAYER_MOCK_DATA.map(toLaunchPlayer),
-    events: matches.map((match): LaunchEvent => {
+    events: matches.filter((match): match is typeof match & {
+      homeTeamId: string;
+      awayTeamId: string;
+      courseId: string;
+      date: string;
+    } => Boolean(match.homeTeamId && match.awayTeamId && match.courseId && match.date)).map((match): LaunchEvent => {
       const round = roundById.get(match.roundId);
       const schedule = round ? scheduleById.get(round.scheduleId) : undefined;
       const course = courseById.get(match.courseId);
@@ -38,8 +43,8 @@ export async function buildLaunchSeedData(): Promise<LaunchSeedData> {
         awayTeamId: match.awayTeamId,
         courseName: course?.name ?? match.courseId,
         directionsUrl: course?.mapUrl ?? '',
-        date: match.date,
-        time: match.time,
+        date: match.date ?? '',
+        time: match.time ?? '',
         status: match.status === 'Completed' ? 'Final' : match.status === 'Cancelled' ? 'Cancelled' : 'Scheduled',
         createdAt: match.createdAt,
         updatedAt: match.updatedAt,

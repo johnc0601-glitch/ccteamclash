@@ -569,6 +569,187 @@
   font-weight: 800;
 }
 
+.roundMatches {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid #dfe2db;
+}
+
+.scheduleImport {
+  padding: 24px;
+}
+
+.importFile {
+  display: grid;
+  gap: 8px;
+}
+
+.importFile > span,
+.importPreview > span {
+  color: #56701c;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.importFile input {
+  width: 100%;
+  padding: 14px;
+  border: 1px dashed #aeb7ad;
+  border-radius: 4px;
+  background: #f7f8f5;
+  font: inherit;
+}
+
+.importDiagnostics,
+.importErrors,
+.importPreview {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #dfe2db;
+  border-radius: 4px;
+}
+
+.importDiagnostics {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.importDiagnostics span,
+.importDiagnostics p {
+  margin: 0;
+}
+
+.importDiagnostics ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.importDiagnostics li {
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.importMappings {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.importChoice {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.importChoice select {
+  min-height: 2.75rem;
+}
+
+.importErrors {
+  border-color: #d2a7a7;
+  background: #fff0f0;
+  color: #812c2c;
+}
+
+.importErrors ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.importPreview h3 {
+  margin: 5px 0 0;
+  font-size: 20px;
+  text-transform: uppercase;
+}
+
+.importPreview p {
+  margin: 7px 0 0;
+  color: #667067;
+  font-size: 12px;
+}
+
+.importPreview ol {
+  margin: 15px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  list-style: none;
+}
+
+.importPreview li {
+  padding: 11px 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  border: 1px solid #e1e4de;
+  background: #fff;
+  font-size: 12px;
+}
+
+.importPreview li span {
+  color: #667067;
+}
+
+.roundMatchesHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.roundMatchesHeader span,
+.roundMatch legend {
+  color: #56701c;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.roundMatchesHeader h3 {
+  margin: 4px 0 0;
+  font-size: 18px;
+  text-transform: uppercase;
+}
+
+.roundMatchesHeader p {
+  margin: 0;
+  color: #667067;
+  font-size: 12px;
+}
+
+.roundMatchList {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.roundMatch {
+  min-width: 0;
+  margin: 0;
+  padding: 15px;
+  border: 1px solid #dfe2db;
+  border-radius: 4px;
+  background: #f7f8f5;
+}
+
+.roundMatch legend {
+  padding: 0 6px;
+}
+
+.roundMatchGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(160px, .65fr);
+  gap: 13px;
+}
+
+.roundMatchCourse {
+  grid-column: 1 / -1;
+}
+
 .dialogActions {
   margin-top: 24px;
   display: flex;
@@ -658,7 +839,8 @@
   .cardGrid,
   .compactGrid,
   .formGrid,
-  .detailsGrid {
+  .detailsGrid,
+  .roundMatchGrid {
     grid-template-columns: 1fr;
   }
 
@@ -677,9 +859,14 @@
 
   .detailHeader,
   .subToolbar,
-  .listHeader {
+  .listHeader,
+  .roundMatchesHeader {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .roundMatchCourse {
+    grid-column: auto;
   }
 
   .detailHeaderActions,
@@ -688,8 +875,14 @@
   }
 
   .scheduleForm,
-  .detailsBody {
+  .detailsBody,
+  .scheduleImport {
     padding: 19px;
+  }
+
+  .importPreview li {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .detailsGrid {
