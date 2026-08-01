@@ -140,6 +140,24 @@
   text-transform: uppercase;
 }
 
+.matchHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sideLabel {
+  padding: 4px 8px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 999px;
+  color: var(--cc-teal);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
 .row a {
   width: fit-content;
   color: #006f71;

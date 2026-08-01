@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
-import type {LaunchEvent, LaunchPlayer, LaunchTeam, PlayerClaim} from '@/domain/launch/LaunchData';
+import {createServerScheduleService} from '@/core/createServerScheduleService';
+import type {LaunchPlayer, LaunchTeam, PlayerClaim} from '@/domain/launch/LaunchData';
+import type {TeamScheduleEvent} from '@/domain/schedule/ScheduleService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
@@ -55,12 +57,12 @@ function CaptainDashboard({
   roster,
   team,
 }: {
-  events: LaunchEvent[];
+  events: TeamScheduleEvent[];
   pendingClaims: PlayerClaim[];
   roster: LaunchPlayer[];
   team: LaunchTeam;
 }) {
-  const upcomingEvents = events.filter((event) => event.status === 'Scheduled');
+  const upcomingEvents = events.filter((event) => event.bucket === 'upcoming');
 
   return (
     <>
@@ -103,9 +105,13 @@ function CaptainDashboard({
           <div className={styles.list}>
             {upcomingEvents.length ? upcomingEvents.map((event) => (
               <article className={styles.row} key={event.id}>
-                <strong>{event.date} / {event.time}</strong>
-                <span className={styles.muted}>{event.courseName}</span>
-                <Link href="/schedule">View schedule</Link>
+                <div className={styles.matchHeading}>
+                  <strong>vs {event.opponent}</strong>
+                  <span className={styles.sideLabel}>{event.isHome ? 'Home' : 'Away'}</span>
+                </div>
+                <span className={styles.muted}>{event.date} / {event.time}</span>
+                <span className={styles.muted}>{event.course}</span>
+                <Link href={`/matches/${event.id}?manage=roster`}>Manage Match Roster</Link>
               </article>
             )) : (
               <p className={styles.empty}>No upcoming matches are posted for your team yet.</p>
@@ -155,7 +161,7 @@ function AccessMessage({message}: {message: string}) {
 }
 
 async function getCaptainData(): Promise<
-  | {ok: true; team: LaunchTeam; roster: LaunchPlayer[]; events: LaunchEvent[]; pendingClaims: PlayerClaim[]}
+  | {ok: true; team: LaunchTeam; roster: LaunchPlayer[]; events: TeamScheduleEvent[]; pendingClaims: PlayerClaim[]}
   | {ok: false; message: string}
 > {
   if (!hasSupabaseConfig()) return {ok: false, message: 'League accounts are not configured yet.'};
@@ -173,10 +179,11 @@ async function getCaptainData(): Promise<
     }
     if (!profile.captainTeamId) return {ok: false, message: 'No captain team has been assigned yet.'};
 
+    const scheduleService = await createServerScheduleService();
     const [team, players, events, claims] = await Promise.all([
       repository.getTeam(profile.captainTeamId),
       repository.getPlayers(),
-      repository.getEvents(),
+      scheduleService.getTeamEvents(profile.captainTeamId),
       repository.getPlayerClaims(),
     ]);
 
