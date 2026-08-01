@@ -10,7 +10,7 @@ export function MatchRosterBoard({matchday}: {matchday: PublicMatchday}) {
           <span>Match roster</span>
           <h2>Active team rosters</h2>
         </div>
-        <p>Attendance and captain confirmation arrive in Patch 2.</p>
+        <p>Active players appear here until captain confirmation is introduced.</p>
       </header>
       <div className={styles.rosterGrid}>
         <TeamRosterColumn team={matchday.awayTeam} label="Away team" />

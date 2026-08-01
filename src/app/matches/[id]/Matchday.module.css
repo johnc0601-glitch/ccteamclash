@@ -83,12 +83,103 @@
 }
 
 .stateBanner,
+.attendanceCard,
 .sectionCard,
 .scoreboard {
   border: 1px solid var(--cc-card-border);
   border-radius: 10px;
   background: var(--cc-card-bg);
   box-shadow: var(--cc-card-shadow);
+}
+
+.attendanceCard {
+  padding: 26px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, .8fr);
+  align-items: center;
+  gap: 26px;
+  border-left: 5px solid var(--cc-gold);
+}
+
+.attendanceCard > div > span {
+  color: var(--cc-teal);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.attendanceCard h2 {
+  margin: 7px 0 0;
+  color: var(--cc-heading);
+  font-family: var(--cc-font-display);
+  font-size: 32px;
+  font-style: italic;
+  letter-spacing: -.03em;
+  line-height: .95;
+  text-transform: uppercase;
+}
+
+.attendanceCard > div > p {
+  margin: 8px 0 0;
+  color: var(--cc-muted);
+  line-height: 1.5;
+}
+
+.attendanceControls {
+  display: grid;
+  gap: 10px;
+}
+
+.attendanceControls .attendanceStatus,
+.attendanceControls .attendanceNotice,
+.attendanceControls .attendanceError {
+  margin: 0;
+  font-size: 14px;
+}
+
+.attendanceStatus strong {
+  color: var(--cc-heading);
+}
+
+.attendanceNotice {
+  color: #56701c !important;
+}
+
+.attendanceError {
+  color: #b64040 !important;
+}
+
+.attendanceActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.attendanceActions button {
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.attendanceActions button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.playingButton {
+  background: var(--cc-teal);
+  color: #fff;
+}
+
+.notPlayingButton {
+  border-color: var(--cc-card-border) !important;
+  background: var(--cc-card-bg);
+  color: var(--cc-heading);
 }
 
 .stateBanner {
@@ -311,7 +402,12 @@
 
 @media (max-width: 680px) {
   .stateBanner,
+  .attendanceCard,
   .rosterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .attendanceActions {
     grid-template-columns: 1fr;
   }
 
