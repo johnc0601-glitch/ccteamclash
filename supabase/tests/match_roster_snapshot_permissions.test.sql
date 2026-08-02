@@ -1,6 +1,6 @@
 begin;
 
-select plan(45);
+select plan(49);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -8,7 +8,8 @@ insert into auth.users (
   confirmation_token, recovery_token, email_change_token_new, email_change
 ) values
   ('00000000-0000-0000-0000-000000000000', '20000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'snapshot-player@example.test', '', now(), now(), now(), '', '', '', ''),
-  ('00000000-0000-0000-0000-000000000000', '20000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'snapshot-captain@example.test', '', now(), now(), now(), '', '', '', '');
+  ('00000000-0000-0000-0000-000000000000', '20000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'snapshot-captain@example.test', '', now(), now(), now(), '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '20000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'snapshot-commissioner@example.test', '', now(), now(), now(), '', '', '', '');
 
 insert into public.launch_players (
   id, name, gender, pdga_number, current_team_id, active
@@ -21,7 +22,8 @@ insert into public.launch_profiles (
   id, user_id, display_name, role, status, player_id, captain_team_id
 ) values
   ('snapshot-profile-player', '20000000-0000-0000-0000-000000000001', 'Snapshot Player', 'Player', 'Approved', 'snapshot-home-player', null),
-  ('snapshot-profile-captain', '20000000-0000-0000-0000-000000000002', 'Snapshot Captain', 'Captain', 'Approved', null, 'dark-knights');
+  ('snapshot-profile-captain', '20000000-0000-0000-0000-000000000002', 'Snapshot Captain', 'Captain', 'Approved', null, 'dark-knights'),
+  ('snapshot-profile-commissioner', '20000000-0000-0000-0000-000000000003', 'Snapshot Commissioner', 'Commissioner', 'Approved', null, null);
 
 insert into public.launch_rounds (
   id, schedule_id, season_id, number, name, date, published
@@ -30,7 +32,8 @@ insert into public.launch_rounds (
   ('snapshot-round-november', 'summer-2026-championship', 'summer-team-clash-2026', 912, 'Snapshot November DST', '2026-11-01', true),
   ('snapshot-round-unpublished', 'summer-2026-championship', 'summer-team-clash-2026', 913, 'Snapshot Unpublished', '2026-03-08', false),
   ('snapshot-round-incomplete', 'summer-2026-championship', 'summer-team-clash-2026', 914, 'Snapshot Incomplete', '2026-03-08', true),
-  ('snapshot-round-future', 'summer-2026-championship', 'summer-team-clash-2026', 915, 'Snapshot Future', '2099-11-01', true);
+  ('snapshot-round-future', 'summer-2026-championship', 'summer-team-clash-2026', 915, 'Snapshot Future', '2099-11-01', true),
+  ('snapshot-round-partial', 'summer-2026-championship', 'summer-team-clash-2026', 916, 'Snapshot Partial', '2026-03-08', true);
 
 insert into public.launch_schedule_matches (
   id, round_id, season_id, home_team_id, away_team_id, course_id,
@@ -40,7 +43,8 @@ insert into public.launch_schedule_matches (
   ('snapshot-match-november', 'snapshot-round-november', 'summer-team-clash-2026', 'dark-knights', 'ninjas', 'castle-hayne-park', '2026-11-01', '09:00', 'Scheduled', ''),
   ('snapshot-match-unpublished', 'snapshot-round-unpublished', 'summer-team-clash-2026', 'dark-knights', 'ninjas', 'castle-hayne-park', '2026-03-08', '09:00', 'Scheduled', ''),
   ('snapshot-match-incomplete', 'snapshot-round-incomplete', 'summer-team-clash-2026', 'dark-knights', null, 'castle-hayne-park', '2026-03-08', '09:00', 'Scheduled', ''),
-  ('snapshot-match-future', 'snapshot-round-future', 'summer-team-clash-2026', 'dark-knights', 'ninjas', 'castle-hayne-park', '2099-11-01', '09:00', 'Scheduled', '');
+  ('snapshot-match-future', 'snapshot-round-future', 'summer-team-clash-2026', 'dark-knights', 'ninjas', 'castle-hayne-park', '2099-11-01', '09:00', 'Scheduled', ''),
+  ('snapshot-match-partial', 'snapshot-round-partial', 'summer-team-clash-2026', 'dark-knights', 'ninjas', 'castle-hayne-park', '2026-03-08', '09:00', 'Scheduled', '');
 
 insert into public.launch_match_attendance (
   match_id, team_id, player_id, status, updated_by
@@ -52,6 +56,56 @@ insert into public.launch_match_rosters (
   match_id, team_id, status, confirmed_by, confirmed_at
 ) values (
   'snapshot-match-march', 'dark-knights', 'Confirmed', 'snapshot-profile-captain', '2026-03-08 18:00:00+00'
+);
+
+insert into public.launch_match_roster_snapshots (
+  match_id, team_id, needs_commissioner_review, updated_by, updated_at
+) values (
+  'snapshot-match-partial', 'dark-knights', true, null, '2026-03-08 19:00:00+00'
+);
+
+insert into public.launch_match_roster_snapshot_players (
+  match_id, team_id, team_name_snapshot, player_id, player_name_snapshot,
+  updated_by, updated_at
+) values (
+  'snapshot-match-partial', 'dark-knights', 'Partial Team', 'snapshot-later-player', 'Partial Player',
+  null, '2026-03-08 19:00:00+00'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '20000000-0000-0000-0000-000000000003', true);
+
+select throws_ok(
+  $$select public.commissioner_add_launch_match_roster_snapshot_player(
+    'snapshot-match-partial', 'dark-knights', 'snapshot-away-player'
+  )$$,
+  '42501',
+  'Official roster correction is not available.',
+  'commissioner add rejects a partial one-manifest snapshot'
+);
+
+select throws_ok(
+  $$select public.commissioner_remove_launch_match_roster_snapshot_player(
+    'snapshot-match-partial', 'dark-knights', 'snapshot-later-player'
+  )$$,
+  '42501',
+  'Official roster correction is not available.',
+  'commissioner remove rejects a partial one-manifest snapshot'
+);
+
+reset role;
+
+select is(
+  (select count(*)::integer from public.launch_match_roster_snapshot_players where match_id = 'snapshot-match-partial'),
+  1,
+  'partial-snapshot rejection leaves snapshot-player rows unchanged'
+);
+
+select ok(
+  (select updated_by is null and updated_at = '2026-03-08 19:00:00+00'::timestamptz
+   from public.launch_match_roster_snapshots
+   where match_id = 'snapshot-match-partial' and team_id = 'dark-knights'),
+  'partial-snapshot rejection leaves manifest audit fields unchanged'
 );
 
 select is(

@@ -1,8 +1,35 @@
 import type {PublicMatchday} from '@/services/matches/MatchdayService';
 import {TeamRosterColumn} from '@/components/matches/TeamRosterColumn';
 import styles from '@/app/matches/[id]/Matchday.module.css';
+import type {OfficialSnapshotState, OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
 
-export function MatchRosterBoard({matchday}: {matchday: PublicMatchday}) {
+export function MatchRosterBoard({matchday, official}: {matchday: PublicMatchday; official?: OfficialSnapshotState}) {
+  if (official?.status === 'unavailable') {
+    return (
+      <section className={styles.sectionCard}>
+        <header className={styles.sectionHeader}>
+          <div><span>Official match roster</span><h2>Official roster temporarily unavailable</h2></div>
+        </header>
+        <p className={styles.empty}>The match page remains available while the official roster is recovered.</p>
+      </section>
+    );
+  }
+
+  if (official?.status === 'complete') {
+    return (
+      <section className={styles.sectionCard}>
+        <header className={styles.sectionHeader}>
+          <div><span>Official match roster</span><h2>Locked roster snapshot</h2></div>
+          <p>These stored names and players are the permanent roster for this match.</p>
+        </header>
+        <div className={styles.rosterGrid}>
+          <OfficialRosterColumn roster={findRoster(official.rosters, matchday.awayTeam.id)} label="Away team" />
+          <OfficialRosterColumn roster={findRoster(official.rosters, matchday.homeTeam.id)} label="Home team" />
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className={styles.sectionCard}>
       <header className={styles.sectionHeader}>
@@ -10,7 +37,7 @@ export function MatchRosterBoard({matchday}: {matchday: PublicMatchday}) {
           <span>Match roster</span>
           <h2>Active team rosters</h2>
         </div>
-        <p>Active players appear here until captain confirmation is introduced.</p>
+        <p>Attendance and captain confirmation remain live until the match roster locks.</p>
       </header>
       <div className={styles.rosterGrid}>
         <TeamRosterColumn team={matchday.awayTeam} label="Away team" />
@@ -18,4 +45,34 @@ export function MatchRosterBoard({matchday}: {matchday: PublicMatchday}) {
       </div>
     </section>
   );
+}
+
+function OfficialRosterColumn({roster, label}: {roster: OfficialMatchRoster; label: string}) {
+  const teamName = roster.players[0]?.teamNameSnapshot ?? `${label} official roster`;
+  return (
+    <article className={styles.rosterTeam}>
+      <div className={styles.rosterTeamHeader}>
+        <div><span>{label}</span><h3>{teamName}</h3></div>
+      </div>
+      <div className={styles.rosterTitle}><span>Official players</span><span>{roster.players.length}</span></div>
+      <div className={styles.playerList}>
+        {roster.players.length ? roster.players.map((player) => (
+          <div className={styles.playerRow} key={player.playerId}>
+            <b>{initials(player.playerNameSnapshot)}</b>
+            <strong>{player.playerNameSnapshot}</strong>
+          </div>
+        )) : <p className={styles.empty}>No players are listed on this official roster.</p>}
+      </div>
+    </article>
+  );
+}
+
+function findRoster(rosters: OfficialMatchRoster[], teamId: string): OfficialMatchRoster {
+  const roster = rosters.find((candidate) => candidate.teamId === teamId);
+  if (!roster) throw new Error(`Official roster manifest missing for ${teamId}.`);
+  return roster;
+}
+
+function initials(name: string): string {
+  return name.split(/\s+/).filter(Boolean).map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 }

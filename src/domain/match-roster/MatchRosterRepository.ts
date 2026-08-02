@@ -6,6 +6,7 @@ import type {
   MatchRoster,
   TeamAttendanceMember,
 } from '@/domain/match-roster/MatchAttendance';
+import type {OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
 
 export interface MatchRosterRepository {
   getAttendanceActor(userId: string): Promise<AttendanceActor | undefined>;
@@ -13,6 +14,12 @@ export interface MatchRosterRepository {
   getAttendance(matchId: string, playerId: string): Promise<MatchAttendance | undefined>;
   getTeamAttendance(matchId: string, teamId: string): Promise<TeamAttendanceMember[]>;
   getMatchRoster(matchId: string, teamId: string): Promise<MatchRoster | undefined>;
+  getOfficialMatchRosters(matchId: string): Promise<OfficialMatchRoster[]>;
+  hasCompleteSnapshot(matchId: string): Promise<boolean>;
+  getSnapshotCandidateMatches(snapshotStartAt: Date, now: Date): Promise<AttendanceMatch[]>;
+  createLockedSnapshot(matchId: string): Promise<void>;
+  addSnapshotPlayer(matchId: string, teamId: string, playerId: string): Promise<void>;
+  removeSnapshotPlayer(matchId: string, teamId: string, playerId: string): Promise<void>;
   saveAttendance(input: {
     matchId: string;
     teamId: string;

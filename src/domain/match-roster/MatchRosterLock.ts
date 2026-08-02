@@ -31,6 +31,12 @@ export function isMatchAttendanceOpen(match: AttendanceMatch, now = new Date()):
   return Boolean(lockAt && now.getTime() < lockAt.getTime());
 }
 
+export function isMatchRosterLocked(match: AttendanceMatch, now = new Date()): boolean {
+  if (!match.date) return false;
+  const lockAt = getMatchRosterLockAt(match.date);
+  return Boolean(lockAt && now.getTime() >= lockAt.getTime());
+}
+
 function easternParts(date: Date) {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',

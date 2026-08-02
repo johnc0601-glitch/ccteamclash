@@ -7,14 +7,137 @@ import {
   type ManagedTeamRoster,
   type PersonalAttendance,
 } from '@/domain/match-roster/MatchAttendance';
-import {isMatchAttendanceOpen} from '@/domain/match-roster/MatchRosterLock';
+import {isMatchAttendanceOpen, isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
 import type {MatchRosterRepository} from '@/domain/match-roster/MatchRosterRepository';
+import type {
+  OfficialMatchRoster,
+  OfficialSnapshotState,
+  SnapshotCronSummary,
+} from '@/domain/match-roster/MatchRosterSnapshot';
+import {
+  isMatchAtOrAfterSnapshotCutoff,
+  snapshotErrorClass,
+  type SnapshotLogContext,
+} from '@/domain/match-roster/MatchRosterSnapshotAutomation';
 
 export class MatchRosterService {
   constructor(
     private readonly repository: MatchRosterRepository,
     private readonly now: () => Date = () => new Date(),
+    private readonly snapshotCreator: Pick<MatchRosterRepository, 'createLockedSnapshot'> = repository,
+    private readonly log: (context: SnapshotLogContext) => void = (context) => {
+      if (context.operation === 'configuration') {
+        console.warn('Match roster snapshot automation configuration is unavailable.', context);
+      } else {
+        console.error('Match roster snapshot operation failed.', context);
+      }
+    },
   ) {}
+
+  getOfficialMatchRosters(matchId: string): Promise<OfficialMatchRoster[]> {
+    return this.repository.getOfficialMatchRosters(matchId);
+  }
+
+  async canManageOfficialSnapshot(userId: string, matchId: string): Promise<boolean> {
+    const [actor, match, complete] = await Promise.all([
+      this.repository.getAttendanceActor(userId),
+      this.repository.getAttendanceMatch(matchId),
+      this.repository.hasCompleteSnapshot(matchId),
+    ]);
+    return Boolean(
+      actor?.profileStatus === 'Approved'
+      && actor.profileRole === 'Commissioner'
+      && match
+      && match.status !== 'Cancelled'
+      && isMatchRosterLocked(match, this.now())
+      && complete
+    );
+  }
+
+  async ensureLockedSnapshot(matchId: string, snapshotStartAt?: Date): Promise<OfficialSnapshotState> {
+    const match = await this.repository.getAttendanceMatch(matchId);
+    if (!match || !isMatchRosterLocked(match, this.now())) return {status: 'before-lock', rosters: []};
+
+    try {
+      if (await this.repository.hasCompleteSnapshot(matchId)) {
+        return {status: 'complete', rosters: await this.repository.getOfficialMatchRosters(matchId)};
+      }
+      if (!snapshotStartAt || !isMatchAtOrAfterSnapshotCutoff(match, snapshotStartAt)) {
+        this.log({operation: 'configuration', matchId});
+        return {status: 'unavailable', rosters: []};
+      }
+      await this.snapshotCreator.createLockedSnapshot(matchId);
+      if (!await this.repository.hasCompleteSnapshot(matchId)) return {status: 'unavailable', rosters: []};
+      return {status: 'complete', rosters: await this.repository.getOfficialMatchRosters(matchId)};
+    } catch (error) {
+      this.log({operation: 'lazy-create', matchId, errorClass: snapshotErrorClass(error)});
+      return {status: 'unavailable', rosters: []};
+    }
+  }
+
+  async commissionerAddSnapshotPlayer(
+    userId: string,
+    matchId: string,
+    teamId: string,
+    playerId: string,
+  ): Promise<AttendanceResult<OfficialMatchRoster>> {
+    const context = await this.getCommissionerSnapshotContext(userId, matchId, teamId);
+    if (!context) return {ok: false, message: 'Official roster correction is not available.'};
+    try {
+      await this.repository.addSnapshotPlayer(matchId, teamId, playerId);
+    } catch {
+      return {ok: false, message: 'That player could not be added to the official roster.'};
+    }
+    const roster = (await this.repository.getOfficialMatchRosters(matchId)).find((item) => item.teamId === teamId);
+    return roster ? {ok: true, data: roster} : {ok: false, message: 'Official roster is unavailable.'};
+  }
+
+  async commissionerRemoveSnapshotPlayer(
+    userId: string,
+    matchId: string,
+    teamId: string,
+    playerId: string,
+  ): Promise<AttendanceResult<OfficialMatchRoster>> {
+    const context = await this.getCommissionerSnapshotContext(userId, matchId, teamId);
+    if (!context) return {ok: false, message: 'Official roster correction is not available.'};
+    const roster = context.rosters.find((item) => item.teamId === teamId);
+    if (!roster?.players.some((player) => player.playerId === playerId)) {
+      return {ok: false, message: 'That player is not on the official roster.'};
+    }
+    try {
+      await this.repository.removeSnapshotPlayer(matchId, teamId, playerId);
+    } catch {
+      return {ok: false, message: 'That player could not be removed from the official roster.'};
+    }
+    const updated = (await this.repository.getOfficialMatchRosters(matchId)).find((item) => item.teamId === teamId);
+    return updated ? {ok: true, data: updated} : {ok: false, message: 'Official roster is unavailable.'};
+  }
+
+  async processLockedSnapshots(snapshotStartAt?: Date): Promise<SnapshotCronSummary> {
+    if (!snapshotStartAt) {
+      this.log({operation: 'configuration'});
+      return {processed: 0, succeeded: 0, alreadyComplete: 0, failed: 0};
+    }
+    const now = this.now();
+    const candidates = await this.repository.getSnapshotCandidateMatches(snapshotStartAt, now);
+    const summary: SnapshotCronSummary = {processed: candidates.length, succeeded: 0, alreadyComplete: 0, failed: 0};
+
+    for (const candidate of candidates) {
+      try {
+        if (await this.repository.hasCompleteSnapshot(candidate.id)) {
+          summary.alreadyComplete += 1;
+          continue;
+        }
+        await this.snapshotCreator.createLockedSnapshot(candidate.id);
+        if (await this.repository.hasCompleteSnapshot(candidate.id)) summary.succeeded += 1;
+        else summary.failed += 1;
+      } catch (error) {
+        summary.failed += 1;
+        this.log({operation: 'scheduled-create', matchId: candidate.id, errorClass: snapshotErrorClass(error)});
+      }
+    }
+    return summary;
+  }
 
   async getPersonalAttendance(userId: string, matchId: string): Promise<PersonalAttendance | undefined> {
     const context = await this.getAuthorizedContext(userId, matchId);
@@ -207,6 +330,34 @@ export class MatchRosterService {
       return {actor, match, teamIds: [actor.captainTeamId]};
     }
     return undefined;
+  }
+
+  private async getCommissionerSnapshotContext(
+    userId: string,
+    matchId: string,
+    teamId: string,
+  ): Promise<{actor: AttendanceActor; match: AttendanceMatch; rosters: OfficialMatchRoster[]} | undefined> {
+    const [actor, match, rosters] = await Promise.all([
+      this.repository.getAttendanceActor(userId),
+      this.repository.getAttendanceMatch(matchId),
+      this.repository.getOfficialMatchRosters(matchId),
+    ]);
+    if (
+      !actor
+      || actor.profileStatus !== 'Approved'
+      || actor.profileRole !== 'Commissioner'
+      || !match
+      || match.status === 'Cancelled'
+      || !isMatchRosterLocked(match, this.now())
+    ) return undefined;
+    const teamIds = [match.awayTeamId, match.homeTeamId].filter((id): id is string => Boolean(id));
+    const snapshotTeamIds = new Set(rosters.map((roster) => roster.teamId));
+    if (
+      teamIds.length !== 2
+      || !teamIds.includes(teamId)
+      || !teamIds.every((participatingTeamId) => snapshotTeamIds.has(participatingTeamId))
+    ) return undefined;
+    return {actor, match, rosters};
   }
 }
 

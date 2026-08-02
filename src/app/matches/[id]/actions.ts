@@ -7,6 +7,7 @@ import {SupabaseMatchRosterRepository} from '@/domain/match-roster/SupabaseMatch
 import type {AttendanceResult, PersonalAttendance} from '@/domain/match-roster/MatchAttendance';
 import type {ManagedTeamRoster} from '@/domain/match-roster/MatchAttendance';
 import {createClient} from '@/lib/supabase/server';
+import type {OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
 
 export async function setOwnMatchAttendance(formData: FormData) {
   const matchId = readFormValue(formData, 'matchId');
@@ -69,6 +70,34 @@ export async function confirmCaptainMatchRoster(formData: FormData) {
   revalidatePath(`/matches/${matchId}`);
   revalidatePath('/captain');
   redirect(`${path}&captainNotice=${encodeURIComponent('Match roster confirmed.')}`);
+}
+
+export async function addCommissionerSnapshotPlayer(formData: FormData) {
+  await runCommissionerSnapshotAction(formData, 'add');
+}
+
+export async function removeCommissionerSnapshotPlayer(formData: FormData) {
+  await runCommissionerSnapshotAction(formData, 'remove');
+}
+
+async function runCommissionerSnapshotAction(formData: FormData, operation: 'add' | 'remove') {
+  const matchId = readFormValue(formData, 'matchId');
+  const teamId = readFormValue(formData, 'teamId');
+  const playerId = readFormValue(formData, 'playerId');
+  if (!matchId || !teamId || !playerId) redirect('/schedule?error=Match, team, and player are required.');
+  const path = `/matches/${encodeURIComponent(matchId)}?manage=roster`;
+  const {service, userId} = await getMatchRosterService();
+  let result: AttendanceResult<OfficialMatchRoster>;
+  try {
+    result = operation === 'add'
+      ? await service.commissionerAddSnapshotPlayer(userId, matchId, teamId, playerId)
+      : await service.commissionerRemoveSnapshotPlayer(userId, matchId, teamId, playerId);
+  } catch {
+    redirect(`${path}&commissionerError=${encodeURIComponent('Official roster correction could not be saved.')}`);
+  }
+  if (!result.ok) redirect(`${path}&commissionerError=${encodeURIComponent(result.message)}`);
+  revalidatePath(`/matches/${matchId}`);
+  redirect(`${path}&commissionerNotice=${encodeURIComponent(operation === 'add' ? 'Player added to the official roster.' : 'Player removed from the official roster.')}`);
 }
 
 async function getMatchRosterService() {

@@ -6,11 +6,16 @@ import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchStateBanner} from '@/components/matches/MatchStateBanner';
 import {PersonalAttendanceCard} from '@/components/matches/PersonalAttendanceCard';
 import {CaptainRosterPanel} from '@/components/matches/CaptainRosterPanel';
+import {CommissionerSnapshotPanel} from '@/components/matches/CommissionerSnapshotPanel';
 import {createServerResultsService} from '@/core/createServerResultsService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {MatchRosterService} from '@/domain/match-roster/MatchRosterService';
+import {isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
+import type {OfficialSnapshotState} from '@/domain/match-roster/MatchRosterSnapshot';
+import {parseMatchRosterSnapshotStartAt, snapshotErrorClass} from '@/domain/match-roster/MatchRosterSnapshotAutomation';
 import {SupabaseMatchRosterRepository} from '@/domain/match-roster/SupabaseMatchRosterRepository';
+import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 import {resolveMatchday} from '@/services/matches/MatchdayService';
 import styles from './Matchday.module.css';
@@ -25,6 +30,8 @@ type MatchdayPageProps = {
     attendanceError?: string | string[];
     captainNotice?: string | string[];
     captainError?: string | string[];
+    commissionerNotice?: string | string[];
+    commissionerError?: string | string[];
   }>;
 };
 
@@ -37,7 +44,8 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     createClient(),
   ]);
   const launchRepository = new SupabaseLaunchRepository(supabase);
-  const matchRosterService = new MatchRosterService(new SupabaseMatchRosterRepository(supabase));
+  const matchRosterRepository = new SupabaseMatchRosterRepository(supabase);
+  const matchRosterService = new MatchRosterService(matchRosterRepository);
   const userPromise = supabase.auth.getUser();
   const [event, match, publishedResult, teams, players, courses, userResult] = await Promise.all([
     scheduleService.getPublishedEventById(matchId),
@@ -59,12 +67,39 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     Boolean(publishedResult),
   );
   if (!matchday) notFound();
-  const personalAttendance = userResult.data.user
+  const locked = isMatchRosterLocked(match);
+  let officialSnapshot: OfficialSnapshotState | undefined;
+  if (locked) {
+    try {
+      const adminRepository = new SupabaseMatchRosterRepository(createAdminClient());
+      officialSnapshot = await new MatchRosterService(
+        matchRosterRepository,
+        undefined,
+        adminRepository,
+      ).ensureLockedSnapshot(
+        matchId,
+        parseMatchRosterSnapshotStartAt(process.env.MATCH_ROSTER_SNAPSHOT_START_AT),
+      );
+    } catch (error) {
+      console.error('Official match roster snapshot is unavailable.', {
+        operation: 'lazy-create',
+        matchId,
+        errorClass: snapshotErrorClass(error),
+      });
+      officialSnapshot = {status: 'unavailable', rosters: []};
+    }
+  }
+  const personalAttendance = !locked && userResult.data.user
     ? await matchRosterService.getPersonalAttendance(userResult.data.user.id, matchId)
     : undefined;
-  const managedRosters = userResult.data.user && readParam(query.manage) === 'roster'
+  const managedRosters = !locked && userResult.data.user && readParam(query.manage) === 'roster'
     ? await matchRosterService.getManagedTeamRosters(userResult.data.user.id, matchId)
     : [];
+  const canCorrectSnapshot = locked
+    && officialSnapshot?.status === 'complete'
+    && userResult.data.user
+    ? await matchRosterService.canManageOfficialSnapshot(userResult.data.user.id, matchId)
+    : false;
 
   return (
     <>
@@ -92,7 +127,19 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
               error={readParam(query.captainError)}
             />
           ) : null}
-          <MatchRosterBoard matchday={matchday} />
+          {canCorrectSnapshot && officialSnapshot?.status === 'complete' ? (
+            <CommissionerSnapshotPanel
+              rosters={officialSnapshot.rosters}
+              activePlayers={players.filter((player) => player.active)}
+              teamLabels={{
+                [matchday.awayTeam.id]: 'Away team official roster',
+                [matchday.homeTeam.id]: 'Home team official roster',
+              }}
+              notice={readParam(query.commissionerNotice)}
+              error={readParam(query.commissionerError)}
+            />
+          ) : null}
+          <MatchRosterBoard matchday={matchday} official={officialSnapshot} />
           {!publishedResult ? <MatchScoreboard matchday={matchday} result={undefined} /> : null}
         </div>
       </main>

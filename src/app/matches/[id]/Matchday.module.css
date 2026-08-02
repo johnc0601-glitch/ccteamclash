@@ -85,6 +85,7 @@
 .stateBanner,
 .attendanceCard,
 .captainPanel,
+.commissionerPanel,
 .sectionCard,
 .scoreboard {
   border: 1px solid var(--cc-card-border);
@@ -96,6 +97,53 @@
 .captainPanel {
   padding: 26px;
   border-top: 5px solid var(--cc-teal);
+}
+
+.commissionerPanel {
+  padding: 26px;
+  border-top: 5px solid var(--cc-bronze);
+}
+
+.snapshotAddForm {
+  padding: 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  border-top: 1px solid var(--cc-card-border);
+  background: var(--cc-table-head-bg);
+}
+
+.snapshotAddForm select,
+.snapshotAddForm button,
+.removeSnapshotButton {
+  min-height: 38px;
+  padding: 8px 11px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 5px;
+  background: var(--cc-card-bg);
+  color: var(--cc-heading);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.snapshotAddForm button {
+  border-color: var(--cc-teal);
+  background: var(--cc-teal);
+  color: #fff;
+  cursor: pointer;
+}
+
+.removeSnapshotButton {
+  border-color: #b64040;
+  color: #b64040;
+  cursor: pointer;
+}
+
+.snapshotAddForm button:disabled,
+.snapshotAddForm select:disabled {
+  cursor: not-allowed;
+  opacity: .5;
 }
 
 .captainRosterGrid {
@@ -544,6 +592,10 @@
   }
 
   .attendanceActions {
+    grid-template-columns: 1fr;
+  }
+
+  .snapshotAddForm {
     grid-template-columns: 1fr;
   }
 
