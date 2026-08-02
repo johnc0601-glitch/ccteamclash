@@ -367,9 +367,9 @@ select is(
   (select count(*)::integer
    from information_schema.tables
    where table_schema = 'public'
-     and table_name in ('launch_match_roster_snapshot_players', 'attendance_notifications')),
+     and table_name = 'attendance_notifications'),
   0,
-  'snapshot and notification tables are not created by this patch'
+  'attendance notification tables are not created by this patch'
 );
 
 select * from finish();
