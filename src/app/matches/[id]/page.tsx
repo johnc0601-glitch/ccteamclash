@@ -5,6 +5,7 @@ import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchStateBanner} from '@/components/matches/MatchStateBanner';
 import {PersonalAttendanceCard} from '@/components/matches/PersonalAttendanceCard';
+import {CaptainRosterPanel} from '@/components/matches/CaptainRosterPanel';
 import {createServerResultsService} from '@/core/createServerResultsService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
@@ -18,7 +19,13 @@ export const dynamic = 'force-dynamic';
 
 type MatchdayPageProps = {
   params: Promise<{id: string}>;
-  searchParams: Promise<{attendanceNotice?: string | string[]; attendanceError?: string | string[]}>;
+  searchParams: Promise<{
+    manage?: string | string[];
+    attendanceNotice?: string | string[];
+    attendanceError?: string | string[];
+    captainNotice?: string | string[];
+    captainError?: string | string[];
+  }>;
 };
 
 export default async function MatchdayPage({params, searchParams}: MatchdayPageProps) {
@@ -55,6 +62,9 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const personalAttendance = userResult.data.user
     ? await matchRosterService.getPersonalAttendance(userResult.data.user.id, matchId)
     : undefined;
+  const managedRosters = userResult.data.user && readParam(query.manage) === 'roster'
+    ? await matchRosterService.getManagedTeamRosters(userResult.data.user.id, matchId)
+    : [];
 
   return (
     <>
@@ -69,6 +79,17 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
               attendance={personalAttendance}
               notice={readParam(query.attendanceNotice)}
               error={readParam(query.attendanceError)}
+            />
+          ) : null}
+          {managedRosters.length ? (
+            <CaptainRosterPanel
+              rosters={managedRosters}
+              teamNames={{
+                [matchday.awayTeam.id]: matchday.awayTeam.name,
+                [matchday.homeTeam.id]: matchday.homeTeam.name,
+              }}
+              notice={readParam(query.captainNotice)}
+              error={readParam(query.captainError)}
             />
           ) : null}
           <MatchRosterBoard matchday={matchday} />

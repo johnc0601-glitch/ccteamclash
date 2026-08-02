@@ -4,6 +4,8 @@ import type {
   AttendanceMatch,
   MatchAttendance,
   MatchAttendanceStatus,
+  MatchRoster,
+  TeamAttendanceMember,
 } from '@/domain/match-roster/MatchAttendance';
 import type {MatchRosterRepository} from '@/domain/match-roster/MatchRosterRepository';
 import type {Database} from '@/lib/supabase/database';
@@ -28,12 +30,28 @@ type AttendanceDatabase = {
         Update: Pick<AttendanceRow, 'status' | 'updated_by'>;
         Relationships: [];
       };
+      launch_match_rosters: {
+        Row: RosterRow;
+        Insert: Pick<RosterRow, 'match_id' | 'team_id' | 'status' | 'confirmed_by' | 'confirmed_at'>;
+        Update: Pick<RosterRow, 'status' | 'confirmed_by' | 'confirmed_at'>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };
+};
+
+type RosterRow = {
+  id: string;
+  match_id: string;
+  team_id: string;
+  status: string;
+  confirmed_by: string | null;
+  confirmed_at: string | null;
+  updated_at: string;
 };
 
 export class SupabaseMatchRosterRepository implements MatchRosterRepository {
@@ -46,7 +64,7 @@ export class SupabaseMatchRosterRepository implements MatchRosterRepository {
   async getAttendanceActor(userId: string): Promise<AttendanceActor | undefined> {
     const {data: profile, error: profileError} = await this.supabase
       .from('launch_profiles')
-      .select('id,status,role,player_id')
+      .select('id,status,role,player_id,captain_team_id')
       .eq('user_id', userId)
       .maybeSingle();
     if (profileError) throw profileError;
@@ -59,6 +77,7 @@ export class SupabaseMatchRosterRepository implements MatchRosterRepository {
         profileRole: profile.role as AttendanceActor['profileRole'],
         playerId: null,
         teamId: null,
+        captainTeamId: profile.captain_team_id,
         playerName: null,
         playerActive: false,
       };
@@ -77,6 +96,7 @@ export class SupabaseMatchRosterRepository implements MatchRosterRepository {
       profileRole: profile.role as AttendanceActor['profileRole'],
       playerId: player?.id ?? profile.player_id,
       teamId: player?.current_team_id ?? null,
+      captainTeamId: profile.captain_team_id,
       playerName: player?.name ?? null,
       playerActive: player?.active ?? false,
     };
@@ -109,6 +129,43 @@ export class SupabaseMatchRosterRepository implements MatchRosterRepository {
     return data ? toAttendance(data) : undefined;
   }
 
+  async getTeamAttendance(matchId: string, teamId: string): Promise<TeamAttendanceMember[]> {
+    const [{data: players, error: playerError}, {data: attendanceRows, error: attendanceError}] = await Promise.all([
+      this.supabase
+        .from('launch_players')
+        .select('id,name,current_team_id')
+        .eq('current_team_id', teamId)
+        .eq('active', true)
+        .order('name'),
+      this.attendanceClient
+        .from('launch_match_attendance')
+        .select('*')
+        .eq('match_id', matchId)
+        .eq('team_id', teamId),
+    ]);
+    if (playerError) throw playerError;
+    if (attendanceError) throw attendanceError;
+
+    const statuses = new Map(attendanceRows.map((row) => [row.player_id, row.status as MatchAttendanceStatus]));
+    return players.map((player) => ({
+      playerId: player.id,
+      playerName: player.name,
+      teamId,
+      status: statuses.get(player.id) ?? 'Unconfirmed',
+    }));
+  }
+
+  async getMatchRoster(matchId: string, teamId: string): Promise<MatchRoster | undefined> {
+    const {data, error} = await this.attendanceClient
+      .from('launch_match_rosters')
+      .select('*')
+      .eq('match_id', matchId)
+      .eq('team_id', teamId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? toMatchRoster(data) : undefined;
+  }
+
   async saveAttendance(input: {
     matchId: string;
     teamId: string;
@@ -136,6 +193,32 @@ export class SupabaseMatchRosterRepository implements MatchRosterRepository {
     if (error) throw error;
     return toAttendance(data);
   }
+
+  async saveMatchRoster(input: {
+    matchId: string;
+    teamId: string;
+    confirmedBy: string;
+    confirmedAt: string;
+  }): Promise<MatchRoster> {
+    const existing = await this.getMatchRoster(input.matchId, input.teamId);
+    const values = {
+      status: 'Confirmed',
+      confirmed_by: input.confirmedBy,
+      confirmed_at: input.confirmedAt,
+    };
+    const query = existing
+      ? this.attendanceClient
+        .from('launch_match_rosters')
+        .update(values)
+        .eq('match_id', input.matchId)
+        .eq('team_id', input.teamId)
+      : this.attendanceClient
+        .from('launch_match_rosters')
+        .insert({...values, match_id: input.matchId, team_id: input.teamId});
+    const {data, error} = await query.select().single();
+    if (error) throw error;
+    return toMatchRoster(data);
+  }
 }
 
 function toAttendance(row: AttendanceRow): MatchAttendance {
@@ -147,6 +230,18 @@ function toAttendance(row: AttendanceRow): MatchAttendance {
     status: row.status as MatchAttendanceStatus,
     updatedBy: row.updated_by,
     createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function toMatchRoster(row: RosterRow): MatchRoster {
+  return {
+    id: row.id,
+    matchId: row.match_id,
+    teamId: row.team_id,
+    status: row.status as MatchRoster['status'],
+    confirmedBy: row.confirmed_by,
+    confirmedAt: row.confirmed_at,
     updatedAt: row.updated_at,
   };
 }

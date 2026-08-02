@@ -21,8 +21,37 @@ export type AttendanceActor = {
   profileRole: 'Player' | 'Captain' | 'Commissioner';
   playerId: string | null;
   teamId: string | null;
+  captainTeamId: string | null;
   playerName: string | null;
   playerActive: boolean;
+};
+
+export type TeamAttendanceMember = {
+  playerId: string;
+  playerName: string;
+  teamId: string;
+  status: MatchAttendanceStatus | 'Unconfirmed';
+};
+
+export type MatchRosterStatus = 'Draft' | 'Confirmed';
+
+export type MatchRoster = {
+  id: string;
+  matchId: string;
+  teamId: string;
+  status: MatchRosterStatus;
+  confirmedBy: string | null;
+  confirmedAt: string | null;
+  updatedAt: string;
+};
+
+export type ManagedTeamRoster = {
+  matchId: string;
+  teamId: string;
+  attendanceOpen: boolean;
+  rosterStatus: MatchRosterStatus;
+  confirmedAt: string | null;
+  players: TeamAttendanceMember[];
 };
 
 export type AttendanceMatch = {

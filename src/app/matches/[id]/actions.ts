@@ -5,6 +5,7 @@ import {redirect} from 'next/navigation';
 import {MatchRosterService} from '@/domain/match-roster/MatchRosterService';
 import {SupabaseMatchRosterRepository} from '@/domain/match-roster/SupabaseMatchRosterRepository';
 import type {AttendanceResult, PersonalAttendance} from '@/domain/match-roster/MatchAttendance';
+import type {ManagedTeamRoster} from '@/domain/match-roster/MatchAttendance';
 import {createClient} from '@/lib/supabase/server';
 
 export async function setOwnMatchAttendance(formData: FormData) {
@@ -28,6 +29,57 @@ export async function setOwnMatchAttendance(formData: FormData) {
 
   revalidatePath(path);
   redirect(`${path}?attendanceNotice=${encodeURIComponent('Your availability was saved.')}`);
+}
+
+export async function setCaptainMatchAttendance(formData: FormData) {
+  const matchId = readFormValue(formData, 'matchId');
+  const playerId = readFormValue(formData, 'playerId');
+  const status = readFormValue(formData, 'status');
+  if (!matchId || !playerId) redirect('/captain?error=Match and player are required.');
+
+  const path = `/matches/${encodeURIComponent(matchId)}?manage=roster`;
+  const {service, userId} = await getMatchRosterService();
+  let result: AttendanceResult<ManagedTeamRoster>;
+  try {
+    result = await service.setTeamAttendance(userId, matchId, playerId, status);
+  } catch {
+    redirect(`${path}&captainError=${encodeURIComponent('Player attendance could not be saved.')}`);
+  }
+  if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(result.message)}`);
+
+  revalidatePath(`/matches/${matchId}`);
+  redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was updated.')}`);
+}
+
+export async function confirmCaptainMatchRoster(formData: FormData) {
+  const matchId = readFormValue(formData, 'matchId');
+  const teamId = readFormValue(formData, 'teamId');
+  if (!matchId || !teamId) redirect('/captain?error=Match and team are required.');
+
+  const path = `/matches/${encodeURIComponent(matchId)}?manage=roster`;
+  const {service, userId} = await getMatchRosterService();
+  let result: AttendanceResult<ManagedTeamRoster>;
+  try {
+    result = await service.confirmTeamRoster(userId, matchId, teamId);
+  } catch {
+    redirect(`${path}&captainError=${encodeURIComponent('The roster could not be confirmed.')}`);
+  }
+  if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(result.message)}`);
+
+  revalidatePath(`/matches/${matchId}`);
+  revalidatePath('/captain');
+  redirect(`${path}&captainNotice=${encodeURIComponent('Match roster confirmed.')}`);
+}
+
+async function getMatchRosterService() {
+  const supabase = await createClient();
+  const {data: {user}, error} = await supabase.auth.getUser();
+  if (error || !user) redirect(`/account?error=${encodeURIComponent('Sign in with an approved captain account.')}`);
+
+  return {
+    service: new MatchRosterService(new SupabaseMatchRosterRepository(supabase)),
+    userId: user.id,
+  };
 }
 
 function readFormValue(formData: FormData, key: string): string {

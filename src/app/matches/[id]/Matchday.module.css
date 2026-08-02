@@ -84,12 +84,147 @@
 
 .stateBanner,
 .attendanceCard,
+.captainPanel,
 .sectionCard,
 .scoreboard {
   border: 1px solid var(--cc-card-border);
   border-radius: 10px;
   background: var(--cc-card-bg);
   box-shadow: var(--cc-card-shadow);
+}
+
+.captainPanel {
+  padding: 26px;
+  border-top: 5px solid var(--cc-teal);
+}
+
+.captainRosterGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.captainTeamRoster {
+  overflow: hidden;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 8px;
+}
+
+.captainTeamHeader {
+  padding: 18px;
+  background: linear-gradient(145deg, #12191b, #071012);
+  color: #fff;
+}
+
+.captainTeamHeader > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.captainTeamHeader span {
+  color: var(--cc-gold);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.captainTeamHeader h3,
+.captainTeamHeader p {
+  margin: 0;
+}
+
+.captainTeamHeader h3 {
+  font-family: var(--cc-font-display);
+  font-size: 25px;
+  font-style: italic;
+  text-transform: uppercase;
+}
+
+.captainTeamHeader p {
+  margin-top: 8px;
+  color: #d7e0dd;
+  font-size: 13px;
+}
+
+.captainPlayerList {
+  display: grid;
+}
+
+.captainPlayerRow {
+  min-height: 62px;
+  padding: 10px 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid var(--cc-card-border);
+}
+
+.captainPlayerRow:first-child {
+  border-top: 0;
+}
+
+.captainPlayerRow > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.captainPlayerRow strong {
+  overflow: hidden;
+  color: var(--cc-heading);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.captainPlayerRow span {
+  color: var(--cc-muted);
+  font-size: 12px;
+}
+
+.captainPlayerActions {
+  display: flex;
+  gap: 7px;
+}
+
+.captainPlayerActions button,
+.confirmRosterForm button {
+  min-height: 38px;
+  padding: 8px 11px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 5px;
+  background: var(--cc-card-bg);
+  color: var(--cc-heading);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.captainPlayerActions button:first-of-type,
+.confirmRosterForm button {
+  border-color: var(--cc-teal);
+  background: var(--cc-teal);
+  color: #fff;
+}
+
+.captainPlayerActions button:disabled,
+.confirmRosterForm button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.confirmRosterForm {
+  padding: 14px;
+  border-top: 1px solid var(--cc-card-border);
+  background: var(--cc-table-head-bg);
+}
+
+.confirmRosterForm button {
+  width: 100%;
 }
 
 .attendanceCard {
@@ -403,12 +538,22 @@
 @media (max-width: 680px) {
   .stateBanner,
   .attendanceCard,
+  .captainRosterGrid,
   .rosterGrid {
     grid-template-columns: 1fr;
   }
 
   .attendanceActions {
     grid-template-columns: 1fr;
+  }
+
+  .captainPlayerRow {
+    grid-template-columns: 1fr;
+  }
+
+  .captainPlayerActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .sectionCard {

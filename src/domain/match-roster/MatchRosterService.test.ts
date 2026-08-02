@@ -5,6 +5,8 @@ import type {
   AttendanceMatch,
   MatchAttendance,
   MatchAttendanceStatus,
+  MatchRoster,
+  TeamAttendanceMember,
 } from '@/domain/match-roster/MatchAttendance';
 import {getMatchRosterLockAt, isMatchAttendanceOpen} from '@/domain/match-roster/MatchRosterLock';
 import type {MatchRosterRepository} from '@/domain/match-roster/MatchRosterRepository';
@@ -16,6 +18,7 @@ const actor: AttendanceActor = {
   profileRole: 'Player',
   playerId: 'player-own',
   teamId: 'team-home',
+  captainTeamId: null,
   playerName: 'Own Player',
   playerActive: true,
 };
@@ -158,6 +161,81 @@ test('does not return a personal card model for another team player', async () =
   assert.equal(personal, undefined);
 });
 
+test('captain views and updates only the assigned team attendance', async () => {
+  const repository = new FakeMatchRosterRepository();
+  repository.actor = {...actor, profileRole: 'Captain', playerId: null, teamId: null, playerName: null, captainTeamId: 'team-home'};
+  const service = new MatchRosterService(repository, () => new Date('2026-08-08T18:00:00Z'));
+
+  const rosters = await service.getManagedTeamRosters('captain-user', match.id);
+  const ownResult = await service.setTeamAttendance('captain-user', match.id, 'player-own', 'Playing');
+  const opponentResult = await service.setTeamAttendance('captain-user', match.id, 'player-away', 'Playing');
+
+  assert.deepEqual(rosters.map((roster) => roster.teamId), ['team-home']);
+  assert.equal(ownResult.ok, true);
+  assert.equal(opponentResult.ok, false);
+  assert.equal(repository.savedInputs.at(-1)?.teamId, 'team-home');
+});
+
+test('captain confirms and revises only the assigned team roster before lock', async () => {
+  const repository = new FakeMatchRosterRepository();
+  repository.actor = {...actor, profileRole: 'Captain', playerId: null, teamId: null, playerName: null, captainTeamId: 'team-home'};
+  const service = new MatchRosterService(repository, () => new Date('2026-08-08T18:00:00Z'));
+
+  const confirmed = await service.confirmTeamRoster('captain-user', match.id, 'team-home');
+  const revised = await service.setTeamAttendance('captain-user', match.id, 'player-own', 'NotPlaying');
+  const opponent = await service.confirmTeamRoster('captain-user', match.id, 'team-away');
+
+  assert.equal(confirmed.ok && confirmed.data.rosterStatus, 'Confirmed');
+  assert.equal(revised.ok, true);
+  assert.equal(opponent.ok, false);
+  assert.deepEqual(repository.savedRosterInputs, [{
+    matchId: 'match-1',
+    teamId: 'team-home',
+    confirmedBy: 'profile-player',
+    confirmedAt: '2026-08-08T18:00:00.000Z',
+  }]);
+});
+
+test('captain cannot manage a match that does not include the assigned team', async () => {
+  const repository = new FakeMatchRosterRepository();
+  repository.actor = {...actor, profileRole: 'Captain', captainTeamId: 'team-unrelated'};
+
+  const rosters = await new MatchRosterService(repository).getManagedTeamRosters('captain-user', match.id);
+  const result = await new MatchRosterService(repository).confirmTeamRoster('captain-user', match.id, 'team-unrelated');
+
+  assert.deepEqual(rosters, []);
+  assert.equal(result.ok, false);
+});
+
+test('commissioner manages either participating team through the same service path', async () => {
+  const repository = new FakeMatchRosterRepository();
+  repository.actor = {...actor, profileRole: 'Commissioner', playerId: null, teamId: null, playerName: null};
+  const service = new MatchRosterService(repository, () => new Date('2026-08-08T18:00:00Z'));
+
+  const rosters = await service.getManagedTeamRosters('commissioner-user', match.id);
+  const awayUpdate = await service.setTeamAttendance('commissioner-user', match.id, 'player-away', 'Playing');
+  const awayConfirmation = await service.confirmTeamRoster('commissioner-user', match.id, 'team-away');
+
+  assert.deepEqual(rosters.map((roster) => roster.teamId), ['team-away', 'team-home']);
+  assert.equal(awayUpdate.ok, true);
+  assert.equal(awayConfirmation.ok, true);
+});
+
+test('captain and commissioner management is blocked at the lock', async () => {
+  for (const role of ['Captain', 'Commissioner'] as const) {
+    const repository = new FakeMatchRosterRepository();
+    repository.actor = {
+      ...actor,
+      profileRole: role,
+      captainTeamId: role === 'Captain' ? 'team-home' : null,
+    };
+    const service = new MatchRosterService(repository, () => new Date('2026-08-08T19:00:00Z'));
+
+    assert.equal((await service.setTeamAttendance(`${role}-user`, match.id, 'player-own', 'Playing')).ok, false);
+    assert.equal((await service.confirmTeamRoster(`${role}-user`, match.id, 'team-home')).ok, false);
+  }
+});
+
 class FakeMatchRosterRepository implements MatchRosterRepository {
   actor: AttendanceActor | undefined = actor;
   match: AttendanceMatch | undefined = match;
@@ -169,6 +247,17 @@ class FakeMatchRosterRepository implements MatchRosterRepository {
     status: MatchAttendanceStatus;
     updatedBy: string;
   }> = [];
+  savedRosterInputs: Array<{
+    matchId: string;
+    teamId: string;
+    confirmedBy: string;
+    confirmedAt: string;
+  }> = [];
+  teamAttendance: Record<string, TeamAttendanceMember[]> = {
+    'team-home': [{playerId: 'player-own', playerName: 'Own Player', teamId: 'team-home', status: 'Unconfirmed'}],
+    'team-away': [{playerId: 'player-away', playerName: 'Away Player', teamId: 'team-away', status: 'Unconfirmed'}],
+  };
+  matchRosters: Record<string, MatchRoster | undefined> = {};
 
   async getAttendanceActor(): Promise<AttendanceActor | undefined> {
     return this.actor;
@@ -182,10 +271,38 @@ class FakeMatchRosterRepository implements MatchRosterRepository {
     return this.attendance;
   }
 
+  async getTeamAttendance(_matchId: string, teamId: string): Promise<TeamAttendanceMember[]> {
+    return (this.teamAttendance[teamId] ?? []).map((player) => ({...player}));
+  }
+
+  async getMatchRoster(_matchId: string, teamId: string): Promise<MatchRoster | undefined> {
+    const roster = this.matchRosters[teamId];
+    return roster ? {...roster} : undefined;
+  }
+
   async saveAttendance(input: (typeof this.savedInputs)[number]): Promise<MatchAttendance> {
     this.savedInputs.push(input);
     this.attendance = attendance(input.status);
+    this.teamAttendance[input.teamId] = (this.teamAttendance[input.teamId] ?? []).map((player) => (
+      player.playerId === input.playerId ? {...player, status: input.status} : player
+    ));
     return this.attendance;
+  }
+
+
+  async saveMatchRoster(input: (typeof this.savedRosterInputs)[number]): Promise<MatchRoster> {
+    this.savedRosterInputs.push(input);
+    const roster: MatchRoster = {
+      id: `roster-${input.teamId}`,
+      matchId: input.matchId,
+      teamId: input.teamId,
+      status: 'Confirmed',
+      confirmedBy: input.confirmedBy,
+      confirmedAt: input.confirmedAt,
+      updatedAt: input.confirmedAt,
+    };
+    this.matchRosters[input.teamId] = roster;
+    return roster;
   }
 }
 
