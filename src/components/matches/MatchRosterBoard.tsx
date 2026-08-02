@@ -48,7 +48,7 @@ export function MatchRosterBoard({matchday, official}: {matchday: PublicMatchday
 }
 
 function OfficialRosterColumn({roster, label}: {roster: OfficialMatchRoster; label: string}) {
-  const teamName = roster.players[0]?.teamNameSnapshot ?? `${label} official roster`;
+  const teamName = roster.teamNameSnapshot;
   return (
     <article className={styles.rosterTeam}>
       <div className={styles.rosterTeamHeader}>

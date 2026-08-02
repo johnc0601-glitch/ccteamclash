@@ -1,6 +1,6 @@
 begin;
 
-select plan(49);
+select plan(54);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -59,9 +59,9 @@ insert into public.launch_match_rosters (
 );
 
 insert into public.launch_match_roster_snapshots (
-  match_id, team_id, needs_commissioner_review, updated_by, updated_at
+  match_id, team_id, team_name_snapshot, needs_commissioner_review, updated_by, updated_at
 ) values (
-  'snapshot-match-partial', 'dark-knights', true, null, '2026-03-08 19:00:00+00'
+  'snapshot-match-partial', 'dark-knights', 'Partial Team', true, null, '2026-03-08 19:00:00+00'
 );
 
 insert into public.launch_match_roster_snapshot_players (
@@ -215,6 +215,31 @@ select is(
   'both participating team manifests are committed together'
 );
 
+select col_not_null(
+  'public',
+  'launch_match_roster_snapshots',
+  'team_name_snapshot',
+  'manifest team names are required after backfill'
+);
+
+select is(
+  (select count(*)::integer from public.launch_match_roster_snapshots where team_name_snapshot is null),
+  0,
+  'manifest team-name backfill leaves no null names'
+);
+
+select is(
+  (select team_name_snapshot from public.launch_match_roster_snapshots where match_id = 'snapshot-match-march' and team_id = 'dark-knights'),
+  (select name from public.launch_teams where id = 'dark-knights'),
+  'home manifest captures its trusted team name'
+);
+
+select is(
+  (select team_name_snapshot from public.launch_match_roster_snapshots where match_id = 'snapshot-match-march' and team_id = 'ninjas'),
+  (select name from public.launch_teams where id = 'ninjas'),
+  'zero-player away manifest captures its trusted team name'
+);
+
 select is(
   (select count(*)::integer from public.launch_match_roster_snapshot_players where match_id = 'snapshot-match-march' and team_id = 'dark-knights'),
   1,
@@ -315,11 +340,17 @@ select is(
   'retry does not duplicate manifests'
 );
 
+select isnt(
+  (select team_name_snapshot from public.launch_match_roster_snapshots where match_id = 'snapshot-match-march' and team_id = 'dark-knights'),
+  'Snapshot Renamed Team',
+  'retry does not refresh the stored manifest team name'
+);
+
 insert into public.launch_match_roster_snapshots (
-  match_id, team_id, needs_commissioner_review
+  match_id, team_id, team_name_snapshot, needs_commissioner_review
 ) values
-  ('snapshot-match-unpublished', 'dark-knights', true),
-  ('snapshot-match-unpublished', 'ninjas', true);
+  ('snapshot-match-unpublished', 'dark-knights', 'Unpublished Home', true),
+  ('snapshot-match-unpublished', 'ninjas', 'Unpublished Away', true);
 
 insert into public.launch_match_roster_snapshot_players (
   match_id, team_id, team_name_snapshot, player_id, player_name_snapshot

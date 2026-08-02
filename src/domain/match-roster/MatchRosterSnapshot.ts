@@ -14,6 +14,7 @@ export type MatchRosterSnapshotManifest = {
   id: string;
   matchId: string;
   teamId: string;
+  teamNameSnapshot: string;
   needsCommissionerReview: boolean;
   createdAt: string;
   updatedBy: string | null;

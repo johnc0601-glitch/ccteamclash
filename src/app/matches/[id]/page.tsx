@@ -7,6 +7,7 @@ import {MatchStateBanner} from '@/components/matches/MatchStateBanner';
 import {PersonalAttendanceCard} from '@/components/matches/PersonalAttendanceCard';
 import {CaptainRosterPanel} from '@/components/matches/CaptainRosterPanel';
 import {CommissionerSnapshotPanel} from '@/components/matches/CommissionerSnapshotPanel';
+import {OfficialRosterExportPanel} from '@/components/matches/OfficialRosterExportPanel';
 import {createServerResultsService} from '@/core/createServerResultsService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
@@ -100,6 +101,9 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     && userResult.data.user
     ? await matchRosterService.canManageOfficialSnapshot(userResult.data.user.id, matchId)
     : false;
+  const rosterExport = locked && officialSnapshot?.status === 'complete' && userResult.data.user
+    ? await matchRosterService.getOfficialRosterExport(userResult.data.user.id, matchId)
+    : undefined;
 
   return (
     <>
@@ -131,14 +135,11 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             <CommissionerSnapshotPanel
               rosters={officialSnapshot.rosters}
               activePlayers={players.filter((player) => player.active)}
-              teamLabels={{
-                [matchday.awayTeam.id]: 'Away team official roster',
-                [matchday.homeTeam.id]: 'Home team official roster',
-              }}
               notice={readParam(query.commissionerNotice)}
               error={readParam(query.commissionerError)}
             />
           ) : null}
+          {rosterExport?.ok ? <OfficialRosterExportPanel exportData={rosterExport.data} /> : null}
           <MatchRosterBoard matchday={matchday} official={officialSnapshot} />
           {!publishedResult ? <MatchScoreboard matchday={matchday} result={undefined} /> : null}
         </div>

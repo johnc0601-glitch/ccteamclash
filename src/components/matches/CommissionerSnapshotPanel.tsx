@@ -9,13 +9,11 @@ import type {OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapsho
 export function CommissionerSnapshotPanel({
   rosters,
   activePlayers,
-  teamLabels,
   notice,
   error,
 }: {
   rosters: OfficialMatchRoster[];
   activePlayers: LaunchPlayer[];
-  teamLabels: Record<string, string>;
   notice?: string;
   error?: string;
 }) {
@@ -33,7 +31,6 @@ export function CommissionerSnapshotPanel({
             key={roster.teamId}
             roster={roster}
             activePlayers={activePlayers}
-            fallbackTeamName={teamLabels[roster.teamId] ?? 'Official roster'}
           />
         ))}
       </div>
@@ -44,15 +41,13 @@ export function CommissionerSnapshotPanel({
 function CommissionerTeam({
   roster,
   activePlayers,
-  fallbackTeamName,
 }: {
   roster: OfficialMatchRoster;
   activePlayers: LaunchPlayer[];
-  fallbackTeamName: string;
 }) {
   const listedIds = new Set(roster.players.map((player) => player.playerId));
   const candidates = activePlayers.filter((player) => !listedIds.has(player.id));
-  const teamName = roster.players[0]?.teamNameSnapshot ?? fallbackTeamName;
+  const teamName = roster.teamNameSnapshot;
   return (
     <article className={styles.captainTeamRoster}>
       <header className={styles.captainTeamHeader}>

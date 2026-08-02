@@ -13,6 +13,11 @@ import type {MatchRosterRepository} from '@/domain/match-roster/MatchRosterRepos
 import {MatchRosterService} from '@/domain/match-roster/MatchRosterService';
 import type {OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
 import {parseMatchRosterSnapshotStartAt} from '@/domain/match-roster/MatchRosterSnapshotAutomation';
+import {
+  formatOfficialMatchRoster,
+  formatOfficialTeamRoster,
+  officialRosterFilename,
+} from '@/domain/match-roster/MatchRosterExport';
 
 const actor: AttendanceActor = {
   profileId: 'profile-player',
@@ -378,6 +383,117 @@ test('scheduled processing fails closed when the cutoff is missing or invalid', 
   }
 });
 
+test('official roster export rejects pre-lock, anonymous, partial, and unavailable snapshots', async () => {
+  const preLock = lockedSnapshotRepository();
+  preLock.actor = {...actor, profileRole: 'Captain', captainTeamId: 'team-home'};
+  assert.equal((await new MatchRosterService(preLock, () => new Date('2026-08-08T18:59:59.999Z'))
+    .getOfficialRosterExport('captain', match.id)).ok, false);
+  assert.equal((await lockedService(preLock).getOfficialRosterExport(undefined, match.id)).ok, false);
+
+  const partial = lockedSnapshotRepository();
+  partial.actor = {...actor, profileRole: 'Commissioner'};
+  partial.officialRosters = partial.officialRosters.filter((roster) => roster.teamId === 'team-home');
+  assert.equal((await lockedService(partial).getOfficialRosterExport('commissioner', match.id)).ok, false);
+
+  const unavailable = lockedSnapshotRepository();
+  unavailable.actor = {...actor, profileRole: 'Commissioner'};
+  unavailable.officialReadFails = true;
+  assert.equal((await lockedService(unavailable).getOfficialRosterExport('commissioner', match.id)).ok, false);
+});
+
+test('official roster export allows either participating captain and commissioners only', async () => {
+  for (const captainTeamId of ['team-home', 'team-away']) {
+    const repository = lockedSnapshotRepository();
+    repository.actor = {...actor, profileRole: 'Captain', captainTeamId};
+    assert.equal((await lockedService(repository).getOfficialRosterExport('captain', match.id)).ok, true);
+  }
+
+  const commissioner = lockedSnapshotRepository();
+  commissioner.actor = {...actor, profileRole: 'Commissioner'};
+  assert.equal((await lockedService(commissioner).getOfficialRosterExport('commissioner', match.id)).ok, true);
+
+  for (const rejectedActor of [
+    {...actor, profileRole: 'Captain' as const, captainTeamId: 'team-other'},
+    actor,
+    {...actor, profileRole: 'Commissioner' as const, profileStatus: 'Pending' as const},
+  ]) {
+    const repository = lockedSnapshotRepository();
+    repository.actor = rejectedActor;
+    assert.equal((await lockedService(repository).getOfficialRosterExport('user', match.id)).ok, false);
+  }
+});
+
+test('official export uses stored names, deterministic ordering, and accepts an empty team', async () => {
+  const repository = lockedSnapshotRepository();
+  repository.actor = {...actor, profileRole: 'Commissioner'};
+  const home = repository.officialRosters.find((roster) => roster.teamId === 'team-home');
+  home?.players.push(
+    {...snapshotPlayer('player-z', 'team-home'), playerNameSnapshot: 'Zulu Player'},
+    {...snapshotPlayer('player-a', 'team-home'), playerNameSnapshot: 'alpha Player'},
+  );
+  repository.teamAttendance['team-home'] = [{
+    playerId: 'live-only',
+    playerName: 'Live Attendance Name',
+    teamId: 'team-home',
+    status: 'Playing',
+  }];
+
+  const result = await lockedService(repository).getOfficialRosterExport('commissioner', match.id);
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.data.homeTeam.name, 'Historic Home');
+  assert.deepEqual(result.data.homeTeam.playerNames, ['alpha Player', 'Historic Player', 'Zulu Player']);
+  assert.deepEqual(result.data.awayTeam, {name: 'Historic Away', playerNames: []});
+  assert.equal(formatOfficialMatchRoster(result.data).includes('Live Attendance Name'), false);
+  assert.equal(formatOfficialMatchRoster(result.data).includes('PDGA'), false);
+  assert.equal(formatOfficialMatchRoster(result.data).includes('rating'), false);
+});
+
+test('commissioner snapshot corrections are reflected without recalculating live data', async () => {
+  const repository = lockedSnapshotRepository();
+  repository.actor = {...actor, profileRole: 'Commissioner'};
+  await lockedService(repository).commissionerAddSnapshotPlayer('commissioner', match.id, 'team-away', 'corrected');
+  const result = await lockedService(repository).getOfficialRosterExport('commissioner', match.id);
+  assert.equal(result.ok && result.data.awayTeam.playerNames.includes('Trusted Current Player'), true);
+});
+
+test('zero-player home and away exports use stored manifest team names', async () => {
+  for (const emptyTeamId of ['team-home', 'team-away']) {
+    const repository = lockedSnapshotRepository();
+    repository.actor = {...actor, profileRole: 'Commissioner'};
+    const emptyRoster = repository.officialRosters.find((roster) => roster.teamId === emptyTeamId);
+    if (emptyRoster) emptyRoster.players = [];
+    const result = await lockedService(repository).getOfficialRosterExport('commissioner', match.id);
+    assert.equal(result.ok, true);
+    if (!result.ok) continue;
+    assert.equal(result.data.homeTeam.name, 'Historic Home');
+    assert.equal(result.data.awayTeam.name, 'Historic Away');
+  }
+});
+
+test('a malformed completed manifest without a stored team name is unavailable', async () => {
+  const repository = lockedSnapshotRepository();
+  repository.actor = {...actor, profileRole: 'Commissioner'};
+  repository.officialRosters[0] = {...repository.officialRosters[0]!, teamNameSnapshot: ''};
+  assert.equal((await lockedService(repository).getOfficialRosterExport('commissioner', match.id)).ok, false);
+  assert.equal((await lockedService(repository).ensureLockedSnapshot(match.id)).status, 'unavailable');
+});
+
+test('copy and text-download formatting use identical full roster content', async () => {
+  const repository = lockedSnapshotRepository();
+  repository.actor = {...actor, profileRole: 'Commissioner'};
+  const result = await lockedService(repository).getOfficialRosterExport('commissioner', match.id);
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  const copied = formatOfficialMatchRoster(result.data);
+  const downloaded = [
+    formatOfficialTeamRoster(result.data.homeTeam),
+    formatOfficialTeamRoster(result.data.awayTeam),
+  ].join('\n\n');
+  assert.equal(copied, downloaded);
+  assert.equal(officialRosterFilename(result.data.matchId), 'match-match-1-roster.txt');
+});
+
 class FakeMatchRosterRepository implements MatchRosterRepository {
   actor: AttendanceActor | undefined = actor;
   match: AttendanceMatch | undefined = match;
@@ -410,6 +526,7 @@ class FakeMatchRosterRepository implements MatchRosterRepository {
   addedSnapshotPlayers: Array<{matchId: string; teamId: string; playerId: string}> = [];
   removedSnapshotPlayers: Array<{matchId: string; teamId: string; playerId: string}> = [];
   candidateQueryCount = 0;
+  officialReadFails = false;
 
   async getAttendanceActor(): Promise<AttendanceActor | undefined> {
     return this.actor;
@@ -433,11 +550,13 @@ class FakeMatchRosterRepository implements MatchRosterRepository {
   }
 
   async getOfficialMatchRosters(): Promise<OfficialMatchRoster[]> {
+    if (this.officialReadFails) throw new Error('unavailable');
     return this.officialRosters.map((roster) => ({...roster, players: roster.players.map((player) => ({...player}))}));
   }
 
   async hasCompleteSnapshot(matchId: string): Promise<boolean> {
-    return (this.candidates.length === 0 && this.snapshotComplete) || this.completeMatchIds.has(matchId);
+    const markedComplete = (this.candidates.length === 0 && this.snapshotComplete) || this.completeMatchIds.has(matchId);
+    return markedComplete && this.officialRosters.every((roster) => Boolean(roster.teamNameSnapshot.trim()));
   }
 
   async getSnapshotCandidateMatches(): Promise<AttendanceMatch[]> {
@@ -507,6 +626,7 @@ function officialRosters(): OfficialMatchRoster[] {
     id: `manifest-${teamId}`,
     matchId: match.id,
     teamId,
+    teamNameSnapshot: teamId === 'team-home' ? 'Historic Home' : 'Historic Away',
     needsCommissionerReview: teamId === 'team-away',
     createdAt: '2026-08-08T19:00:00Z',
     updatedBy: null,

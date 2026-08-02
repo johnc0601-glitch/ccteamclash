@@ -87,6 +87,7 @@ type SnapshotManifestRow = {
   id: string;
   match_id: string;
   team_id: string;
+  team_name_snapshot: string;
   needs_commissioner_review: boolean;
   created_at: string;
   updated_by: string | null;
@@ -238,7 +239,10 @@ export class SupabaseMatchRosterRepository implements MatchRosterRepository {
     ]);
     if (!match?.homeTeamId || !match.awayTeamId || match.homeTeamId === match.awayTeamId) return false;
     const actual = new Set(rosters.map((roster) => roster.teamId));
-    return actual.has(match.homeTeamId) && actual.has(match.awayTeamId) && actual.size === 2;
+    return actual.has(match.homeTeamId)
+      && actual.has(match.awayTeamId)
+      && actual.size === 2
+      && rosters.every((roster) => Boolean(roster.teamNameSnapshot.trim()));
   }
 
   async getSnapshotCandidateMatches(snapshotStartAt: Date, now: Date): Promise<AttendanceMatch[]> {
@@ -385,6 +389,7 @@ function toSnapshotManifest(row: SnapshotManifestRow): MatchRosterSnapshotManife
     id: row.id,
     matchId: row.match_id,
     teamId: row.team_id,
+    teamNameSnapshot: row.team_name_snapshot,
     needsCommissionerReview: row.needs_commissioner_review,
     createdAt: row.created_at,
     updatedBy: row.updated_by,

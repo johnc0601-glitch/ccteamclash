@@ -86,6 +86,7 @@
 .attendanceCard,
 .captainPanel,
 .commissionerPanel,
+.exportPanel,
 .sectionCard,
 .scoreboard {
   border: 1px solid var(--cc-card-border);
@@ -102,6 +103,41 @@
 .commissionerPanel {
   padding: 26px;
   border-top: 5px solid var(--cc-bronze);
+}
+
+.exportPanel {
+  padding: 26px;
+  border-top: 5px solid var(--cc-gold);
+}
+
+.exportActions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.exportActions button {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--cc-teal);
+  border-radius: 5px;
+  background: var(--cc-teal);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.exportActions button:last-child {
+  border-color: var(--cc-bronze);
+  background: var(--cc-bronze);
+}
+
+.exportNotice {
+  margin: 14px 0 0;
+  color: var(--cc-muted);
+  font-size: 13px;
 }
 
 .snapshotAddForm {
@@ -596,6 +632,10 @@
   }
 
   .snapshotAddForm {
+    grid-template-columns: 1fr;
+  }
+
+  .exportActions {
     grid-template-columns: 1fr;
   }
 

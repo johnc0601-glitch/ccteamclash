@@ -14,6 +14,7 @@ import type {
   OfficialSnapshotState,
   SnapshotCronSummary,
 } from '@/domain/match-roster/MatchRosterSnapshot';
+import type {OfficialRosterExport, OfficialRosterExportTeam} from '@/domain/match-roster/MatchRosterExport';
 import {
   isMatchAtOrAfterSnapshotCutoff,
   snapshotErrorClass,
@@ -36,6 +37,55 @@ export class MatchRosterService {
 
   getOfficialMatchRosters(matchId: string): Promise<OfficialMatchRoster[]> {
     return this.repository.getOfficialMatchRosters(matchId);
+  }
+
+  async getOfficialRosterExport(
+    userId: string | undefined,
+    matchId: string,
+  ): Promise<AttendanceResult<OfficialRosterExport>> {
+    if (!userId) return {ok: false, message: 'Official roster export is not available.'};
+    try {
+      const [actor, match, complete] = await Promise.all([
+        this.repository.getAttendanceActor(userId),
+        this.repository.getAttendanceMatch(matchId),
+        this.repository.hasCompleteSnapshot(matchId),
+      ]);
+      if (
+        !actor
+        || actor.profileStatus !== 'Approved'
+        || !match?.date
+        || !isMatchRosterLocked(match, this.now())
+        || !complete
+      ) return {ok: false, message: 'Official roster export is not available.'};
+      const participatingTeamIds = [match.homeTeamId, match.awayTeamId]
+        .filter((teamId): teamId is string => Boolean(teamId));
+      const authorized = actor.profileRole === 'Commissioner'
+        || (
+          actor.profileRole === 'Captain'
+          && Boolean(actor.captainTeamId && participatingTeamIds.includes(actor.captainTeamId))
+        );
+      if (!authorized || participatingTeamIds.length !== 2) {
+        return {ok: false, message: 'Official roster export is not available.'};
+      }
+
+      const rosters = await this.repository.getOfficialMatchRosters(matchId);
+      const home = rosters.find((roster) => roster.teamId === match.homeTeamId);
+      const away = rosters.find((roster) => roster.teamId === match.awayTeamId);
+      if (!home || !away) return {ok: false, message: 'Official roster export is not available.'};
+
+      return {
+        ok: true,
+        data: {
+          matchId,
+          matchDate: match.date,
+          homeTeam: toExportTeam(home),
+          awayTeam: toExportTeam(away),
+          generatedAt: this.now().toISOString(),
+        },
+      };
+    } catch {
+      return {ok: false, message: 'Official roster export is not available.'};
+    }
   }
 
   async canManageOfficialSnapshot(userId: string, matchId: string): Promise<boolean> {
@@ -359,6 +409,15 @@ export class MatchRosterService {
     ) return undefined;
     return {actor, match, rosters};
   }
+}
+
+function toExportTeam(roster: OfficialMatchRoster): OfficialRosterExportTeam {
+  return {
+    name: roster.teamNameSnapshot,
+    playerNames: roster.players
+      .map((player) => player.playerNameSnapshot)
+      .sort((left, right) => left.localeCompare(right, 'en', {sensitivity: 'base'})),
+  };
 }
 
 type AuthorizedActor = AttendanceActor & {
