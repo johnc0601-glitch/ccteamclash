@@ -3,6 +3,10 @@ import {PlayerRecordSelect} from '@/components/launch/PlayerRecordSelect';
 import {ThemeToggle} from '@/components/ThemeToggle';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import type {LaunchPlayer, LaunchProfile, PlayerClaim} from '@/domain/launch/LaunchData';
+import {
+  resolveLaunchProfileState,
+  type LaunchProfileState,
+} from '@/domain/launch/LaunchProfileState';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
 import {
@@ -151,13 +155,17 @@ function MemberProfile({
 }) {
   const latestClaim = claims[0];
   const linkedPlayer = players.find((player) => player.id === profile.playerId);
-  const canSubmitClaim = !latestClaim || ['Rejected', 'Cancelled'].includes(latestClaim.status);
+  const profileState = resolveLaunchProfileState(profile);
+  const canManageHistory = profileState === 'pending_player' || profileState === 'approved_player';
+  const canSubmitClaim = canManageHistory
+    && (!latestClaim || ['Rejected', 'Cancelled'].includes(latestClaim.status));
 
   return (
     <section className={styles.grid}>
       <article className={styles.panel}>
         <span className={styles.eyebrow}>Profile status</span>
         <h2>{profile.displayName}</h2>
+        <ProfileStateMessage state={profileState} />
         <dl className={styles.statusList}>
           <div>
             <dt>Status</dt>
@@ -183,10 +191,10 @@ function MemberProfile({
           />
           <button className={styles.secondaryButton} type="submit">Save profile</button>
         </form>
-        {profile.role === 'Captain' ? (
+        {profileState === 'approved_captain' ? (
           <Link className={styles.actionLink} href="/captain">Open Captain Home</Link>
         ) : null}
-        {profile.role === 'Commissioner' ? (
+        {profileState === 'approved_commissioner' ? (
           <Link className={styles.actionLink} href="/office">Open Commissioner Office</Link>
         ) : null}
       </article>
@@ -211,7 +219,15 @@ function MemberProfile({
             <p className={styles.muted}>First season? No action is needed here. A commissioner can add you to the league directory.</p>
             {latestClaim ? (
               <p className={styles.claimState}>
-                Your request to connect <strong>{latestClaim.submittedName}</strong> is {latestClaim.status}.
+                {latestClaim.status === 'Pending' ? (
+                  <>Your claim for <strong>{latestClaim.submittedName}</strong> is awaiting approval.</>
+                ) : (
+                  <>Your request to connect <strong>{latestClaim.submittedName}</strong> is {latestClaim.status}.</>
+                )}
+              </p>
+            ) : profileState === 'pending_player' ? (
+              <p className={styles.claimState}>
+                New player profile pending. No player claim is required; await league assignment and approval.
               </p>
             ) : null}
           </>
@@ -249,6 +265,23 @@ function MemberProfile({
       </article>
     </section>
   );
+}
+
+function ProfileStateMessage({state}: {state: LaunchProfileState}) {
+  const message = getProfileStateMessage(state);
+  return message ? <p className={styles.claimState}>{message}</p> : null;
+}
+
+function getProfileStateMessage(state: LaunchProfileState): string | undefined {
+  if (state === 'pending_player') return 'Your Player profile is pending league approval.';
+  if (state === 'pending_captain') return 'Captain tools will become available after approval.';
+  if (state === 'pending_commissioner') return 'Commissioner tools will become available after approval.';
+  if (state === 'approved_player') return 'Your Player profile is approved.';
+  if (state === 'approved_captain') return 'Your Captain profile is approved.';
+  if (state === 'approved_commissioner') return 'Your Commissioner profile is approved.';
+  if (state === 'rejected') return 'This profile was not approved. Privileged tools are unavailable.';
+  if (state === 'suspended') return 'This profile is suspended. Privileged tools are unavailable.';
+  return undefined;
 }
 
 function getDisplayName(email: string | undefined, metadataName: unknown): string {

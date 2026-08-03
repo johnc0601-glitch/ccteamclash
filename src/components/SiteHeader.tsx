@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {MobileAccountLink} from '@/components/MobileAccountLink';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
+import {resolveLaunchProfileState} from '@/domain/launch/LaunchProfileState';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
 import {BRAND_LOGO, BRAND_NAME, BRAND_TAGLINE, FOOTER_COPY} from '@/shared/constants';
@@ -71,8 +72,9 @@ async function getHeaderAccess(): Promise<'commissioner' | 'captain' | null> {
 
     const repository = new SupabaseLaunchRepository(supabase);
     const profile = await repository.getProfileByUserId(user.id);
-    if (profile?.role === 'Commissioner' && profile.status === 'Approved') return 'commissioner';
-    if (profile?.role === 'Captain' && profile.status === 'Approved') return 'captain';
+    const profileState = resolveLaunchProfileState(profile);
+    if (profileState === 'approved_commissioner') return 'commissioner';
+    if (profileState === 'approved_captain') return 'captain';
     return null;
   } catch {
     return null;
