@@ -83,6 +83,7 @@
 }
 
 .stateBanner,
+.permissionNotice,
 .attendanceCard,
 .captainPanel,
 .commissionerPanel,
@@ -93,6 +94,25 @@
   border-radius: 10px;
   background: var(--cc-card-bg);
   box-shadow: var(--cc-card-shadow);
+}
+
+.permissionNotice {
+  padding: 20px 24px;
+  border-left: 5px solid var(--cc-bronze);
+}
+
+.permissionNotice span {
+  color: var(--cc-bronze);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.permissionNotice p {
+  margin: 7px 0 0;
+  color: var(--cc-muted);
+  line-height: 1.5;
 }
 
 .captainPanel {

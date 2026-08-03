@@ -8,11 +8,13 @@ import type {ManagedTeamRoster} from '@/domain/match-roster/MatchAttendance';
 export function CaptainRosterPanel({
   rosters,
   teamNames,
+  guidance,
   notice,
   error,
 }: {
   rosters: ManagedTeamRoster[];
   teamNames: Record<string, string>;
+  guidance: string;
   notice?: string;
   error?: string;
 }) {
@@ -20,10 +22,10 @@ export function CaptainRosterPanel({
     <section className={styles.captainPanel} aria-labelledby="captain-roster-heading">
       <header className={styles.sectionHeader}>
         <div>
-          <span>Captain controls</span>
+          <span>Team roster management</span>
           <h2 id="captain-roster-heading">Manage match roster</h2>
         </div>
-        <p>Set player availability and confirm each roster you are authorized to manage.</p>
+        <p>{guidance}</p>
       </header>
       {notice ? <p className={styles.attendanceNotice}>{notice}</p> : null}
       {error ? <p className={styles.attendanceError}>{error}</p> : null}
