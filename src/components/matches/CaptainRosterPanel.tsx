@@ -4,6 +4,7 @@ import {
 } from '@/app/matches/[id]/actions';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 import type {ManagedTeamRoster} from '@/domain/match-roster/MatchAttendance';
+import {PendingSubmitButton} from '@/components/forms/PendingSubmitButton';
 
 export function CaptainRosterPanel({
   rosters,
@@ -67,8 +68,8 @@ function CaptainTeamRoster({roster, teamName}: {roster: ManagedTeamRoster; teamN
             <form action={setCaptainMatchAttendance} className={styles.captainPlayerActions}>
               <input name="matchId" type="hidden" value={roster.matchId} />
               <input name="playerId" type="hidden" value={player.playerId} />
-              <button disabled={!roster.attendanceOpen} name="status" type="submit" value="Playing">Playing</button>
-              <button disabled={!roster.attendanceOpen} name="status" type="submit" value="NotPlaying">Not playing</button>
+              <PendingSubmitButton disabled={!roster.attendanceOpen} name="status" pendingLabel="Saving..." value="Playing">Playing</PendingSubmitButton>
+              <PendingSubmitButton disabled={!roster.attendanceOpen} name="status" pendingLabel="Saving..." value="NotPlaying">Not playing</PendingSubmitButton>
             </form>
           </div>
         ))}
@@ -76,9 +77,9 @@ function CaptainTeamRoster({roster, teamName}: {roster: ManagedTeamRoster; teamN
       <form action={confirmCaptainMatchRoster} className={styles.confirmRosterForm}>
         <input name="matchId" type="hidden" value={roster.matchId} />
         <input name="teamId" type="hidden" value={roster.teamId} />
-        <button disabled={!roster.attendanceOpen} type="submit">
+        <PendingSubmitButton disabled={!roster.attendanceOpen} pendingLabel="Confirming roster...">
           {roster.rosterStatus === 'Confirmed' ? 'Update confirmed roster' : 'Confirm match roster'}
-        </button>
+        </PendingSubmitButton>
       </form>
     </article>
   );

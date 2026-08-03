@@ -7,6 +7,7 @@ import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
 import {confirmTeamClaim} from './actions';
+import {PendingSubmitButton} from '@/components/forms/PendingSubmitButton';
 import styles from './Captain.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -87,7 +88,7 @@ function CaptainDashboard({
                 <span className={styles.muted}>{claim.submittedPdgaNumber ? `PDGA #${claim.submittedPdgaNumber}` : 'No PDGA number submitted'}</span>
                 <form action={confirmTeamClaim}>
                   <input name="claimId" type="hidden" value={claim.id} />
-                  <button className={styles.primaryButton} type="submit">Confirm player</button>
+                  <PendingSubmitButton className={styles.primaryButton} pendingLabel="Confirming player...">Confirm player</PendingSubmitButton>
                 </form>
               </article>
             )) : (

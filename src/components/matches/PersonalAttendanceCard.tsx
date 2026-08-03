@@ -1,5 +1,6 @@
 import type {PersonalAttendance} from '@/domain/match-roster/MatchAttendance';
 import {setOwnMatchAttendance} from '@/app/matches/[id]/actions';
+import {PendingSubmitButton} from '@/components/forms/PendingSubmitButton';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 
 export function PersonalAttendanceCard({
@@ -30,24 +31,24 @@ export function PersonalAttendanceCard({
         {error ? <p className={styles.attendanceError}>{error}</p> : null}
         <form action={setOwnMatchAttendance} className={styles.attendanceActions}>
           <input name="matchId" type="hidden" value={attendance.matchId} />
-          <button
+          <PendingSubmitButton
             className={styles.playingButton}
             disabled={!attendance.attendanceOpen}
             name="status"
-            type="submit"
+            pendingLabel="Saving..."
             value="Playing"
           >
             I&apos;m playing
-          </button>
-          <button
+          </PendingSubmitButton>
+          <PendingSubmitButton
             className={styles.notPlayingButton}
             disabled={!attendance.attendanceOpen}
             name="status"
-            type="submit"
+            pendingLabel="Saving..."
             value="NotPlaying"
           >
             I&apos;m not playing
-          </button>
+          </PendingSubmitButton>
         </form>
       </div>
     </section>

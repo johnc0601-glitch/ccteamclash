@@ -10,6 +10,7 @@ import {
   suspendProfile,
 } from '@/app/office/players/actions';
 import {PlayerRecordSelect} from './PlayerRecordSelect';
+import {PendingSubmitButton} from '@/components/forms/PendingSubmitButton';
 import styles from './MemberManagement.module.css';
 
 type MemberManagementProps = {
@@ -137,8 +138,25 @@ export function MemberManagement({
                     required
                   />
                   <div className={styles.actions}>
-                    <button className={styles.primaryButton} type="submit">Approve and link</button>
-                    <button className={styles.secondaryButton} formAction={rejectClaim} type="submit">Reject</button>
+                    <PendingSubmitButton
+                      className={styles.primaryButton}
+                      name="reviewIntent"
+                      pendingLabel="Approving..."
+                      pendingWhen={{name: 'reviewIntent', value: 'approve'}}
+                      value="approve"
+                    >
+                      Approve and link
+                    </PendingSubmitButton>
+                    <PendingSubmitButton
+                      className={styles.secondaryButton}
+                      formAction={rejectClaim}
+                      name="reviewIntent"
+                      pendingLabel="Rejecting..."
+                      pendingWhen={{name: 'reviewIntent', value: 'reject'}}
+                      value="reject"
+                    >
+                      Reject
+                    </PendingSubmitButton>
                   </div>
                 </form>
               </article>

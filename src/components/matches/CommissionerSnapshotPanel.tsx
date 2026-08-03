@@ -5,6 +5,7 @@ import {
 import styles from '@/app/matches/[id]/Matchday.module.css';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import type {OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
+import {PendingSubmitButton} from '@/components/forms/PendingSubmitButton';
 
 export function CommissionerSnapshotPanel({
   rosters,
@@ -62,7 +63,7 @@ function CommissionerTeam({
               <input name="matchId" type="hidden" value={roster.matchId} />
               <input name="teamId" type="hidden" value={roster.teamId} />
               <input name="playerId" type="hidden" value={player.playerId} />
-              <button className={styles.removeSnapshotButton} type="submit">Remove</button>
+              <PendingSubmitButton className={styles.removeSnapshotButton} pendingLabel="Removing...">Remove</PendingSubmitButton>
             </form>
           </div>
         ))}
@@ -75,7 +76,7 @@ function CommissionerTeam({
           <option value="">Select an active player</option>
           {candidates.map((player) => <option key={player.id} value={player.id}>{player.name}</option>)}
         </select>
-        <button disabled={!candidates.length} type="submit">Add player</button>
+        <PendingSubmitButton disabled={!candidates.length} pendingLabel="Adding...">Add player</PendingSubmitButton>
       </form>
     </article>
   );

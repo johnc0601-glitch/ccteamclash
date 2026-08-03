@@ -154,6 +154,11 @@
   background: var(--cc-bronze);
 }
 
+.exportActions button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
 .exportNotice {
   margin: 14px 0 0;
   color: var(--cc-muted);
