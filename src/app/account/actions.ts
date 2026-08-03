@@ -7,6 +7,11 @@ import {ensureLaunchSignupProfile} from '@/domain/launch/LaunchAccountSetup';
 import {LaunchService} from '@/domain/launch/LaunchService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {createClient} from '@/lib/supabase/server';
+import {
+  normalizeActionError,
+  normalizeAuthError,
+  SIGN_IN_REQUIRED_MESSAGE,
+} from '@/domain/errors/ActionErrorMessage';
 
 export async function requestMagicLink(formData: FormData) {
   const email = readFormValue(formData, 'email');
@@ -21,7 +26,7 @@ export async function requestMagicLink(formData: FormData) {
     },
   });
 
-  if (error) redirect(`/account?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
+  if (error) redirect(`/account?error=${encodeURIComponent(normalizeAuthError(error).message)}`);
   redirect('/account?notice=Check your email for the sign-in link.');
 }
 
@@ -47,11 +52,13 @@ export async function createLeagueAccount(formData: FormData) {
     },
   });
 
-  if (error) redirect(`/account/create?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
+  if (error) redirect(`/account/create?error=${encodeURIComponent(normalizeAuthError(error).message)}`);
 
   if (data.user && data.session) {
     const setupError = await ensureLaunchSignupProfile(supabase, data.user, signupInput);
-    if (setupError) redirect(`/account/create?error=${encodeURIComponent(setupError)}`);
+    if (setupError) redirect(`/account/create?error=${encodeURIComponent(
+      normalizeActionError(setupError, 'Your league profile could not be created.').message,
+    )}`);
     revalidatePath('/account');
     redirect('/account?notice=Your account is ready. Connect your previous league history if you played before.');
   }
@@ -67,7 +74,7 @@ export async function signInWithPassword(formData: FormData) {
 
   const supabase = await createClient();
   const {error} = await supabase.auth.signInWithPassword({email, password});
-  if (error) redirect(`/account?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
+  if (error) redirect(`/account?error=${encodeURIComponent(normalizeAuthError(error).message)}`);
 
   revalidatePath('/account');
   redirect('/account?notice=You are signed in.');
@@ -83,7 +90,7 @@ export async function requestPasswordReset(formData: FormData) {
     redirectTo: `${origin}/auth/callback?next=/account/reset-password`,
   });
 
-  if (error) redirect(`/account/forgot-password?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
+  if (error) redirect(`/account/forgot-password?error=${encodeURIComponent(normalizeAuthError(error).message)}`);
   redirect('/account/forgot-password?notice=If an account exists for that email, a reset link has been sent.');
 }
 
@@ -100,7 +107,7 @@ export async function updatePassword(formData: FormData) {
   }
 
   const {error} = await supabase.auth.updateUser({password});
-  if (error) redirect(`/account/reset-password?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
+  if (error) redirect(`/account/reset-password?error=${encodeURIComponent(normalizeAuthError(error).message)}`);
 
   revalidatePath('/account');
   redirect('/account?notice=Password updated. You are signed in.');
@@ -116,7 +123,7 @@ export async function signInWithGoogle() {
     },
   });
 
-  if (error) redirect(`/account?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/account?error=${encodeURIComponent(normalizeAuthError(error).message)}`);
   if (data.url) redirect(data.url);
   redirect('/account?error=Google sign-in did not return a redirect.');
 }
@@ -138,7 +145,7 @@ export async function createPendingProfile(formData: FormData) {
   if (!selectedPlayer) redirect('/account?error=Choose a valid previous league name.');
 
   const profileResult = await service.createPendingProfile({userId, displayName});
-  if (!profileResult.ok) redirect(`/account?error=${encodeURIComponent(profileResult.message)}`);
+  if (!profileResult.ok) redirectWithServiceError(profileResult.message, 'Your league profile could not be created.');
 
   const claimResult = await service.submitPlayerClaim({
     profileId: profileResult.data.id,
@@ -146,7 +153,7 @@ export async function createPendingProfile(formData: FormData) {
     submittedName: displayName,
     submittedPdgaNumber: selectedPlayer.pdgaNumber,
   });
-  if (!claimResult.ok) redirect(`/account?error=${encodeURIComponent(claimResult.message)}`);
+  if (!claimResult.ok) redirectWithServiceError(claimResult.message, 'Your player claim could not be submitted.');
 
   revalidatePath('/account');
   redirect('/account?notice=Your league history connection is ready for commissioner approval.');
@@ -158,7 +165,7 @@ export async function updateProfileName(formData: FormData) {
 
   const {service, userId} = await getLaunchServiceForUser();
   const result = await service.updateOwnProfileName(userId, displayName);
-  if (!result.ok) redirect(`/account?error=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirectWithServiceError(result.message, 'Your profile name could not be updated.');
 
   revalidatePath('/account');
   redirect('/account?notice=Your profile name was updated.');
@@ -183,7 +190,7 @@ export async function submitPlayerClaim(formData: FormData) {
     submittedName,
     submittedPdgaNumber: submittedPdgaNumber || selectedPlayer.pdgaNumber,
   });
-  if (!result.ok) redirect(`/account?error=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirectWithServiceError(result.message, 'Your player claim could not be submitted.');
 
   revalidatePath('/account');
   redirect('/account?notice=Your league history connection was sent to the commissioner.');
@@ -192,7 +199,7 @@ export async function submitPlayerClaim(formData: FormData) {
 async function getLaunchServiceForUser() {
   const supabase = await createClient();
   const {data, error} = await supabase.auth.getUser();
-  if (error || !data.user) redirect('/account?error=Sign in first.');
+  if (error || !data.user) redirect(`/account?error=${encodeURIComponent(SIGN_IN_REQUIRED_MESSAGE)}`);
 
   const repository = new SupabaseLaunchRepository(supabase);
   return {
@@ -221,10 +228,6 @@ function readFormValue(formData: FormData, key: string): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function getAuthErrorMessage(error: {message?: string; code?: string; status?: number}): string {
-  const message = error.message?.trim();
-  if (message === 'Invalid login credentials') return 'Email or password is wrong. Use password reset if needed.';
-  if (message && message !== '{}') return message;
-  if (error.code === 'over_email_send_rate_limit') return 'Email rate limit exceeded. Wait a few minutes before requesting another sign-in link.';
-  return 'The sign-in email could not be sent. Check the Supabase email sender settings.';
+function redirectWithServiceError(error: unknown, fallback: string): never {
+  redirect(`/account?error=${encodeURIComponent(normalizeActionError(error, fallback).message)}`);
 }

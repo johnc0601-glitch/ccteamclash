@@ -6,6 +6,7 @@ import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import {LaunchService} from '@/domain/launch/LaunchService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {createClient} from '@/lib/supabase/server';
+import {normalizeActionError, SIGN_IN_REQUIRED_MESSAGE} from '@/domain/errors/ActionErrorMessage';
 
 const PLAYERS_PATH = '/office/players';
 
@@ -29,7 +30,7 @@ export async function savePlayer(formData: FormData) {
     active,
   }, commissionerProfileId);
 
-  if (!result.ok) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirectWithServiceError(result.message, 'The player could not be saved.');
 
   revalidatePeoplePages();
   redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent(playerId ? 'Player updated.' : 'Player created.')}`);
@@ -42,7 +43,7 @@ export async function approveClaim(formData: FormData) {
   if (!claimId) redirect(`${PLAYERS_PATH}?error=Claim is required.`);
 
   const result = await service.approvePlayerClaim(claimId, commissionerProfileId, playerId);
-  if (!result.ok) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirectWithServiceError(result.message, 'The player claim could not be approved.');
 
   revalidatePeoplePages();
   redirect(`${PLAYERS_PATH}?notice=Player claim approved.`);
@@ -54,7 +55,7 @@ export async function rejectClaim(formData: FormData) {
   if (!claimId) redirect(`${PLAYERS_PATH}?error=Claim is required.`);
 
   const result = await service.rejectPlayerClaim(claimId, commissionerProfileId);
-  if (!result.ok) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirectWithServiceError(result.message, 'The player claim could not be rejected.');
 
   revalidatePeoplePages();
   redirect(`${PLAYERS_PATH}?notice=Player claim rejected.`);
@@ -85,7 +86,7 @@ export async function assignAccess(formData: FormData) {
       access.startsWith('captain:') ? access.slice('captain:'.length) : null,
       commissionerProfileId,
     );
-  if (!result.ok) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirectWithServiceError(result.message, 'Member access could not be updated.');
 
   revalidatePeoplePages();
   redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent(
@@ -100,7 +101,7 @@ export async function assignCaptain(formData: FormData) {
   if (!profileId) redirect(`${PLAYERS_PATH}?error=Profile is required.`);
 
   const result = await service.assignCaptainTeam(profileId, teamId, commissionerProfileId);
-  if (!result.ok) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirectWithServiceError(result.message, 'Captain access could not be updated.');
 
   revalidatePeoplePages();
   redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent(teamId ? 'Captain access updated.' : 'Captain access removed.')}`);
@@ -115,7 +116,7 @@ export async function linkProfileToPlayer(formData: FormData) {
   if (!playerId) redirect(`${PLAYERS_PATH}?error=Player is required.`);
 
   const result = await service.linkProfileToPlayer(profileId, playerId, commissionerProfileId, useProfileName);
-  if (!result.ok) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirectWithServiceError(result.message, 'The account could not be linked.');
 
   revalidatePeoplePages();
   redirect(`${PLAYERS_PATH}?notice=Account linked to player record.`);
@@ -127,7 +128,7 @@ async function setProfileStatus(formData: FormData, status: 'Approved' | 'Reject
   if (!profileId) redirect(`${PLAYERS_PATH}?error=Profile is required.`);
 
   const result = await service.setProfileStatus(profileId, status, commissionerProfileId);
-  if (!result.ok) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirectWithServiceError(result.message, 'The profile status could not be updated.');
 
   revalidatePeoplePages();
   redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent(notice)}`);
@@ -136,7 +137,7 @@ async function setProfileStatus(formData: FormData, status: 'Approved' | 'Reject
 async function getCommissionerService() {
   const supabase = await createClient();
   const {data, error} = await supabase.auth.getUser();
-  if (error || !data.user) redirect('/account?error=Sign in first.');
+  if (error || !data.user) redirect(`/account?error=${encodeURIComponent(SIGN_IN_REQUIRED_MESSAGE)}`);
 
   const repository = new SupabaseLaunchRepository(supabase);
   const commissionerProfile = await repository.getProfileByUserId(data.user.id);
@@ -166,4 +167,8 @@ function readRating(value: string): number | null {
 function revalidatePeoplePages() {
   revalidatePath(PLAYERS_PATH);
   revalidatePath('/office/members');
+}
+
+function redirectWithServiceError(error: unknown, fallback: string): never {
+  redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(normalizeActionError(error, fallback).message)}`);
 }

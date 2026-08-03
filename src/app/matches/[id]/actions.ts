@@ -8,6 +8,7 @@ import type {AttendanceResult, PersonalAttendance} from '@/domain/match-roster/M
 import type {ManagedTeamRoster} from '@/domain/match-roster/MatchAttendance';
 import {createClient} from '@/lib/supabase/server';
 import type {OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
+import {normalizeActionError, SIGN_IN_REQUIRED_MESSAGE} from '@/domain/errors/ActionErrorMessage';
 
 export async function setOwnMatchAttendance(formData: FormData) {
   const matchId = readFormValue(formData, 'matchId');
@@ -17,16 +18,16 @@ export async function setOwnMatchAttendance(formData: FormData) {
   const path = `/matches/${encodeURIComponent(matchId)}`;
   const supabase = await createClient();
   const {data: {user}, error: userError} = await supabase.auth.getUser();
-  if (userError || !user) redirect(`/account?error=${encodeURIComponent('Sign in to set your attendance.')}`);
+  if (userError || !user) redirect(`/account?error=${encodeURIComponent(SIGN_IN_REQUIRED_MESSAGE)}`);
 
   let result: AttendanceResult<PersonalAttendance>;
   try {
     const service = new MatchRosterService(new SupabaseMatchRosterRepository(supabase));
     result = await service.setOwnAttendance(user.id, matchId, status);
-  } catch {
-    redirect(`${path}?attendanceError=${encodeURIComponent('Attendance could not be saved. Try again.')}`);
+  } catch (error) {
+    redirect(`${path}?attendanceError=${encodeURIComponent(actionMessage(error, 'Attendance could not be saved. Try again.'))}`);
   }
-  if (!result.ok) redirect(`${path}?attendanceError=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirect(`${path}?attendanceError=${encodeURIComponent(actionMessage(result.message, 'Attendance could not be saved. Try again.'))}`);
 
   revalidatePath(path);
   redirect(`${path}?attendanceNotice=${encodeURIComponent('Your availability was saved.')}`);
@@ -43,10 +44,10 @@ export async function setCaptainMatchAttendance(formData: FormData) {
   let result: AttendanceResult<ManagedTeamRoster>;
   try {
     result = await service.setTeamAttendance(userId, matchId, playerId, status);
-  } catch {
-    redirect(`${path}&captainError=${encodeURIComponent('Player attendance could not be saved.')}`);
+  } catch (error) {
+    redirect(`${path}&captainError=${encodeURIComponent(actionMessage(error, 'Player attendance could not be saved.'))}`);
   }
-  if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(actionMessage(result.message, 'Player attendance could not be saved.'))}`);
 
   revalidatePath(`/matches/${matchId}`);
   redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was updated.')}`);
@@ -62,10 +63,10 @@ export async function confirmCaptainMatchRoster(formData: FormData) {
   let result: AttendanceResult<ManagedTeamRoster>;
   try {
     result = await service.confirmTeamRoster(userId, matchId, teamId);
-  } catch {
-    redirect(`${path}&captainError=${encodeURIComponent('The roster could not be confirmed.')}`);
+  } catch (error) {
+    redirect(`${path}&captainError=${encodeURIComponent(actionMessage(error, 'The roster could not be confirmed.'))}`);
   }
-  if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(actionMessage(result.message, 'The roster could not be confirmed.'))}`);
 
   revalidatePath(`/matches/${matchId}`);
   revalidatePath('/captain');
@@ -92,10 +93,10 @@ async function runCommissionerSnapshotAction(formData: FormData, operation: 'add
     result = operation === 'add'
       ? await service.commissionerAddSnapshotPlayer(userId, matchId, teamId, playerId)
       : await service.commissionerRemoveSnapshotPlayer(userId, matchId, teamId, playerId);
-  } catch {
-    redirect(`${path}&commissionerError=${encodeURIComponent('Official roster correction could not be saved.')}`);
+  } catch (error) {
+    redirect(`${path}&commissionerError=${encodeURIComponent(actionMessage(error, 'Official roster correction could not be saved.'))}`);
   }
-  if (!result.ok) redirect(`${path}&commissionerError=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirect(`${path}&commissionerError=${encodeURIComponent(actionMessage(result.message, 'Official roster correction could not be saved.'))}`);
   revalidatePath(`/matches/${matchId}`);
   redirect(`${path}&commissionerNotice=${encodeURIComponent(operation === 'add' ? 'Player added to the official roster.' : 'Player removed from the official roster.')}`);
 }
@@ -103,12 +104,16 @@ async function runCommissionerSnapshotAction(formData: FormData, operation: 'add
 async function getMatchRosterService() {
   const supabase = await createClient();
   const {data: {user}, error} = await supabase.auth.getUser();
-  if (error || !user) redirect(`/account?error=${encodeURIComponent('Sign in with an approved captain account.')}`);
+  if (error || !user) redirect(`/account?error=${encodeURIComponent(SIGN_IN_REQUIRED_MESSAGE)}`);
 
   return {
     service: new MatchRosterService(new SupabaseMatchRosterRepository(supabase)),
     userId: user.id,
   };
+}
+
+function actionMessage(error: unknown, fallback: string): string {
+  return normalizeActionError(error, fallback).message;
 }
 
 function readFormValue(formData: FormData, key: string): string {
