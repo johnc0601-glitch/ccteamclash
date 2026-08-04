@@ -274,6 +274,23 @@ test('lazy creation runs only for incomplete snapshots and hides failures', asyn
   assert.deepEqual(unavailable, {status: 'unavailable', rosters: []});
 });
 
+test('lazy creation re-reads through the snapshot repository after creation', async () => {
+  const requestRepository = new FakeMatchRosterRepository();
+  const snapshotRepository = new FakeMatchRosterRepository();
+  const service = new MatchRosterService(
+    requestRepository,
+    () => new Date('2026-08-08T19:00:00Z'),
+    snapshotRepository,
+  );
+
+  const created = await service.ensureLockedSnapshot(match.id, new Date('2026-08-08T19:00:00Z'));
+
+  assert.equal(created.status, 'complete');
+  assert.equal(snapshotRepository.snapshotCreateCount, 1);
+  assert.equal(requestRepository.snapshotComplete, false);
+  assert.equal(created.rosters.length, 2);
+});
+
 test('lazy creation fails closed before cutoff and for missing or invalid configuration', async () => {
   for (const cutoff of [
     new Date('2026-08-08T19:00:00.001Z'),

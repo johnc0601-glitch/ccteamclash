@@ -25,7 +25,10 @@ export class MatchRosterService {
   constructor(
     private readonly repository: MatchRosterRepository,
     private readonly now: () => Date = () => new Date(),
-    private readonly snapshotCreator: Pick<MatchRosterRepository, 'createLockedSnapshot'> = repository,
+    private readonly snapshotCreator: Pick<
+      MatchRosterRepository,
+      'createLockedSnapshot' | 'hasCompleteSnapshot' | 'getOfficialMatchRosters'
+    > = repository,
     private readonly log: (context: SnapshotLogContext) => void = (context) => {
       if (context.operation === 'configuration') {
         console.warn('Match roster snapshot automation configuration is unavailable.', context);
@@ -117,8 +120,8 @@ export class MatchRosterService {
         return {status: 'unavailable', rosters: []};
       }
       await this.snapshotCreator.createLockedSnapshot(matchId);
-      if (!await this.repository.hasCompleteSnapshot(matchId)) return {status: 'unavailable', rosters: []};
-      return {status: 'complete', rosters: await this.repository.getOfficialMatchRosters(matchId)};
+      if (!await this.snapshotCreator.hasCompleteSnapshot(matchId)) return {status: 'unavailable', rosters: []};
+      return {status: 'complete', rosters: await this.snapshotCreator.getOfficialMatchRosters(matchId)};
     } catch (error) {
       this.log({operation: 'lazy-create', matchId, errorClass: snapshotErrorClass(error)});
       return {status: 'unavailable', rosters: []};
