@@ -150,14 +150,12 @@ select lives_ok(
   'approved player can recreate own attendance after returning to Unconfirmed'
 );
 
-select is(
-  (with changed as (
-    update public.launch_match_attendance
+select throws_ok(
+  $$update public.launch_match_attendance
     set status = 'NotPlaying', updated_by = 'matchday-profile-player'
-    where match_id = 'matchday-test-future' and player_id = 'matchday-player-away-two'
-    returning id
-  ) select count(*)::integer from changed),
-  0,
+    where match_id = 'matchday-test-future' and player_id = 'matchday-player-away-two'$$,
+  '42501',
+  null,
   'player cannot update another player attendance'
 );
 
@@ -224,14 +222,12 @@ select lives_ok(
   'captain confirms assigned team roster before lock'
 );
 
-select is(
-  (with changed as (
-    update public.launch_match_rosters
+select throws_ok(
+  $$update public.launch_match_rosters
     set status = 'Draft', confirmed_by = null, confirmed_at = null
-    where match_id = 'matchday-test-future' and team_id = 'ninjas'
-    returning id
-  ) select count(*)::integer from changed),
-  0,
+    where match_id = 'matchday-test-future' and team_id = 'ninjas'$$,
+  '42501',
+  null,
   'captain cannot change opposing team roster'
 );
 
@@ -262,24 +258,20 @@ select throws_ok(
   'commissioner cannot create live attendance after lock'
 );
 
-select is(
-  (with changed as (
-    update public.launch_match_attendance
+select throws_ok(
+  $$update public.launch_match_attendance
     set status = 'NotPlaying', updated_by = 'matchday-profile-commissioner'
-    where match_id = 'matchday-test-past' and player_id = 'matchday-player-home-two'
-    returning id
-  ) select count(*)::integer from changed),
-  0,
+    where match_id = 'matchday-test-past' and player_id = 'matchday-player-home-two'$$,
+  '42501',
+  null,
   'commissioner cannot update live attendance after lock'
 );
 
-select is(
-  (with removed as (
-    delete from public.launch_match_attendance
-    where match_id = 'matchday-test-past' and player_id = 'matchday-player-home-two'
-    returning id
-  ) select count(*)::integer from removed),
-  0,
+select throws_ok(
+  $$delete from public.launch_match_attendance
+    where match_id = 'matchday-test-past' and player_id = 'matchday-player-home-two'$$,
+  '42501',
+  null,
   'commissioner cannot delete live attendance after lock'
 );
 
