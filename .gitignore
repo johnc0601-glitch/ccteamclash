@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local tools and generated artifacts
+/.codex-remote-attachments/
+/cctc-welcome-intro/
+/dump.sql
+/output/
+/supabase/.branches/
+/supabase/.temp/
+/supabase/snippets/
+/tmp/
