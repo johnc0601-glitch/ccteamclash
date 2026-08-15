@@ -140,6 +140,10 @@
   text-transform: uppercase;
 }
 
+.seasonRoster {
+  margin-top: 22px;
+}
+
 .matchHeading {
   display: flex;
   align-items: center;

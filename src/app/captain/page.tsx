@@ -8,6 +8,15 @@ import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
 import {confirmTeamClaim} from './actions';
 import {PendingSubmitButton} from '@/components/forms/PendingSubmitButton';
+import {SeasonRosterManagement} from '@/components/season-rosters/SeasonRosterManagement';
+import type {Season} from '@/domain/season/Season';
+import {SupabaseSeasonRepository} from '@/domain/season/SupabaseSeasonRepository';
+import {SeasonRosterService} from '@/domain/season-roster/SeasonRosterService';
+import {SupabaseSeasonRosterRepository} from '@/domain/season-roster/SupabaseSeasonRosterRepository';
+import {
+  buildSeasonRosterTeamViews,
+  type SeasonRosterTeamView,
+} from '@/domain/season-roster/SeasonRosterPresentation';
 import styles from './Captain.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -38,12 +47,29 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
           {!captainData.ok ? (
             <AccessMessage message={captainData.message} />
           ) : (
-            <CaptainDashboard
-              events={captainData.events}
-              pendingClaims={captainData.pendingClaims}
-              roster={captainData.roster}
-              team={captainData.team}
-            />
+            <>
+              <CaptainDashboard
+                events={captainData.events}
+                pendingClaims={captainData.pendingClaims}
+                roster={captainData.roster}
+                team={captainData.team}
+              />
+              {captainData.seasonRoster ? (
+                <div className={styles.seasonRoster}>
+                  <SeasonRosterManagement
+                    season={captainData.seasonRoster.season}
+                    teamViews={captainData.seasonRoster.teamViews}
+                    returnPath="/captain"
+                    notice={readParam(params.rosterNotice)}
+                    error={readParam(params.rosterError)}
+                  />
+                </div>
+              ) : (
+                <section className={styles.alert}>
+                  <strong>No active season roster is available.</strong>
+                </section>
+              )}
+            </>
           )}
         </div>
       </section>
@@ -69,7 +95,7 @@ function CaptainDashboard({
     <>
       <div className={styles.summaryGrid}>
         <SummaryCard label="Team" value={team.name} />
-        <SummaryCard label="Roster" value={`${roster.length} players`} />
+        <SummaryCard label="Directory" value={`${roster.length} assigned`} />
         <SummaryCard label="Confirm" value={`${pendingClaims.length} pending`} />
         <SummaryCard label="Upcoming" value={`${upcomingEvents.length} matches`} />
       </div>
@@ -122,9 +148,9 @@ function CaptainDashboard({
 
         <section className={styles.panel}>
           <header className={styles.panelHeader}>
-            <span>Roster</span>
+            <span>Player directory</span>
             <h2>{team.name}</h2>
-            <p className={styles.muted}>Players currently assigned to your team.</p>
+            <p className={styles.muted}>Current directory assignments. Season roster membership is managed below.</p>
           </header>
           <div className={styles.list}>
             {roster.length ? roster.map((player) => (
@@ -162,7 +188,14 @@ function AccessMessage({message}: {message: string}) {
 }
 
 async function getCaptainData(): Promise<
-  | {ok: true; team: LaunchTeam; roster: LaunchPlayer[]; events: TeamScheduleEvent[]; pendingClaims: PlayerClaim[]}
+  | {
+    ok: true;
+    team: LaunchTeam;
+    roster: LaunchPlayer[];
+    events: TeamScheduleEvent[];
+    pendingClaims: PlayerClaim[];
+    seasonRoster?: {season: Season; teamViews: SeasonRosterTeamView[]};
+  }
   | {ok: false; message: string}
 > {
   if (!hasSupabaseConfig()) return {ok: false, message: 'League accounts are not configured yet.'};
@@ -173,6 +206,8 @@ async function getCaptainData(): Promise<
     if (!user) return {ok: false, message: 'Sign in to open Captain Home.'};
 
     const repository = new SupabaseLaunchRepository(supabase);
+    const seasonRepository = new SupabaseSeasonRepository(supabase);
+    const seasonRosterService = new SeasonRosterService(new SupabaseSeasonRosterRepository(supabase));
     const profile = await repository.getProfileByUserId(user.id);
     if (!profile || profile.status !== 'Approved') return {ok: false, message: 'Captain access is not approved yet.'};
     if (profile.role !== 'Captain' && profile.role !== 'Commissioner') {
@@ -181,15 +216,36 @@ async function getCaptainData(): Promise<
     if (!profile.captainTeamId) return {ok: false, message: 'No captain team has been assigned yet.'};
 
     const scheduleService = await createServerScheduleService();
-    const [team, players, events, claims] = await Promise.all([
+    const [team, players, events, claims, activeSeason] = await Promise.all([
       repository.getTeam(profile.captainTeamId),
       repository.getPlayers(),
       scheduleService.getTeamEvents(profile.captainTeamId),
       repository.getPlayerClaims(),
+      seasonRepository.getActive(),
     ]);
 
     if (!team) return {ok: false, message: 'Captain team could not be found.'};
     const teamPlayerIds = new Set(players.filter((player) => player.currentTeamId === team.id).map((player) => player.id));
+
+    let seasonRoster: {season: Season; teamViews: SeasonRosterTeamView[]} | undefined;
+    if (activeSeason) {
+      const [seasonTeams, memberships, teams] = await Promise.all([
+        seasonRosterService.listSeasonTeams(activeSeason.id),
+        seasonRosterService.listMemberships(activeSeason.id),
+        repository.getTeams(),
+      ]);
+      seasonRoster = {
+        season: activeSeason,
+        teamViews: buildSeasonRosterTeamViews({
+          season: activeSeason,
+          seasonTeams,
+          memberships,
+          teams,
+          players,
+          viewer: {role: 'Captain', teamId: team.id},
+        }),
+      };
+    }
 
     return {
       ok: true,
@@ -197,6 +253,7 @@ async function getCaptainData(): Promise<
       roster: players.filter((player) => player.active && player.currentTeamId === team.id),
       events: events.filter((event) => event.homeTeamId === team.id || event.awayTeamId === team.id),
       pendingClaims: claims.filter((claim) => claim.status === 'Pending' && claim.requestedPlayerId && teamPlayerIds.has(claim.requestedPlayerId)),
+      seasonRoster,
     };
   } catch {
     return {ok: false, message: 'Captain Home could not load right now.'};

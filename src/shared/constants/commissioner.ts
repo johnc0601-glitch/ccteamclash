@@ -45,6 +45,11 @@ export const OFFICE_SECTIONS = {
     description: 'Review the competitive order produced by league results.',
     href: '/office/standings',
   },
+  rosters: {
+    title: 'Rosters',
+    description: 'Manage season team membership, categories, and permanent drops.',
+    href: '/office/rosters',
+  },
   playoffs: {
     title: 'Playoffs',
     description: 'Generate, publish, and advance the championship bracket.',
