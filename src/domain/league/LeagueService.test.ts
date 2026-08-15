@@ -28,6 +28,9 @@ test('existing, new, and duplicated seasons retain League ownership', async () =
     startDate: '2027-01-01',
     endDate: '2027-03-31',
     registrationOpen: false,
+    mensRosterCap: 25,
+    womensRosterCap: null,
+    juniorRosterCap: null,
     published: false,
   });
   assert.equal(created.ok, true);

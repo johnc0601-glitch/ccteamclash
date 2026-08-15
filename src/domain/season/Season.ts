@@ -7,6 +7,12 @@ export type Season = {
   startDate: string;
   endDate: string;
   registrationOpen: boolean;
+  mensRosterCap: number;
+  womensRosterCap: number | null;
+  juniorRosterCap: number | null;
+  rosterRulesLockAt: string | null;
+  rosterRulesLockedAt: string | null;
+  rosterRulesLocked: boolean;
   active: boolean;
   published: boolean;
   archived: boolean;
@@ -16,7 +22,13 @@ export type Season = {
 
 export type SeasonInput = Pick<
   Season,
-  'name' | 'year' | 'description' | 'startDate' | 'endDate' | 'registrationOpen' | 'published'
+  'name' | 'year' | 'description' | 'startDate' | 'endDate' | 'registrationOpen'
+  | 'mensRosterCap' | 'womensRosterCap' | 'juniorRosterCap' | 'published'
+>;
+
+export type SeasonRosterRulesState = Pick<
+  Season,
+  'rosterRulesLockAt' | 'rosterRulesLockedAt' | 'rosterRulesLocked'
 >;
 
 export type SeasonStatusFilter = 'all' | 'active' | 'published' | 'draft' | 'archived';

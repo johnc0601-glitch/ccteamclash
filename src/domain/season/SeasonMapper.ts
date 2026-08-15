@@ -9,6 +9,9 @@ export class SeasonMapper {
       startDate: input.startDate.trim(),
       endDate: input.endDate.trim(),
       registrationOpen: input.registrationOpen,
+      mensRosterCap: input.mensRosterCap,
+      womensRosterCap: input.womensRosterCap,
+      juniorRosterCap: input.juniorRosterCap,
       published: input.published,
     };
   }
@@ -21,6 +24,9 @@ export class SeasonMapper {
       startDate: season.startDate,
       endDate: season.endDate,
       registrationOpen: season.registrationOpen,
+      mensRosterCap: season.mensRosterCap,
+      womensRosterCap: season.womensRosterCap,
+      juniorRosterCap: season.juniorRosterCap,
       published: season.published,
     };
   }
@@ -32,6 +38,9 @@ export class SeasonMapper {
       leagueId,
       active: false,
       archived: false,
+      rosterRulesLockAt: null,
+      rosterRulesLockedAt: null,
+      rosterRulesLocked: false,
       createdAt: timestamp,
       updatedAt: timestamp,
     };

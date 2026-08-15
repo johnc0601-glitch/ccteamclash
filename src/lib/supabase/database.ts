@@ -10,70 +10,10 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
-      captain_assignments: {
-        Row: {
-          created_at: string
-          id: string
-          season_id: string
-          team_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          season_id: string
-          team_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          season_id?: string
-          team_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "captain_assignments_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "season_standings"
-            referencedColumns: ["season_id"]
-          },
-          {
-            foreignKeyName: "captain_assignments_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "seasons"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "captain_assignments_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "season_standings"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "captain_assignments_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "captain_assignments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       historical_player_matchups: {
         Row: {
           deduplication_key: string
@@ -207,61 +147,6 @@ export type Database = {
             columns: ["season_id"]
             isOneToOne: false
             referencedRelation: "launch_seasons"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      import_runs: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          errors: Json
-          filename: string
-          id: string
-          season_id: string | null
-          status: string
-          summary: Json
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          errors?: Json
-          filename: string
-          id?: string
-          season_id?: string | null
-          status?: string
-          summary?: Json
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          errors?: Json
-          filename?: string
-          id?: string
-          season_id?: string | null
-          status?: string
-          summary?: Json
-        }
-        Relationships: [
-          {
-            foreignKeyName: "import_runs_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "import_runs_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "season_standings"
-            referencedColumns: ["season_id"]
-          },
-          {
-            foreignKeyName: "import_runs_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "seasons"
             referencedColumns: ["id"]
           },
         ]
@@ -557,6 +442,68 @@ export type Database = {
         }
         Relationships: []
       }
+      launch_match_attendance: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          player_id: string
+          status: string
+          team_id: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          player_id: string
+          status: string
+          team_id: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          player_id?: string
+          status?: string
+          team_id?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "launch_match_attendance_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "launch_schedule_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launch_match_attendance_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "launch_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launch_match_attendance_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "launch_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launch_match_attendance_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "launch_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       launch_match_results: {
         Row: {
           away_score: number | null
@@ -594,6 +541,171 @@ export type Database = {
             columns: ["match_id"]
             isOneToOne: true
             referencedRelation: "launch_schedule_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      launch_match_roster_snapshot_players: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          player_id: string
+          player_name_snapshot: string
+          team_id: string
+          team_name_snapshot: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          player_id: string
+          player_name_snapshot: string
+          team_id: string
+          team_name_snapshot: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          player_id?: string
+          player_name_snapshot?: string
+          team_id?: string
+          team_name_snapshot?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "launch_match_roster_snapshot_players_match_id_team_id_fkey"
+            columns: ["match_id", "team_id"]
+            isOneToOne: false
+            referencedRelation: "launch_match_roster_snapshots"
+            referencedColumns: ["match_id", "team_id"]
+          },
+          {
+            foreignKeyName: "launch_match_roster_snapshot_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "launch_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launch_match_roster_snapshot_players_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "launch_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      launch_match_roster_snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          needs_commissioner_review: boolean
+          team_id: string
+          team_name_snapshot: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          needs_commissioner_review?: boolean
+          team_id: string
+          team_name_snapshot: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          needs_commissioner_review?: boolean
+          team_id?: string
+          team_name_snapshot?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "launch_match_roster_snapshots_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "launch_schedule_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launch_match_roster_snapshots_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "launch_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launch_match_roster_snapshots_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "launch_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      launch_match_rosters: {
+        Row: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          id: string
+          match_id: string
+          status: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          id?: string
+          match_id: string
+          status?: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          id?: string
+          match_id?: string
+          status?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "launch_match_rosters_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "launch_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launch_match_rosters_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "launch_schedule_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launch_match_rosters_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "launch_teams"
             referencedColumns: ["id"]
           },
         ]
@@ -1136,12 +1248,16 @@ export type Database = {
           description: string
           end_date: string
           id: string
+          junior_roster_cap: number | null
           league_id: string
+          mens_roster_cap: number
           name: string
           published: boolean
           registration_open: boolean
+          roster_rules_locked_at: string | null
           start_date: string
           updated_at: string
+          womens_roster_cap: number | null
           year: number
         }
         Insert: {
@@ -1151,12 +1267,16 @@ export type Database = {
           description?: string
           end_date: string
           id: string
+          junior_roster_cap?: number | null
           league_id: string
+          mens_roster_cap?: number
           name: string
           published?: boolean
           registration_open?: boolean
+          roster_rules_locked_at?: string | null
           start_date: string
           updated_at?: string
+          womens_roster_cap?: number | null
           year: number
         }
         Update: {
@@ -1166,12 +1286,16 @@ export type Database = {
           description?: string
           end_date?: string
           id?: string
+          junior_roster_cap?: number | null
           league_id?: string
+          mens_roster_cap?: number
           name?: string
           published?: boolean
           registration_open?: boolean
+          roster_rules_locked_at?: string | null
           start_date?: string
           updated_at?: string
+          womens_roster_cap?: number | null
           year?: number
         }
         Relationships: [
@@ -1246,631 +1370,43 @@ export type Database = {
         }
         Relationships: []
       }
-      match_misc_points: {
-        Row: {
-          away_points: number
-          home_points: number
-          match_id: string
-          notes: string | null
-        }
-        Insert: {
-          away_points?: number
-          home_points?: number
-          match_id: string
-          notes?: string | null
-        }
-        Update: {
-          away_points?: number
-          home_points?: number
-          match_id?: string
-          notes?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "match_misc_points_match_id_fkey"
-            columns: ["match_id"]
-            isOneToOne: true
-            referencedRelation: "matches"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      match_rows: {
-        Row: {
-          away_player_1_id: string | null
-          away_player_2_id: string | null
-          away_points: number
-          created_at: string
-          format: Database["public"]["Enums"]["match_format"]
-          home_player_1_id: string | null
-          home_player_2_id: string | null
-          home_points: number
-          id: string
-          match_id: string
-          result: Database["public"]["Enums"]["result_code"] | null
-          row_number: number
-        }
-        Insert: {
-          away_player_1_id?: string | null
-          away_player_2_id?: string | null
-          away_points?: number
-          created_at?: string
-          format: Database["public"]["Enums"]["match_format"]
-          home_player_1_id?: string | null
-          home_player_2_id?: string | null
-          home_points?: number
-          id?: string
-          match_id: string
-          result?: Database["public"]["Enums"]["result_code"] | null
-          row_number: number
-        }
-        Update: {
-          away_player_1_id?: string | null
-          away_player_2_id?: string | null
-          away_points?: number
-          created_at?: string
-          format?: Database["public"]["Enums"]["match_format"]
-          home_player_1_id?: string | null
-          home_player_2_id?: string | null
-          home_points?: number
-          id?: string
-          match_id?: string
-          result?: Database["public"]["Enums"]["result_code"] | null
-          row_number?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "match_rows_away_player_1_id_fkey"
-            columns: ["away_player_1_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "match_rows_away_player_2_id_fkey"
-            columns: ["away_player_2_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "match_rows_home_player_1_id_fkey"
-            columns: ["home_player_1_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "match_rows_home_player_2_id_fkey"
-            columns: ["home_player_2_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "match_rows_match_id_fkey"
-            columns: ["match_id"]
-            isOneToOne: false
-            referencedRelation: "matches"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      matches: {
-        Row: {
-          approved_at: string | null
-          approved_by: string | null
-          away_score: number
-          away_team_id: string
-          course: string | null
-          created_at: string
-          home_score: number
-          home_team_id: string
-          id: string
-          notes: string | null
-          scheduled_at: string | null
-          status: Database["public"]["Enums"]["match_status"]
-          submitted_at: string | null
-          submitted_by: string | null
-          week_id: string
-        }
-        Insert: {
-          approved_at?: string | null
-          approved_by?: string | null
-          away_score?: number
-          away_team_id: string
-          course?: string | null
-          created_at?: string
-          home_score?: number
-          home_team_id: string
-          id?: string
-          notes?: string | null
-          scheduled_at?: string | null
-          status?: Database["public"]["Enums"]["match_status"]
-          submitted_at?: string | null
-          submitted_by?: string | null
-          week_id: string
-        }
-        Update: {
-          approved_at?: string | null
-          approved_by?: string | null
-          away_score?: number
-          away_team_id?: string
-          course?: string | null
-          created_at?: string
-          home_score?: number
-          home_team_id?: string
-          id?: string
-          notes?: string | null
-          scheduled_at?: string | null
-          status?: Database["public"]["Enums"]["match_status"]
-          submitted_at?: string | null
-          submitted_by?: string | null
-          week_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "matches_approved_by_fkey"
-            columns: ["approved_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "matches_away_team_id_fkey"
-            columns: ["away_team_id"]
-            isOneToOne: false
-            referencedRelation: "season_standings"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "matches_away_team_id_fkey"
-            columns: ["away_team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "matches_home_team_id_fkey"
-            columns: ["home_team_id"]
-            isOneToOne: false
-            referencedRelation: "season_standings"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "matches_home_team_id_fkey"
-            columns: ["home_team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "matches_submitted_by_fkey"
-            columns: ["submitted_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "matches_week_id_fkey"
-            columns: ["week_id"]
-            isOneToOne: false
-            referencedRelation: "weeks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      photos: {
-        Row: {
-          caption: string | null
-          created_at: string
-          id: string
-          is_featured: boolean
-          match_id: string | null
-          season_id: string | null
-          storage_path: string
-          team_id: string | null
-          week_id: string | null
-        }
-        Insert: {
-          caption?: string | null
-          created_at?: string
-          id?: string
-          is_featured?: boolean
-          match_id?: string | null
-          season_id?: string | null
-          storage_path: string
-          team_id?: string | null
-          week_id?: string | null
-        }
-        Update: {
-          caption?: string | null
-          created_at?: string
-          id?: string
-          is_featured?: boolean
-          match_id?: string | null
-          season_id?: string | null
-          storage_path?: string
-          team_id?: string | null
-          week_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "photos_match_id_fkey"
-            columns: ["match_id"]
-            isOneToOne: false
-            referencedRelation: "matches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "photos_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "season_standings"
-            referencedColumns: ["season_id"]
-          },
-          {
-            foreignKeyName: "photos_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "seasons"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "photos_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "season_standings"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "photos_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "photos_week_id_fkey"
-            columns: ["week_id"]
-            isOneToOne: false
-            referencedRelation: "weeks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      players: {
-        Row: {
-          active: boolean
-          created_at: string
-          full_name: string
-          id: string
-          normalized_name: string | null
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          full_name: string
-          id?: string
-          normalized_name?: string | null
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          full_name?: string
-          id?: string
-          normalized_name?: string | null
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          created_at: string
-          display_name: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-        }
-        Insert: {
-          created_at?: string
-          display_name?: string
-          id: string
-          role?: Database["public"]["Enums"]["app_role"]
-        }
-        Update: {
-          created_at?: string
-          display_name?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-        }
-        Relationships: []
-      }
-      seasons: {
-        Row: {
-          created_at: string
-          ends_on: string | null
-          id: string
-          is_current: boolean
-          name: string
-          starts_on: string | null
-        }
-        Insert: {
-          created_at?: string
-          ends_on?: string | null
-          id?: string
-          is_current?: boolean
-          name: string
-          starts_on?: string | null
-        }
-        Update: {
-          created_at?: string
-          ends_on?: string | null
-          id?: string
-          is_current?: boolean
-          name?: string
-          starts_on?: string | null
-        }
-        Relationships: []
-      }
-      stories: {
-        Row: {
-          body: string
-          created_at: string
-          created_by: string | null
-          hero_image_url: string | null
-          id: string
-          match_id: string | null
-          published_at: string | null
-          season_id: string | null
-          slug: string
-          status: string
-          summary: string | null
-          title: string
-          updated_at: string
-          week_id: string | null
-        }
-        Insert: {
-          body?: string
-          created_at?: string
-          created_by?: string | null
-          hero_image_url?: string | null
-          id?: string
-          match_id?: string | null
-          published_at?: string | null
-          season_id?: string | null
-          slug: string
-          status?: string
-          summary?: string | null
-          title: string
-          updated_at?: string
-          week_id?: string | null
-        }
-        Update: {
-          body?: string
-          created_at?: string
-          created_by?: string | null
-          hero_image_url?: string | null
-          id?: string
-          match_id?: string | null
-          published_at?: string | null
-          season_id?: string | null
-          slug?: string
-          status?: string
-          summary?: string | null
-          title?: string
-          updated_at?: string
-          week_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stories_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stories_match_id_fkey"
-            columns: ["match_id"]
-            isOneToOne: false
-            referencedRelation: "matches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stories_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "season_standings"
-            referencedColumns: ["season_id"]
-          },
-          {
-            foreignKeyName: "stories_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "seasons"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stories_week_id_fkey"
-            columns: ["week_id"]
-            isOneToOne: false
-            referencedRelation: "weeks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_memberships: {
-        Row: {
-          created_at: string
-          id: string
-          is_captain: boolean
-          player_id: string
-          season_id: string
-          team_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_captain?: boolean
-          player_id: string
-          season_id: string
-          team_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_captain?: boolean
-          player_id?: string
-          season_id?: string
-          team_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_memberships_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_memberships_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "season_standings"
-            referencedColumns: ["season_id"]
-          },
-          {
-            foreignKeyName: "team_memberships_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "seasons"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_memberships_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "season_standings"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "team_memberships_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      teams: {
-        Row: {
-          active: boolean
-          color: string | null
-          created_at: string
-          id: string
-          logo_url: string | null
-          name: string
-          short_name: string | null
-          slug: string
-        }
-        Insert: {
-          active?: boolean
-          color?: string | null
-          created_at?: string
-          id?: string
-          logo_url?: string | null
-          name: string
-          short_name?: string | null
-          slug: string
-        }
-        Update: {
-          active?: boolean
-          color?: string | null
-          created_at?: string
-          id?: string
-          logo_url?: string | null
-          name?: string
-          short_name?: string | null
-          slug?: string
-        }
-        Relationships: []
-      }
-      weeks: {
-        Row: {
-          created_at: string
-          id: string
-          label: string | null
-          publish_status: string
-          season_id: string
-          starts_on: string | null
-          week_number: number
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          label?: string | null
-          publish_status?: string
-          season_id: string
-          starts_on?: string | null
-          week_number: number
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          label?: string | null
-          publish_status?: string
-          season_id?: string
-          starts_on?: string | null
-          week_number?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "weeks_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "season_standings"
-            referencedColumns: ["season_id"]
-          },
-          {
-            foreignKeyName: "weeks_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "seasons"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
-      season_standings: {
-        Row: {
-          losses: number | null
-          matches_played: number | null
-          points_against: number | null
-          points_for: number | null
-          season_id: string | null
-          team_id: string | null
-          team_name: string | null
-          ties: number | null
-          wins: number | null
-        }
-        Relationships: []
-      }
-    }
-    Functions: {
       [_ in never]: never
     }
+    Functions: {
+      commissioner_add_launch_match_roster_snapshot_player: {
+        Args: {
+          target_match_id: string
+          target_player_id: string
+          target_team_id: string
+        }
+        Returns: undefined
+      }
+      commissioner_remove_launch_match_roster_snapshot_player: {
+        Args: {
+          target_match_id: string
+          target_player_id: string
+          target_team_id: string
+        }
+        Returns: undefined
+      }
+      create_launch_match_roster_snapshot: {
+        Args: { target_match_id: string }
+        Returns: undefined
+      }
+      get_launch_season_roster_rules_states: {
+        Args: { target_season_ids: string[] }
+        Returns: {
+          lock_at: string
+          locked: boolean
+          locked_at: string
+          season_id: string
+        }[]
+      }
+    }
     Enums: {
-      app_role: "commissioner" | "captain"
-      match_format: "singles" | "doubles"
-      match_status:
-        | "scheduled"
-        | "lineups_open"
-        | "scoring"
-        | "submitted"
-        | "approved"
-        | "published"
-        | "archived"
-      result_code: "home_win" | "away_win" | "tie"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1997,19 +1533,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["commissioner", "captain"],
-      match_format: ["singles", "doubles"],
-      match_status: [
-        "scheduled",
-        "lineups_open",
-        "scoring",
-        "submitted",
-        "approved",
-        "published",
-        "archived",
-      ],
-      result_code: ["home_win", "away_win", "tie"],
-    },
+    Enums: {},
   },
 } as const

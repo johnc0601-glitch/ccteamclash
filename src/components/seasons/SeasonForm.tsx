@@ -7,23 +7,36 @@ type SeasonFormProps = {
   fieldErrors: SeasonFieldErrors;
   submitLabel: string;
   submitting: boolean;
+  rosterRulesLocked: boolean;
   onSubmit: (values: SeasonInput) => void;
   onCancel: () => void;
 };
 
-type SeasonFormState = Omit<SeasonInput, 'year'> & {year: string};
+type SeasonFormState = Omit<
+  SeasonInput,
+  'year' | 'mensRosterCap' | 'womensRosterCap' | 'juniorRosterCap'
+> & {
+  year: string;
+  mensRosterCap: string;
+  womensRosterCap: string;
+  juniorRosterCap: string;
+};
 
 export function SeasonForm({
   initialValues,
   fieldErrors,
   submitLabel,
   submitting,
+  rosterRulesLocked,
   onSubmit,
   onCancel,
 }: SeasonFormProps) {
   const [values, setValues] = useState<SeasonFormState>({
     ...initialValues,
     year: String(initialValues.year),
+    mensRosterCap: String(initialValues.mensRosterCap),
+    womensRosterCap: initialValues.womensRosterCap === null ? '' : String(initialValues.womensRosterCap),
+    juniorRosterCap: initialValues.juniorRosterCap === null ? '' : String(initialValues.juniorRosterCap),
   });
 
   function setTextField(field: 'name' | 'year' | 'description' | 'startDate' | 'endDate', value: string) {
@@ -34,9 +47,19 @@ export function SeasonForm({
     setValues((current) => ({...current, [field]: value}));
   }
 
+  function setRosterCap(field: 'mensRosterCap' | 'womensRosterCap' | 'juniorRosterCap', value: string) {
+    setValues((current) => ({...current, [field]: value}));
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onSubmit({...values, year: Number(values.year)});
+    onSubmit({
+      ...values,
+      year: Number(values.year),
+      mensRosterCap: Number(values.mensRosterCap),
+      womensRosterCap: optionalNumber(values.womensRosterCap),
+      juniorRosterCap: optionalNumber(values.juniorRosterCap),
+    });
   }
 
   return (
@@ -101,6 +124,61 @@ export function SeasonForm({
             <small id="season-end-date-error" className={styles.fieldError}>{fieldErrors.endDate}</small>
           ) : null}
         </label>
+        <label>
+          <span>Men’s roster cap per team</span>
+          <input
+            name="mensRosterCap"
+            type="number"
+            inputMode="numeric"
+            min="1"
+            value={values.mensRosterCap}
+            disabled={rosterRulesLocked}
+            onChange={(event) => setRosterCap('mensRosterCap', event.target.value)}
+            aria-invalid={Boolean(fieldErrors.mensRosterCap)}
+          />
+          {fieldErrors.mensRosterCap ? (
+            <small className={styles.fieldError}>{fieldErrors.mensRosterCap}</small>
+          ) : null}
+        </label>
+        <label>
+          <span>Women’s roster cap per team</span>
+          <input
+            name="womensRosterCap"
+            type="number"
+            inputMode="numeric"
+            min="1"
+            placeholder="Unlimited"
+            value={values.womensRosterCap}
+            disabled={rosterRulesLocked}
+            onChange={(event) => setRosterCap('womensRosterCap', event.target.value)}
+            aria-invalid={Boolean(fieldErrors.womensRosterCap)}
+          />
+          {fieldErrors.womensRosterCap ? (
+            <small className={styles.fieldError}>{fieldErrors.womensRosterCap}</small>
+          ) : null}
+        </label>
+        <label>
+          <span>Junior roster cap per team</span>
+          <input
+            name="juniorRosterCap"
+            type="number"
+            inputMode="numeric"
+            min="1"
+            placeholder="Unlimited"
+            value={values.juniorRosterCap}
+            disabled={rosterRulesLocked}
+            onChange={(event) => setRosterCap('juniorRosterCap', event.target.value)}
+            aria-invalid={Boolean(fieldErrors.juniorRosterCap)}
+          />
+          {fieldErrors.juniorRosterCap ? (
+            <small className={styles.fieldError}>{fieldErrors.juniorRosterCap}</small>
+          ) : null}
+        </label>
+        {rosterRulesLocked ? (
+          <p className={styles.fullField} role="status">
+            Roster caps are locked because this season’s first published match has started.
+          </p>
+        ) : null}
         <label className={styles.fullField}>
           <span>Description</span>
           <textarea
@@ -139,4 +217,8 @@ export function SeasonForm({
       </div>
     </form>
   );
+}
+
+function optionalNumber(value: string): number | null {
+  return value.trim() ? Number(value) : null;
 }

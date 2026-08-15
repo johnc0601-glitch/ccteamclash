@@ -26,6 +26,10 @@ export function SeasonDetailsDialog({season, onEdit, onClose}: SeasonDetailsDial
           <div><dt>End date</dt><dd>{formatSeasonDate(season.endDate)}</dd></div>
           <div><dt>Published</dt><dd>{season.published ? 'Yes' : 'No'}</dd></div>
           <div><dt>Registration</dt><dd>{season.registrationOpen ? 'Open' : 'Closed'}</dd></div>
+          <div><dt>Men’s roster cap</dt><dd>{season.mensRosterCap}</dd></div>
+          <div><dt>Women’s roster cap</dt><dd>{season.womensRosterCap ?? 'Unlimited'}</dd></div>
+          <div><dt>Junior roster cap</dt><dd>{season.juniorRosterCap ?? 'Unlimited'}</dd></div>
+          <div><dt>Roster rules</dt><dd>{season.rosterRulesLocked ? 'Locked' : 'Editable'}</dd></div>
           <div><dt>Created</dt><dd>{new Date(season.createdAt).toLocaleDateString()}</dd></div>
           <div><dt>Last updated</dt><dd>{new Date(season.updatedAt).toLocaleDateString()}</dd></div>
         </dl>

@@ -7,6 +7,9 @@ export const EMPTY_SEASON_INPUT: SeasonInput = {
   startDate: '',
   endDate: '',
   registrationOpen: false,
+  mensRosterCap: 25,
+  womensRosterCap: null,
+  juniorRosterCap: null,
   published: false,
 };
 
@@ -18,6 +21,9 @@ export function seasonToFormValues(season: Season): SeasonInput {
     startDate: season.startDate,
     endDate: season.endDate,
     registrationOpen: season.registrationOpen,
+    mensRosterCap: season.mensRosterCap,
+    womensRosterCap: season.womensRosterCap,
+    juniorRosterCap: season.juniorRosterCap,
     published: season.published,
   };
 }

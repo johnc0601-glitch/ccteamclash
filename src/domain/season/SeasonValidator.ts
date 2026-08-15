@@ -24,6 +24,17 @@ export class SeasonValidator {
     if (!Number.isInteger(input.year) || input.year <= 0) {
       fieldErrors.year = 'Enter a valid season year.';
     }
+    if (!Number.isInteger(input.mensRosterCap) || input.mensRosterCap <= 0) {
+      fieldErrors.mensRosterCap = 'Enter a positive men’s roster cap.';
+    }
+    if (input.womensRosterCap !== null
+      && (!Number.isInteger(input.womensRosterCap) || input.womensRosterCap <= 0)) {
+      fieldErrors.womensRosterCap = 'Enter a positive women’s roster cap or leave it unlimited.';
+    }
+    if (input.juniorRosterCap !== null
+      && (!Number.isInteger(input.juniorRosterCap) || input.juniorRosterCap <= 0)) {
+      fieldErrors.juniorRosterCap = 'Enter a positive junior roster cap or leave it unlimited.';
+    }
 
     const duplicateName = seasons.some((season) =>
       season.id !== currentId

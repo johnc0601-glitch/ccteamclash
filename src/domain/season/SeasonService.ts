@@ -80,6 +80,10 @@ export class SeasonService {
       return {ok: false, message: 'Archived seasons cannot be edited.'};
     }
 
+    if (existingSeason.rosterRulesLocked && rosterCapsChanged(existingSeason, input)) {
+      return {ok: false, message: 'Season roster caps are locked because the first match has started.'};
+    }
+
     const normalizedInput = this.mapper.normalizeInput(input);
     const seasons = await this.repository.getAll();
     const fieldErrors = this.validator.validate(normalizedInput, seasons, id);
@@ -222,4 +226,10 @@ export class SeasonService {
   private notFoundResult<T>(): SeasonServiceResult<T> {
     return {ok: false, message: 'Season not found.'};
   }
+}
+
+function rosterCapsChanged(season: Season, input: SeasonInput): boolean {
+  return season.mensRosterCap !== input.mensRosterCap
+    || season.womensRosterCap !== input.womensRosterCap
+    || season.juniorRosterCap !== input.juniorRosterCap;
 }

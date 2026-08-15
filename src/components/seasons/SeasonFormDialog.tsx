@@ -33,6 +33,7 @@ export function SeasonFormDialog({
         fieldErrors={fieldErrors}
         submitLabel={season ? 'Save changes' : 'Create season'}
         submitting={submitting}
+        rosterRulesLocked={season?.rosterRulesLocked ?? false}
         onSubmit={onSubmit}
         onCancel={onClose}
       />
