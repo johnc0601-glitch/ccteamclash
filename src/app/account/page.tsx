@@ -1,19 +1,30 @@
 import Link from 'next/link';
+import {PlayerApplicationForm} from '@/components/launch/PlayerApplicationForm';
 import {PlayerRecordSelect} from '@/components/launch/PlayerRecordSelect';
 import {ThemeToggle} from '@/components/ThemeToggle';
+import {createServerPlayerApplicationService} from '@/core/createServerPlayerApplicationService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
-import type {LaunchPlayer, LaunchProfile, PlayerClaim} from '@/domain/launch/LaunchData';
+import type {LaunchPlayer, LaunchProfile, LaunchTeam, PlayerClaim} from '@/domain/launch/LaunchData';
 import {
   resolveLaunchProfileState,
   type LaunchProfileState,
 } from '@/domain/launch/LaunchProfileState';
+import type {PlayerApplication} from '@/domain/player-application/PlayerApplication';
+import {
+  buildPlayerApplicationSummary,
+  canStartPlayerApplication,
+} from '@/domain/player-application/PlayerApplicationPresentation';
+import {SupabaseSeasonRepository} from '@/domain/season/SupabaseSeasonRepository';
+import {SupabaseSeasonRosterRepository} from '@/domain/season-roster/SupabaseSeasonRosterRepository';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
 import {
+  changePlayerApplicationRequestedTeam,
   createPendingProfile,
   signInWithPassword,
   signOut,
   submitPlayerClaim,
+  submitPlayerApplication,
   updateProfileName,
 } from './actions';
 import {AccountPageLayout, readAccountParam} from './AccountPageLayout';
@@ -46,6 +57,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
   const supabase = await createClient();
   const {data: {user}} = await supabase.auth.getUser();
   const repository = new SupabaseLaunchRepository(supabase);
+  const seasonRepository = new SupabaseSeasonRepository(supabase);
 
   if (!user) {
     return (
@@ -78,11 +90,24 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
     );
   }
 
-  const [profile, claims, players] = await Promise.all([
+  const playerApplicationService = await createServerPlayerApplicationService();
+
+  const [profile, claims, players, teams, activeSeason, applications] = await Promise.all([
     repository.getProfileByUserId(user.id),
     repository.getPlayerClaims(),
     repository.getPlayers(),
+    repository.getTeams(),
+    seasonRepository.getActive(),
+    playerApplicationService.listApplications(),
   ]);
+  const applicableSeason = activeSeason?.published
+    && activeSeason.registrationOpen
+    && !activeSeason.archived
+    ? activeSeason
+    : undefined;
+  const seasonTeams = applicableSeason
+    ? await new SupabaseSeasonRosterRepository(supabase).listSeasonTeams(applicableSeason.id)
+    : [];
 
   return (
     <AccountPageLayout
@@ -106,52 +131,53 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
             profile={profile}
             claims={claims.filter((claim) => claim.profileId === profile.id).slice().reverse()}
             players={players}
+            application={applications.find((candidate) => candidate.profileId === profile.id)}
+            applicationSeasonId={applicableSeason?.id}
+            applicationTeamIds={seasonTeams.map((seasonTeam) => seasonTeam.teamId)}
+            teams={teams}
           />
         ) : (
           <CreateProfileForm
             fallbackName={getDisplayName(user.email, user.user_metadata?.name)}
-            players={players}
           />
         )}
     </AccountPageLayout>
   );
 }
 
-function CreateProfileForm({fallbackName, players}: {fallbackName: string; players: LaunchPlayer[]}) {
+function CreateProfileForm({fallbackName}: {fallbackName: string}) {
   return (
     <article className={styles.panel}>
       <span className={styles.eyebrow}>Finish account setup</span>
-      <h2>Connect your history</h2>
+      <h2>Create your player profile</h2>
       <p className={styles.linkingNote}>
-        Choose the name you used in previous seasons. This connects your wins, losses, rankings, and team history.
+        Start with your name. You can choose whether to connect previous Team Clash history in the next step.
       </p>
       <form className={styles.form} action={createPendingProfile}>
-        <label htmlFor="profileRequestedPlayerId">What name did you play under before?</label>
-        <PlayerRecordSelect
-          emptyLabel="Choose your previous league name"
-          id="profileRequestedPlayerId"
-          name="requestedPlayerId"
-          players={players}
-          searchLabel="Search previous league names"
-          searchPlaceholder="Type your old name"
-          required
-        />
-        <label htmlFor="displayName">What name should we show now?</label>
+        <label htmlFor="displayName">First Name Last Name</label>
         <input id="displayName" name="displayName" defaultValue={fallbackName} autoComplete="name" required />
-        <button className={styles.primaryButton} type="submit">Connect my league history</button>
+        <button className={styles.primaryButton} type="submit">Continue</button>
       </form>
     </article>
   );
 }
 
 function MemberProfile({
+  application,
+  applicationSeasonId,
+  applicationTeamIds,
   claims,
   players,
   profile,
+  teams,
 }: {
+  application?: PlayerApplication;
+  applicationSeasonId?: string;
+  applicationTeamIds: string[];
   claims: PlayerClaim[];
   players: LaunchPlayer[];
   profile: LaunchProfile;
+  teams: LaunchTeam[];
 }) {
   const latestClaim = claims[0];
   const linkedPlayer = players.find((player) => player.id === profile.playerId);
@@ -200,7 +226,17 @@ function MemberProfile({
         ) : null}
       </article>
 
-      <article className={styles.panel}>
+      {profileState === 'pending_player' ? (
+        <PlayerApplicationExperience
+          application={application}
+          applicationSeasonId={applicationSeasonId}
+          applicationTeamIds={applicationTeamIds}
+          claims={claims}
+          players={players}
+          profile={profile}
+          teams={teams}
+        />
+      ) : <article className={styles.panel}>
         {linkedPlayer ? (
           <>
             <span className={styles.eyebrow}>League history</span>
@@ -226,10 +262,6 @@ function MemberProfile({
                   <>Your request to connect <strong>{latestClaim.submittedName}</strong> is {latestClaim.status}.</>
                 )}
               </p>
-            ) : profileState === 'pending_player' ? (
-              <p className={styles.claimState}>
-                New player profile pending. No player claim is required; await league assignment and approval.
-              </p>
             ) : null}
           </>
         )}
@@ -254,7 +286,7 @@ function MemberProfile({
         ) : !linkedPlayer ? (
           <p className={styles.muted}>The commissioner needs to review this claim before another one is submitted.</p>
         ) : null}
-      </article>
+      </article>}
 
       <article className={styles.panel}>
         <span className={styles.eyebrow}>Display</span>
@@ -265,6 +297,103 @@ function MemberProfile({
         </div>
       </article>
     </section>
+  );
+}
+
+function PlayerApplicationExperience({
+  application,
+  applicationSeasonId,
+  applicationTeamIds,
+  claims,
+  players,
+  profile,
+  teams,
+}: {
+  application?: PlayerApplication;
+  applicationSeasonId?: string;
+  applicationTeamIds: string[];
+  claims: PlayerClaim[];
+  players: LaunchPlayer[];
+  profile: LaunchProfile;
+  teams: LaunchTeam[];
+}) {
+  const teamOptions = applicationTeamIds
+    .map((teamId) => teams.find((team) => team.id === teamId))
+    .filter((team): team is LaunchTeam => Boolean(team?.active))
+    .map(({id, name}) => ({id, name}));
+  const availability = canStartPlayerApplication({
+    profileState: resolveLaunchProfileState(profile),
+    seasonAvailable: Boolean(applicationSeasonId),
+    enrolledTeamCount: teamOptions.length,
+  });
+
+  if (!application) {
+    return (
+      <article className={styles.panel}>
+        <span className={styles.eyebrow}>Finish your player application</span>
+        <h2>Player application</h2>
+        {availability.available && applicationSeasonId ? (
+          <PlayerApplicationForm
+            action={submitPlayerApplication}
+            defaultName={profile.displayName}
+            players={players.filter((player) => player.active)}
+            seasonId={applicationSeasonId}
+            teams={teamOptions}
+          />
+        ) : <p className={styles.claimState}>{availability.message}</p>}
+      </article>
+    );
+  }
+
+  const claim = claims[0];
+  const previousPlayer = claim?.requestedPlayerId
+    ? players.find((player) => player.id === claim.requestedPlayerId)
+    : undefined;
+  const requestedTeam = teams.find((team) => team.id === application.requestedTeamId);
+  const summary = buildPlayerApplicationSummary({
+    application,
+    displayName: profile.displayName,
+    requestedTeamName: requestedTeam?.name,
+    claim,
+    previousPlayerName: previousPlayer?.name,
+  });
+
+  return (
+    <article className={styles.panel}>
+      <span className={styles.eyebrow}>Application {summary.status}</span>
+      <h2>{summary.displayName}</h2>
+      <p className={styles.applicationIdentity}>{summary.identityLabel}</p>
+      <dl className={styles.statusList}>
+        <div><dt>Requested Team</dt><dd>{summary.requestedTeamName}</dd></div>
+        <div><dt>Status</dt><dd>{summary.status}</dd></div>
+      </dl>
+      {summary.status === 'Pending' ? (
+        <p className={styles.claimState}>Your application is awaiting league approval.</p>
+      ) : (
+        <p className={styles.claimState}>This application is read-only.</p>
+      )}
+      {summary.previousPlayerName ? (
+        <div className={styles.historySummary}>
+          <strong>Previous player: {summary.previousPlayerName}</strong>
+          <span>History connection: {summary.historyConnectionStatus ?? 'Not submitted'}</span>
+        </div>
+      ) : null}
+      {summary.canChangeRequestedTeam && teamOptions.length ? (
+        <form className={styles.form} action={changePlayerApplicationRequestedTeam}>
+          <input name="applicationId" type="hidden" value={application.id} />
+          <label htmlFor="changeRequestedTeam">Change Requested Team</label>
+          <select
+            defaultValue={application.requestedTeamId}
+            id="changeRequestedTeam"
+            name="requestedTeamId"
+            required
+          >
+            {teamOptions.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+          </select>
+          <SubmitButton pendingLabel="Updating team..." secondary>Change Requested Team</SubmitButton>
+        </form>
+      ) : null}
+    </article>
   );
 }
 

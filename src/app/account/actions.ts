@@ -6,12 +6,15 @@ import {revalidatePath} from 'next/cache';
 import {ensureLaunchSignupProfile} from '@/domain/launch/LaunchAccountSetup';
 import {LaunchService} from '@/domain/launch/LaunchService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
+import {createServerPlayerApplicationService} from '@/core/createServerPlayerApplicationService';
+import {playerApplicationActionError} from '@/domain/player-application/PlayerApplicationActionMessage';
 import {createClient} from '@/lib/supabase/server';
 import {
   normalizeActionError,
   normalizeAuthError,
   SIGN_IN_REQUIRED_MESSAGE,
 } from '@/domain/errors/ActionErrorMessage';
+import {parsePlayerApplicationForm} from './playerApplicationForm';
 
 export async function requestMagicLink(formData: FormData) {
   const email = readFormValue(formData, 'email');
@@ -136,27 +139,14 @@ export async function signOut() {
 
 export async function createPendingProfile(formData: FormData) {
   const displayName = readFormValue(formData, 'displayName');
-  const requestedPlayerId = readFormValue(formData, 'requestedPlayerId');
   if (!displayName) redirect('/account?error=Enter your name.');
-  if (!requestedPlayerId) redirect('/account?error=Choose the name you played under before.');
 
-  const {repository, service, userId} = await getLaunchServiceForUser();
-  const selectedPlayer = await repository.getPlayer(requestedPlayerId);
-  if (!selectedPlayer) redirect('/account?error=Choose a valid previous league name.');
-
+  const {service, userId} = await getLaunchServiceForUser();
   const profileResult = await service.createPendingProfile({userId, displayName});
   if (!profileResult.ok) redirectWithServiceError(profileResult.message, 'Your league profile could not be created.');
 
-  const claimResult = await service.submitPlayerClaim({
-    profileId: profileResult.data.id,
-    requestedPlayerId: selectedPlayer.id,
-    submittedName: displayName,
-    submittedPdgaNumber: selectedPlayer.pdgaNumber,
-  });
-  if (!claimResult.ok) redirectWithServiceError(claimResult.message, 'Your player claim could not be submitted.');
-
   revalidatePath('/account');
-  redirect('/account?notice=Your league history connection is ready for commissioner approval.');
+  redirect('/account?notice=Your Player profile is ready. Finish your player application.');
 }
 
 export async function updateProfileName(formData: FormData) {
@@ -194,6 +184,91 @@ export async function submitPlayerClaim(formData: FormData) {
 
   revalidatePath('/account');
   redirect('/account?notice=Your league history connection was sent to the commissioner.');
+}
+
+export async function submitPlayerApplication(formData: FormData) {
+  const parsed = parsePlayerApplicationForm(formData);
+  if (!parsed.ok) redirect(`/account?error=${encodeURIComponent(parsed.message)}`);
+  const {
+    displayName,
+    gender,
+    playedBefore,
+    playerType,
+    requestedPlayerId,
+    requestedTeamId,
+    seasonId,
+    submittedPdgaNumber,
+  } = parsed.data;
+
+  const {repository, service: launchService, userId} = await getLaunchServiceForUser();
+  const profile = await repository.getProfileByUserId(userId);
+  if (!profile) redirect('/account?error=Create your league profile first.');
+
+  const nameResult = await launchService.updateOwnProfileName(userId, displayName);
+  if (!nameResult.ok) {
+    redirectWithServiceError(nameResult.message, 'Your profile name could not be updated.');
+  }
+
+  const applicationService = await createServerPlayerApplicationService();
+  let applicationResult: Awaited<ReturnType<typeof applicationService.submitApplication>>;
+  try {
+    applicationResult = await applicationService.submitApplication({
+      seasonId,
+      requestedTeamId,
+      playerType,
+      gender,
+      playedBefore,
+    });
+  } catch (applicationError) {
+    redirect(`/account?error=${encodeURIComponent(playerApplicationActionError(applicationError))}`);
+  }
+  if (!applicationResult.ok) {
+    redirect(`/account?error=${encodeURIComponent(applicationResult.message)}`);
+  }
+
+  if (playedBefore) {
+    const selectedPlayer = await repository.getPlayer(requestedPlayerId);
+    if (!selectedPlayer) redirect('/account?error=Choose a valid previous player record.');
+    const existingClaim = (await repository.getPlayerClaims()).find((claim) => (
+      claim.profileId === profile.id && ['Pending', 'Approved'].includes(claim.status)
+    ));
+    if (!existingClaim) {
+      const claimResult = await launchService.submitPlayerClaim({
+        profileId: profile.id,
+        requestedPlayerId: selectedPlayer.id,
+        submittedName: displayName,
+        submittedPdgaNumber: submittedPdgaNumber || selectedPlayer.pdgaNumber,
+      });
+      if (!claimResult.ok) {
+        redirectWithServiceError(
+          claimResult.message,
+          'Your application was saved, but the history connection could not be submitted.',
+        );
+      }
+    }
+  }
+
+  revalidatePath('/account');
+  redirect('/account?notice=Your player application is awaiting league approval.');
+}
+
+export async function changePlayerApplicationRequestedTeam(formData: FormData) {
+  const applicationId = readFormValue(formData, 'applicationId');
+  const requestedTeamId = readFormValue(formData, 'requestedTeamId');
+  if (!applicationId) redirect('/account?error=Player application not found.');
+  if (!requestedTeamId) redirect('/account?error=Choose a requested team.');
+
+  const applicationService = await createServerPlayerApplicationService();
+  let result: Awaited<ReturnType<typeof applicationService.changeRequestedTeam>>;
+  try {
+    result = await applicationService.changeRequestedTeam(applicationId, requestedTeamId);
+  } catch (applicationError) {
+    redirect(`/account?error=${encodeURIComponent(playerApplicationActionError(applicationError))}`);
+  }
+  if (!result.ok) redirect(`/account?error=${encodeURIComponent(result.message)}`);
+
+  revalidatePath('/account');
+  redirect('/account?notice=Your requested team was updated.');
 }
 
 async function getLaunchServiceForUser() {

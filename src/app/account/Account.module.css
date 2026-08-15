@@ -97,6 +97,69 @@
   padding: 0 13px;
 }
 
+.choiceGroup {
+  margin: 4px 0;
+  padding: 12px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 22px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 5px;
+}
+
+.choiceGroup legend {
+  padding: 0 6px;
+  color: var(--cc-heading);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.choiceGroup label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  text-transform: none;
+}
+
+.choiceGroup input {
+  min-height: auto;
+  width: auto;
+}
+
+.returningPlayerFields,
+.historySummary {
+  display: grid;
+  gap: 10px;
+}
+
+.returningPlayerFields {
+  padding: 16px;
+  border-left: 4px solid var(--cc-bronze);
+  border-radius: 4px;
+  background: var(--cc-card-bg-soft);
+}
+
+.applicationIdentity {
+  margin: -4px 0 14px;
+  color: var(--cc-muted);
+  font-weight: 850;
+}
+
+.historySummary {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 5px;
+  background: var(--cc-card-bg-soft);
+  color: var(--cc-body-text);
+}
+
+.historySummary strong {
+  color: var(--cc-heading);
+}
+
 .primaryButton,
 .secondaryButton {
   min-height: 46px;
