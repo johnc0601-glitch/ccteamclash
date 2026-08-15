@@ -28,6 +28,13 @@ type AttendanceRow = {
   updated_at: string;
 };
 
+type MembershipRow = {
+  season_id: string;
+  team_id: string;
+  player_id: string;
+  status: string;
+};
+
 type AttendanceDatabase = {
   public: {
     Tables: {
@@ -51,6 +58,12 @@ type AttendanceDatabase = {
       };
       launch_match_roster_snapshot_players: {
         Row: SnapshotPlayerRow;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      launch_season_roster_memberships: {
+        Row: MembershipRow;
         Insert: never;
         Update: never;
         Relationships: [];
@@ -113,7 +126,7 @@ export class SupabaseMatchRosterRepository implements MatchRosterRepository {
     this.attendanceClient = supabase as unknown as SupabaseClient<AttendanceDatabase>;
   }
 
-  async getAttendanceActor(userId: string): Promise<AttendanceActor | undefined> {
+  async getAttendanceActor(userId: string, seasonId: string): Promise<AttendanceActor | undefined> {
     const {data: profile, error: profileError} = await this.supabase
       .from('launch_profiles')
       .select('id,status,role,player_id,captain_team_id')
@@ -135,34 +148,36 @@ export class SupabaseMatchRosterRepository implements MatchRosterRepository {
       };
     }
 
-    const {data: player, error: playerError} = await this.supabase
-      .from('launch_players')
-      .select('id,name,current_team_id,active')
-      .eq('id', profile.player_id)
-      .maybeSingle();
+    const [{data: player, error: playerError}, {data: membership, error: membershipError}] = await Promise.all([
+      this.supabase
+        .from('launch_players')
+        .select('id,name,active')
+        .eq('id', profile.player_id)
+        .maybeSingle(),
+      this.attendanceClient
+        .from('launch_season_roster_memberships')
+        .select('season_id,team_id,player_id,status')
+        .eq('season_id', seasonId)
+        .eq('player_id', profile.player_id)
+        .eq('status', 'Active')
+        .maybeSingle(),
+    ]);
     if (playerError) throw playerError;
+    if (membershipError) throw membershipError;
 
-    return {
-      profileId: profile.id,
-      profileStatus: profile.status as AttendanceActor['profileStatus'],
-      profileRole: profile.role as AttendanceActor['profileRole'],
-      playerId: player?.id ?? profile.player_id,
-      teamId: player?.current_team_id ?? null,
-      captainTeamId: profile.captain_team_id,
-      playerName: player?.name ?? null,
-      playerActive: player?.active ?? false,
-    };
+    return resolveAttendanceActor({...profile, player_id: profile.player_id}, player, membership);
   }
 
   async getAttendanceMatch(matchId: string): Promise<AttendanceMatch | undefined> {
     const {data, error} = await this.supabase
       .from('launch_schedule_matches')
-      .select('id,home_team_id,away_team_id,date,status')
+      .select('id,season_id,home_team_id,away_team_id,date,status')
       .eq('id', matchId)
       .maybeSingle();
     if (error) throw error;
     return data ? {
       id: data.id,
+      seasonId: data.season_id,
       homeTeamId: data.home_team_id,
       awayTeamId: data.away_team_id,
       date: data.date,
@@ -181,30 +196,33 @@ export class SupabaseMatchRosterRepository implements MatchRosterRepository {
     return data ? toAttendance(data) : undefined;
   }
 
-  async getTeamAttendance(matchId: string, teamId: string): Promise<TeamAttendanceMember[]> {
-    const [{data: players, error: playerError}, {data: attendanceRows, error: attendanceError}] = await Promise.all([
-      this.supabase
-        .from('launch_players')
-        .select('id,name,current_team_id')
-        .eq('current_team_id', teamId)
-        .eq('active', true)
-        .order('name'),
+  async getTeamAttendance(matchId: string, seasonId: string, teamId: string): Promise<TeamAttendanceMember[]> {
+    const [{data: memberships, error: membershipError}, {data: attendanceRows, error: attendanceError}] = await Promise.all([
+      this.attendanceClient
+        .from('launch_season_roster_memberships')
+        .select('season_id,team_id,player_id,status')
+        .eq('season_id', seasonId)
+        .eq('team_id', teamId)
+        .eq('status', 'Active'),
       this.attendanceClient
         .from('launch_match_attendance')
         .select('*')
         .eq('match_id', matchId)
         .eq('team_id', teamId),
     ]);
-    if (playerError) throw playerError;
+    if (membershipError) throw membershipError;
     if (attendanceError) throw attendanceError;
 
-    const statuses = new Map(attendanceRows.map((row) => [row.player_id, row.status as MatchAttendanceStatus]));
-    return players.map((player) => ({
-      playerId: player.id,
-      playerName: player.name,
-      teamId,
-      status: statuses.get(player.id) ?? 'Unconfirmed',
-    }));
+    if (!memberships.length) return [];
+    const {data: players, error: playerError} = await this.supabase
+      .from('launch_players')
+      .select('id,name,active')
+      .in('id', memberships.map((membership) => membership.player_id))
+      .eq('active', true)
+      .order('name');
+    if (playerError) throw playerError;
+
+    return buildTeamAttendanceMembers(teamId, memberships, players, attendanceRows);
   }
 
   async getMatchRoster(matchId: string, teamId: string): Promise<MatchRoster | undefined> {
@@ -256,12 +274,13 @@ export class SupabaseMatchRosterRepository implements MatchRosterRepository {
     if (!rounds.length) return [];
     const {data: matches, error: matchError} = await this.supabase
       .from('launch_schedule_matches')
-      .select('id,home_team_id,away_team_id,date,status')
+      .select('id,season_id,home_team_id,away_team_id,date,status')
       .in('round_id', rounds.map((round) => round.id))
       .neq('status', 'Cancelled');
     if (matchError) throw matchError;
     return filterSnapshotCandidateMatches(matches.map((row) => ({
       id: row.id,
+      seasonId: row.season_id,
       homeTeamId: row.home_team_id,
       awayTeamId: row.away_team_id,
       date: row.date,
@@ -409,4 +428,45 @@ function toSnapshotPlayer(row: SnapshotPlayerRow): MatchRosterSnapshotPlayer {
     updatedBy: row.updated_by,
     updatedAt: row.updated_at,
   };
+}
+
+export function resolveAttendanceActor(
+  profile: {
+    id: string;
+    status: string;
+    role: string;
+    player_id: string;
+    captain_team_id: string | null;
+  },
+  player: {id: string; name: string; active: boolean} | null,
+  membership: Pick<MembershipRow, 'team_id'> | null,
+): AttendanceActor {
+  return {
+    profileId: profile.id,
+    profileStatus: profile.status as AttendanceActor['profileStatus'],
+    profileRole: profile.role as AttendanceActor['profileRole'],
+    playerId: player?.id ?? profile.player_id,
+    teamId: membership?.team_id ?? null,
+    captainTeamId: profile.captain_team_id,
+    playerName: player?.name ?? null,
+    playerActive: player?.active ?? false,
+  };
+}
+
+export function buildTeamAttendanceMembers(
+  teamId: string,
+  memberships: Array<Pick<MembershipRow, 'player_id'>>,
+  players: Array<{id: string; name: string; active: boolean}>,
+  attendanceRows: Array<Pick<AttendanceRow, 'player_id' | 'status'>>,
+): TeamAttendanceMember[] {
+  const statuses = new Map(attendanceRows.map((row) => [row.player_id, row.status as MatchAttendanceStatus]));
+  const eligiblePlayerIds = new Set(memberships.map((membership) => membership.player_id));
+  return players
+    .filter((player) => player.active && eligiblePlayerIds.has(player.id))
+    .map((player) => ({
+      playerId: player.id,
+      playerName: player.name,
+      teamId,
+      status: statuses.get(player.id) ?? 'Unconfirmed',
+    }));
 }

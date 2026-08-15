@@ -56,6 +56,7 @@ export type ManagedTeamRoster = {
 
 export type AttendanceMatch = {
   id: string;
+  seasonId: string;
   homeTeamId: string | null;
   awayTeamId: string | null;
   date: string | null;

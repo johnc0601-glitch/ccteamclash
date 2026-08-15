@@ -32,6 +32,7 @@ const actor: AttendanceActor = {
 
 const match: AttendanceMatch = {
   id: 'match-1',
+  seasonId: 'season-1',
   homeTeamId: 'team-home',
   awayTeamId: 'team-away',
   date: '2026-08-08',
@@ -45,6 +46,7 @@ test('derives player, team, and updater IDs from the authenticated user context'
   const result = await service.setOwnAttendance('user-own', match.id, 'Playing');
 
   assert.equal(result.ok, true);
+  assert.deepEqual(repository.actorSeasonIds, ['season-1']);
   assert.deepEqual(repository.savedInputs, [{
     matchId: 'match-1',
     teamId: 'team-home',
@@ -181,6 +183,7 @@ test('captain views and updates only the assigned team attendance', async () => 
   assert.equal(ownResult.ok, true);
   assert.equal(opponentResult.ok, false);
   assert.equal(repository.savedInputs.at(-1)?.teamId, 'team-home');
+  assert.ok(repository.teamAttendanceSeasonIds.every((seasonId) => seasonId === 'season-1'));
 });
 
 test('captain confirms and revises only the assigned team roster before lock', async () => {
@@ -544,8 +547,12 @@ class FakeMatchRosterRepository implements MatchRosterRepository {
   removedSnapshotPlayers: Array<{matchId: string; teamId: string; playerId: string}> = [];
   candidateQueryCount = 0;
   officialReadFails = false;
+  actorSeasonIds: string[] = [];
+  teamAttendanceSeasonIds: string[] = [];
 
-  async getAttendanceActor(): Promise<AttendanceActor | undefined> {
+  async getAttendanceActor(userId: string, seasonId: string): Promise<AttendanceActor | undefined> {
+    void userId;
+    this.actorSeasonIds.push(seasonId);
     return this.actor;
   }
 
@@ -557,7 +564,8 @@ class FakeMatchRosterRepository implements MatchRosterRepository {
     return this.attendance;
   }
 
-  async getTeamAttendance(_matchId: string, teamId: string): Promise<TeamAttendanceMember[]> {
+  async getTeamAttendance(_matchId: string, seasonId: string, teamId: string): Promise<TeamAttendanceMember[]> {
+    this.teamAttendanceSeasonIds.push(seasonId);
     return (this.teamAttendance[teamId] ?? []).map((player) => ({...player}));
   }
 

@@ -48,15 +48,16 @@ export class MatchRosterService {
   ): Promise<AttendanceResult<OfficialRosterExport>> {
     if (!userId) return {ok: false, message: 'Official roster export is not available.'};
     try {
-      const [actor, match, complete] = await Promise.all([
-        this.repository.getAttendanceActor(userId),
-        this.repository.getAttendanceMatch(matchId),
+      const match = await this.repository.getAttendanceMatch(matchId);
+      if (!match) return {ok: false, message: 'Official roster export is not available.'};
+      const [actor, complete] = await Promise.all([
+        this.repository.getAttendanceActor(userId, match.seasonId),
         this.repository.hasCompleteSnapshot(matchId),
       ]);
       if (
         !actor
         || actor.profileStatus !== 'Approved'
-        || !match?.date
+        || !match.date
         || !isMatchRosterLocked(match, this.now())
         || !complete
       ) return {ok: false, message: 'Official roster export is not available.'};
@@ -92,15 +93,15 @@ export class MatchRosterService {
   }
 
   async canManageOfficialSnapshot(userId: string, matchId: string): Promise<boolean> {
-    const [actor, match, complete] = await Promise.all([
-      this.repository.getAttendanceActor(userId),
-      this.repository.getAttendanceMatch(matchId),
+    const match = await this.repository.getAttendanceMatch(matchId);
+    if (!match) return false;
+    const [actor, complete] = await Promise.all([
+      this.repository.getAttendanceActor(userId, match.seasonId),
       this.repository.hasCompleteSnapshot(matchId),
     ]);
     return Boolean(
       actor?.profileStatus === 'Approved'
       && actor.profileRole === 'Commissioner'
-      && match
       && match.status !== 'Cancelled'
       && isMatchRosterLocked(match, this.now())
       && complete
@@ -213,7 +214,7 @@ export class MatchRosterService {
 
     return Promise.all(context.teamIds.map(async (teamId) => {
       const [players, roster] = await Promise.all([
-        this.repository.getTeamAttendance(matchId, teamId),
+        this.repository.getTeamAttendance(matchId, context.match.seasonId, teamId),
         this.repository.getMatchRoster(matchId, teamId),
       ]);
       return {
@@ -282,7 +283,7 @@ export class MatchRosterService {
 
     const teamMembers = (await Promise.all(context.teamIds.map(async (teamId) => ({
       teamId,
-      players: await this.repository.getTeamAttendance(matchId, teamId),
+      players: await this.repository.getTeamAttendance(matchId, context.match.seasonId, teamId),
     })))).find((team) => team.players.some((player) => player.playerId === playerId));
     if (!teamMembers) {
       return {ok: false, message: 'That player is not on a team you manage for this match.'};
@@ -296,7 +297,7 @@ export class MatchRosterService {
       updatedBy: context.actor.profileId,
     });
     const [players, roster] = await Promise.all([
-      this.repository.getTeamAttendance(matchId, teamMembers.teamId),
+      this.repository.getTeamAttendance(matchId, context.match.seasonId, teamMembers.teamId),
       this.repository.getMatchRoster(matchId, teamMembers.teamId),
     ]);
 
@@ -334,7 +335,7 @@ export class MatchRosterService {
         confirmedBy: context.actor.profileId,
         confirmedAt,
       }),
-      this.repository.getTeamAttendance(matchId, teamId),
+      this.repository.getTeamAttendance(matchId, context.match.seasonId, teamId),
     ]);
 
     return {
@@ -354,11 +355,10 @@ export class MatchRosterService {
     userId: string,
     matchId: string,
   ): Promise<{actor: AuthorizedActor; match: AttendanceMatch} | undefined> {
-    const [actor, match] = await Promise.all([
-      this.repository.getAttendanceActor(userId),
-      this.repository.getAttendanceMatch(matchId),
-    ]);
-    if (!actor || !match || !isAuthorizedPlayer(actor)) return undefined;
+    const match = await this.repository.getAttendanceMatch(matchId);
+    if (!match) return undefined;
+    const actor = await this.repository.getAttendanceActor(userId, match.seasonId);
+    if (!actor || !isAuthorizedPlayer(actor)) return undefined;
     if (actor.teamId !== match.homeTeamId && actor.teamId !== match.awayTeamId) return undefined;
     return {actor, match};
   }
@@ -367,11 +367,10 @@ export class MatchRosterService {
     userId: string,
     matchId: string,
   ): Promise<{actor: AttendanceActor; match: AttendanceMatch; teamIds: string[]} | undefined> {
-    const [actor, match] = await Promise.all([
-      this.repository.getAttendanceActor(userId),
-      this.repository.getAttendanceMatch(matchId),
-    ]);
-    if (!actor || !match || actor.profileStatus !== 'Approved') return undefined;
+    const match = await this.repository.getAttendanceMatch(matchId);
+    if (!match) return undefined;
+    const actor = await this.repository.getAttendanceActor(userId, match.seasonId);
+    if (!actor || actor.profileStatus !== 'Approved') return undefined;
 
     const matchTeamIds = [match.awayTeamId, match.homeTeamId].filter((teamId): teamId is string => Boolean(teamId));
     if (actor.profileRole === 'Commissioner') return {actor, match, teamIds: matchTeamIds};
@@ -390,16 +389,16 @@ export class MatchRosterService {
     matchId: string,
     teamId: string,
   ): Promise<{actor: AttendanceActor; match: AttendanceMatch; rosters: OfficialMatchRoster[]} | undefined> {
-    const [actor, match, rosters] = await Promise.all([
-      this.repository.getAttendanceActor(userId),
-      this.repository.getAttendanceMatch(matchId),
+    const match = await this.repository.getAttendanceMatch(matchId);
+    if (!match) return undefined;
+    const [actor, rosters] = await Promise.all([
+      this.repository.getAttendanceActor(userId, match.seasonId),
       this.repository.getOfficialMatchRosters(matchId),
     ]);
     if (
       !actor
       || actor.profileStatus !== 'Approved'
       || actor.profileRole !== 'Commissioner'
-      || !match
       || match.status === 'Cancelled'
       || !isMatchRosterLocked(match, this.now())
     ) return undefined;
