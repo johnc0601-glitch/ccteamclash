@@ -4,8 +4,10 @@ import type {Course} from '@/domain/course/Course';
 import type {LaunchPlayer, LaunchTeam} from '@/domain/launch/LaunchData';
 import type {Match} from '@/domain/schedule/Match';
 import type {PublicScheduleEvent} from '@/domain/schedule/ScheduleService';
+import type {SeasonRosterMembership} from '@/domain/season-roster/SeasonRosterMembership';
 import {
   getCaptainMatchIds,
+  resolveAttendanceUnavailableMessage,
   resolveMatchday,
   resolveMatchdayLifecycle,
   resolveMatchdayScoreboard,
@@ -72,7 +74,8 @@ test('resolves teams, players, and courses only by stable IDs after display-name
   ));
   players.push(launchPlayer('home-1', 'Home Player', 'team-home'));
 
-  const resolved = resolveMatchday(event, match, teams, players, courses, false);
+  const memberships = players.map((player) => membership(player.id, player.id.startsWith('away-') ? 'team-away' : 'team-home'));
+  const resolved = resolveMatchday(event, match, teams, players, memberships, courses, false);
 
   assert.ok(resolved);
   assert.equal(resolved.homeTeam.name, 'Renamed Home');
@@ -82,22 +85,75 @@ test('resolves teams, players, and courses only by stable IDs after display-name
   assert.equal(resolved.homeTeam.roster.length, 1);
 });
 
+test('builds pre-lock public rosters only from active membership in the match season', () => {
+  const membershipWins = launchPlayer('membership-wins', 'Membership Wins', 'team-other');
+  const directoryOnly = launchPlayer('directory-only', 'Directory Only', 'team-home');
+  const dropped = launchPlayer('dropped', 'Dropped Player', 'team-home');
+  const wrongSeason = launchPlayer('wrong-season', 'Wrong Season', 'team-home');
+  const inactive = {...launchPlayer('inactive', 'Inactive Player', 'team-home'), active: false};
+
+  const resolved = resolveMatchday(event, match, teams, [
+    membershipWins,
+    directoryOnly,
+    dropped,
+    wrongSeason,
+    inactive,
+  ], [
+    membership(membershipWins.id, 'team-home'),
+    membership(dropped.id, 'team-home', 'Dropped'),
+    membership(wrongSeason.id, 'team-home', 'Active', 'season-other'),
+    membership(inactive.id, 'team-home'),
+  ], courses, false);
+
+  assert.ok(resolved);
+  assert.deepEqual(resolved.homeTeam.roster.map((player) => player.id), ['membership-wins']);
+  assert.equal(resolved.awayTeam.roster.length, 0);
+});
+
+test('explains membership, dropped, inactive, and non-participating attendance states', () => {
+  const player = launchPlayer('player-1', 'Player One', 'team-other');
+  const profile = {
+    id: 'profile-1',
+    userId: 'user-1',
+    displayName: 'Player One',
+    role: 'Player' as const,
+    status: 'Approved' as const,
+    playerId: player.id,
+    captainTeamId: null,
+    createdAt: '2026-07-01T00:00:00.000Z',
+    updatedAt: '2026-07-01T00:00:00.000Z',
+  };
+  const base = {
+    signedIn: true,
+    state: 'approved_player' as const,
+    profile,
+    player,
+    homeTeamId: 'team-home',
+    awayTeamId: 'team-away',
+  };
+
+  assert.match(resolveAttendanceUnavailableMessage({...base, membership: undefined}), /not on an active season roster/i);
+  assert.match(resolveAttendanceUnavailableMessage({...base, membership: membership(player.id, 'team-home', 'Dropped')}), /dropped/i);
+  assert.match(resolveAttendanceUnavailableMessage({...base, player: {...player, active: false}, membership: membership(player.id, 'team-home')}), /inactive/i);
+  assert.match(resolveAttendanceUnavailableMessage({...base, membership: membership(player.id, 'team-other')}), /not participating/i);
+});
+
 test('supports a missing logo without changing team identity', () => {
-  const resolved = resolveMatchday(event, match, teams, [], courses, false);
+  const resolved = resolveMatchday(event, match, teams, [], [], courses, false);
   assert.ok(resolved);
   assert.equal(resolved.awayTeam.id, 'team-away');
   assert.equal(resolved.awayTeam.logo, '');
 });
 
 test('does not rediscover a missing course by its display name', () => {
-  const resolved = resolveMatchday(event, match, teams, [], [], false);
+  const resolved = resolveMatchday(event, match, teams, [], [], [], false);
   assert.ok(resolved);
   assert.equal(resolved.courseDetails, undefined);
 });
 
 test('rejects incomplete match identity data', () => {
-  assert.equal(resolveMatchday(event, {...match, courseId: null}, teams, [], courses, false), undefined);
-  assert.equal(resolveMatchday(event, {...match, awayTeamId: null}, teams, [], courses, false), undefined);
+  assert.equal(resolveMatchday(event, {...match, courseId: null}, teams, [], [], courses, false), undefined);
+  assert.equal(resolveMatchday(event, {...match, awayTeamId: null}, teams, [], [], courses, false), undefined);
 });
 
 test('uses only current Patch 1 lifecycle states', () => {
@@ -120,7 +176,7 @@ test('returns only matches involving the captain stable team ID', () => {
 });
 
 test('shows a pending scoreboard when no published result exists', () => {
-  const resolved = resolveMatchday(event, match, teams, [], courses, false);
+  const resolved = resolveMatchday(event, match, teams, [], [], courses, false);
   assert.ok(resolved);
   assert.deepEqual(resolveMatchdayScoreboard(resolved, undefined), {
     heading: 'Scoreboard pending',
@@ -129,7 +185,7 @@ test('shows a pending scoreboard when no published result exists', () => {
 });
 
 test('shows the published away and home final score', () => {
-  const resolved = resolveMatchday(event, match, teams, [], courses, true);
+  const resolved = resolveMatchday(event, match, teams, [], [], courses, true);
   assert.ok(resolved);
   assert.deepEqual(resolveMatchdayScoreboard(resolved, {
     matchId: match.id,
@@ -168,6 +224,28 @@ function launchPlayer(id: string, name: string, currentTeamId: string): LaunchPl
     currentTeamId,
     homeArea: '',
     active: true,
+    createdAt: '2026-07-01T00:00:00.000Z',
+    updatedAt: '2026-07-01T00:00:00.000Z',
+  };
+}
+
+function membership(
+  playerId: string,
+  teamId: string,
+  status: SeasonRosterMembership['status'] = 'Active',
+  seasonId = match.seasonId,
+): SeasonRosterMembership {
+  return {
+    id: `membership-${playerId}`,
+    seasonId,
+    teamId,
+    playerId,
+    rosterCategory: 'Men',
+    status,
+    addedBy: 'profile-1',
+    addedAt: '2026-07-01T00:00:00.000Z',
+    droppedBy: status === 'Dropped' ? 'profile-2' : null,
+    droppedAt: status === 'Dropped' ? '2026-07-02T00:00:00.000Z' : null,
     createdAt: '2026-07-01T00:00:00.000Z',
     updatedAt: '2026-07-01T00:00:00.000Z',
   };

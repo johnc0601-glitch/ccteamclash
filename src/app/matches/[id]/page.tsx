@@ -11,8 +11,9 @@ import {CommissionerSnapshotPanel} from '@/components/matches/CommissionerSnapsh
 import {OfficialRosterExportPanel} from '@/components/matches/OfficialRosterExportPanel';
 import {createServerResultsService} from '@/core/createServerResultsService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
+import {createServerSeasonRosterService} from '@/core/createServerSeasonRosterService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
-import type {LaunchPlayer, LaunchProfile} from '@/domain/launch/LaunchData';
+import type {LaunchProfile} from '@/domain/launch/LaunchData';
 import {resolveLaunchProfileState, type LaunchProfileState} from '@/domain/launch/LaunchProfileState';
 import {MatchRosterService} from '@/domain/match-roster/MatchRosterService';
 import {isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
@@ -21,7 +22,11 @@ import {parseMatchRosterSnapshotStartAt, snapshotErrorClass} from '@/domain/matc
 import {SupabaseMatchRosterRepository} from '@/domain/match-roster/SupabaseMatchRosterRepository';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
-import {resolveMatchday, type PublicMatchday} from '@/services/matches/MatchdayService';
+import {
+  resolveAttendanceUnavailableMessage,
+  resolveMatchday,
+  type PublicMatchday,
+} from '@/services/matches/MatchdayService';
 import styles from './Matchday.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -42,9 +47,10 @@ type MatchdayPageProps = {
 export default async function MatchdayPage({params, searchParams}: MatchdayPageProps) {
   const {id: matchId} = await params;
   const query = await searchParams;
-  const [scheduleService, resultsService, supabase] = await Promise.all([
+  const [scheduleService, resultsService, seasonRosterService, supabase] = await Promise.all([
     createServerScheduleService(),
     createServerResultsService(),
+    createServerSeasonRosterService(),
     createClient(),
   ]);
   const launchRepository = new SupabaseLaunchRepository(supabase);
@@ -62,11 +68,13 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   ]);
 
   if (!event || !match) notFound();
+  const seasonMemberships = await seasonRosterService.listMemberships(match.seasonId);
   const matchday = resolveMatchday(
     event,
     match,
     teams,
     players,
+    seasonMemberships,
     courses,
     Boolean(publishedResult),
   );
@@ -107,8 +115,19 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const linkedPlayer = profile?.playerId
     ? players.find((player) => player.id === profile.playerId)
     : undefined;
+  const linkedMembership = profile?.playerId
+    ? seasonMemberships.find((membership) => membership.playerId === profile.playerId)
+    : undefined;
   const attendanceUnavailableMessage = !locked && !personalAttendance
-    ? getAttendanceUnavailableMessage(Boolean(userResult.data.user), profileState, profile, linkedPlayer, matchday)
+    ? resolveAttendanceUnavailableMessage({
+      signedIn: Boolean(userResult.data.user),
+      state: profileState,
+      profile,
+      player: linkedPlayer,
+      membership: linkedMembership,
+      homeTeamId: matchday.homeTeam.id,
+      awayTeamId: matchday.awayTeam.id,
+    })
     : undefined;
   const rosterUnavailableMessage = !locked && manageRosterRequested && !managedRosters.length
     ? getRosterUnavailableMessage(Boolean(userResult.data.user), profileState, profile, matchday)
@@ -181,29 +200,6 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
 function readParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
-}
-
-function getAttendanceUnavailableMessage(
-  signedIn: boolean,
-  state: LaunchProfileState,
-  profile: LaunchProfile | undefined,
-  player: LaunchPlayer | undefined,
-  matchday: PublicMatchday,
-): string {
-  if (!signedIn) return 'Sign in and complete your player profile to submit match availability.';
-  if (state === 'missing') return 'No league profile is connected to your account. Complete account setup to submit match availability.';
-  if (state.startsWith('pending_')) return 'Your profile is pending approval. Attendance will be available after your player profile is approved and assigned.';
-  if (state === 'rejected') return 'Your profile is not approved for match attendance. Visit your account for status details.';
-  if (state === 'suspended') return 'Your profile is suspended, so match attendance is unavailable.';
-  if (state !== 'approved_player') return 'Personal attendance is available only through an approved player profile.';
-  if (!profile?.playerId) return 'Your player profile is approved but is not linked to a player record.';
-  if (!player) return 'Your linked player record is unavailable. Contact a league administrator.';
-  if (!player.active) return 'Your linked player record is inactive, so attendance is unavailable.';
-  if (!player.currentTeamId) return 'You are not currently assigned to a team.';
-  if (player.currentTeamId !== matchday.homeTeam.id && player.currentTeamId !== matchday.awayTeam.id) {
-    return 'Your assigned team is not participating in this match.';
-  }
-  return 'Attendance is unavailable for this match. Refresh the page or contact a league administrator.';
 }
 
 function getRosterUnavailableMessage(
