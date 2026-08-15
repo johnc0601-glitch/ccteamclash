@@ -123,7 +123,7 @@ select is(
 );
 select lives_ok(
   $$select public.submit_launch_player_application(
-      'application-current-season', 'beast-mode', 'Junior', 'Female', true
+      'application-current-season', 'beast-mode', 'Junior', 'Female', false
     )$$,
   'repeat submission idempotently updates the Pending application'
 );
@@ -203,8 +203,8 @@ select ok(
 );
 select is(
   (select status from public.launch_profiles where id = 'application-player-profile'),
-  'Pending',
-  'application review does not automatically approve the profile'
+  'Approved',
+  'atomic application review approves the profile identity'
 );
 select is(
   (select count(*) from public.launch_season_roster_memberships

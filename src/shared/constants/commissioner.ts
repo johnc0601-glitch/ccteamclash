@@ -45,6 +45,11 @@ export const OFFICE_SECTIONS = {
     description: 'Review the competitive order produced by league results.',
     href: '/office/standings',
   },
+  applications: {
+    title: 'Applications',
+    description: 'Review new and returning player applications before roster placement.',
+    href: '/office/applications',
+  },
   rosters: {
     title: 'Rosters',
     description: 'Manage season team membership, categories, and permanent drops.',
