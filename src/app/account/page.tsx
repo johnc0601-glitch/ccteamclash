@@ -181,11 +181,12 @@ function MemberProfile({
           </div>
         </dl>
         <form className={styles.form} action={updateProfileName}>
-          <label htmlFor="profileDisplayName">Display name</label>
+          <label htmlFor="profileDisplayName">First Name Last Name</label>
           <input
             id="profileDisplayName"
             name="displayName"
             defaultValue={profile.displayName}
+            placeholder="First Name Last Name"
             autoComplete="name"
             required
           />
@@ -234,17 +235,17 @@ function MemberProfile({
         )}
         {!linkedPlayer && canSubmitClaim ? (
           <form className={styles.form} action={submitPlayerClaim}>
-            <label htmlFor="requestedPlayerId">What name did you play under before?</label>
+            <label htmlFor="requestedPlayerId">First Name Last Name</label>
             <PlayerRecordSelect
               emptyLabel="Choose your previous league name"
               id="requestedPlayerId"
               name="requestedPlayerId"
               players={players}
               searchLabel="Search previous league names"
-              searchPlaceholder="Type your old name"
+              searchPlaceholder="First Name Last Name"
               required
             />
-            <label htmlFor="submittedName">What name should we show now?</label>
+            <label htmlFor="submittedName">First Name Last Name</label>
             <input id="submittedName" name="submittedName" defaultValue={profile.displayName} required />
             <label htmlFor="submittedPdgaNumber">PDGA number</label>
             <input id="submittedPdgaNumber" name="submittedPdgaNumber" inputMode="numeric" />
