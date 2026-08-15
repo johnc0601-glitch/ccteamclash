@@ -6,7 +6,9 @@ import {MockScheduleRepository} from '@/domain/schedule/ScheduleRepository';
 import type {ResultContestInput} from '@/domain/results/MatchResult';
 
 function createService() {
-  return new ResultsService(new MockResultsRepository(), new MockScheduleRepository());
+  const repository = new MockResultsRepository();
+  repository.setOfficialRosters('summer-2026-r1-dark-ninjas', officialRosters());
+  return new ResultsService(repository, new MockScheduleRepository());
 }
 
 test('results workflow saves and edits a draft, publishes it, and exposes only the final result', async () => {
@@ -92,6 +94,30 @@ test('player contest validation rejects incomplete singles, malformed doubles, a
   if (!invalid.ok) assert.match(invalid.fieldErrors?.contests ?? '', /scheduled home and away teams/i);
 });
 
+test('player contests require both official manifests and snapshot participants', async () => {
+  const repository = new MockResultsRepository();
+  const service = new ResultsService(repository, new MockScheduleRepository());
+  const matchId = 'summer-2026-r1-dark-ninjas';
+
+  repository.setOfficialRosters(matchId, officialRosters().slice(0, 1));
+  const partial = await service.saveDraft(matchId, {homeScore: 5, awayScore: 3, contests: validContests(matchId)});
+  assert.equal(partial.ok, false);
+  if (!partial.ok) assert.match(partial.fieldErrors?.contests ?? '', /complete official match roster/i);
+
+  repository.setOfficialRosters(matchId, officialRosters());
+  const invalid = validContests(matchId);
+  invalid[0].players[0].playerId = 'not-on-snapshot';
+  const rejected = await service.saveDraft(matchId, {homeScore: 5, awayScore: 3, contests: invalid});
+  assert.equal(rejected.ok, false);
+  if (!rejected.ok) assert.match(rejected.fieldErrors?.contests ?? '', /official match roster/i);
+});
+
+test('team-only scoring remains valid without an official snapshot', async () => {
+  const service = new ResultsService(new MockResultsRepository(), new MockScheduleRepository());
+  assert.equal((await service.saveDraft('summer-2026-r1-dark-ninjas', {homeScore: 5, awayScore: 3})).ok, true);
+  assert.equal((await service.publish('summer-2026-r1-dark-ninjas', {homeScore: 5, awayScore: 3})).ok, true);
+});
+
 function validContests(matchId: string): ResultContestInput[] {
   return [
     {
@@ -111,6 +137,31 @@ function validContests(matchId: string): ResultContestInput[] {
         {playerId: 'away-1', teamId: 'ninjas', side: 'Away', slot: 1},
         {playerId: 'away-2', teamId: 'ninjas', side: 'Away', slot: 2},
       ],
+    },
+  ];
+}
+
+function officialRosters() {
+  return [
+    {
+      teamId: 'dark-knights',
+      teamName: 'Historical Dark Knights',
+      players: ['home-1', 'home-2'].map((playerId) => ({
+        playerId,
+        playerName: `Historical ${playerId}`,
+        teamId: 'dark-knights',
+        teamName: 'Historical Dark Knights',
+      })),
+    },
+    {
+      teamId: 'ninjas',
+      teamName: 'Historical Ninjas',
+      players: ['away-1', 'away-2'].map((playerId) => ({
+        playerId,
+        playerName: `Historical ${playerId}`,
+        teamId: 'ninjas',
+        teamName: 'Historical Ninjas',
+      })),
     },
   ];
 }

@@ -1,6 +1,7 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
 import type {
   MatchResult,
+  OfficialResultRoster,
   ResultContest,
   ResultContestInput,
   ResultContestPlayer,
@@ -65,6 +66,34 @@ export class SupabaseResultsRepository implements ResultsRepository {
       contest,
       players.filter((player) => player.contest_id === contest.id),
     ));
+  }
+
+  async getOfficialRosters(matchId: string): Promise<OfficialResultRoster[]> {
+    const {data: manifests, error: manifestError} = await this.supabase
+      .from('launch_match_roster_snapshots')
+      .select('team_id,team_name_snapshot')
+      .eq('match_id', matchId)
+      .order('team_id');
+    if (manifestError) throw manifestError;
+    if (!manifests.length) return [];
+    const {data: players, error: playerError} = await this.supabase
+      .from('launch_match_roster_snapshot_players')
+      .select('team_id,team_name_snapshot,player_id,player_name_snapshot')
+      .eq('match_id', matchId)
+      .order('player_name_snapshot');
+    if (playerError) throw playerError;
+    return manifests.map((manifest) => ({
+      teamId: manifest.team_id,
+      teamName: manifest.team_name_snapshot,
+      players: players
+        .filter((player) => player.team_id === manifest.team_id)
+        .map((player) => ({
+          playerId: player.player_id,
+          playerName: player.player_name_snapshot,
+          teamId: player.team_id,
+          teamName: player.team_name_snapshot,
+        })),
+    }));
   }
 
   async replaceContests(matchId: string, contests: ResultContestInput[]): Promise<ResultContest[]> {

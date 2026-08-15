@@ -29,6 +29,12 @@ export type ResultContest = {
 
 export type ResultContestPlayerInput = Pick<ResultContestPlayer, 'playerId' | 'teamId' | 'side' | 'slot'>;
 
+export type OfficialResultRoster = {
+  teamId: string;
+  teamName: string;
+  players: Array<Pick<ResultContestPlayer, 'playerId' | 'playerName' | 'teamId' | 'teamName'>>;
+};
+
 export type ResultContestInput = Pick<
   ResultContest,
   'id' | 'format' | 'position' | 'homeOutcome' | 'awayOutcome' | 'homeScore' | 'awayScore'

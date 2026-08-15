@@ -12,7 +12,7 @@ import type {
   ResultContestSide,
   ResultsFieldErrors,
 } from '@/domain/results/MatchResult';
-import type {LaunchPlayer} from '@/domain/launch/LaunchData';
+import type {OfficialResultRoster} from '@/domain/results/MatchResult';
 import type {Match} from '@/domain/schedule/Match';
 import type {Round} from '@/domain/schedule/Round';
 import type {Schedule} from '@/domain/schedule/Schedule';
@@ -32,7 +32,6 @@ type ResultsManagementProps = {
   initialTeams: Team[];
   initialCourses: Course[];
   initialRoundId: string;
-  initialPlayers: LaunchPlayer[];
 };
 
 export function ResultsManagement({
@@ -43,7 +42,6 @@ export function ResultsManagement({
   initialTeams,
   initialCourses,
   initialRoundId,
-  initialPlayers,
 }: ResultsManagementProps) {
   const [schedules, setSchedules] = useState(initialSchedules);
   const [rounds, setRounds] = useState(initialRounds);
@@ -59,6 +57,7 @@ export function ResultsManagement({
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [contests, setContests] = useState<ResultContestInput[]>([]);
+  const [officialRosters, setOfficialRosters] = useState<OfficialResultRoster[]>([]);
 
   async function load(preferredRoundId?: string) {
     const [nextSchedules, nextTeams, nextCourses, nextResults] = await Promise.all([
@@ -99,7 +98,14 @@ export function ResultsManagement({
     setAwayScore(result?.awayScore === null || result?.awayScore === undefined ? '' : String(result.awayScore));
     setFieldErrors({});
     setMessage('');
-    setContests((await services.results.getContests(match.id)).map(toContestInput));
+    const [storedContests, rosters] = await Promise.all([
+      services.results.getContests(match.id),
+      services.results.getOfficialContestRosters(match.id),
+    ]);
+    setContests(storedContests.map(toContestInput));
+    setOfficialRosters(result?.status === 'Published'
+      ? mergeStoredContestPlayers(rosters, storedContests)
+      : rosters);
   }
 
   async function save(action: 'draft' | 'publish' | 'reopen') {
@@ -123,6 +129,9 @@ export function ResultsManagement({
       return;
     }
     setMessage(action === 'draft' ? 'Draft saved.' : action === 'publish' ? 'Result published.' : 'Result reopened.');
+    if (action === 'reopen') {
+      setOfficialRosters(await services.results.getOfficialContestRosters(editor.match.id));
+    }
     if (action !== 'draft') await services.playoffs.getBracket(editor.match.seasonId);
     await load(roundId);
     setEditor({match: editor.match, result: result.data});
@@ -131,15 +140,10 @@ export function ResultsManagement({
   const teamNames = useMemo(() => new Map(teams.map((team) => [team.id, team.name])), [teams]);
   const courseNames = useMemo(() => new Map(courses.map((course) => [course.id, course.name])), [courses]);
   const scheduleNames = useMemo(() => new Map(schedules.map((schedule) => [schedule.id, schedule.name])), [schedules]);
-  const playersByTeam = useMemo(() => {
-    const grouped = new Map<string, LaunchPlayer[]>();
-    for (const player of initialPlayers.filter((candidate) => candidate.active && candidate.currentTeamId)) {
-      const rows = grouped.get(player.currentTeamId!) ?? [];
-      rows.push(player);
-      grouped.set(player.currentTeamId!, rows);
-    }
-    return grouped;
-  }, [initialPlayers]);
+  const playersByTeam = useMemo(() => new Map(officialRosters.map((roster) => [
+    roster.teamId,
+    roster.players.slice().sort((left, right) => left.playerName.localeCompare(right.playerName)),
+  ])), [officialRosters]);
 
   function addContest(format: ResultContestFormat) {
     if (!editor?.match.homeTeamId || !editor.match.awayTeamId) return;
@@ -273,7 +277,7 @@ export function ResultsManagement({
                           onChange={(event) => updatePlayer(contestIndex, side, slot, event.target.value)}
                         >
                           <option value="">Select player</option>
-                          {(teamId ? playersByTeam.get(teamId) ?? [] : []).map((player) => <option value={player.id} key={player.id}>{player.name}</option>)}
+                          {(teamId ? playersByTeam.get(teamId) ?? [] : []).map((player) => <option value={player.playerId} key={player.playerId}>{player.playerName}</option>)}
                         </select>
                       </label>)}
                     </div>;
@@ -325,6 +329,31 @@ function toContestInput(contest: ResultContest): ResultContestInput {
     awayScore: contest.awayScore,
     players: contest.players.map(({playerId, teamId, side, slot}) => ({playerId, teamId, side, slot})),
   };
+}
+
+export function mergeStoredContestPlayers(
+  rosters: OfficialResultRoster[],
+  contests: ResultContest[],
+): OfficialResultRoster[] {
+  const merged = new Map(rosters.map((roster) => [roster.teamId, {
+    ...roster,
+    players: new Map(roster.players.map((player) => [player.playerId, player])),
+  }]));
+  contests.flatMap((contest) => contest.players).forEach((player) => {
+    const roster = merged.get(player.teamId) ?? {
+      teamId: player.teamId,
+      teamName: player.teamName,
+      players: new Map(),
+    };
+    roster.players.set(player.playerId, {
+        playerId: player.playerId,
+        playerName: player.playerName,
+        teamId: player.teamId,
+        teamName: player.teamName,
+    });
+    merged.set(player.teamId, roster);
+  });
+  return [...merged.values()].map((roster) => ({...roster, players: [...roster.players.values()]}));
 }
 
 function parseScore(value: string): number | null {

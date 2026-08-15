@@ -2,19 +2,15 @@ import {OfficePage} from '@/components/commissioner/OfficePage';
 import {ResultsManagement} from '@/components/results/ResultsManagement';
 import {createServerResultsService} from '@/core/createServerResultsService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
-import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
-import {createClient} from '@/lib/supabase/server';
 
 export default async function OfficeResultsPage() {
   const scheduleService = await createServerScheduleService();
   const resultsService = await createServerResultsService();
-  const launchRepository = new SupabaseLaunchRepository(await createClient());
-  const [schedules, teams, courses, results, players] = await Promise.all([
+  const [schedules, teams, courses, results] = await Promise.all([
     scheduleService.getSchedules(),
     scheduleService.getTeams(),
     scheduleService.getCourses(),
     resultsService.getResults(),
-    launchRepository.getPlayers(),
   ]);
   const rounds = (await Promise.all(
     schedules.map((schedule) => scheduleService.getRounds(schedule.id)),
@@ -34,7 +30,6 @@ export default async function OfficeResultsPage() {
         initialTeams={teams}
         initialCourses={courses}
         initialRoundId={initialRoundId}
-        initialPlayers={players}
       />
     </OfficePage>
   );

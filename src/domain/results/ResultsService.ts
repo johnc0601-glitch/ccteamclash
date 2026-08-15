@@ -1,6 +1,7 @@
 import type {
   MatchResult,
   MatchResultInput,
+  OfficialResultRoster,
   ResultContestInput,
   ResultsFieldErrors,
   ResultsServiceResult,
@@ -26,6 +27,13 @@ export class ResultsService {
     return this.repository.getContests(matchId);
   }
 
+  async getOfficialContestRosters(matchId: string): Promise<OfficialResultRoster[]> {
+    const match = await this.scheduleRepository.getMatch(matchId);
+    if (!match?.homeTeamId || !match.awayTeamId) return [];
+    const rosters = await this.repository.getOfficialRosters(matchId);
+    return hasCompleteOfficialRosters(rosters, match.homeTeamId, match.awayTeamId) ? rosters : [];
+  }
+
   async getPublishedResult(matchId: string): Promise<MatchResult | undefined> {
     const result = await this.repository.getByMatchId(matchId);
     return result?.status === 'Published' ? result : undefined;
@@ -46,7 +54,7 @@ export class ResultsService {
     const existing = await this.repository.getByMatchId(matchId);
     if (existing?.status === 'Published') return this.publishedLock();
     const fieldErrors = this.validateScores(input, false);
-    Object.assign(fieldErrors, this.validateContests(input.contests, false, match.homeTeamId, match.awayTeamId));
+    Object.assign(fieldErrors, await this.validateContests(input.contests, false, match.homeTeamId, match.awayTeamId, matchId));
     if (Object.keys(fieldErrors).length) return this.validationFailure(fieldErrors);
     const now = new Date().toISOString();
     const saved = await this.repository.save({
@@ -79,7 +87,7 @@ export class ResultsService {
     }
     const fieldErrors = this.validateScores(input, true);
     const contests = input.contests ?? await this.repository.getContests(matchId);
-    Object.assign(fieldErrors, this.validateContests(contests, true, match.homeTeamId, match.awayTeamId));
+    Object.assign(fieldErrors, await this.validateContests(contests, true, match.homeTeamId, match.awayTeamId, matchId));
     if (Object.keys(fieldErrors).length) return this.validationFailure(fieldErrors);
     const now = new Date().toISOString();
     if (input.contests) {
@@ -143,13 +151,22 @@ export class ResultsService {
     return errors;
   }
 
-  private validateContests(
+  private async validateContests(
     contests: ResultContestInput[] | undefined,
     requireComplete: boolean,
     homeTeamId: string,
     awayTeamId: string,
-  ): ResultsFieldErrors {
+    matchId: string,
+  ): Promise<ResultsFieldErrors> {
     if (!contests) return {};
+    if (!contests.length) return {};
+    const officialRosters = await this.repository.getOfficialRosters(matchId);
+    if (!hasCompleteOfficialRosters(officialRosters, homeTeamId, awayTeamId)) {
+      return {contests: 'The complete official match roster is required for player results.'};
+    }
+    const officialPlayers = new Set(officialRosters.flatMap((roster) =>
+      roster.players.map((player) => `${roster.teamId}:${player.playerId}`),
+    ));
     const ids = new Set<string>();
     const positions = new Set<string>();
     for (const contest of contests) {
@@ -190,6 +207,9 @@ export class ResultsService {
         player.teamId !== (player.side === 'Home' ? homeTeamId : awayTeamId))) {
         return {contests: 'Contest players must use the scheduled home and away teams.'};
       }
+      if (contest.players.some((player) => !officialPlayers.has(`${player.teamId}:${player.playerId}`))) {
+        return {contests: 'Every contest player must be listed on the official match roster.'};
+      }
     }
     return {};
   }
@@ -221,4 +241,15 @@ export class ResultsService {
   private publishedLock(): ResultsServiceResult<MatchResult> {
     return {ok: false, message: 'Reopen this result before editing it.'};
   }
+}
+
+export function hasCompleteOfficialRosters(
+  rosters: OfficialResultRoster[],
+  homeTeamId: string,
+  awayTeamId: string,
+): boolean {
+  if (homeTeamId === awayTeamId || rosters.length !== 2) return false;
+  const teams = new Set(rosters.map((roster) => roster.teamId));
+  return teams.size === 2 && teams.has(homeTeamId) && teams.has(awayTeamId)
+    && rosters.every((roster) => Boolean(roster.teamName.trim()));
 }
