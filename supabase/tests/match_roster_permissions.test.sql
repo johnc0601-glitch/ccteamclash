@@ -44,6 +44,19 @@ insert into public.launch_schedule_matches (
   ('matchday-test-future', 'matchday-test-round-future', 'summer-team-clash-2026', 'dark-knights', 'ninjas', 'castle-hayne-park', '2099-07-18', '09:00', 'Scheduled', ''),
   ('matchday-test-past', 'matchday-test-round-past', 'summer-team-clash-2026', 'dark-knights', 'ninjas', 'castle-hayne-park', '2020-01-18', '09:00', 'Scheduled', '');
 
+insert into public.launch_season_teams(season_id, team_id, added_by) values
+  ('summer-team-clash-2026', 'dark-knights', 'matchday-profile-commissioner'),
+  ('summer-team-clash-2026', 'ninjas', 'matchday-profile-commissioner')
+on conflict (season_id, team_id) do nothing;
+
+insert into public.launch_season_roster_memberships(
+  season_id, team_id, player_id, roster_category, added_by
+) values
+  ('summer-team-clash-2026', 'dark-knights', 'matchday-player-home', 'Men', 'matchday-profile-commissioner'),
+  ('summer-team-clash-2026', 'dark-knights', 'matchday-player-home-two', 'Men', 'matchday-profile-commissioner'),
+  ('summer-team-clash-2026', 'ninjas', 'matchday-player-away', 'Men', 'matchday-profile-commissioner'),
+  ('summer-team-clash-2026', 'ninjas', 'matchday-player-away-two', 'Men', 'matchday-profile-commissioner');
+
 insert into public.launch_match_attendance (
   match_id, team_id, player_id, status, updated_by
 ) values (
@@ -210,8 +223,8 @@ select throws_ok(
   $$insert into public.launch_match_attendance
     (match_id, team_id, player_id, status, updated_by)
     values ('matchday-test-future', 'dark-knights', 'matchday-player-inactive', 'Playing', 'matchday-profile-captain')$$,
-  '42501',
-  null,
+  '23514',
+  'Attendance player is not eligible for the selected match team.',
   'inactive player cannot receive attendance'
 );
 
@@ -315,7 +328,7 @@ select throws_ok(
     (match_id, team_id, player_id, status, updated_by)
     values ('matchday-test-future', 'ninjas', 'matchday-player-home', 'Playing', 'matchday-profile-commissioner')$$,
   '23514',
-  'Attendance player must be active on the selected team.',
+  'Attendance player is not eligible for the selected match team.',
   'database integrity rejects mismatched player and team IDs even outside RLS'
 );
 

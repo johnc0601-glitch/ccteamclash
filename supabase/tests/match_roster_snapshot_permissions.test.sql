@@ -46,6 +46,18 @@ insert into public.launch_schedule_matches (
   ('snapshot-match-future', 'snapshot-round-future', 'summer-team-clash-2026', 'dark-knights', 'ninjas', 'castle-hayne-park', '2099-11-01', '09:00', 'Scheduled', ''),
   ('snapshot-match-partial', 'snapshot-round-partial', 'summer-team-clash-2026', 'dark-knights', 'ninjas', 'castle-hayne-park', '2026-03-08', '09:00', 'Scheduled', '');
 
+insert into public.launch_season_teams(season_id, team_id, added_by) values
+  ('summer-team-clash-2026', 'dark-knights', 'snapshot-profile-commissioner'),
+  ('summer-team-clash-2026', 'ninjas', 'snapshot-profile-commissioner')
+on conflict (season_id, team_id) do nothing;
+
+insert into public.launch_season_roster_memberships(
+  season_id, team_id, player_id, roster_category, added_by
+) values
+  ('summer-team-clash-2026', 'dark-knights', 'snapshot-home-player', 'Men', 'snapshot-profile-commissioner'),
+  ('summer-team-clash-2026', 'dark-knights', 'snapshot-later-player', 'Men', 'snapshot-profile-commissioner'),
+  ('summer-team-clash-2026', 'ninjas', 'snapshot-away-player', 'Men', 'snapshot-profile-commissioner');
+
 insert into public.launch_match_attendance (
   match_id, team_id, player_id, status, updated_by
 ) values
