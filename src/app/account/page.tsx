@@ -30,6 +30,7 @@ import {
 import {loadAccountDataWithJwtTimingRetry} from './accountDataRetry';
 import {AccountPageLayout, readAccountParam} from './AccountPageLayout';
 import {PasswordField, SubmitButton} from './AuthFormControls';
+import {resolvePlayerApplicationSeasonContext} from './playerApplicationSeasonContext';
 import styles from './Account.module.css';
 
 type AccountPageProps = {
@@ -103,13 +104,16 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
       playerApplicationService.listApplications(),
     ]),
   );
-  const applicableSeason = activeSeason?.published
-    && activeSeason.registrationOpen
-    && !activeSeason.archived
-    ? activeSeason
+  const application = profile
+    ? applications.find((candidate) => candidate.profileId === profile.id)
     : undefined;
-  const seasonTeams = applicableSeason
-    ? await new SupabaseSeasonRosterRepository(supabase).listSeasonTeams(applicableSeason.id)
+  const applicationSeasonContext = resolvePlayerApplicationSeasonContext({
+    activeSeason,
+    application,
+  });
+  const seasonTeams = applicationSeasonContext.teamOptionsSeasonId
+    ? await new SupabaseSeasonRosterRepository(supabase)
+      .listSeasonTeams(applicationSeasonContext.teamOptionsSeasonId)
     : [];
 
   return (
@@ -134,8 +138,8 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
             profile={profile}
             claims={claims.filter((claim) => claim.profileId === profile.id).slice().reverse()}
             players={players}
-            application={applications.find((candidate) => candidate.profileId === profile.id)}
-            applicationSeasonId={applicableSeason?.id}
+            application={application}
+            applicationSeasonId={applicationSeasonContext.newApplicationSeasonId}
             applicationTeamIds={seasonTeams.map((seasonTeam) => seasonTeam.teamId)}
             teams={teams}
           />
@@ -395,6 +399,10 @@ function PlayerApplicationExperience({
           </select>
           <SubmitButton pendingLabel="Updating team..." secondary>Change Requested Team</SubmitButton>
         </form>
+      ) : summary.canChangeRequestedTeam ? (
+        <p className={styles.claimState}>
+          Requested-team changes are unavailable because this application&apos;s season teams could not be loaded.
+        </p>
       ) : null}
     </article>
   );
