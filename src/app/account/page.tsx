@@ -27,6 +27,7 @@ import {
   submitPlayerApplication,
   updateProfileName,
 } from './actions';
+import {loadAccountDataWithJwtTimingRetry} from './accountDataRetry';
 import {AccountPageLayout, readAccountParam} from './AccountPageLayout';
 import {PasswordField, SubmitButton} from './AuthFormControls';
 import styles from './Account.module.css';
@@ -92,14 +93,16 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
 
   const playerApplicationService = await createServerPlayerApplicationService();
 
-  const [profile, claims, players, teams, activeSeason, applications] = await Promise.all([
-    repository.getProfileByUserId(user.id),
-    repository.getPlayerClaims(),
-    repository.getPlayers(),
-    repository.getTeams(),
-    seasonRepository.getActive(),
-    playerApplicationService.listApplications(),
-  ]);
+  const [profile, claims, players, teams, activeSeason, applications] = await loadAccountDataWithJwtTimingRetry(
+    () => Promise.all([
+      repository.getProfileByUserId(user.id),
+      repository.getPlayerClaims(),
+      repository.getPlayers(),
+      repository.getTeams(),
+      seasonRepository.getActive(),
+      playerApplicationService.listApplications(),
+    ]),
+  );
   const applicableSeason = activeSeason?.published
     && activeSeason.registrationOpen
     && !activeSeason.archived
