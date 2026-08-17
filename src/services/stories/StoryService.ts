@@ -11,10 +11,6 @@ type StoryPayload = {
 };
 
 export async function getStories(): Promise<Story[]> {
-  if (!isBlobConnected()) {
-    return seedStories;
-  }
-
   try {
     const result = await withTimeout(list({
       prefix: STORY_STORE_PATH,
@@ -47,10 +43,6 @@ export async function getStoryBySlug(slug: string): Promise<Story | undefined> {
 }
 
 export async function saveStories(stories: Story[]): Promise<Story[]> {
-  if (!isBlobConnected()) {
-    throw new Error('Story storage is not connected yet.');
-  }
-
   const normalizedStories = normalizeStories(stories);
   await put(STORY_STORE_PATH, JSON.stringify({stories: normalizedStories}, null, 2), {
     access: 'public',
@@ -123,13 +115,6 @@ function normalizeLinks(links: unknown): StoryLink[] | undefined {
 
 function cleanText(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
-}
-
-function isBlobConnected(): boolean {
-  return Boolean(
-    process.env.BLOB_READ_WRITE_TOKEN ||
-    process.env.BLOB_STORE_ID
-  );
 }
 
 async function withTimeout<T>(promise: Promise<T>): Promise<T> {
