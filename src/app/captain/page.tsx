@@ -1,18 +1,54 @@
 import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
-import type {LaunchPlayer, LaunchTeam, PlayerClaim} from '@/domain/launch/LaunchData';
+import type {LaunchPlayer, LaunchTeam} from '@/domain/launch/LaunchData';
 import type {TeamScheduleEvent} from '@/domain/schedule/ScheduleService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
-import {confirmTeamClaim} from './actions';
+import {confirmTeamApplication} from './actions';
 import styles from './Captain.module.css';
 
 export const dynamic = 'force-dynamic';
 
 type CaptainPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+type TeamApplication = {
+  id: string;
+  profileId: string;
+  displayName: string;
+  playerType: string;
+  gender: string;
+  playedBefore: boolean;
+  createdAt: string;
+};
+
+type ApplicationRow = {
+  id: string;
+  profile_id: string;
+  requested_team_id: string;
+  player_type: string;
+  gender: string;
+  played_before: boolean;
+  status: string;
+  created_at: string;
+};
+
+type ApplicationQueryClient = {
+  from: (relation: 'launch_player_applications') => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        eq: (column: string, value: string) => {
+          order: (column: string, options: {ascending: boolean}) => Promise<{
+            data: ApplicationRow[] | null;
+            error: {message: string} | null;
+          }>;
+        };
+      };
+    };
+  };
 };
 
 export default async function CaptainPage({searchParams}: CaptainPageProps) {
@@ -39,7 +75,7 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
           ) : (
             <CaptainDashboard
               events={captainData.events}
-              pendingClaims={captainData.pendingClaims}
+              pendingApplications={captainData.pendingApplications}
               roster={captainData.roster}
               team={captainData.team}
             />
@@ -53,12 +89,12 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
 
 function CaptainDashboard({
   events,
-  pendingClaims,
+  pendingApplications,
   roster,
   team,
 }: {
   events: TeamScheduleEvent[];
-  pendingClaims: PlayerClaim[];
+  pendingApplications: TeamApplication[];
   roster: LaunchPlayer[];
   team: LaunchTeam;
 }) {
@@ -69,7 +105,7 @@ function CaptainDashboard({
       <div className={styles.summaryGrid}>
         <SummaryCard label="Team" value={team.name} />
         <SummaryCard label="Roster" value={`${roster.length} players`} />
-        <SummaryCard label="Confirm" value={`${pendingClaims.length} pending`} />
+        <SummaryCard label="Confirm" value={`${pendingApplications.length} pending`} />
         <SummaryCard label="Upcoming" value={`${upcomingEvents.length} matches`} />
       </div>
 
@@ -78,16 +114,21 @@ function CaptainDashboard({
           <header className={styles.panelHeader}>
             <span>Captain confirmation</span>
             <h2>Roster requests</h2>
-            <p className={styles.muted}>Approve players who claimed a record already assigned to your team.</p>
+            <p className={styles.muted}>Approve players who selected {team.name} during registration.</p>
           </header>
           <div className={styles.list}>
-            {pendingClaims.length ? pendingClaims.map((claim) => (
-              <article className={styles.row} key={claim.id}>
-                <strong>{claim.submittedName}</strong>
-                <span className={styles.muted}>{claim.submittedPdgaNumber ? `PDGA #${claim.submittedPdgaNumber}` : 'No PDGA number submitted'}</span>
-                <form action={confirmTeamClaim}>
-                  <input name="claimId" type="hidden" value={claim.id} />
-                  <button className={styles.primaryButton} type="submit">Confirm player</button>
+            {pendingApplications.length ? pendingApplications.map((application) => (
+              <article className={styles.row} key={application.id}>
+                <strong>{application.displayName}</strong>
+                <span className={styles.muted}>
+                  {application.playerType} · {application.gender} · {application.playedBefore ? 'Returning player' : 'New player'}
+                </span>
+                {application.playedBefore ? (
+                  <span className={styles.muted}>Returning players must connect their previous player record before approval.</span>
+                ) : null}
+                <form action={confirmTeamApplication}>
+                  <input name="applicationId" type="hidden" value={application.id} />
+                  <button className={styles.primaryButton} type="submit">Approve player</button>
                 </form>
               </article>
             )) : (
@@ -161,7 +202,7 @@ function AccessMessage({message}: {message: string}) {
 }
 
 async function getCaptainData(): Promise<
-  | {ok: true; team: LaunchTeam; roster: LaunchPlayer[]; events: TeamScheduleEvent[]; pendingClaims: PlayerClaim[]}
+  | {ok: true; team: LaunchTeam; roster: LaunchPlayer[]; events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]}
   | {ok: false; message: string}
 > {
   if (!hasSupabaseConfig()) return {ok: false, message: 'League accounts are not configured yet.'};
@@ -180,22 +221,46 @@ async function getCaptainData(): Promise<
     if (!profile.captainTeamId) return {ok: false, message: 'No captain team has been assigned yet.'};
 
     const scheduleService = await createServerScheduleService();
-    const [team, players, events, claims] = await Promise.all([
+    const [team, players, events] = await Promise.all([
       repository.getTeam(profile.captainTeamId),
       repository.getPlayers(),
       scheduleService.getTeamEvents(profile.captainTeamId),
-      repository.getPlayerClaims(),
     ]);
 
     if (!team) return {ok: false, message: 'Captain team could not be found.'};
-    const teamPlayerIds = new Set(players.filter((player) => player.currentTeamId === team.id).map((player) => player.id));
+
+    const applicationClient = supabase as unknown as ApplicationQueryClient;
+    const {data: applicationRows, error: applicationError} = await applicationClient
+      .from('launch_player_applications')
+      .select('id, profile_id, requested_team_id, player_type, gender, played_before, status, created_at')
+      .eq('requested_team_id', team.id)
+      .eq('status', 'Pending')
+      .order('created_at', {ascending: true});
+    if (applicationError) throw applicationError;
+
+    const pendingRows = applicationRows ?? [];
+    const profileIds = [...new Set(pendingRows.map((application) => application.profile_id))];
+    const profiles = profileIds.length
+      ? (await supabase.from('launch_profiles').select('id, display_name').in('id', profileIds)).data ?? []
+      : [];
+    const profileNames = new Map(profiles.map((candidate) => [candidate.id, candidate.display_name]));
+
+    const pendingApplications = pendingRows.map((application): TeamApplication => ({
+      id: application.id,
+      profileId: application.profile_id,
+      displayName: profileNames.get(application.profile_id) ?? 'Unknown player',
+      playerType: application.player_type,
+      gender: application.gender,
+      playedBefore: application.played_before,
+      createdAt: application.created_at,
+    }));
 
     return {
       ok: true,
       team,
       roster: players.filter((player) => player.active && player.currentTeamId === team.id),
       events: events.filter((event) => event.homeTeamId === team.id || event.awayTeamId === team.id),
-      pendingClaims: claims.filter((claim) => claim.status === 'Pending' && claim.requestedPlayerId && teamPlayerIds.has(claim.requestedPlayerId)),
+      pendingApplications,
     };
   } catch {
     return {ok: false, message: 'Captain Home could not load right now.'};
