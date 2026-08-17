@@ -36,7 +36,20 @@ export default async function CreateAccountPage({searchParams}: CreateAccountPag
     season = openSeason;
 
     if (season) {
-      const {data: seasonTeams} = await supabase
+      // launch_season_teams exists in the live launch schema, but the checked-in
+      // generated Database type is behind that schema. Keep this query local and
+      // narrowly typed until the full Supabase types are regenerated.
+      const launchSupabase = supabase as unknown as {
+        from: (relation: 'launch_season_teams') => {
+          select: (columns: 'team_id') => {
+            eq: (column: 'season_id', value: string) => Promise<{
+              data: {team_id: string}[] | null;
+              error: unknown;
+            }>;
+          };
+        };
+      };
+      const {data: seasonTeams} = await launchSupabase
         .from('launch_season_teams')
         .select('team_id')
         .eq('season_id', season.id);
