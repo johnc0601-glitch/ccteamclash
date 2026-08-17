@@ -108,21 +108,24 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
     registrationSeason = openSeason;
 
     if (registrationSeason) {
+      // These launch tables exist in the live database, but the checked-in
+      // generated Supabase types are behind the current launch schema.
+      const launchSupabase = supabase as any;
       const [{data: existingApplication}, {data: seasonTeams}] = await Promise.all([
-        supabase
+        launchSupabase
           .from('launch_player_applications')
           .select('status, requested_team_id, player_type, gender, played_before')
           .eq('profile_id', profile.id)
           .eq('season_id', registrationSeason.id)
           .maybeSingle(),
-        supabase
+        launchSupabase
           .from('launch_season_teams')
           .select('team_id')
           .eq('season_id', registrationSeason.id),
       ]);
-      application = existingApplication;
+      application = existingApplication as RegistrationApplication | null;
 
-      const teamIds = (seasonTeams ?? []).map((item) => item.team_id);
+      const teamIds = ((seasonTeams ?? []) as {team_id: string}[]).map((item) => item.team_id);
       if (teamIds.length) {
         const {data: teamRows} = await supabase
           .from('launch_teams')
