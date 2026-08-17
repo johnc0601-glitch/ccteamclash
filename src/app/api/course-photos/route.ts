@@ -7,10 +7,6 @@ const ALLOWED_COURSE_PHOTO_TYPES = new Set(['image/webp', 'image/png', 'image/jp
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return Response.json({error: 'Course photo storage is not connected yet.'}, {status: 503});
-  }
-
   const formData = await request.formData();
   const file = formData.get('file');
   const courseName = formData.get('courseName');
