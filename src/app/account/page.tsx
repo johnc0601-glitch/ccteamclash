@@ -10,6 +10,7 @@ import {
   signInWithPassword,
   signOut,
   submitPlayerClaim,
+  submitSeasonApplication,
   updateProfileName,
 } from './actions';
 import {AccountPageLayout, readAccountParam} from './AccountPageLayout';
@@ -18,6 +19,16 @@ import styles from './Account.module.css';
 
 type AccountPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+type RegistrationSeason = {id: string; name: string};
+type RegistrationTeam = {id: string; name: string};
+type RegistrationApplication = {
+  status: string;
+  requested_team_id: string;
+  player_type: string;
+  gender: string;
+  played_before: boolean;
 };
 
 export default async function AccountPage({searchParams}: AccountPageProps) {
@@ -67,7 +78,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
           </form>
           <div className={styles.accountPrompt}>
             <span>New to Team Clash?</span>
-            <Link className={styles.secondaryActionLink} href="/account/create">Create an account</Link>
+            <Link className={styles.secondaryActionLink} href="/account/create">Register</Link>
           </div>
         </article>
       </AccountPageLayout>
@@ -80,9 +91,52 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
     repository.getPlayers(),
   ]);
 
+  let registrationSeason: RegistrationSeason | null = null;
+  let registrationTeams: RegistrationTeam[] = [];
+  let application: RegistrationApplication | null = null;
+
+  if (profile) {
+    const {data: openSeason} = await supabase
+      .from('launch_seasons')
+      .select('id, name')
+      .eq('registration_open', true)
+      .eq('active', true)
+      .eq('published', true)
+      .order('year', {ascending: false})
+      .limit(1)
+      .maybeSingle();
+    registrationSeason = openSeason;
+
+    if (registrationSeason) {
+      const [{data: existingApplication}, {data: seasonTeams}] = await Promise.all([
+        supabase
+          .from('launch_player_applications')
+          .select('status, requested_team_id, player_type, gender, played_before')
+          .eq('profile_id', profile.id)
+          .eq('season_id', registrationSeason.id)
+          .maybeSingle(),
+        supabase
+          .from('launch_season_teams')
+          .select('team_id')
+          .eq('season_id', registrationSeason.id),
+      ]);
+      application = existingApplication;
+
+      const teamIds = (seasonTeams ?? []).map((item) => item.team_id);
+      if (teamIds.length) {
+        const {data: teamRows} = await supabase
+          .from('launch_teams')
+          .select('id, name')
+          .in('id', teamIds)
+          .order('name');
+        registrationTeams = teamRows ?? [];
+      }
+    }
+  }
+
   return (
     <AccountPageLayout
-      description="Manage your profile, league history, and access."
+      description="Manage your registration, profile, league history, and access."
       error={error}
       notice={notice}
       title="My account"
@@ -102,6 +156,9 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
             profile={profile}
             claims={claims.filter((claim) => claim.profileId === profile.id).slice().reverse()}
             players={players}
+            registrationSeason={registrationSeason}
+            registrationTeams={registrationTeams}
+            application={application}
           />
         ) : (
           <CreateProfileForm
@@ -144,17 +201,68 @@ function MemberProfile({
   claims,
   players,
   profile,
+  registrationSeason,
+  registrationTeams,
+  application,
 }: {
   claims: PlayerClaim[];
   players: LaunchPlayer[];
   profile: LaunchProfile;
+  registrationSeason: RegistrationSeason | null;
+  registrationTeams: RegistrationTeam[];
+  application: RegistrationApplication | null;
 }) {
   const latestClaim = claims[0];
   const linkedPlayer = players.find((player) => player.id === profile.playerId);
   const canSubmitClaim = !latestClaim || ['Rejected', 'Cancelled'].includes(latestClaim.status);
+  const requestedTeam = registrationTeams.find((team) => team.id === application?.requested_team_id);
 
   return (
     <section className={styles.grid}>
+      {registrationSeason ? (
+        <article className={styles.panel}>
+          <span className={styles.eyebrow}>Season registration</span>
+          <h2>{registrationSeason.name}</h2>
+          {application ? (
+            <div className={styles.connected}>
+              <strong>{application.status}</strong>
+              {requestedTeam?.name ?? application.requested_team_id} · {application.player_type} · {application.gender}
+              {application.played_before ? ' · Returning player' : ' · New player'}
+            </div>
+          ) : (
+            <>
+              <p className={styles.linkingNote}>Complete this form to enter the commissioner approval queue.</p>
+              <form className={styles.form} action={submitSeasonApplication}>
+                <input name="seasonId" type="hidden" value={registrationSeason.id} />
+                <label htmlFor="accountRequestedTeam">Requested team</label>
+                <select id="accountRequestedTeam" name="requestedTeamId" required defaultValue="">
+                  <option value="" disabled>Choose a team</option>
+                  {registrationTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+                </select>
+                <label htmlFor="accountPlayerType">Player type</label>
+                <select id="accountPlayerType" name="playerType" required defaultValue="Adult">
+                  <option value="Adult">Adult</option>
+                  <option value="Junior">Junior</option>
+                </select>
+                <label htmlFor="accountGender">Division</label>
+                <select id="accountGender" name="gender" required defaultValue="">
+                  <option value="" disabled>Choose division</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+                <label htmlFor="accountPlayedBefore">Have you played Coastal Clash before?</label>
+                <select id="accountPlayedBefore" name="playedBefore" required defaultValue="">
+                  <option value="" disabled>Choose one</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+                <button className={styles.primaryButton} type="submit">Submit registration</button>
+              </form>
+            </>
+          )}
+        </article>
+      ) : null}
+
       <article className={styles.panel}>
         <span className={styles.eyebrow}>Profile status</span>
         <h2>{profile.displayName}</h2>
@@ -208,7 +316,7 @@ function MemberProfile({
             <p className={styles.linkingNote}>
               Played in Team Clash before? Choose your previous name to restore your results, rankings, and team history.
             </p>
-            <p className={styles.muted}>First season? No action is needed here. A commissioner can add you to the league directory.</p>
+            <p className={styles.muted}>First season? No action is needed here. Approval will create your player record.</p>
             {latestClaim ? (
               <p className={styles.claimState}>
                 Your request to connect <strong>{latestClaim.submittedName}</strong> is {latestClaim.status}.
