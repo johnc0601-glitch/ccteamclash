@@ -15,6 +15,11 @@ export const OFFICE_SECTIONS = {
     description: 'Organize team identities, captains, and roster assignments.',
     href: '/office/teams',
   },
+  applications: {
+    title: 'Applications',
+    description: 'Review player registration applications before adding them to league rosters.',
+    href: '/office/applications',
+  },
   players: {
     title: 'Players',
     description: 'Maintain players, account approvals, player claims, and captain access.',
