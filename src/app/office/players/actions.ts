@@ -121,6 +121,39 @@ export async function linkProfileToPlayer(formData: FormData) {
   redirect(`${PLAYERS_PATH}?notice=Account linked to player record.`);
 }
 
+export async function createNewPlayerForProfile(formData: FormData) {
+  const {commissionerProfileId, repository, service} = await getCommissionerService();
+  const profileId = readFormValue(formData, 'profileId');
+  if (!profileId) redirect(`${PLAYERS_PATH}?error=Profile is required.`);
+
+  const profile = await repository.getProfile(profileId);
+  if (!profile) redirect(`${PLAYERS_PATH}?error=Profile not found.`);
+  if (profile.playerId) redirect(`${PLAYERS_PATH}?error=This account is already linked to a player.`);
+
+  const createResult = await service.savePlayer({
+    name: profile.displayName,
+    gender: 'Unknown',
+    pdgaNumber: '',
+    pdgaRating: null,
+    currentTeamId: null,
+    active: true,
+  }, commissionerProfileId);
+  if (!createResult.ok) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(createResult.message)}`);
+
+  const linkResult = await service.linkProfileToPlayer(
+    profileId,
+    createResult.data.id,
+    commissionerProfileId,
+    true,
+  );
+  if (!linkResult.ok) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(linkResult.message)}`);
+
+  revalidatePeoplePages();
+  revalidatePath('/office/applications');
+  revalidatePath('/account');
+  redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent('New player record created and account approved.')}`);
+}
+
 async function setProfileStatus(formData: FormData, status: 'Approved' | 'Rejected' | 'Suspended', notice: string) {
   const {commissionerProfileId, service} = await getCommissionerService();
   const profileId = readFormValue(formData, 'profileId');
@@ -144,6 +177,7 @@ async function getCommissionerService() {
 
   return {
     commissionerProfileId: commissionerProfile.id,
+    repository,
     service: new LaunchService(repository),
   };
 }
