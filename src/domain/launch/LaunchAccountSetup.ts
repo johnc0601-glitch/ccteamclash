@@ -10,6 +10,11 @@ type LaunchSignupMetadata = {
   requestedPlayerId?: unknown;
   submittedName?: unknown;
   submittedPdgaNumber?: unknown;
+  seasonId?: unknown;
+  requestedTeamId?: unknown;
+  playerType?: unknown;
+  gender?: unknown;
+  playedBefore?: unknown;
 };
 
 export type LaunchSignupInput = {
@@ -17,6 +22,11 @@ export type LaunchSignupInput = {
   requestedPlayerId?: string;
   submittedName?: string;
   submittedPdgaNumber?: string;
+  seasonId?: string;
+  requestedTeamId?: string;
+  playerType?: 'Adult' | 'Junior';
+  gender?: 'Male' | 'Female';
+  playedBefore?: boolean;
 };
 
 export async function ensureLaunchSignupProfile(
@@ -34,6 +44,24 @@ export async function ensureLaunchSignupProfile(
     displayName: metadata.displayName,
   });
   if (!profileResult.ok) return profileResult.message;
+
+  if (
+    metadata.seasonId
+    && metadata.requestedTeamId
+    && metadata.playerType
+    && metadata.gender
+    && typeof metadata.playedBefore === 'boolean'
+  ) {
+    const {error: applicationError} = await supabase.rpc('submit_launch_player_application', {
+      target_season_id: metadata.seasonId,
+      target_requested_team_id: metadata.requestedTeamId,
+      target_player_type: metadata.playerType,
+      target_gender: metadata.gender,
+      target_played_before: metadata.playedBefore,
+    });
+    if (applicationError) return applicationError.message;
+  }
+
   if (!metadata.requestedPlayerId || !metadata.submittedName) return null;
 
   const existingClaims = await repository.getPlayerClaims();
@@ -54,6 +82,8 @@ function readMetadata(metadata: LaunchSignupMetadata): LaunchSignupInput | null 
   const displayName = readString(metadata.displayName);
   const requestedPlayerId = readString(metadata.requestedPlayerId);
   const submittedName = readString(metadata.submittedName);
+  const playerType = readPlayerType(metadata.playerType);
+  const gender = readGender(metadata.gender);
   if (!displayName) return null;
 
   return {
@@ -61,9 +91,29 @@ function readMetadata(metadata: LaunchSignupMetadata): LaunchSignupInput | null 
     requestedPlayerId: requestedPlayerId || undefined,
     submittedName: submittedName || undefined,
     submittedPdgaNumber: readString(metadata.submittedPdgaNumber),
+    seasonId: readString(metadata.seasonId) || undefined,
+    requestedTeamId: readString(metadata.requestedTeamId) || undefined,
+    playerType,
+    gender,
+    playedBefore: readBoolean(metadata.playedBefore),
   };
 }
 
 function readString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function readBoolean(value: unknown): boolean | undefined {
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return undefined;
+}
+
+function readPlayerType(value: unknown): 'Adult' | 'Junior' | undefined {
+  return value === 'Adult' || value === 'Junior' ? value : undefined;
+}
+
+function readGender(value: unknown): 'Male' | 'Female' | undefined {
+  return value === 'Male' || value === 'Female' ? value : undefined;
 }
