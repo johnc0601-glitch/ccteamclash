@@ -42,7 +42,7 @@ export async function createLeagueAccount(formData: FormData) {
     const setupError = await ensureLaunchSignupProfile(supabase, data.user, signupInput);
     if (setupError) redirect(`/account/create?error=${encodeURIComponent(setupError)}`);
     revalidatePath('/account');
-    redirect(`/account?notice=${encodeURIComponent(playedBefore ? 'Registration submitted. Connect your previous league history below so the commissioner can approve it.' : 'Registration submitted for commissioner approval.')}`);
+    redirect(`/account?notice=${encodeURIComponent(playedBefore ? 'Registration submitted. Connect your previous league history below, then your requested team captain can approve you.' : 'Registration submitted to your requested team captain for approval.')}`);
   }
   redirect('/account?notice=Account created. Confirm your email to finish submitting your registration.');
 }
@@ -58,9 +58,6 @@ export async function submitSeasonApplication(formData: FormData) {
   const {data: {user}, error: userError} = await supabase.auth.getUser();
   if (userError || !user) redirect('/account?error=Sign in first.');
 
-  // The production database already exposes this RPC. The checked-in generated
-  // Database type is behind the live schema, so narrow this one call until the
-  // generated type file is refreshed from Supabase.
   const {error} = await supabase.rpc('submit_launch_player_application' as never, {
     target_season_id: seasonId,
     target_requested_team_id: requestedTeamId,
@@ -70,8 +67,9 @@ export async function submitSeasonApplication(formData: FormData) {
   } as never);
   if (error) redirect(`/account?error=${encodeURIComponent(error.message)}`);
   revalidatePath('/account');
+  revalidatePath('/captain');
   revalidatePath('/office/applications');
-  redirect(`/account?notice=${encodeURIComponent(playedBefore ? 'Registration submitted. Connect your previous league history below so the commissioner can approve it.' : 'Registration submitted for commissioner approval.')}`);
+  redirect(`/account?notice=${encodeURIComponent(playedBefore ? 'Registration submitted. Connect your previous league history below, then your requested team captain can approve you.' : 'Registration submitted to your requested team captain for approval.')}`);
 }
 
 export async function signInWithPassword(formData: FormData) {
@@ -91,7 +89,7 @@ export async function requestPasswordReset(formData: FormData) {
   if (!email) redirect('/account/forgot-password?error=Enter your email address.');
   const supabase = await createClient();
   const origin = await getOrigin();
-  const {error} = await supabase.auth.resetPasswordForEmail(email, {redirectTo: `${origin}/auth/callback?next=/account/reset-password`});
+  const {error} = await supabase.auth.resetPasswordForEmail({email} as never, {redirectTo: `${origin}/auth/callback?next=/account/reset-password`} as never);
   if (error) redirect(`/account/forgot-password?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
   redirect('/account/forgot-password?notice=If an account exists for that email, a reset link has been sent.');
 }
@@ -138,7 +136,8 @@ export async function createPendingProfile(formData: FormData) {
   const claimResult = await service.submitPlayerClaim({profileId: profileResult.data.id, requestedPlayerId: selectedPlayer.id, submittedName: displayName, submittedPdgaNumber: selectedPlayer.pdgaNumber});
   if (!claimResult.ok) redirect(`/account?error=${encodeURIComponent(claimResult.message)}`);
   revalidatePath('/account');
-  redirect('/account?notice=Your league history connection is ready for commissioner approval.');
+  revalidatePath('/captain');
+  redirect('/account?notice=Your previous player record is connected for captain approval.');
 }
 
 export async function updateProfileName(formData: FormData) {
@@ -165,7 +164,8 @@ export async function submitPlayerClaim(formData: FormData) {
   const result = await service.submitPlayerClaim({profileId: profile.id, requestedPlayerId: selectedPlayer.id, submittedName, submittedPdgaNumber: submittedPdgaNumber || selectedPlayer.pdgaNumber});
   if (!result.ok) redirect(`/account?error=${encodeURIComponent(result.message)}`);
   revalidatePath('/account');
-  redirect('/account?notice=Your league history connection was sent to the commissioner.');
+  revalidatePath('/captain');
+  redirect('/account?notice=Your previous league history is ready for your requested team captain to review.');
 }
 
 async function getLaunchServiceForUser() {
