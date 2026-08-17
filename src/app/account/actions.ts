@@ -3,7 +3,7 @@
 import {headers} from 'next/headers';
 import {redirect} from 'next/navigation';
 import {revalidatePath} from 'next/cache';
-import {ensureLaunchSignupProfile} from '@/domain/launch/LaunchAccountSetup';
+import {ensureLaunchSignupProfile, type LaunchSignupInput} from '@/domain/launch/LaunchAccountSetup';
 import {LaunchService} from '@/domain/launch/LaunchService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {createClient} from '@/lib/supabase/server';
@@ -30,13 +30,29 @@ export async function createLeagueAccount(formData: FormData) {
   const password = readFormValue(formData, 'password');
   const confirmPassword = readFormValue(formData, 'confirmPassword');
   const displayName = readFormValue(formData, 'displayName');
+  const seasonId = readFormValue(formData, 'seasonId');
+  const requestedTeamId = readFormValue(formData, 'requestedTeamId');
+  const playerType = readPlayerType(readFormValue(formData, 'playerType'));
+  const gender = readApplicationGender(readFormValue(formData, 'gender'));
+  const playedBefore = readPlayedBefore(readFormValue(formData, 'playedBefore'));
+
   if (!displayName) redirect('/account/create?error=Enter your name.');
   if (!email) redirect('/account/create?error=Enter your email address.');
   if (password.length < 8) redirect('/account/create?error=Password must be at least 8 characters.');
   if (password !== confirmPassword) redirect('/account/create?error=Passwords do not match.');
+  if (!seasonId || !requestedTeamId || !playerType || !gender || playedBefore === null) {
+    redirect('/account/create?error=Complete all registration fields.');
+  }
 
   const supabase = await createClient();
-  const signupInput = {displayName};
+  const signupInput: LaunchSignupInput = {
+    displayName,
+    seasonId,
+    requestedTeamId,
+    playerType,
+    gender,
+    playedBefore,
+  };
   const origin = await getOrigin();
   const {data, error} = await supabase.auth.signUp({
     email,
@@ -53,10 +69,42 @@ export async function createLeagueAccount(formData: FormData) {
     const setupError = await ensureLaunchSignupProfile(supabase, data.user, signupInput);
     if (setupError) redirect(`/account/create?error=${encodeURIComponent(setupError)}`);
     revalidatePath('/account');
-    redirect('/account?notice=Your account is ready. Connect your previous league history if you played before.');
+    redirect(`/account?notice=${encodeURIComponent(playedBefore
+      ? 'Registration submitted. Connect your previous league history below so the commissioner can approve it.'
+      : 'Registration submitted for commissioner approval.')}`);
   }
 
-  redirect('/account?notice=Account created. Check your email to confirm it, then sign in.');
+  redirect('/account?notice=Account created. Confirm your email to finish submitting your registration.');
+}
+
+export async function submitSeasonApplication(formData: FormData) {
+  const seasonId = readFormValue(formData, 'seasonId');
+  const requestedTeamId = readFormValue(formData, 'requestedTeamId');
+  const playerType = readPlayerType(readFormValue(formData, 'playerType'));
+  const gender = readApplicationGender(readFormValue(formData, 'gender'));
+  const playedBefore = readPlayedBefore(readFormValue(formData, 'playedBefore'));
+  if (!seasonId || !requestedTeamId || !playerType || !gender || playedBefore === null) {
+    redirect('/account?error=Complete all registration fields.');
+  }
+
+  const supabase = await createClient();
+  const {data: {user}, error: userError} = await supabase.auth.getUser();
+  if (userError || !user) redirect('/account?error=Sign in first.');
+
+  const {error} = await supabase.rpc('submit_launch_player_application', {
+    target_season_id: seasonId,
+    target_requested_team_id: requestedTeamId,
+    target_player_type: playerType,
+    target_gender: gender,
+    target_played_before: playedBefore,
+  });
+  if (error) redirect(`/account?error=${encodeURIComponent(error.message)}`);
+
+  revalidatePath('/account');
+  revalidatePath('/office/applications');
+  redirect(`/account?notice=${encodeURIComponent(playedBefore
+    ? 'Registration submitted. Connect your previous league history below so the commissioner can approve it.'
+    : 'Registration submitted for commissioner approval.')}`);
 }
 
 export async function signInWithPassword(formData: FormData) {
@@ -219,6 +267,20 @@ async function getOrigin(): Promise<string> {
 function readFormValue(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function readPlayerType(value: string): 'Adult' | 'Junior' | null {
+  return value === 'Adult' || value === 'Junior' ? value : null;
+}
+
+function readApplicationGender(value: string): 'Male' | 'Female' | null {
+  return value === 'Male' || value === 'Female' ? value : null;
+}
+
+function readPlayedBefore(value: string): boolean | null {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return null;
 }
 
 function getAuthErrorMessage(error: {message?: string; code?: string; status?: number}): string {
