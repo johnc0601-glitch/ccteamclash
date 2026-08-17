@@ -224,7 +224,10 @@ function cleanText(value: unknown): string {
 }
 
 function isBlobConnected(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  return Boolean(
+    process.env.BLOB_READ_WRITE_TOKEN ||
+    process.env.BLOB_STORE_ID
+  );
 }
 
 async function withTimeout<T>(promise: Promise<T>): Promise<T> {
