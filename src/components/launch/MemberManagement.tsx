@@ -4,6 +4,7 @@ import {
   approveClaim,
   approveProfile,
   assignCaptain,
+  createNewPlayerForProfile,
   linkProfileToPlayer,
   rejectClaim,
   rejectProfile,
@@ -85,10 +86,19 @@ export function MemberManagement({
                 <span className={styles.badge}>{profile.status}</span>
               </div>
               <span className={styles.claimMeta}>{profile.role}</span>
-              <span className={styles.muted}>This account exists, but it is not connected to an imported player record.</span>
+              <span className={styles.muted}>This account is not connected to a player record yet.</span>
+
+              <form className={styles.reviewForm} action={createNewPlayerForProfile}>
+                <input name="profileId" type="hidden" value={profile.id} />
+                <span className={styles.muted}>First-time Coastal Clash player? Create a new player record and approve the account.</span>
+                <div className={styles.actions}>
+                  <button className={styles.primaryButton} type="submit">Create new player & approve</button>
+                </div>
+              </form>
+
               <form className={styles.reviewForm} action={linkProfileToPlayer}>
                 <input name="profileId" type="hidden" value={profile.id} />
-                <label htmlFor={`link-player-${profile.id}`}>Player record</label>
+                <label htmlFor={`link-player-${profile.id}`}>Returning player record</label>
                 <PlayerRecordSelect
                   id={`link-player-${profile.id}`}
                   name="playerId"
@@ -100,7 +110,7 @@ export function MemberManagement({
                   <span>Use account name on player record</span>
                 </label>
                 <div className={styles.actions}>
-                  <button className={styles.primaryButton} type="submit">Link account</button>
+                  <button className={styles.secondaryButton} type="submit">Link existing player</button>
                 </div>
               </form>
             </article>
