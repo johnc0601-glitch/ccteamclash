@@ -102,10 +102,6 @@ async function mutateCourses(
 }
 
 async function loadCourses(): Promise<Course[]> {
-  if (!isBlobConnected()) {
-    return getSeedCourses();
-  }
-
   try {
     const result = await withTimeout(list({
       prefix: COURSE_STORE_PATH,
@@ -133,10 +129,6 @@ async function loadCourses(): Promise<Course[]> {
 }
 
 async function saveCourses(courses: Course[]): Promise<Course[]> {
-  if (!isBlobConnected()) {
-    throw new Error('Course storage is not connected yet.');
-  }
-
   const normalizedCourses = normalizeCourses(courses);
   await put(COURSE_STORE_PATH, JSON.stringify({courses: normalizedCourses}, null, 2), {
     access: 'public',
@@ -196,10 +188,6 @@ function cloneCourse(course: Course): Course {
 
 function cleanText(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
-}
-
-function isBlobConnected(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 }
 
 async function withTimeout<T>(promise: Promise<T>): Promise<T> {
