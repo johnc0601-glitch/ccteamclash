@@ -4,6 +4,7 @@ import {PlayerRecordSelect} from '@/components/launch/PlayerRecordSelect';
 import {ThemeToggle} from '@/components/ThemeToggle';
 import {createServerPlayerApplicationService} from '@/core/createServerPlayerApplicationService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
+import {resolveLaunchSignupDisplayName} from '@/domain/launch/LaunchSignupDisplayName';
 import type {LaunchPlayer, LaunchProfile, LaunchTeam, PlayerClaim} from '@/domain/launch/LaunchData';
 import {
   resolveLaunchProfileState,
@@ -145,7 +146,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
           />
         ) : (
           <CreateProfileForm
-            fallbackName={getDisplayName(user.email, user.user_metadata?.name)}
+            fallbackName={resolveLaunchSignupDisplayName(user.email, user.user_metadata)}
           />
         )}
     </AccountPageLayout>
@@ -423,9 +424,4 @@ function getProfileStateMessage(state: LaunchProfileState): string | undefined {
   if (state === 'rejected') return 'This profile was not approved. Privileged tools are unavailable.';
   if (state === 'suspended') return 'This profile is suspended. Privileged tools are unavailable.';
   return undefined;
-}
-
-function getDisplayName(email: string | undefined, metadataName: unknown): string {
-  if (typeof metadataName === 'string' && metadataName.trim()) return metadataName.trim();
-  return email?.split('@')[0] ?? '';
 }

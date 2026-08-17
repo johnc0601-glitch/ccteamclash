@@ -1,12 +1,14 @@
 import type {SupabaseClient, User} from '@supabase/supabase-js';
 import {LaunchService} from '@/domain/launch/LaunchService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
+import {resolveLaunchSignupDisplayName} from '@/domain/launch/LaunchSignupDisplayName';
 import type {Database} from '@/lib/supabase/database';
 
 type LaunchSupabaseClient = SupabaseClient<Database>;
 
 type LaunchSignupMetadata = {
   displayName?: unknown;
+  name?: unknown;
   requestedPlayerId?: unknown;
   submittedName?: unknown;
   submittedPdgaNumber?: unknown;
@@ -24,7 +26,7 @@ export async function ensureLaunchSignupProfile(
   user: User,
   input?: LaunchSignupInput,
 ): Promise<string | null> {
-  const metadata = input ?? readMetadata(user.user_metadata);
+  const metadata = input ?? readMetadata(user.user_metadata, user.email);
   if (!metadata?.displayName) return null;
 
   const repository = new SupabaseLaunchRepository(supabase);
@@ -50,8 +52,8 @@ export async function ensureLaunchSignupProfile(
   return claimResult.ok ? null : claimResult.message;
 }
 
-function readMetadata(metadata: LaunchSignupMetadata): LaunchSignupInput | null {
-  const displayName = readString(metadata.displayName);
+function readMetadata(metadata: LaunchSignupMetadata, email: string | undefined): LaunchSignupInput | null {
+  const displayName = resolveLaunchSignupDisplayName(email, metadata);
   const requestedPlayerId = readString(metadata.requestedPlayerId);
   const submittedName = readString(metadata.submittedName);
   if (!displayName) return null;

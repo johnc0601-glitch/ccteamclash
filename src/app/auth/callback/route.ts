@@ -1,7 +1,7 @@
 import {NextResponse} from 'next/server';
 import {INTRO_COOKIE_NAME} from '@/components/intro/intro.config';
-import {ensureLaunchSignupProfile} from '@/domain/launch/LaunchAccountSetup';
 import {createClient} from '@/lib/supabase/server';
+import {completeAuthCallback} from './completeAuthCallback';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -12,8 +12,11 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const {error} = await supabase.auth.exchangeCodeForSession(code);
-    if (error) {
+    const completion = await completeAuthCallback(supabase, code);
+    if (!completion.ok) {
+      if (completion.stage === 'profile') {
+        return NextResponse.redirect(new URL(`/account?error=${encodeURIComponent(completion.message)}`, requestUrl.origin));
+      }
       const resetFlow = next === '/account/reset-password';
       const message = encodeURIComponent(resetFlow
         ? 'That reset link is expired or invalid. Request a new one.'
@@ -21,13 +24,8 @@ export async function GET(request: Request) {
       const destination = resetFlow ? '/account/forgot-password' : '/account';
       return NextResponse.redirect(new URL(`${destination}?error=${message}`, requestUrl.origin));
     }
-    const {data} = await supabase.auth.getUser();
-    if (data.user) {
+    if (completion.user) {
       magicLinkAuthenticated = flow === 'magic-link';
-      const setupError = await ensureLaunchSignupProfile(supabase, data.user);
-      if (setupError) {
-        return NextResponse.redirect(new URL(`/account?error=${encodeURIComponent(setupError)}`, requestUrl.origin));
-      }
     }
   }
 
