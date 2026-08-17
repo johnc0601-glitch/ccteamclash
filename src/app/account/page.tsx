@@ -108,8 +108,6 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
     registrationSeason = openSeason;
 
     if (registrationSeason) {
-      // These launch tables exist in the live database, but the checked-in
-      // generated Supabase types are behind the current launch schema.
       const launchSupabase = supabase as any;
       const [{data: existingApplication}, {data: seasonTeams}] = await Promise.all([
         launchSupabase
@@ -228,13 +226,13 @@ function MemberProfile({
           <h2>{registrationSeason.name}</h2>
           {application ? (
             <div className={styles.connected}>
-              <strong>{application.status}</strong>
+              <strong>{application.status === 'Pending' ? 'Pending captain approval' : application.status}</strong>
               {requestedTeam?.name ?? application.requested_team_id} · {application.player_type} · {application.gender}
               {application.played_before ? ' · Returning player' : ' · New player'}
             </div>
           ) : (
             <>
-              <p className={styles.linkingNote}>Complete this form to enter the commissioner approval queue.</p>
+              <p className={styles.linkingNote}>Choose a team and submit your registration. That team&apos;s captain will review it.</p>
               <form className={styles.form} action={submitSeasonApplication}>
                 <input name="seasonId" type="hidden" value={registrationSeason.id} />
                 <label htmlFor="accountRequestedTeam">Requested team</label>
@@ -319,7 +317,7 @@ function MemberProfile({
             <p className={styles.linkingNote}>
               Played in Team Clash before? Choose your previous name to restore your results, rankings, and team history.
             </p>
-            <p className={styles.muted}>First season? No action is needed here. Approval will create your player record.</p>
+            <p className={styles.muted}>First season? No action is needed here. Your captain&apos;s approval will create your player record.</p>
             {latestClaim ? (
               <p className={styles.claimState}>
                 Your request to connect <strong>{latestClaim.submittedName}</strong> is {latestClaim.status}.
@@ -346,7 +344,7 @@ function MemberProfile({
             <button className={styles.primaryButton} type="submit">Connect my league history</button>
           </form>
         ) : !linkedPlayer ? (
-          <p className={styles.muted}>The commissioner needs to review this claim before another one is submitted.</p>
+          <p className={styles.muted}>Your previous-player link is waiting for captain review.</p>
         ) : null}
       </article>
 
