@@ -6,6 +6,13 @@ import {createClient} from '@/lib/supabase/server';
 
 const APPLICATIONS_PATH = '/office/applications';
 
+type ReviewRpcClient = {
+  rpc: (
+    fn: string,
+    args: {target_application_id: string; target_status: 'Approved' | 'Rejected'},
+  ) => Promise<{error: {message: string} | null}>;
+};
+
 export async function approveApplication(formData: FormData) {
   await reviewApplication(formData, 'Approved', 'Application approved.');
 }
@@ -30,10 +37,15 @@ async function reviewApplication(
     redirect('/account?error=Sign%20in%20first.');
   }
 
-  const {error} = await supabase.rpc('review_launch_player_application', {
-    target_application_id: applicationId,
-    target_status: status,
-  });
+  // The database RPC exists in production but is not present in the generated
+  // Database function typings yet, so keep the call narrowly typed here.
+  const {error} = await (supabase as unknown as ReviewRpcClient).rpc(
+    'review_launch_player_application',
+    {
+      target_application_id: applicationId,
+      target_status: status,
+    },
+  );
 
   if (error) {
     redirect(`${APPLICATIONS_PATH}?error=${encodeURIComponent(error.message)}`);
