@@ -9,6 +9,17 @@ type OfficeApplicationsPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
+type ApplicationRow = {
+  id: string;
+  profile_id: string;
+  season_id: string;
+  requested_team_id: string;
+  player_type: string;
+  gender: string;
+  played_before: boolean;
+  status: string;
+  created_at: string;
+};
 type ProfileRow = {id: string; display_name: string};
 type TeamRow = {id: string; name: string};
 type ClaimRow = {
@@ -22,6 +33,17 @@ type ClaimRow = {
 };
 type ClaimedPlayerRow = {id: string; name: string; pdga_number: string};
 
+type ApplicationsQueryClient = {
+  from: (relation: 'launch_player_applications') => {
+    select: (columns: '*') => {
+      order: (column: 'created_at', options: {ascending: boolean}) => Promise<{
+        data: ApplicationRow[] | null;
+        error: {message: string} | null;
+      }>;
+    };
+  };
+};
+
 export default async function OfficeApplicationsPage({searchParams}: OfficeApplicationsPageProps) {
   const params = searchParams ? await searchParams : {};
   const notice = readParam(params.notice);
@@ -32,7 +54,8 @@ export default async function OfficeApplicationsPage({searchParams}: OfficeAppli
   }
 
   const supabase = await createClient();
-  const {data: applications, error} = await supabase
+  const applicationsClient = supabase as unknown as ApplicationsQueryClient;
+  const {data: applications, error} = await applicationsClient
     .from('launch_player_applications')
     .select('*')
     .order('created_at', {ascending: false});
