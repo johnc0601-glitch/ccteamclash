@@ -189,9 +189,12 @@ function normalizeTeam(value: unknown): Team | null {
   if (!value || typeof value !== 'object') return null;
 
   const team = value as Partial<Team>;
-  const id = cleanText(team.id);
+  const rawId = cleanText(team.id);
   const name = cleanText(team.name);
   const shortName = cleanText(team.shortName);
+  const id = name.toLocaleLowerCase() === 'team focus' && rawId.startsWith('team-focus-')
+    ? 'team-focus'
+    : rawId;
 
   if (!id || !name || !shortName) return null;
 
