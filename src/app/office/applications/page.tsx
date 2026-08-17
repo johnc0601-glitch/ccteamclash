@@ -1,7 +1,6 @@
 import {OfficePage} from '@/components/commissioner/OfficePage';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
-import {approveApplication, rejectApplication} from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -108,8 +107,9 @@ export default async function OfficeApplicationsPage({searchParams}: OfficeAppli
       <section className="office-panel">
         <div className="office-panel-heading">
           <div>
-            <span className="office-eyebrow">Registration review</span>
+            <span className="office-eyebrow">Registration overview</span>
             <h2>Player applications</h2>
+            <p>Players choose a team when they register. Pending applications are approved by that team&apos;s captain.</p>
           </div>
           <strong>{pendingCount} pending</strong>
         </div>
@@ -138,26 +138,17 @@ export default async function OfficeApplicationsPage({searchParams}: OfficeAppli
 
               {application.played_before ? (
                 <div style={{marginTop: '0.75rem'}}>
-                  <p><strong>Returning-player claim:</strong> {claim?.status ?? 'No claim found'}</p>
+                  <p><strong>Returning-player link:</strong> {claim?.status ?? 'Not connected yet'}</p>
                   {claim ? <p><strong>Submitted identity:</strong> {claim.submitted_name}{claim.submitted_pdga_number ? ` · PDGA ${claim.submitted_pdga_number}` : ''}</p> : null}
                   {claimedPlayer ? <p><strong>Selected player:</strong> {claimedPlayer.name}{claimedPlayer.pdga_number ? ` · PDGA ${claimedPlayer.pdga_number}` : ''}</p> : null}
-                  {claim?.status === 'Pending' && !claim.requested_player_id
-                    ? <p className="office-error">Choose/link the returning player record before approval.</p>
+                  {application.status === 'Pending' && !claim?.requested_player_id
+                    ? <p className="office-error">Waiting for the player to connect their previous league record before captain approval.</p>
                     : null}
                 </div>
               ) : null}
 
               {application.status === 'Pending' ? (
-                <div className="editor-actions" style={{marginTop: '1rem'}}>
-                  <form action={approveApplication}>
-                    <input type="hidden" name="applicationId" value={application.id} />
-                    <button className="publish-action" type="submit">Approve</button>
-                  </form>
-                  <form action={rejectApplication}>
-                    <input type="hidden" name="applicationId" value={application.id} />
-                    <button className="secondary" type="submit">Reject</button>
-                  </form>
-                </div>
+                <p style={{marginTop: '1rem'}}><strong>Next step:</strong> {teamNames.get(application.requested_team_id) ?? 'Requested team'} captain approval.</p>
               ) : null}
             </article>
           );
