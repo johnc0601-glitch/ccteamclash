@@ -4,6 +4,18 @@ import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository
 import type {Database} from '@/lib/supabase/database';
 
 type LaunchSupabaseClient = SupabaseClient<Database>;
+type SubmitApplicationRpcClient = {
+  rpc: (
+    fn: 'submit_launch_player_application',
+    args: {
+      target_season_id: string;
+      target_requested_team_id: string;
+      target_player_type: string;
+      target_gender: string;
+      target_played_before: boolean;
+    },
+  ) => Promise<{error: {message: string} | null}>;
+};
 
 type LaunchSignupMetadata = {
   displayName?: unknown;
@@ -52,13 +64,16 @@ export async function ensureLaunchSignupProfile(
     && metadata.gender
     && typeof metadata.playedBefore === 'boolean'
   ) {
-    const {error: applicationError} = await supabase.rpc('submit_launch_player_application', {
-      target_season_id: metadata.seasonId,
-      target_requested_team_id: metadata.requestedTeamId,
-      target_player_type: metadata.playerType,
-      target_gender: metadata.gender,
-      target_played_before: metadata.playedBefore,
-    });
+    const {error: applicationError} = await (supabase as unknown as SubmitApplicationRpcClient).rpc(
+      'submit_launch_player_application',
+      {
+        target_season_id: metadata.seasonId,
+        target_requested_team_id: metadata.requestedTeamId,
+        target_player_type: metadata.playerType,
+        target_gender: metadata.gender,
+        target_played_before: metadata.playedBefore,
+      },
+    );
     if (applicationError) return applicationError.message;
   }
 
