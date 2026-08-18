@@ -22,6 +22,11 @@ type RejectedApplicationRow = {
   gender: string;
 };
 
+type ActiveMembershipRow = {
+  player_id: string;
+  team_id: string;
+};
+
 export default async function OfficePlayersPage({searchParams}: OfficePlayersPageProps) {
   const params = searchParams ? await searchParams : {};
   const notice = readParam(params.notice);
@@ -63,11 +68,34 @@ export default async function OfficePlayersPage({searchParams}: OfficePlayersPag
   ]);
 
   const launchSupabase = supabase as any;
-  const {data: rejectedRows} = await launchSupabase
-    .from('launch_player_applications')
-    .select('id, profile_id, season_id, requested_team_id, player_type, gender')
-    .eq('status', 'Rejected')
-    .order('updated_at', {ascending: false});
+  const [{data: rejectedRows}, {data: activeSeason}] = await Promise.all([
+    launchSupabase
+      .from('launch_player_applications')
+      .select('id, profile_id, season_id, requested_team_id, player_type, gender')
+      .eq('status', 'Rejected')
+      .order('updated_at', {ascending: false}),
+    launchSupabase
+      .from('launch_seasons')
+      .select('id')
+      .eq('active', true)
+      .eq('published', true)
+      .eq('archived', false)
+      .order('year', {ascending: false})
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  const {data: activeMembershipRows} = activeSeason?.id
+    ? await launchSupabase
+      .from('launch_season_roster_memberships')
+      .select('player_id, team_id')
+      .eq('season_id', activeSeason.id)
+      .eq('status', 'Active')
+    : {data: [] as ActiveMembershipRow[]};
+
+  const activeSeasonTeamByPlayerId = Object.fromEntries(
+    ((activeMembershipRows ?? []) as ActiveMembershipRow[]).map((membership) => [membership.player_id, membership.team_id]),
+  );
 
   const rows = (rejectedRows ?? []) as RejectedApplicationRow[];
   const seasonIds = [...new Set(rows.map((row) => row.season_id))];
@@ -106,6 +134,7 @@ export default async function OfficePlayersPage({searchParams}: OfficePlayersPag
         teams={teams}
       />
       <LaunchPlayerManagement
+        activeSeasonTeamByPlayerId={activeSeasonTeamByPlayerId}
         commissionerProfileId={commissionerProfile.id}
         players={players}
         profiles={profiles}
