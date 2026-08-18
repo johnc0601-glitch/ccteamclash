@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const {error} = await supabase.auth.exchangeCodeForSession(code);
+    const {data, error} = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       const resetFlow = next === '/account/reset-password';
       const message = encodeURIComponent(resetFlow
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       const destination = resetFlow ? '/account/forgot-password' : '/account';
       return NextResponse.redirect(new URL(`${destination}?error=${message}`, requestUrl.origin));
     }
-    const {data} = await supabase.auth.getUser();
+
     if (data.user) {
       magicLinkAuthenticated = flow === 'magic-link';
       const setupError = await ensureLaunchSignupProfile(supabase, data.user);
