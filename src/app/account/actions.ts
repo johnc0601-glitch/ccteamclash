@@ -186,22 +186,6 @@ export async function signOut() {
   redirect('/account?notice=You are signed out.');
 }
 
-export async function createPendingProfile(formData: FormData) {
-  const displayName = readFormValue(formData, 'displayName');
-  const requestedPlayerId = readFormValue(formData, 'requestedPlayerId');
-  if (!displayName) redirect('/account?error=Enter your name.');
-  if (!requestedPlayerId) redirect('/account?error=Choose the name you played under before.');
-  const {repository, service, userId} = await getLaunchServiceForUser();
-  const selectedPlayer = await repository.getPlayer(requestedPlayerId);
-  if (!selectedPlayer) redirect('/account?error=Choose a valid previous league name.');
-  const profileResult = await service.createPendingProfile({userId, displayName});
-  if (!profileResult.ok) redirect(`/account?error=${encodeURIComponent(profileResult.message)}`);
-  const claimResult = await service.submitPlayerClaim({profileId: profileResult.data.id, requestedPlayerId: selectedPlayer.id, submittedName: displayName, submittedPdgaNumber: selectedPlayer.pdgaNumber});
-  if (!claimResult.ok) redirect(`/account?error=${encodeURIComponent(claimResult.message)}`);
-  revalidatePath('/account');
-  redirect('/account?notice=League profile created.');
-}
-
 export async function updateProfileName(formData: FormData) {
   const displayName = readFormValue(formData, 'displayName');
   if (!displayName) redirect('/account?error=Enter your name.');
@@ -210,23 +194,6 @@ export async function updateProfileName(formData: FormData) {
   if (!result.ok) redirect(`/account?error=${encodeURIComponent(result.message)}`);
   revalidatePath('/account');
   redirect('/account?notice=Your profile name was updated.');
-}
-
-export async function submitPlayerClaim(formData: FormData) {
-  const submittedName = readFormValue(formData, 'submittedName');
-  const submittedPdgaNumber = readFormValue(formData, 'submittedPdgaNumber');
-  const requestedPlayerId = readFormValue(formData, 'requestedPlayerId');
-  if (!submittedName) redirect('/account?error=Enter the player name to claim.');
-  if (!requestedPlayerId) redirect('/account?error=Choose the name you played under before.');
-  const {repository, service, userId} = await getLaunchServiceForUser();
-  const profile = await repository.getProfileByUserId(userId);
-  if (!profile) redirect('/account?error=Create your league profile first.');
-  const selectedPlayer = await repository.getPlayer(requestedPlayerId);
-  if (!selectedPlayer) redirect('/account?error=Choose a valid previous league name.');
-  const result = await service.submitPlayerClaim({profileId: profile.id, requestedPlayerId: selectedPlayer.id, submittedName, submittedPdgaNumber: submittedPdgaNumber || selectedPlayer.pdgaNumber});
-  if (!result.ok) redirect(`/account?error=${encodeURIComponent(result.message)}`);
-  revalidatePath('/account');
-  redirect('/account?notice=Your previous league history request was submitted.');
 }
 
 async function getLaunchServiceForUser() {
