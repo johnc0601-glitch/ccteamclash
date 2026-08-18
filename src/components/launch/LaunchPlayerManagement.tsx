@@ -13,8 +13,16 @@ import {
 } from '@/app/office/players/actions';
 import styles from './LaunchPlayerManagement.module.css';
 
+type SeasonApplicationDetails = {
+  teamId: string;
+  playerType: 'Adult' | 'Junior';
+  gender: 'Male' | 'Female';
+  status: string;
+};
+
 type LaunchPlayerManagementProps = {
   activeSeasonTeamByPlayerId?: Record<string, string>;
+  currentSeasonApplicationByProfileId?: Record<string, SeasonApplicationDetails>;
   error?: string;
   notice?: string;
   players?: LaunchPlayer[];
@@ -25,6 +33,7 @@ type LaunchPlayerManagementProps = {
 
 export function LaunchPlayerManagement({
   activeSeasonTeamByPlayerId = {},
+  currentSeasonApplicationByProfileId = {},
   error,
   notice,
   players = [],
@@ -116,6 +125,7 @@ export function LaunchPlayerManagement({
                           <>
                             <SeasonRoute
                               activeSeasonTeamId={activeSeasonTeamByPlayerId[player.id]}
+                              application={currentSeasonApplicationByProfileId[profile.id]}
                               player={player}
                               profile={profile}
                               teams={teams}
@@ -146,11 +156,13 @@ export function LaunchPlayerManagement({
 
 function SeasonRoute({
   activeSeasonTeamId,
+  application,
   player,
   profile,
   teams,
 }: {
   activeSeasonTeamId?: string;
+  application?: SeasonApplicationDetails;
   player: LaunchPlayer;
   profile: LaunchProfile;
   teams: LaunchTeam[];
@@ -158,7 +170,10 @@ function SeasonRoute({
   if (profile.status === 'Rejected' || profile.status === 'Suspended') return null;
 
   const alreadyRostered = Boolean(activeSeasonTeamId);
-  const division = player.gender === 'Male' || player.gender === 'Female' ? player.gender : '';
+  const routeTeamId = alreadyRostered ? activeSeasonTeamId ?? '' : application?.teamId ?? '';
+  const playerType = application?.playerType ?? '';
+  const division = application?.gender ?? (player.gender === 'Male' || player.gender === 'Female' ? player.gender : '');
+  const pending = application?.status === 'Pending';
 
   return (
     <section className={styles.accountAccess}>
@@ -166,8 +181,10 @@ function SeasonRoute({
         <strong>{alreadyRostered ? 'Season details' : 'Season team routing'}</strong>
         <span>
           {alreadyRostered
-            ? 'This player is already on the active-season roster. Save the missing season details without changing the roster or sending another approval.'
-            : 'Commissioner selection sends a Pending request to the team captain. It does not roster the player.'}
+            ? 'Current active-season roster details. Updating these fields does not change the roster team or require captain approval.'
+            : pending
+              ? 'This player already has a Pending team request. Update the fields below to replace that request.'
+              : 'Commissioner selection sends a Pending request to the team captain. It does not roster the player.'}
         </span>
       </div>
       <form className={styles.captainForm} action={commissionerRoutePlayerToCaptain}>
@@ -177,15 +194,15 @@ function SeasonRoute({
           <span>Team</span>
           {alreadyRostered ? (
             <>
-              <input name="requestedTeamId" type="hidden" value={activeSeasonTeamId} />
-              <select value={activeSeasonTeamId} disabled>
+              <input name="requestedTeamId" type="hidden" value={routeTeamId} />
+              <select value={routeTeamId} disabled>
                 {teams.map((team) => (
                   <option key={team.id} value={team.id}>{team.name}</option>
                 ))}
               </select>
             </>
           ) : (
-            <select name="requestedTeamId" defaultValue="" required>
+            <select name="requestedTeamId" defaultValue={routeTeamId} required>
               <option value="" disabled>Choose team</option>
               {teams.map((team) => (
                 <option key={team.id} value={team.id}>{team.name}</option>
@@ -195,7 +212,7 @@ function SeasonRoute({
         </label>
         <label>
           <span>Player type</span>
-          <select name="playerType" defaultValue="" required>
+          <select name="playerType" defaultValue={playerType} required>
             <option value="" disabled>Choose type</option>
             <option value="Adult">Adult</option>
             <option value="Junior">Junior</option>
@@ -210,7 +227,7 @@ function SeasonRoute({
           </select>
         </label>
         <button className={styles.primaryButton} type="submit">
-          {alreadyRostered ? 'Save season details' : 'Send to captain'}
+          {alreadyRostered ? 'Update season details' : pending ? 'Update captain request' : 'Send to captain'}
         </button>
       </form>
     </section>
