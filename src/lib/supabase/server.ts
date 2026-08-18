@@ -1,7 +1,7 @@
 import {createServerClient} from '@supabase/ssr';
 import {cookies} from 'next/headers';
 import {getSupabaseConfig} from '@/lib/supabase/config';
-import type {Database} from '@/lib/supabase/database';
+import type {Database} from '@/lib/supabase/database.current';
 
 export async function createClient() {
   const cookieStore = await cookies();
