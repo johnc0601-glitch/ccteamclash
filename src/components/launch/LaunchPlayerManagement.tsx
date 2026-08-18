@@ -14,6 +14,7 @@ import {
 import styles from './LaunchPlayerManagement.module.css';
 
 type LaunchPlayerManagementProps = {
+  activeSeasonTeamByPlayerId?: Record<string, string>;
   error?: string;
   notice?: string;
   players?: LaunchPlayer[];
@@ -23,6 +24,7 @@ type LaunchPlayerManagementProps = {
 };
 
 export function LaunchPlayerManagement({
+  activeSeasonTeamByPlayerId = {},
   error,
   notice,
   players = [],
@@ -113,6 +115,7 @@ export function LaunchPlayerManagement({
                         {profile ? (
                           <>
                             <SeasonRoute
+                              activeSeasonTeamId={activeSeasonTeamByPlayerId[player.id]}
                               player={player}
                               profile={profile}
                               teams={teams}
@@ -142,48 +145,73 @@ export function LaunchPlayerManagement({
 }
 
 function SeasonRoute({
+  activeSeasonTeamId,
   player,
   profile,
   teams,
 }: {
+  activeSeasonTeamId?: string;
   player: LaunchPlayer;
   profile: LaunchProfile;
   teams: LaunchTeam[];
 }) {
   if (profile.role === 'Commissioner' || profile.status === 'Rejected' || profile.status === 'Suspended') return null;
 
+  const alreadyRostered = Boolean(activeSeasonTeamId);
+  const division = player.gender === 'Male' || player.gender === 'Female' ? player.gender : '';
+
   return (
     <section className={styles.accountAccess}>
       <div>
-        <strong>Season team routing</strong>
-        <span>Commissioner selection sends a Pending request to the team captain. It does not roster the player.</span>
+        <strong>{alreadyRostered ? 'Season details' : 'Season team routing'}</strong>
+        <span>
+          {alreadyRostered
+            ? 'This player is already on the active-season roster. Save the missing season details without changing the roster or sending another approval.'
+            : 'Commissioner selection sends a Pending request to the team captain. It does not roster the player.'}
+        </span>
       </div>
       <form className={styles.captainForm} action={commissionerRoutePlayerToCaptain}>
         <input name="profileId" type="hidden" value={profile.id} />
+        {alreadyRostered ? <input name="alreadyRostered" type="hidden" value="true" /> : null}
         <label>
           <span>Team</span>
-          <select name="requestedTeamId" defaultValue={player.currentTeamId ?? ''} required>
-            <option value="" disabled>Choose team</option>
-            {teams.map((team) => (
-              <option key={team.id} value={team.id}>{team.name}</option>
-            ))}
-          </select>
+          {alreadyRostered ? (
+            <>
+              <input name="requestedTeamId" type="hidden" value={activeSeasonTeamId} />
+              <select value={activeSeasonTeamId} disabled>
+                {teams.map((team) => (
+                  <option key={team.id} value={team.id}>{team.name}</option>
+                ))}
+              </select>
+            </>
+          ) : (
+            <select name="requestedTeamId" defaultValue="" required>
+              <option value="" disabled>Choose team</option>
+              {teams.map((team) => (
+                <option key={team.id} value={team.id}>{team.name}</option>
+              ))}
+            </select>
+          )}
         </label>
         <label>
           <span>Player type</span>
-          <select name="playerType" defaultValue="Adult" required>
+          <select name="playerType" defaultValue="" required>
+            <option value="" disabled>Choose type</option>
             <option value="Adult">Adult</option>
             <option value="Junior">Junior</option>
           </select>
         </label>
         <label>
           <span>Division</span>
-          <select name="gender" defaultValue={player.gender === 'Female' ? 'Female' : 'Male'} required>
+          <select name="gender" defaultValue={division} required>
+            <option value="" disabled>Choose division</option>
             <option value="Male">Male</option>
             <option value="Female">Female</option>
           </select>
         </label>
-        <button className={styles.primaryButton} type="submit">Send to captain</button>
+        <button className={styles.primaryButton} type="submit">
+          {alreadyRostered ? 'Save season details' : 'Send to captain'}
+        </button>
       </form>
     </section>
   );
