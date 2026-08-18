@@ -35,6 +35,11 @@ export const OFFICE_SECTIONS = {
     description: 'Record completed matches and review submitted scores.',
     href: '/office/results',
   },
+  matchFeedLab: {
+    title: 'Match Feed Lab',
+    description: 'Prototype match posts, photos, reactions, comments, and replies before public rollout.',
+    href: '/office/match-feed',
+  },
   imports: {
     title: 'Imports',
     description: 'Import historical team and player summary records.',
