@@ -72,9 +72,9 @@ export async function completePlayerSetup(formData: FormData) {
 export async function submitSeasonApplication(formData: FormData) {
   const seasonId = readFormValue(formData, 'seasonId');
   const requestedTeamId = readFormValue(formData, 'requestedTeamId');
-  const playerType = readPlayerType(readFormValue(formData, 'playerType'));
-  const gender = readApplicationGender(readFormValue(formData, 'gender'));
-  if (!seasonId || !requestedTeamId || !playerType || !gender) redirect('/account?error=Complete all season registration fields.');
+  let playerType = readPlayerType(readFormValue(formData, 'playerType'));
+  let gender = readApplicationGender(readFormValue(formData, 'gender'));
+  if (!seasonId || !requestedTeamId) redirect('/account?error=Complete all season registration fields.');
 
   const supabase = await createClient();
   const {data: {user}, error: userError} = await supabase.auth.getUser();
@@ -83,13 +83,41 @@ export async function submitSeasonApplication(formData: FormData) {
   const launchSupabase = supabase as any;
   const {data: profile, error: profileError} = await launchSupabase
     .from('launch_profiles')
-    .select('played_before, player_id')
+    .select('id, played_before, player_id')
     .eq('user_id', user.id)
     .maybeSingle();
   if (profileError) redirect(`/account?error=${encodeURIComponent(profileError.message)}`);
   if (!profile?.player_id || typeof profile.played_before !== 'boolean') {
     redirect('/account?error=Finish your one-time Player Setup before registering for the season.');
   }
+
+  const [{data: priorApplication}, {data: playerRow}] = await Promise.all([
+    launchSupabase
+      .from('launch_player_applications')
+      .select('player_type, gender, created_at')
+      .eq('profile_id', profile.id)
+      .eq('status', 'Approved')
+      .neq('season_id', seasonId)
+      .order('created_at', {ascending: false})
+      .limit(1)
+      .maybeSingle(),
+    launchSupabase
+      .from('launch_players')
+      .select('gender')
+      .eq('id', profile.player_id)
+      .maybeSingle(),
+  ]);
+
+  const establishedPlayerType = readPlayerType(priorApplication?.player_type ?? '');
+  const establishedGender = readApplicationGender(playerRow?.gender ?? '')
+    ?? readApplicationGender(priorApplication?.gender ?? '');
+
+  if (establishedPlayerType && establishedGender) {
+    playerType = establishedPlayerType;
+    gender = establishedGender;
+  }
+
+  if (!playerType || !gender) redirect('/account?error=Complete all season registration fields.');
 
   const {error} = await supabase.rpc('submit_launch_player_application' as never, {
     target_season_id: seasonId,
