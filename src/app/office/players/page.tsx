@@ -83,6 +83,7 @@ export default async function OfficePlayersPage({searchParams}: OfficePlayersPag
     id: row.id,
     displayName: profileNames.get(row.profile_id) ?? 'Unknown player',
     seasonName: seasonNames.get(row.season_id) ?? row.season_id,
+    teamId: row.requested_team_id,
     teamName: teamNames.get(row.requested_team_id) ?? row.requested_team_id,
     playerType: row.player_type,
     gender: row.gender,
@@ -90,7 +91,10 @@ export default async function OfficePlayersPage({searchParams}: OfficePlayersPag
 
   return (
     <OfficePage sectionId="players">
-      <SeasonRegistrationReview registrations={rejectedRegistrations} />
+      <SeasonRegistrationReview
+        registrations={rejectedRegistrations}
+        teams={teams.map((team) => ({id: team.id, name: team.name}))}
+      />
       <MemberManagement
         claims={claims}
         commissionerProfileId={commissionerProfile.id}
