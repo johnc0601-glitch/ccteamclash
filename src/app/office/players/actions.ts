@@ -40,6 +40,7 @@ export async function commissionerRoutePlayerToCaptain(formData: FormData) {
   const requestedTeamId = readFormValue(formData, 'requestedTeamId');
   const playerType = readPlayerType(readFormValue(formData, 'playerType'));
   const gender = readApplicationGender(readFormValue(formData, 'gender'));
+  const alreadyRostered = readFormValue(formData, 'alreadyRostered') === 'true';
   if (!profileId) redirect(`${PLAYERS_PATH}?error=Player account is required.`);
   if (!requestedTeamId) redirect(`${PLAYERS_PATH}?error=Choose a team.`);
   if (!playerType || !gender) redirect(`${PLAYERS_PATH}?error=Choose Adult or Junior and the player division.`);
@@ -65,7 +66,11 @@ export async function commissionerRoutePlayerToCaptain(formData: FormData) {
   revalidatePeoplePages();
   revalidatePath('/captain');
   revalidatePath('/account');
-  redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent('Registration sent to the selected team captain for approval.')}`);
+  redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent(
+    alreadyRostered
+      ? 'Season details updated.'
+      : 'Registration sent to the selected team captain for approval.',
+  )}`);
 }
 
 export async function approveClaim(formData: FormData) {
