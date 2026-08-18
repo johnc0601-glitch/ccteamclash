@@ -5,6 +5,7 @@ import type {LaunchPlayer, LaunchProfile, LaunchTeam} from '@/domain/launch/Laun
 import {
   approveProfile,
   assignAccess,
+  commissionerRoutePlayerToCaptain,
   deleteAccount,
   rejectProfile,
   savePlayer,
@@ -31,7 +32,6 @@ export function LaunchPlayerManagement({
 }: LaunchPlayerManagementProps) {
   const [search, setSearch] = useState('');
   const activePlayers = players.filter((player) => player.active);
-  const assignedPlayers = players.filter((player) => player.currentTeamId);
   const visiblePlayers = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return players;
@@ -40,14 +40,13 @@ export function LaunchPlayerManagement({
         player.name,
         player.pdgaNumber,
         player.pdgaRating,
-        getTeamName(teams, player.currentTeamId),
         player.gender,
         getLinkedProfile(profiles, player.id)?.displayName,
         getLinkedProfile(profiles, player.id)?.status,
       ].join(' ').toLowerCase();
       return searchable.includes(query);
     });
-  }, [players, profiles, search, teams]);
+  }, [players, profiles, search]);
 
   return (
     <section className={styles.management} aria-label="Player control">
@@ -57,7 +56,6 @@ export function LaunchPlayerManagement({
       <div className={styles.summaryGrid}>
         <SummaryCard label="Players" value={players.length} />
         <SummaryCard label="Active" value={activePlayers.length} />
-        <SummaryCard label="Assigned" value={assignedPlayers.length} />
         <SummaryCard label="Inactive" value={players.length - activePlayers.length} />
       </div>
 
@@ -68,21 +66,21 @@ export function LaunchPlayerManagement({
             <h2 id="add-player-title">Add player</h2>
             <p>Create a player record even when that person does not have an account.</p>
           </header>
-          <PlayerForm teams={teams} />
+          <PlayerForm />
         </section>
 
         <section className={styles.panel} aria-labelledby="player-directory-title">
           <header className={styles.panelHeader}>
             <span>Directory</span>
             <h2 id="player-directory-title">Player records</h2>
-            <p>Assign teams, update ratings, and mark roster availability.</p>
+            <p>Update permanent player details here. Team rosters are controlled by active-season membership.</p>
           </header>
           <div className={styles.searchBox}>
             <label htmlFor="playerDirectorySearch">Search players</label>
             <input
               id="playerDirectorySearch"
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search name, team, PDGA, rating"
+              placeholder="Search name, PDGA, rating"
               type="search"
               value={search}
             />
@@ -94,35 +92,41 @@ export function LaunchPlayerManagement({
                   const profile = getLinkedProfile(profiles, player.id);
                   return (
                     <>
-                <div className={styles.playerPrimary}>
-                  <div>
-                    <strong>{player.name}</strong>
-                    <span>{getPlayerMeta(player)}</span>
-                  </div>
-                  <div className={styles.badges}>
-                    <label className={styles.memberCheck}>
-                      <input checked={Boolean(profile)} disabled type="checkbox" />
-                      <span>Member</span>
-                    </label>
-                    <span className={player.active ? styles.activeBadge : styles.inactiveBadge}>
-                      {player.active ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                </div>
-                <p className={styles.muted}>Team: {getTeamName(teams, player.currentTeamId)}</p>
-                <details className={styles.editBox}>
-                  <summary>Edit player</summary>
-                  <PlayerForm player={player} teams={teams} />
-                  {profile ? (
-                    <AccountAccess
-                      commissionerProfileId={commissionerProfileId}
-                      profile={profile}
-                      teams={teams}
-                    />
-                  ) : (
-                    <p className={styles.accountNote}>No website account is linked to this player.</p>
-                  )}
-                </details>
+                      <div className={styles.playerPrimary}>
+                        <div>
+                          <strong>{player.name}</strong>
+                          <span>{getPlayerMeta(player)}</span>
+                        </div>
+                        <div className={styles.badges}>
+                          <label className={styles.memberCheck}>
+                            <input checked={Boolean(profile)} disabled type="checkbox" />
+                            <span>Member</span>
+                          </label>
+                          <span className={player.active ? styles.activeBadge : styles.inactiveBadge}>
+                            {player.active ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </div>
+                      <details className={styles.editBox}>
+                        <summary>Edit player</summary>
+                        <PlayerForm player={player} />
+                        {profile ? (
+                          <>
+                            <SeasonRoute
+                              player={player}
+                              profile={profile}
+                              teams={teams}
+                            />
+                            <AccountAccess
+                              commissionerProfileId={commissionerProfileId}
+                              profile={profile}
+                              teams={teams}
+                            />
+                          </>
+                        ) : (
+                          <p className={styles.accountNote}>No website account is linked to this player.</p>
+                        )}
+                      </details>
                     </>
                   );
                 })()}
@@ -133,6 +137,54 @@ export function LaunchPlayerManagement({
           </div>
         </section>
       </div>
+    </section>
+  );
+}
+
+function SeasonRoute({
+  player,
+  profile,
+  teams,
+}: {
+  player: LaunchPlayer;
+  profile: LaunchProfile;
+  teams: LaunchTeam[];
+}) {
+  if (profile.role === 'Commissioner' || profile.status === 'Rejected' || profile.status === 'Suspended') return null;
+
+  return (
+    <section className={styles.accountAccess}>
+      <div>
+        <strong>Season team routing</strong>
+        <span>Commissioner selection sends a Pending request to the team captain. It does not roster the player.</span>
+      </div>
+      <form className={styles.captainForm} action={commissionerRoutePlayerToCaptain}>
+        <input name="profileId" type="hidden" value={profile.id} />
+        <label>
+          <span>Team</span>
+          <select name="requestedTeamId" defaultValue={player.currentTeamId ?? ''} required>
+            <option value="" disabled>Choose team</option>
+            {teams.map((team) => (
+              <option key={team.id} value={team.id}>{team.name}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Player type</span>
+          <select name="playerType" defaultValue="Adult" required>
+            <option value="Adult">Adult</option>
+            <option value="Junior">Junior</option>
+          </select>
+        </label>
+        <label>
+          <span>Division</span>
+          <select name="gender" defaultValue={player.gender === 'Female' ? 'Female' : 'Male'} required>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </label>
+        <button className={styles.primaryButton} type="submit">Send to captain</button>
+      </form>
     </section>
   );
 }
@@ -211,7 +263,7 @@ function ProfileAction({
   );
 }
 
-function PlayerForm({player, teams}: {player?: LaunchPlayer; teams: LaunchTeam[]}) {
+function PlayerForm({player}: {player?: LaunchPlayer}) {
   return (
     <form className={styles.form} action={savePlayer}>
       <input name="playerId" type="hidden" value={player?.id ?? ''} />
@@ -246,15 +298,6 @@ function PlayerForm({player, teams}: {player?: LaunchPlayer; teams: LaunchTeam[]
           <input name="pdgaRating" defaultValue={player?.pdgaRating ?? ''} inputMode="numeric" />
         </label>
       </div>
-      <label>
-        <span>Team</span>
-        <select name="currentTeamId" defaultValue={player?.currentTeamId ?? ''}>
-          <option value="">Unassigned</option>
-          {teams.map((team) => (
-            <option key={team.id} value={team.id}>{team.name}</option>
-          ))}
-        </select>
-      </label>
       <button className={styles.primaryButton} type="submit">{player ? 'Save player' : 'Add player'}</button>
     </form>
   );
@@ -276,11 +319,6 @@ function getPlayerMeta(player: LaunchPlayer): string {
     player.pdgaRating ? `Rating ${player.pdgaRating}` : 'No rating',
   ];
   return pieces.join(' / ');
-}
-
-function getTeamName(teams: LaunchTeam[], teamId: string | null): string {
-  if (!teamId) return 'Unassigned';
-  return teams.find((team) => team.id === teamId)?.name ?? 'Unknown team';
 }
 
 function getLinkedProfile(profiles: LaunchProfile[], playerId: string): LaunchProfile | undefined {
