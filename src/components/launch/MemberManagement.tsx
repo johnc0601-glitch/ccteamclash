@@ -5,6 +5,7 @@ import {
   approveProfile,
   assignCaptain,
   createNewPlayerForProfile,
+  deleteAccount,
   linkProfileToPlayer,
   rejectClaim,
   rejectProfile,
@@ -113,6 +114,11 @@ export function MemberManagement({
                   <button className={styles.secondaryButton} type="submit">Link existing player</button>
                 </div>
               </form>
+
+              <form action={deleteAccount}>
+                <input name="profileId" type="hidden" value={profile.id} />
+                <button className={styles.secondaryButton} type="submit">Delete account</button>
+              </form>
             </article>
           )) : (
             <p className={styles.emptyState}>No unlinked player accounts.</p>
@@ -187,6 +193,9 @@ export function MemberManagement({
                   ) : null}
                   {profile.status !== 'Suspended' && profile.id !== commissionerProfileId ? (
                     <ProfileAction action={suspendProfile} label="Suspend" profileId={profile.id} secondary />
+                  ) : null}
+                  {profile.id !== commissionerProfileId ? (
+                    <ProfileAction action={deleteAccount} label="Delete account" profileId={profile.id} secondary />
                   ) : null}
                 </div>
               </article>
