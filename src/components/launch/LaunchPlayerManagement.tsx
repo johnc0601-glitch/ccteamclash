@@ -5,6 +5,7 @@ import type {LaunchPlayer, LaunchProfile, LaunchTeam} from '@/domain/launch/Laun
 import {
   approveProfile,
   assignAccess,
+  deleteAccount,
   rejectProfile,
   savePlayer,
   suspendProfile,
@@ -180,7 +181,13 @@ function AccountAccess({
         {profile.status !== 'Suspended' && profile.id !== commissionerProfileId ? (
           <ProfileAction action={suspendProfile} label="Suspend" profileId={profile.id} secondary />
         ) : null}
+        {profile.id !== commissionerProfileId ? (
+          <ProfileAction action={deleteAccount} label="Delete account" profileId={profile.id} secondary />
+        ) : null}
       </div>
+      {profile.id !== commissionerProfileId ? (
+        <p className={styles.accountNote}>Delete account removes the website login and unlinks it from the player. Historical player records remain intact.</p>
+      ) : null}
     </section>
   );
 }
