@@ -8,6 +8,7 @@ export function buildPublicTeamRoster(
   teamId: string,
   teamName: string,
   currentSeasonName: string,
+  rosterPlayerIds?: ReadonlySet<string>,
 ): PublicPlayerView[] {
   const publicPlayersById = new Map(publicPlayers.map((view) => [view.player.id, view]));
   const publicPlayersByName = new Map(
@@ -15,7 +16,9 @@ export function buildPublicTeamRoster(
   );
 
   return launchPlayers
-    .filter((player) => player.active && player.currentTeamId === teamId)
+    .filter((player) => player.active && (
+      rosterPlayerIds ? rosterPlayerIds.has(player.id) : player.currentTeamId === teamId
+    ))
     .map((player) => {
       const existing = publicPlayersById.get(player.id)
         ?? publicPlayersByName.get(normalizeName(player.name));
