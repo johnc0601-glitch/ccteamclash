@@ -88,6 +88,7 @@ function normalizeStory(value: unknown): Story | null {
       ? story.body.map(cleanText).filter(Boolean)
       : [],
     links: normalizeLinks(story.links),
+    featured: story.featured === true,
   };
 }
 
