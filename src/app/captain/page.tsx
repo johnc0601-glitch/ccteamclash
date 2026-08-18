@@ -6,7 +6,7 @@ import type {TeamScheduleEvent} from '@/domain/schedule/ScheduleService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
-import {confirmTeamApplication} from './actions';
+import {confirmTeamApplication, rejectTeamApplication} from './actions';
 import styles from './Captain.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -21,7 +21,6 @@ type TeamApplication = {
   displayName: string;
   playerType: string;
   gender: string;
-  playedBefore: boolean;
   createdAt: string;
 };
 
@@ -31,7 +30,6 @@ type ApplicationRow = {
   requested_team_id: string;
   player_type: string;
   gender: string;
-  played_before: boolean;
   status: string;
   created_at: string;
 };
@@ -113,26 +111,29 @@ function CaptainDashboard({
         <section className={styles.panel}>
           <header className={styles.panelHeader}>
             <span>Captain confirmation</span>
-            <h2>Roster requests</h2>
-            <p className={styles.muted}>Approve players who selected {team.name} during registration.</p>
+            <h2>Season requests</h2>
+            <p className={styles.muted}>Approve or reject players who selected {team.name} during season registration.</p>
           </header>
           <div className={styles.list}>
             {pendingApplications.length ? pendingApplications.map((application) => (
               <article className={styles.row} key={application.id}>
                 <strong>{application.displayName}</strong>
                 <span className={styles.muted}>
-                  {application.playerType} · {application.gender} · {application.playedBefore ? 'Returning player' : 'New player'}
+                  {application.playerType} · {application.gender}
                 </span>
-                {application.playedBefore ? (
-                  <span className={styles.muted}>Returning players must connect their previous player record before approval.</span>
-                ) : null}
-                <form action={confirmTeamApplication}>
-                  <input name="applicationId" type="hidden" value={application.id} />
-                  <button className={styles.primaryButton} type="submit">Approve player</button>
-                </form>
+                <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
+                  <form action={confirmTeamApplication}>
+                    <input name="applicationId" type="hidden" value={application.id} />
+                    <button className={styles.primaryButton} type="submit">Approve</button>
+                  </form>
+                  <form action={rejectTeamApplication}>
+                    <input name="applicationId" type="hidden" value={application.id} />
+                    <button type="submit">Reject</button>
+                  </form>
+                </div>
               </article>
             )) : (
-              <p className={styles.empty}>No player requests need captain confirmation.</p>
+              <p className={styles.empty}>No season requests need captain confirmation.</p>
             )}
           </div>
         </section>
@@ -232,7 +233,7 @@ async function getCaptainData(): Promise<
     const applicationClient = supabase as unknown as ApplicationQueryClient;
     const {data: applicationRows, error: applicationError} = await applicationClient
       .from('launch_player_applications')
-      .select('id, profile_id, requested_team_id, player_type, gender, played_before, status, created_at')
+      .select('id, profile_id, requested_team_id, player_type, gender, status, created_at')
       .eq('requested_team_id', team.id)
       .eq('status', 'Pending')
       .order('created_at', {ascending: true});
@@ -251,7 +252,6 @@ async function getCaptainData(): Promise<
       displayName: profileNames.get(application.profile_id) ?? 'Unknown player',
       playerType: application.player_type,
       gender: application.gender,
-      playedBefore: application.played_before,
       createdAt: application.created_at,
     }));
 
