@@ -171,7 +171,7 @@ function SeasonRoute({
 
   const alreadyRostered = Boolean(activeSeasonTeamId);
   const routeTeamId = alreadyRostered ? activeSeasonTeamId ?? '' : application?.teamId ?? '';
-  const playerType = application?.playerType ?? '';
+  const junior = application?.playerType === 'Junior';
   const division = application?.gender ?? (player.gender === 'Male' || player.gender === 'Female' ? player.gender : '');
   const pending = application?.status === 'Pending';
 
@@ -210,13 +210,10 @@ function SeasonRoute({
             </select>
           )}
         </label>
-        <label>
-          <span>Player type</span>
-          <select name="playerType" defaultValue={playerType} required>
-            <option value="" disabled>Choose type</option>
-            <option value="Adult">Adult</option>
-            <option value="Junior">Junior</option>
-          </select>
+        <label className={styles.memberCheck}>
+          <input name="playerType" type="checkbox" value="Junior" defaultChecked={junior} />
+          <input name="playerType" type="hidden" value="Adult" />
+          <span>Junior</span>
         </label>
         <label>
           <span>Division</span>
