@@ -3,7 +3,6 @@
 import {headers} from 'next/headers';
 import {redirect} from 'next/navigation';
 import {revalidatePath} from 'next/cache';
-import {ensureLaunchSignupProfile, type LaunchSignupInput} from '@/domain/launch/LaunchAccountSetup';
 import {LaunchService} from '@/domain/launch/LaunchService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {createClient} from '@/lib/supabase/server';
@@ -23,28 +22,51 @@ export async function createLeagueAccount(formData: FormData) {
   const password = readFormValue(formData, 'password');
   const confirmPassword = readFormValue(formData, 'confirmPassword');
   const displayName = readFormValue(formData, 'displayName');
-  const seasonId = readFormValue(formData, 'seasonId');
-  const requestedTeamId = readFormValue(formData, 'requestedTeamId');
-  const playerType = readPlayerType(readFormValue(formData, 'playerType'));
-  const gender = readApplicationGender(readFormValue(formData, 'gender'));
-  const playedBefore = readPlayedBefore(readFormValue(formData, 'playedBefore'));
+
   if (!displayName) redirect('/account/create?error=Enter your name.');
   if (!email) redirect('/account/create?error=Enter your email address.');
   if (password.length < 8) redirect('/account/create?error=Password must be at least 8 characters.');
   if (password !== confirmPassword) redirect('/account/create?error=Passwords do not match.');
-  if (!seasonId || !requestedTeamId || !playerType || !gender || playedBefore === null) redirect('/account/create?error=Complete all registration fields.');
+
   const supabase = await createClient();
-  const signupInput: LaunchSignupInput = {displayName, seasonId, requestedTeamId, playerType, gender, playedBefore};
   const origin = await getOrigin();
-  const {data, error} = await supabase.auth.signUp({email, password, options: {emailRedirectTo: `${origin}/auth/callback?next=/account`, data: signupInput}});
+  const {data, error} = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${origin}/auth/callback?next=/account`,
+      data: {displayName},
+    },
+  });
+
   if (error) redirect(`/account/create?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
   if (data.user && data.session) {
-    const setupError = await ensureLaunchSignupProfile(supabase, data.user, signupInput);
-    if (setupError) redirect(`/account/create?error=${encodeURIComponent(setupError)}`);
     revalidatePath('/account');
-    redirect(`/account?notice=${encodeURIComponent(playedBefore ? 'Registration submitted. Connect your previous league history below, then your requested team captain can approve you.' : 'Registration submitted to your requested team captain for approval.')}`);
+    redirect('/account?notice=Account created. Complete your one-time Player Setup, then register for the season.');
   }
-  redirect('/account?notice=Account created. Confirm your email to finish submitting your registration.');
+  redirect('/account?notice=Account created. Confirm your email, then complete Player Setup and season registration.');
+}
+
+export async function completePlayerSetup(formData: FormData) {
+  const playedBefore = readPlayedBefore(readFormValue(formData, 'playedBefore'));
+  const requestedPlayerId = readFormValue(formData, 'requestedPlayerId');
+  if (playedBefore === null) redirect('/account?error=Choose whether you have played Coastal Clash before.');
+  if (playedBefore && !requestedPlayerId) redirect('/account?error=Choose the player record you used before.');
+
+  const supabase = await createClient();
+  const {data: {user}, error: userError} = await supabase.auth.getUser();
+  if (userError || !user) redirect('/account?error=Sign in first.');
+
+  const {error} = await supabase.rpc('complete_launch_player_setup' as never, {
+    target_played_before: playedBefore,
+    target_player_id: playedBefore ? requestedPlayerId : null,
+  } as never);
+  if (error) redirect(`/account?error=${encodeURIComponent(error.message)}`);
+
+  revalidatePath('/account');
+  revalidatePath('/players');
+  revalidatePath('/office/players');
+  redirect(`/account?notice=${encodeURIComponent(playedBefore ? 'Player Setup complete. Your previous Coastal Clash history is connected.' : 'Player Setup complete. Your new Coastal Clash player record is ready.')}`);
 }
 
 export async function submitSeasonApplication(formData: FormData) {
@@ -52,24 +74,37 @@ export async function submitSeasonApplication(formData: FormData) {
   const requestedTeamId = readFormValue(formData, 'requestedTeamId');
   const playerType = readPlayerType(readFormValue(formData, 'playerType'));
   const gender = readApplicationGender(readFormValue(formData, 'gender'));
-  const playedBefore = readPlayedBefore(readFormValue(formData, 'playedBefore'));
-  if (!seasonId || !requestedTeamId || !playerType || !gender || playedBefore === null) redirect('/account?error=Complete all registration fields.');
+  if (!seasonId || !requestedTeamId || !playerType || !gender) redirect('/account?error=Complete all season registration fields.');
+
   const supabase = await createClient();
   const {data: {user}, error: userError} = await supabase.auth.getUser();
   if (userError || !user) redirect('/account?error=Sign in first.');
+
+  const launchSupabase = supabase as any;
+  const {data: profile, error: profileError} = await launchSupabase
+    .from('launch_profiles')
+    .select('played_before, player_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  if (profileError) redirect(`/account?error=${encodeURIComponent(profileError.message)}`);
+  if (!profile?.player_id || typeof profile.played_before !== 'boolean') {
+    redirect('/account?error=Finish your one-time Player Setup before registering for the season.');
+  }
 
   const {error} = await supabase.rpc('submit_launch_player_application' as never, {
     target_season_id: seasonId,
     target_requested_team_id: requestedTeamId,
     target_player_type: playerType,
     target_gender: gender,
-    target_played_before: playedBefore,
+    target_played_before: profile.played_before,
   } as never);
   if (error) redirect(`/account?error=${encodeURIComponent(error.message)}`);
+
   revalidatePath('/account');
   revalidatePath('/captain');
-  revalidatePath('/office/applications');
-  redirect(`/account?notice=${encodeURIComponent(playedBefore ? 'Registration submitted. Connect your previous league history below, then your requested team captain can approve you.' : 'Registration submitted to your requested team captain for approval.')}`);
+  revalidatePath('/office/players');
+  revalidatePath('/players');
+  redirect('/account?notice=Season registration complete. You have been added to your selected team roster.');
 }
 
 export async function signInWithPassword(formData: FormData) {
@@ -136,8 +171,7 @@ export async function createPendingProfile(formData: FormData) {
   const claimResult = await service.submitPlayerClaim({profileId: profileResult.data.id, requestedPlayerId: selectedPlayer.id, submittedName: displayName, submittedPdgaNumber: selectedPlayer.pdgaNumber});
   if (!claimResult.ok) redirect(`/account?error=${encodeURIComponent(claimResult.message)}`);
   revalidatePath('/account');
-  revalidatePath('/captain');
-  redirect('/account?notice=Your previous player record is connected for captain approval.');
+  redirect('/account?notice=League profile created.');
 }
 
 export async function updateProfileName(formData: FormData) {
@@ -164,8 +198,7 @@ export async function submitPlayerClaim(formData: FormData) {
   const result = await service.submitPlayerClaim({profileId: profile.id, requestedPlayerId: selectedPlayer.id, submittedName, submittedPdgaNumber: submittedPdgaNumber || selectedPlayer.pdgaNumber});
   if (!result.ok) redirect(`/account?error=${encodeURIComponent(result.message)}`);
   revalidatePath('/account');
-  revalidatePath('/captain');
-  redirect('/account?notice=Your previous league history is ready for your requested team captain to review.');
+  redirect('/account?notice=Your previous league history request was submitted.');
 }
 
 async function getLaunchServiceForUser() {
