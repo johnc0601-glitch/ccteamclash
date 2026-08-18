@@ -12,6 +12,7 @@ export type Story = {
   image: string;
   body: string[];
   links?: StoryLink[];
+  featured?: boolean;
 };
 
 export type StandingEntry = {
