@@ -72,6 +72,32 @@ export async function suspendProfile(formData: FormData) {
   await setProfileStatus(formData, 'Suspended', 'Profile suspended.');
 }
 
+export async function deleteAccount(formData: FormData) {
+  const profileId = readFormValue(formData, 'profileId');
+  if (!profileId) redirect(`${PLAYERS_PATH}?error=Profile is required.`);
+
+  const supabase = await createClient();
+  const {data: {user}, error: userError} = await supabase.auth.getUser();
+  if (userError || !user) redirect('/account?error=Sign in first.');
+
+  const repository = new SupabaseLaunchRepository(supabase);
+  const commissionerProfile = await repository.getProfileByUserId(user.id);
+  if (!commissionerProfile || commissionerProfile.role !== 'Commissioner' || commissionerProfile.status !== 'Approved') {
+    redirect(`${PLAYERS_PATH}?error=${encodeURIComponent('Approved commissioner access is required.')}`);
+  }
+
+  const {error} = await supabase.rpc('commissioner_delete_launch_account' as never, {
+    target_profile_id: profileId,
+  } as never);
+  if (error) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(error.message)}`);
+
+  revalidatePeoplePages();
+  revalidatePath('/office/applications');
+  revalidatePath('/captain');
+  revalidatePath('/account');
+  redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent('Account login deleted. Historical player records were preserved.')}`);
+}
+
 export async function assignAccess(formData: FormData) {
   const {commissionerProfileId, service} = await getCommissionerService();
   const profileId = readFormValue(formData, 'profileId');
