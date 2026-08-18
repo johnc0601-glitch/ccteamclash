@@ -13,6 +13,7 @@ type StoryDraft = {
   body: string;
   links: string;
   image: string;
+  featured: boolean;
 };
 
 const blankDraft: StoryDraft = {
@@ -24,6 +25,7 @@ const blankDraft: StoryDraft = {
   body: '',
   links: '',
   image: 'hero',
+  featured: false,
 };
 
 const storyCategories = [
@@ -58,14 +60,19 @@ export function StoryManager() {
         }
 
         const loadedStories = payload.stories ?? [];
+        const hasFeaturedStory = loadedStories.some((story) => story.featured === true);
+        const hydratedStories = loadedStories.map((story, index) => ({
+          ...story,
+          featured: hasFeaturedStory ? story.featured === true : index === 0,
+        }));
         if (cancelled) {
           return;
         }
 
-        setStories(loadedStories);
-        setStatus(loadedStories.length ? 'Choose a story to edit.' : 'No stories have been posted yet.');
-        if (loadedStories[0]) {
-          selectStory(loadedStories[0]);
+        setStories(hydratedStories);
+        setStatus(hydratedStories.length ? 'Choose a story to edit.' : 'No stories have been posted yet.');
+        if (hydratedStories[0]) {
+          selectStory(hydratedStories[0]);
         }
       } catch (error) {
         if (!cancelled) {
@@ -94,7 +101,7 @@ export function StoryManager() {
     setDraft(storyToDraft(story));
   }
 
-  function updateDraft(field: keyof StoryDraft, value: string) {
+  function updateDraft(field: keyof StoryDraft, value: string | boolean) {
     setDraft((current) => ({...current, [field]: value}));
     setStatus('Unsaved changes.');
   }
@@ -103,6 +110,11 @@ export function StoryManager() {
     setSelectedSlug('');
     setDraft(blankDraft);
     setStatus('New story ready.');
+  }
+
+  function featureOnHomepage() {
+    setDraft((current) => ({...current, featured: true}));
+    setStatus('This story will become the homepage feature when saved.');
   }
 
   async function uploadPhoto(file?: File) {
@@ -151,14 +163,17 @@ export function StoryManager() {
     setStatus('Saving story...');
 
     try {
-      const nextStories = selectedSlug
+      const baseStories = selectedSlug
         ? stories.map((item) => item.slug === selectedSlug ? story : item)
         : [story, ...stories];
+      const nextStories = story.featured
+        ? baseStories.map((item) => ({...item, featured: item.slug === story.slug}))
+        : baseStories;
       await saveStoryList(nextStories);
       setStories(nextStories);
       setSelectedSlug(story.slug);
       setDraft(storyToDraft(story));
-      setStatus('Story saved and public pages updated.');
+      setStatus(story.featured ? 'Story saved and featured on the homepage.' : 'Story saved. Latest stories updated; homepage feature unchanged.');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Story could not save.');
     } finally {
@@ -181,7 +196,10 @@ export function StoryManager() {
     setStatus('Deleting story...');
 
     try {
-      const nextStories = stories.filter((story) => story.slug !== selectedSlug);
+      let nextStories = stories.filter((story) => story.slug !== selectedSlug);
+      if (selectedStory.featured && nextStories[0]) {
+        nextStories = nextStories.map((story, index) => ({...story, featured: index === 0}));
+      }
       await saveStoryList(nextStories);
       setStories(nextStories);
       if (nextStories[0]) {
@@ -221,7 +239,7 @@ export function StoryManager() {
                 key={story.slug}
                 onClick={() => selectStory(story)}
               >
-                <strong>{story.title}</strong>
+                <strong>{story.title}{story.featured ? ' · Featured' : ''}</strong>
                 <span>{story.category} | {story.date}</span>
               </button>
             ))}
@@ -292,12 +310,15 @@ export function StoryManager() {
             <button className="publish-action" type="button" disabled={saving || uploading} onClick={saveStory}>
               {saving ? 'Saving...' : 'Save story'}
             </button>
+            <button className="secondary" type="button" disabled={saving || draft.featured} onClick={featureOnHomepage}>
+              {draft.featured ? 'Featured on homepage' : 'Feature on homepage'}
+            </button>
             <button className="secondary" type="button" disabled={saving || !selectedSlug} onClick={deleteStory}>Delete story</button>
           </div>
         </form>
 
         <aside className="post-preview story-manager-preview">
-          <div className="preview-label">Public preview</div>
+          <div className="preview-label">Public preview{draft.featured ? ' · Homepage feature' : ''}</div>
           {isImageUrl(draft.image)
             ? <span className="story-preview-image" style={{backgroundImage: `url(${draft.image})`}} />
             : <div className={`preview-photo ${draft.image}`}>STORY PHOTO</div>}
@@ -334,6 +355,7 @@ function storyToDraft(story: Story): StoryDraft {
     body: story.body.join('\n\n'),
     links: (story.links ?? []).map((link) => `${link.label} | ${link.url}`).join('\n'),
     image: story.image,
+    featured: story.featured === true,
   };
 }
 
@@ -347,6 +369,7 @@ function draftToStory(draft: StoryDraft, slug: string): Story {
     image: draft.image.trim() || 'hero',
     body: draft.body.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean),
     links: parseLinks(draft.links),
+    featured: draft.featured,
   };
 }
 
