@@ -155,7 +155,7 @@ function SeasonRoute({
   profile: LaunchProfile;
   teams: LaunchTeam[];
 }) {
-  if (profile.role === 'Commissioner' || profile.status === 'Rejected' || profile.status === 'Suspended') return null;
+  if (profile.status === 'Rejected' || profile.status === 'Suspended') return null;
 
   const alreadyRostered = Boolean(activeSeasonTeamId);
   const division = player.gender === 'Male' || player.gender === 'Female' ? player.gender : '';
