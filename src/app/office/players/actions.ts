@@ -10,14 +10,14 @@ import {createClient} from '@/lib/supabase/server';
 const PLAYERS_PATH = '/office/players';
 
 export async function savePlayer(formData: FormData) {
-  const {commissionerProfileId, service} = await getCommissionerService();
+  const {commissionerProfileId, repository, service} = await getCommissionerService();
   const playerId = readFormValue(formData, 'playerId') || undefined;
   const name = readFormValue(formData, 'name');
   const gender = readGender(readFormValue(formData, 'gender'));
   const pdgaNumber = readFormValue(formData, 'pdgaNumber');
   const pdgaRating = readRating(readFormValue(formData, 'pdgaRating'));
-  const currentTeamId = readFormValue(formData, 'currentTeamId') || null;
   const active = readFormValue(formData, 'active') === 'true';
+  const existingPlayer = playerId ? await repository.getPlayer(playerId) : undefined;
 
   const result = await service.savePlayer({
     playerId,
@@ -25,7 +25,7 @@ export async function savePlayer(formData: FormData) {
     gender,
     pdgaNumber,
     pdgaRating,
-    currentTeamId,
+    currentTeamId: existingPlayer?.currentTeamId ?? null,
     active,
   }, commissionerProfileId);
 
@@ -33,6 +33,39 @@ export async function savePlayer(formData: FormData) {
 
   revalidatePeoplePages();
   redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent(playerId ? 'Player updated.' : 'Player created.')}`);
+}
+
+export async function commissionerRoutePlayerToCaptain(formData: FormData) {
+  const profileId = readFormValue(formData, 'profileId');
+  const requestedTeamId = readFormValue(formData, 'requestedTeamId');
+  const playerType = readPlayerType(readFormValue(formData, 'playerType'));
+  const gender = readApplicationGender(readFormValue(formData, 'gender'));
+  if (!profileId) redirect(`${PLAYERS_PATH}?error=Player account is required.`);
+  if (!requestedTeamId) redirect(`${PLAYERS_PATH}?error=Choose a team.`);
+  if (!playerType || !gender) redirect(`${PLAYERS_PATH}?error=Choose Adult or Junior and the player division.`);
+
+  const supabase = await createClient();
+  const {data: {user}, error: userError} = await supabase.auth.getUser();
+  if (userError || !user) redirect('/account?error=Sign in first.');
+
+  const repository = new SupabaseLaunchRepository(supabase);
+  const commissionerProfile = await repository.getProfileByUserId(user.id);
+  if (!commissionerProfile || commissionerProfile.role !== 'Commissioner' || commissionerProfile.status !== 'Approved') {
+    redirect(`${PLAYERS_PATH}?error=${encodeURIComponent('Approved commissioner access is required.')}`);
+  }
+
+  const {error} = await supabase.rpc('commissioner_route_player_to_captain' as never, {
+    target_profile_id: profileId,
+    target_requested_team_id: requestedTeamId,
+    target_player_type: playerType,
+    target_gender: gender,
+  } as never);
+  if (error) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(error.message)}`);
+
+  revalidatePeoplePages();
+  revalidatePath('/captain');
+  revalidatePath('/account');
+  redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent('Registration sent to the selected team captain for approval.')}`);
 }
 
 export async function approveClaim(formData: FormData) {
@@ -213,6 +246,14 @@ function readFormValue(formData: FormData, key: string): string {
 
 function readGender(value: string): LaunchPlayer['gender'] {
   return value === 'Male' || value === 'Female' || value === 'Unknown' ? value : 'Unknown';
+}
+
+function readApplicationGender(value: string): 'Male' | 'Female' | null {
+  return value === 'Male' || value === 'Female' ? value : null;
+}
+
+function readPlayerType(value: string): 'Adult' | 'Junior' | null {
+  return value === 'Adult' || value === 'Junior' ? value : null;
 }
 
 function readRating(value: string): number | null {
