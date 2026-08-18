@@ -28,6 +28,10 @@ type RegistrationApplication = {
   player_type: string;
   gender: string;
 };
+type EstablishedRegistration = {
+  playerType: 'Adult' | 'Junior';
+  gender: 'Male' | 'Female';
+} | null;
 
 export default async function AccountPage({searchParams}: AccountPageProps) {
   const params = searchParams ? await searchParams : {};
@@ -92,6 +96,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
   let registrationSeason: RegistrationSeason | null = null;
   let registrationTeams: RegistrationTeam[] = [];
   let application: RegistrationApplication | null = null;
+  let establishedRegistration: EstablishedRegistration = null;
 
   if (profile) {
     const launchSupabase = supabase as any;
@@ -115,7 +120,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
       registrationSeason = openSeason;
 
       if (registrationSeason) {
-        const [{data: existingApplication}, {data: seasonTeams}] = await Promise.all([
+        const [{data: existingApplication}, {data: seasonTeams}, {data: priorApplication}] = await Promise.all([
           launchSupabase
             .from('launch_player_applications')
             .select('status, requested_team_id, player_type, gender')
@@ -126,8 +131,34 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
             .from('launch_season_teams')
             .select('team_id')
             .eq('season_id', registrationSeason.id),
+          launchSupabase
+            .from('launch_player_applications')
+            .select('player_type, gender, created_at')
+            .eq('profile_id', profile.id)
+            .eq('status', 'Approved')
+            .neq('season_id', registrationSeason.id)
+            .order('created_at', {ascending: false})
+            .limit(1)
+            .maybeSingle(),
         ]);
         application = existingApplication as RegistrationApplication | null;
+
+        const linkedPlayer = players.find((player) => player.id === profile.playerId);
+        const establishedPlayerType = priorApplication?.player_type === 'Adult' || priorApplication?.player_type === 'Junior'
+          ? priorApplication.player_type
+          : null;
+        const establishedGender = linkedPlayer?.gender === 'Male' || linkedPlayer?.gender === 'Female'
+          ? linkedPlayer.gender
+          : priorApplication?.gender === 'Male' || priorApplication?.gender === 'Female'
+            ? priorApplication.gender
+            : null;
+
+        if (establishedPlayerType && establishedGender) {
+          establishedRegistration = {
+            playerType: establishedPlayerType,
+            gender: establishedGender,
+          };
+        }
 
         const teamIds = ((seasonTeams ?? []) as {team_id: string}[]).map((item) => item.team_id);
         if (teamIds.length) {
@@ -167,6 +198,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
           registrationSeason={registrationSeason}
           registrationTeams={registrationTeams}
           application={application}
+          establishedRegistration={establishedRegistration}
         />
       ) : (
         <article className={styles.panel}>
@@ -186,6 +218,7 @@ function MemberProfile({
   registrationSeason,
   registrationTeams,
   application,
+  establishedRegistration,
 }: {
   players: LaunchPlayer[];
   profile: LaunchProfile;
@@ -193,6 +226,7 @@ function MemberProfile({
   registrationSeason: RegistrationSeason | null;
   registrationTeams: RegistrationTeam[];
   application: RegistrationApplication | null;
+  establishedRegistration: EstablishedRegistration;
 }) {
   const linkedPlayer = players.find((player) => player.id === profile.playerId);
   const playerSetupComplete = Boolean(linkedPlayer && playedBefore !== null);
@@ -211,7 +245,11 @@ function MemberProfile({
             </div>
           ) : (
             <>
-              <p className={styles.linkingNote}>Choose your team and division for this season.</p>
+              <p className={styles.linkingNote}>
+                {establishedRegistration
+                  ? 'Choose your team. Your established player type and division carry forward automatically.'
+                  : 'Choose your team and division for this season.'}
+              </p>
               <form className={styles.form} action={submitSeasonApplication}>
                 <input name="seasonId" type="hidden" value={registrationSeason.id} />
                 <label htmlFor="accountRequestedTeam">Team</label>
@@ -219,17 +257,30 @@ function MemberProfile({
                   <option value="" disabled>Choose a team</option>
                   {registrationTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
                 </select>
-                <label htmlFor="accountPlayerType">Player type</label>
-                <select id="accountPlayerType" name="playerType" required defaultValue="Adult">
-                  <option value="Adult">Adult</option>
-                  <option value="Junior">Junior</option>
-                </select>
-                <label htmlFor="accountGender">Division</label>
-                <select id="accountGender" name="gender" required defaultValue="">
-                  <option value="" disabled>Choose division</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
+                {establishedRegistration ? (
+                  <>
+                    <input name="playerType" type="hidden" value={establishedRegistration.playerType} />
+                    <input name="gender" type="hidden" value={establishedRegistration.gender} />
+                    <label>Player type</label>
+                    <div className={styles.connected}><strong>{establishedRegistration.playerType}</strong></div>
+                    <label>Division</label>
+                    <div className={styles.connected}><strong>{establishedRegistration.gender}</strong></div>
+                  </>
+                ) : (
+                  <>
+                    <label htmlFor="accountPlayerType">Player type</label>
+                    <select id="accountPlayerType" name="playerType" required defaultValue="Adult">
+                      <option value="Adult">Adult</option>
+                      <option value="Junior">Junior</option>
+                    </select>
+                    <label htmlFor="accountGender">Division</label>
+                    <select id="accountGender" name="gender" required defaultValue="">
+                      <option value="" disabled>Choose division</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </>
+                )}
                 <button className={styles.primaryButton} type="submit">Register for season</button>
               </form>
             </>
