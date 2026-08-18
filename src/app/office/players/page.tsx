@@ -27,6 +27,14 @@ type ActiveMembershipRow = {
   team_id: string;
 };
 
+type CurrentApplicationRow = {
+  profile_id: string;
+  requested_team_id: string;
+  player_type: 'Adult' | 'Junior';
+  gender: 'Male' | 'Female';
+  status: string;
+};
+
 export default async function OfficePlayersPage({searchParams}: OfficePlayersPageProps) {
   const params = searchParams ? await searchParams : {};
   const notice = readParam(params.notice);
@@ -85,16 +93,33 @@ export default async function OfficePlayersPage({searchParams}: OfficePlayersPag
       .maybeSingle(),
   ]);
 
-  const {data: activeMembershipRows} = activeSeason?.id
-    ? await launchSupabase
-      .from('launch_season_roster_memberships')
-      .select('player_id, team_id')
-      .eq('season_id', activeSeason.id)
-      .eq('status', 'Active')
-    : {data: [] as ActiveMembershipRow[]};
+  const [{data: activeMembershipRows}, {data: currentApplicationRows}] = activeSeason?.id
+    ? await Promise.all([
+      launchSupabase
+        .from('launch_season_roster_memberships')
+        .select('player_id, team_id')
+        .eq('season_id', activeSeason.id)
+        .eq('status', 'Active'),
+      launchSupabase
+        .from('launch_player_applications')
+        .select('profile_id, requested_team_id, player_type, gender, status')
+        .eq('season_id', activeSeason.id),
+    ])
+    : [
+      {data: [] as ActiveMembershipRow[]},
+      {data: [] as CurrentApplicationRow[]},
+    ];
 
   const activeSeasonTeamByPlayerId = Object.fromEntries(
     ((activeMembershipRows ?? []) as ActiveMembershipRow[]).map((membership) => [membership.player_id, membership.team_id]),
+  );
+  const currentSeasonApplicationByProfileId = Object.fromEntries(
+    ((currentApplicationRows ?? []) as CurrentApplicationRow[]).map((application) => [application.profile_id, {
+      teamId: application.requested_team_id,
+      playerType: application.player_type,
+      gender: application.gender,
+      status: application.status,
+    }]),
   );
 
   const rows = (rejectedRows ?? []) as RejectedApplicationRow[];
@@ -136,6 +161,7 @@ export default async function OfficePlayersPage({searchParams}: OfficePlayersPag
       <LaunchPlayerManagement
         activeSeasonTeamByPlayerId={activeSeasonTeamByPlayerId}
         commissionerProfileId={commissionerProfile.id}
+        currentSeasonApplicationByProfileId={currentSeasonApplicationByProfileId}
         players={players}
         profiles={profiles}
         teams={teams}
