@@ -92,7 +92,6 @@ export async function deleteAccount(formData: FormData) {
   if (error) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(error.message)}`);
 
   revalidatePeoplePages();
-  revalidatePath('/office/applications');
   revalidatePath('/captain');
   revalidatePath('/account');
   redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent('Account login deleted. Historical player records were preserved.')}`);
@@ -175,7 +174,6 @@ export async function createNewPlayerForProfile(formData: FormData) {
   if (!linkResult.ok) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(linkResult.message)}`);
 
   revalidatePeoplePages();
-  revalidatePath('/office/applications');
   revalidatePath('/account');
   redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent('New player record created and account approved.')}`);
 }
