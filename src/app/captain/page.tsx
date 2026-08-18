@@ -34,19 +34,8 @@ type ApplicationRow = {
   created_at: string;
 };
 
-type ApplicationQueryClient = {
-  from: (relation: 'launch_player_applications') => {
-    select: (columns: string) => {
-      eq: (column: string, value: string) => {
-        eq: (column: string, value: string) => {
-          order: (column: string, options: {ascending: boolean}) => Promise<{
-            data: ApplicationRow[] | null;
-            error: {message: string} | null;
-          }>;
-        };
-      };
-    };
-  };
+type SeasonMembershipRow = {
+  player_id: string;
 };
 
 export default async function CaptainPage({searchParams}: CaptainPageProps) {
@@ -165,7 +154,7 @@ function CaptainDashboard({
           <header className={styles.panelHeader}>
             <span>Roster</span>
             <h2>{team.name}</h2>
-            <p className={styles.muted}>Players currently assigned to your team.</p>
+            <p className={styles.muted}>Active players on your current season roster.</p>
           </header>
           <div className={styles.list}>
             {roster.length ? roster.map((player) => (
@@ -174,7 +163,7 @@ function CaptainDashboard({
                 <span className={styles.rosterMeta}>{player.pdgaRating ? `Rating ${player.pdgaRating}` : 'Rating pending'}</span>
               </div>
             )) : (
-              <p className={styles.empty}>No players are assigned to this team yet.</p>
+              <p className={styles.empty}>No players are on this season roster yet.</p>
             )}
           </div>
         </section>
@@ -222,24 +211,51 @@ async function getCaptainData(): Promise<
     if (!profile.captainTeamId) return {ok: false, message: 'No captain team has been assigned yet.'};
 
     const scheduleService = await createServerScheduleService();
-    const [team, players, events] = await Promise.all([
+    const [team, players, events, activeSeason] = await Promise.all([
       repository.getTeam(profile.captainTeamId),
       repository.getPlayers(),
       scheduleService.getTeamEvents(profile.captainTeamId),
+      supabase
+        .from('launch_seasons')
+        .select('id')
+        .eq('active', true)
+        .eq('published', true)
+        .order('year', {ascending: false})
+        .limit(1)
+        .maybeSingle(),
     ]);
 
     if (!team) return {ok: false, message: 'Captain team could not be found.'};
+    if (activeSeason.error) throw activeSeason.error;
 
-    const applicationClient = supabase as unknown as ApplicationQueryClient;
-    const {data: applicationRows, error: applicationError} = await applicationClient
-      .from('launch_player_applications')
-      .select('id, profile_id, requested_team_id, player_type, gender, status, created_at')
-      .eq('requested_team_id', team.id)
-      .eq('status', 'Pending')
-      .order('created_at', {ascending: true});
+    const launchSupabase = supabase as any;
+    const seasonId = activeSeason.data?.id ?? null;
+
+    const [{data: applicationRows, error: applicationError}, {data: membershipRows, error: membershipError}] = seasonId
+      ? await Promise.all([
+        launchSupabase
+          .from('launch_player_applications')
+          .select('id, profile_id, requested_team_id, player_type, gender, status, created_at')
+          .eq('season_id', seasonId)
+          .eq('requested_team_id', team.id)
+          .eq('status', 'Pending')
+          .order('created_at', {ascending: true}),
+        launchSupabase
+          .from('launch_season_roster_memberships')
+          .select('player_id')
+          .eq('season_id', seasonId)
+          .eq('team_id', team.id)
+          .eq('status', 'Active'),
+      ])
+      : [
+        {data: [] as ApplicationRow[], error: null},
+        {data: [] as SeasonMembershipRow[], error: null},
+      ];
+
     if (applicationError) throw applicationError;
+    if (membershipError) throw membershipError;
 
-    const pendingRows = applicationRows ?? [];
+    const pendingRows = (applicationRows ?? []) as ApplicationRow[];
     const profileIds = [...new Set(pendingRows.map((application) => application.profile_id))];
     const profiles = profileIds.length
       ? (await supabase.from('launch_profiles').select('id, display_name').in('id', profileIds)).data ?? []
@@ -255,10 +271,14 @@ async function getCaptainData(): Promise<
       createdAt: application.created_at,
     }));
 
+    const rosterPlayerIds = new Set(
+      ((membershipRows ?? []) as SeasonMembershipRow[]).map((membership) => membership.player_id),
+    );
+
     return {
       ok: true,
       team,
-      roster: players.filter((player) => player.active && player.currentTeamId === team.id),
+      roster: players.filter((player) => player.active && rosterPlayerIds.has(player.id)),
       events: events.filter((event) => event.homeTeamId === team.id || event.awayTeamId === team.id),
       pendingApplications,
     };
