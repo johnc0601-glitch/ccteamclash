@@ -1,5 +1,6 @@
 import {
-  commissionerApproveRejectedRegistration,
+  commissionerChangeRejectedRegistrationTeam,
+  commissionerDeleteRejectedRegistration,
   commissionerReopenRegistration,
 } from '@/app/office/players/season-actions';
 import styles from './LaunchPlayerManagement.module.css';
@@ -8,12 +9,21 @@ export type RejectedSeasonRegistration = {
   id: string;
   displayName: string;
   seasonName: string;
+  teamId: string;
   teamName: string;
   playerType: string;
   gender: string;
 };
 
-export function SeasonRegistrationReview({registrations}: {registrations: RejectedSeasonRegistration[]}) {
+type TeamOption = {id: string; name: string};
+
+export function SeasonRegistrationReview({
+  registrations,
+  teams,
+}: {
+  registrations: RejectedSeasonRegistration[];
+  teams: TeamOption[];
+}) {
   if (!registrations.length) return null;
 
   return (
@@ -21,7 +31,7 @@ export function SeasonRegistrationReview({registrations}: {registrations: Reject
       <header className={styles.panelHeader}>
         <span>Commissioner review</span>
         <h2 id="season-review-title">Captain rejections</h2>
-        <p>Registrations rejected by a captain come here instead of disappearing.</p>
+        <p>Send the request back, route it to another team, or delete only this season registration.</p>
       </header>
       <div className={styles.playerList}>
         {registrations.map((registration) => (
@@ -36,13 +46,23 @@ export function SeasonRegistrationReview({registrations}: {registrations: Reject
               Requested team: {registration.teamName} / {registration.playerType} / {registration.gender}
             </p>
             <div className={styles.accountActions}>
-              <form action={commissionerApproveRejectedRegistration}>
-                <input name="applicationId" type="hidden" value={registration.id} />
-                <button className={styles.primaryButton} type="submit">Approve override</button>
-              </form>
               <form action={commissionerReopenRegistration}>
                 <input name="applicationId" type="hidden" value={registration.id} />
-                <button className={styles.secondaryButton} type="submit">Return to captain</button>
+                <button className={styles.primaryButton} type="submit">Send back to captain</button>
+              </form>
+              <form action={commissionerChangeRejectedRegistrationTeam} style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
+                <input name="applicationId" type="hidden" value={registration.id} />
+                <select name="requestedTeamId" defaultValue="" required aria-label="New team">
+                  <option value="" disabled>Change team...</option>
+                  {teams
+                    .filter((team) => team.id !== registration.teamId)
+                    .map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+                </select>
+                <button className={styles.secondaryButton} type="submit">Send to new captain</button>
+              </form>
+              <form action={commissionerDeleteRejectedRegistration}>
+                <input name="applicationId" type="hidden" value={registration.id} />
+                <button className={styles.secondaryButton} type="submit">Delete registration</button>
               </form>
             </div>
           </article>
