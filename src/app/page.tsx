@@ -20,7 +20,7 @@ export default async function Home({searchParams}: HomeProps) {
   const [cookieStore, query] = await Promise.all([cookies(), searchParams]);
   const scheduleService = await createServerScheduleService();
   const stories = await getStories();
-  const lead = stories[0];
+  const lead = stories.find((story) => story.featured) ?? stories[0];
   const teamLogos = await getStoredTeams();
   const homeEvents = (await scheduleService.getHomePageEvents()).slice(0, 4);
 
