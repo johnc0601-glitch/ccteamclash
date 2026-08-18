@@ -10,7 +10,7 @@ import type {
   PlayerClaim,
 } from '@/domain/launch/LaunchData';
 import type {LaunchRepository} from '@/domain/launch/LaunchRepository';
-import type {Database} from '@/lib/supabase/database';
+import type {Database} from '@/lib/supabase/database.current';
 
 type LaunchSupabaseClient = SupabaseClient<Database>;
 type Tables = Database['public']['Tables'];
