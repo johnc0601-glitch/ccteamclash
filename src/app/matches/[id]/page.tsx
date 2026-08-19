@@ -69,19 +69,22 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
   if (!event || !match || !match.homeTeamId || !match.awayTeamId || !match.courseId) notFound();
 
+  const locked = isMatchRosterLocked(match);
   const teamIds = [match.homeTeamId, match.awayTeamId];
   const [rosterPlayerIdsByTeam, teamResults, course] = await Promise.all([
-    getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds),
+    locked ? Promise.resolve(new Map(teamIds.map((teamId) => [teamId, new Set<string>()]))) : getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds),
     Promise.all(teamIds.map((teamId) => launchRepository.getTeam(teamId))),
     courseRepository.getById(match.courseId),
   ]);
-  const rosterUnavailable = rosterPlayerIdsByTeam === null;
+  const rosterUnavailable = !locked && rosterPlayerIdsByTeam === null;
   const effectiveRosterIds = rosterPlayerIdsByTeam ?? new Map([
     [match.homeTeamId, new Set<string>()],
     [match.awayTeamId, new Set<string>()],
   ]);
-  const matchPlayerIds = [...new Set([...effectiveRosterIds.values()].flatMap((ids) => [...ids]))];
-  const players = await getPlayersByIds(supabase, matchPlayerIds);
+  const matchPlayerIds = locked
+    ? []
+    : [...new Set([...effectiveRosterIds.values()].flatMap((ids) => [...ids]))];
+  const players = locked ? [] : await getPlayersByIds(supabase, matchPlayerIds);
   const teams = teamResults.filter((team): team is NonNullable<typeof team> => Boolean(team));
   const courses = course ? [course] : [];
 
@@ -96,7 +99,6 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   );
   if (!matchday) notFound();
 
-  const locked = isMatchRosterLocked(match);
   let officialSnapshot: OfficialSnapshotState | undefined;
   if (locked) {
     try {
