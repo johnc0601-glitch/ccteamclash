@@ -15,19 +15,19 @@ export interface SeasonRepository {
 
 const SEASON_MOCK_DATA = [
   {
-    id: 'summer-team-clash-2026',
+    id: 'coastal-clash-2026-2027-7806a8e2-6755-4310-ad2b-7b2c761752c9',
     leagueId: CCTEAMCLASH_LEAGUE_ID,
-    name: 'Summer Team Clash 2026',
+    name: 'Coastal Clash 2026-2027',
     year: 2026,
-    description: 'The current championship season for weekly team match play.',
-    startDate: '2026-06-06',
-    endDate: '2026-09-26',
+    description: '',
+    startDate: '2026-10-03',
+    endDate: '2027-03-06',
     registrationOpen: true,
     active: true,
     published: true,
     archived: false,
-    createdAt: '2026-01-05T15:00:00.000Z',
-    updatedAt: '2026-07-12T17:30:00.000Z',
+    createdAt: '2026-07-30T14:24:35.932Z',
+    updatedAt: '2026-08-17T12:28:36.726Z',
   },
   {
     id: 'spring-team-clash-2026',
