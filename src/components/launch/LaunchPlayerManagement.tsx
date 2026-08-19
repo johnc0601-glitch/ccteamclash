@@ -77,7 +77,7 @@ export function LaunchPlayerManagement({
             <h2 id="add-player-title">Add player</h2>
             <p>Create a player record even when that person does not have an account.</p>
           </header>
-          <PlayerForm />
+          <PlayerForm teams={teams} />
         </section>
 
         <section className={styles.panel} aria-labelledby="player-directory-title">
@@ -120,7 +120,7 @@ export function LaunchPlayerManagement({
                       </div>
                       <details className={styles.editBox}>
                         <summary>Edit player</summary>
-                        <PlayerForm player={player} />
+                        <PlayerForm player={player} teams={teams} />
                         {profile ? (
                           <>
                             <SeasonRoute
@@ -170,7 +170,9 @@ function SeasonRoute({
   if (profile.status === 'Rejected' || profile.status === 'Suspended') return null;
 
   const alreadyRostered = Boolean(activeSeasonTeamId);
-  const routeTeamId = alreadyRostered ? activeSeasonTeamId ?? '' : application?.teamId ?? '';
+  const routeTeamId = application?.status === 'Pending'
+    ? application.teamId
+    : activeSeasonTeamId ?? application?.teamId ?? '';
   const junior = application?.playerType === 'Junior';
   const division = application?.gender ?? (player.gender === 'Male' || player.gender === 'Female' ? player.gender : '');
   const pending = application?.status === 'Pending';
@@ -178,10 +180,10 @@ function SeasonRoute({
   return (
     <section className={styles.accountAccess}>
       <div>
-        <strong>{alreadyRostered ? 'Season details' : 'Season team routing'}</strong>
+        <strong>{alreadyRostered ? 'Season roster / transfer' : 'Season team routing'}</strong>
         <span>
           {alreadyRostered
-            ? 'Current active-season roster details. Updating these fields does not change the roster team or require captain approval.'
+            ? 'Keep the current team to update season details, or choose another team to remove this player from the current roster and send them to the new captain for approval.'
             : pending
               ? 'This player already has a Pending team request. Update the fields below to replace that request.'
               : 'Commissioner selection sends a Pending request to the team captain. It does not roster the player.'}
@@ -190,25 +192,15 @@ function SeasonRoute({
       <form className={styles.captainForm} action={commissionerRoutePlayerToCaptain}>
         <input name="profileId" type="hidden" value={profile.id} />
         {alreadyRostered ? <input name="alreadyRostered" type="hidden" value="true" /> : null}
+        {activeSeasonTeamId ? <input name="currentTeamId" type="hidden" value={activeSeasonTeamId} /> : null}
         <label>
           <span>Team</span>
-          {alreadyRostered ? (
-            <>
-              <input name="requestedTeamId" type="hidden" value={routeTeamId} />
-              <select value={routeTeamId} disabled>
-                {teams.map((team) => (
-                  <option key={team.id} value={team.id}>{team.name}</option>
-                ))}
-              </select>
-            </>
-          ) : (
-            <select name="requestedTeamId" defaultValue={routeTeamId} required>
-              <option value="" disabled>Choose team</option>
-              {teams.map((team) => (
-                <option key={team.id} value={team.id}>{team.name}</option>
-              ))}
-            </select>
-          )}
+          <select name="requestedTeamId" defaultValue={routeTeamId} required>
+            <option value="" disabled>Choose team</option>
+            {teams.map((team) => (
+              <option key={team.id} value={team.id}>{team.name}</option>
+            ))}
+          </select>
         </label>
         <label className={styles.memberCheck}>
           <input name="playerType" type="checkbox" value="Junior" defaultChecked={junior} />
@@ -224,7 +216,7 @@ function SeasonRoute({
           </select>
         </label>
         <button className={styles.primaryButton} type="submit">
-          {alreadyRostered ? 'Update season details' : pending ? 'Update captain request' : 'Send to captain'}
+          {alreadyRostered ? 'Update / transfer' : pending ? 'Update captain request' : 'Send to captain'}
         </button>
       </form>
     </section>
@@ -305,7 +297,7 @@ function ProfileAction({
   );
 }
 
-function PlayerForm({player}: {player?: LaunchPlayer}) {
+function PlayerForm({player, teams}: {player?: LaunchPlayer; teams: LaunchTeam[]}) {
   return (
     <form className={styles.form} action={savePlayer}>
       <input name="playerId" type="hidden" value={player?.id ?? ''} />
@@ -330,6 +322,17 @@ function PlayerForm({player}: {player?: LaunchPlayer}) {
           </select>
         </label>
       </div>
+      {!player ? (
+        <label>
+          <span>Team</span>
+          <select name="requestedTeamId" defaultValue="">
+            <option value="">No team yet</option>
+            {teams.map((team) => (
+              <option key={team.id} value={team.id}>{team.name}</option>
+            ))}
+          </select>
+        </label>
+      ) : null}
       <div className={styles.formGrid}>
         <label>
           <span>PDGA number</span>
