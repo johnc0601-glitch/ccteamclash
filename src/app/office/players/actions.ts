@@ -12,12 +12,17 @@ const PLAYERS_PATH = '/office/players';
 export async function savePlayer(formData: FormData) {
   const {commissionerProfileId, repository, service} = await getCommissionerService();
   const playerId = readFormValue(formData, 'playerId') || undefined;
+  const requestedTeamId = readFormValue(formData, 'requestedTeamId');
   const name = readFormValue(formData, 'name');
   const gender = readGender(readFormValue(formData, 'gender'));
   const pdgaNumber = readFormValue(formData, 'pdgaNumber');
   const pdgaRating = readRating(readFormValue(formData, 'pdgaRating'));
   const active = readFormValue(formData, 'active') === 'true';
   const existingPlayer = playerId ? await repository.getPlayer(playerId) : undefined;
+
+  if (!playerId && requestedTeamId && gender === 'Unknown') {
+    redirect(`${PLAYERS_PATH}?error=${encodeURIComponent('Choose Male or Female before assigning a team.')}`);
+  }
 
   const result = await service.savePlayer({
     playerId,
@@ -31,13 +36,26 @@ export async function savePlayer(formData: FormData) {
 
   if (!result.ok) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(result.message)}`);
 
+  if (!playerId && requestedTeamId) {
+    const supabase = await createClient();
+    const {error} = await supabase.rpc('commissioner_assign_player_to_active_season' as never, {
+      target_player_id: result.data.id,
+      target_team_id: requestedTeamId,
+    } as never);
+    if (error) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(error.message)}`);
+  }
+
   revalidatePeoplePages();
-  redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent(playerId ? 'Player updated.' : 'Player created.')}`);
+  revalidatePath('/teams');
+  redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent(
+    playerId ? 'Player updated.' : requestedTeamId ? 'Player created and added to the selected team.' : 'Player created.',
+  )}`);
 }
 
 export async function commissionerRoutePlayerToCaptain(formData: FormData) {
   const profileId = readFormValue(formData, 'profileId');
   const requestedTeamId = readFormValue(formData, 'requestedTeamId');
+  const currentTeamId = readFormValue(formData, 'currentTeamId');
   const playerType = readPlayerType(readFormValue(formData, 'playerType'));
   const gender = readApplicationGender(readFormValue(formData, 'gender'));
   const alreadyRostered = readFormValue(formData, 'alreadyRostered') === 'true';
@@ -66,10 +84,14 @@ export async function commissionerRoutePlayerToCaptain(formData: FormData) {
   revalidatePeoplePages();
   revalidatePath('/captain');
   revalidatePath('/account');
+  revalidatePath('/teams');
+  const transfer = alreadyRostered && Boolean(currentTeamId) && currentTeamId !== requestedTeamId;
   redirect(`${PLAYERS_PATH}?notice=${encodeURIComponent(
-    alreadyRostered
-      ? 'Season details updated.'
-      : 'Registration sent to the selected team captain for approval.',
+    transfer
+      ? 'Player removed from the current roster and sent to the new team captain for approval.'
+      : alreadyRostered
+        ? 'Season details updated.'
+        : 'Registration sent to the selected team captain for approval.',
   )}`);
 }
 
