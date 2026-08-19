@@ -1,4 +1,5 @@
 import {
+  clearCaptainMatchAttendance,
   confirmCaptainMatchRoster,
   setCaptainMatchAttendance,
 } from '@/app/matches/[id]/actions';
@@ -67,6 +68,7 @@ function CaptainTeamRoster({roster, teamName}: {roster: ManagedTeamRoster; teamN
               <input name="playerId" type="hidden" value={player.playerId} />
               <button disabled={!roster.attendanceOpen} name="status" type="submit" value="Playing">Playing</button>
               <button disabled={!roster.attendanceOpen} name="status" type="submit" value="NotPlaying">Not playing</button>
+              <button disabled={!roster.attendanceOpen} formAction={clearCaptainMatchAttendance} type="submit">Unconfirmed</button>
             </form>
           </div>
         ))}

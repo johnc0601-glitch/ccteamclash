@@ -52,6 +52,39 @@ export async function setCaptainMatchAttendance(formData: FormData) {
   redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was updated.')}`);
 }
 
+export async function clearCaptainMatchAttendance(formData: FormData) {
+  const matchId = readFormValue(formData, 'matchId');
+  const playerId = readFormValue(formData, 'playerId');
+  if (!matchId || !playerId) redirect('/captain?error=Match and player are required.');
+
+  const path = `/matches/${encodeURIComponent(matchId)}?manage=roster`;
+  const {service, userId, supabase} = await getMatchRosterService();
+  const managedRosters = await service.getManagedTeamRosters(userId, matchId);
+  const authorizedRoster = managedRosters.find((roster) => (
+    roster.attendanceOpen
+    && roster.players.some((player) => player.playerId === playerId)
+  ));
+  if (!authorizedRoster) {
+    redirect(`${path}&captainError=${encodeURIComponent('That player cannot be reset for this match.')}`);
+  }
+
+  try {
+    const attendanceClient = supabase as any;
+    const {error} = await attendanceClient
+      .from('launch_match_attendance')
+      .delete()
+      .eq('match_id', matchId)
+      .eq('team_id', authorizedRoster.teamId)
+      .eq('player_id', playerId);
+    if (error) throw error;
+  } catch {
+    redirect(`${path}&captainError=${encodeURIComponent('Player attendance could not be reset.')}`);
+  }
+
+  revalidatePath(`/matches/${matchId}`);
+  redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was reset to unconfirmed.')}`);
+}
+
 export async function confirmCaptainMatchRoster(formData: FormData) {
   const matchId = readFormValue(formData, 'matchId');
   const teamId = readFormValue(formData, 'teamId');
@@ -108,6 +141,7 @@ async function getMatchRosterService() {
   return {
     service: new MatchRosterService(new SeasonAwareMatchRosterRepository(supabase)),
     userId: user.id,
+    supabase,
   };
 }
 

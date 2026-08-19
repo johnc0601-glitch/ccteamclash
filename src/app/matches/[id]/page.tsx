@@ -13,10 +13,10 @@ import {createServerScheduleService} from '@/core/createServerScheduleService';
 import {SupabaseCourseRepository} from '@/domain/course/SupabaseCourseRepository';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
-import type {AttendanceActor} from '@/domain/match-roster/MatchAttendance';
+import type {AttendanceActor, TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import type {OfficialRosterExport} from '@/domain/match-roster/MatchRosterExport';
 import {MatchRosterService} from '@/domain/match-roster/MatchRosterService';
-import {isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
+import {isMatchAttendanceOpen, isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
 import type {OfficialMatchRoster, OfficialSnapshotState} from '@/domain/match-roster/MatchRosterSnapshot';
 import {parseMatchRosterSnapshotStartAt, snapshotErrorClass} from '@/domain/match-roster/MatchRosterSnapshotAutomation';
 import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
@@ -24,7 +24,7 @@ import {SupabaseMatchRosterRepository} from '@/domain/match-roster/SupabaseMatch
 import type {Match} from '@/domain/schedule/Match';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
-import {resolveMatchday} from '@/services/matches/MatchdayService';
+import {resolveMatchday, type PublicMatchday} from '@/services/matches/MatchdayService';
 import styles from './Matchday.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -70,9 +70,12 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   if (!event || !match || !match.homeTeamId || !match.awayTeamId || !match.courseId) notFound();
 
   const locked = isMatchRosterLocked(match);
+  const availabilityOpen = !locked && isMatchAttendanceOpen(match);
   const teamIds = [match.homeTeamId, match.awayTeamId];
   const [rosterPlayerIdsByTeam, teamResults, course] = await Promise.all([
-    locked ? Promise.resolve(new Map(teamIds.map((teamId) => [teamId, new Set<string>()]))) : getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds),
+    locked
+      ? Promise.resolve(new Map(teamIds.map((teamId) => [teamId, new Set<string>()])))
+      : getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds),
     Promise.all(teamIds.map((teamId) => launchRepository.getTeam(teamId))),
     courseRepository.getById(match.courseId),
   ]);
@@ -98,6 +101,11 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     effectiveRosterIds,
   );
   if (!matchday) notFound();
+
+  const availability = availabilityOpen && !rosterUnavailable
+    ? await getPublicAvailability(supabase, matchId, matchday)
+    : undefined;
+  const availabilityUnavailable = availabilityOpen && availability === null;
 
   let officialSnapshot: OfficialSnapshotState | undefined;
   if (locked) {
@@ -176,7 +184,13 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
           {lockedControls.rosterExport?.ok ? (
             <OfficialRosterExportPanel exportData={lockedControls.rosterExport.data} />
           ) : null}
-          <MatchRosterBoard matchday={matchday} official={officialSnapshot} rosterUnavailable={rosterUnavailable} />
+          <MatchRosterBoard
+            matchday={matchday}
+            official={officialSnapshot}
+            rosterUnavailable={rosterUnavailable}
+            availability={availability ?? undefined}
+            availabilityUnavailable={availabilityUnavailable}
+          />
           {!publishedResult ? <MatchScoreboard matchday={matchday} result={undefined} /> : null}
         </div>
       </main>
@@ -235,6 +249,44 @@ function toExportTeam(roster: OfficialMatchRoster) {
       .map((player) => player.playerNameSnapshot)
       .sort((left, right) => left.localeCompare(right, 'en', {sensitivity: 'base'})),
   };
+}
+
+async function getPublicAvailability(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  matchId: string,
+  matchday: PublicMatchday,
+): Promise<Map<string, TeamAttendanceMember[]> | null> {
+  const teamIds = [matchday.awayTeam.id, matchday.homeTeam.id];
+  const attendanceClient = supabase as any;
+  const {data, error} = await attendanceClient
+    .from('launch_match_attendance')
+    .select('team_id,player_id,status')
+    .eq('match_id', matchId)
+    .in('team_id', teamIds);
+
+  if (error) {
+    console.error('Public match availability is unavailable.', {matchId, error: error.message});
+    return null;
+  }
+
+  const statuses = new Map<string, TeamAttendanceMember['status']>(
+    (data ?? []).map((row: {player_id: string; status: string}) => [
+      row.player_id,
+      row.status as TeamAttendanceMember['status'],
+    ]),
+  );
+  const availability = new Map<string, TeamAttendanceMember[]>();
+
+  for (const team of [matchday.awayTeam, matchday.homeTeam]) {
+    availability.set(team.id, team.roster.map((player) => ({
+      playerId: player.id,
+      playerName: player.name,
+      teamId: team.id,
+      status: statuses.get(player.id) ?? 'Unconfirmed',
+    })));
+  }
+
+  return availability;
 }
 
 async function getPlayersByIds(

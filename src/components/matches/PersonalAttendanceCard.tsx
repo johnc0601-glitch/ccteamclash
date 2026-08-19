@@ -19,7 +19,7 @@ export function PersonalAttendanceCard({
         <p>
           {attendance.attendanceOpen
             ? `${attendance.playerName}, let your team know your match availability.`
-            : 'Attendance changes are closed for this match.'}
+            : 'Attendance opens Friday for this match.'}
         </p>
       </div>
       <div className={styles.attendanceControls}>
