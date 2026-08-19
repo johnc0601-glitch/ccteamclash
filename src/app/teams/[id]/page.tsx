@@ -50,6 +50,9 @@ export default async function TeamPage({params}: TeamPageProps) {
     getStoredCourses({status: 'active'}),
     getLaunchPlayers(),
   ]);
+  const rosterPlayerIds = activeSeason
+    ? await getActiveSeasonRosterPlayerIds(activeSeason.id, team.id)
+    : new Set<string>();
   const scheduleService = await createServerScheduleService();
   const [nextMatch, teamEvents] = await Promise.all([
     scheduleService.getTeamNextEvent(team.id),
@@ -62,6 +65,7 @@ export default async function TeamPage({params}: TeamPageProps) {
       team.id,
       team.name,
       activeSeason?.name ?? 'Current season',
+      rosterPlayerIds,
     )
     : historicalPlayers.filter(({player}) => player.teamId === team.id);
   const publishedSeasons = seasons.filter((season) => season.published);
@@ -200,6 +204,24 @@ async function getLaunchPlayers() {
     return await new SupabaseLaunchRepository(supabase).getPlayers();
   } catch {
     return null;
+  }
+}
+
+async function getActiveSeasonRosterPlayerIds(seasonId: string, teamId: string): Promise<ReadonlySet<string>> {
+  if (!hasSupabaseConfig()) return new Set<string>();
+
+  try {
+    const supabase = await createClient();
+    const {data, error} = await supabase
+      .from('launch_season_roster_memberships')
+      .select('player_id')
+      .eq('season_id', seasonId)
+      .eq('team_id', teamId)
+      .eq('status', 'Active');
+    if (error) return new Set<string>();
+    return new Set((data ?? []).map((membership) => membership.player_id));
+  } catch {
+    return new Set<string>();
   }
 }
 
