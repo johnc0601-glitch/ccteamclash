@@ -26,6 +26,8 @@ export type MatchdayScoreboard = {
   detail: string;
 };
 
+export type MatchdayRosterPlayerIds = ReadonlyMap<string, ReadonlySet<string>>;
+
 export function resolveMatchday(
   event: PublicScheduleEvent,
   match: Match,
@@ -33,6 +35,7 @@ export function resolveMatchday(
   players: LaunchPlayer[],
   courses: Course[],
   hasPublishedResult: boolean,
+  rosterPlayerIdsByTeam: MatchdayRosterPlayerIds,
 ): PublicMatchday | undefined {
   if (
     event.id !== match.id
@@ -47,8 +50,18 @@ export function resolveMatchday(
     ...event,
     lifecycle: resolveMatchdayLifecycle(match.status, hasPublishedResult),
     courseDetails: courses.find((course) => course.id === match.courseId),
-    homeTeam: resolveTeam(match.homeTeamId, teams, players),
-    awayTeam: resolveTeam(match.awayTeamId, teams, players),
+    homeTeam: resolveTeam(
+      match.homeTeamId,
+      teams,
+      players,
+      rosterPlayerIdsByTeam.get(match.homeTeamId) ?? new Set<string>(),
+    ),
+    awayTeam: resolveTeam(
+      match.awayTeamId,
+      teams,
+      players,
+      rosterPlayerIdsByTeam.get(match.awayTeamId) ?? new Set<string>(),
+    ),
   };
 }
 
@@ -91,10 +104,11 @@ function resolveTeam(
   teamId: string,
   teams: LaunchTeam[],
   players: LaunchPlayer[],
+  rosterPlayerIds: ReadonlySet<string>,
 ): PublicMatchdayTeam {
   const team = teams.find((candidate) => candidate.id === teamId);
   const roster = players
-    .filter((player) => player.active && player.currentTeamId === teamId)
+    .filter((player) => player.active && rosterPlayerIds.has(player.id))
     .sort((left, right) => left.name.localeCompare(right.name, undefined, {sensitivity: 'base'}));
 
   return {

@@ -58,7 +58,12 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     userPromise,
   ]);
 
-  if (!event || !match) notFound();
+  if (!event || !match || !match.homeTeamId || !match.awayTeamId) notFound();
+  const rosterPlayerIdsByTeam = await getSeasonRosterPlayerIdsByTeam(
+    supabase,
+    match.seasonId,
+    [match.homeTeamId, match.awayTeamId],
+  );
   const matchday = resolveMatchday(
     event,
     match,
@@ -66,6 +71,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     players,
     courses,
     Boolean(publishedResult),
+    rosterPlayerIdsByTeam,
   );
   if (!matchday) notFound();
   const locked = isMatchRosterLocked(match);
@@ -147,6 +153,35 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
       <Footer />
     </>
   );
+}
+
+async function getSeasonRosterPlayerIdsByTeam(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  seasonId: string,
+  teamIds: string[],
+): Promise<Map<string, Set<string>>> {
+  const rosterPlayerIdsByTeam = new Map(teamIds.map((teamId) => [teamId, new Set<string>()]));
+  const {data, error} = await supabase
+    .from('launch_season_roster_memberships')
+    .select('team_id, player_id')
+    .eq('season_id', seasonId)
+    .eq('status', 'Active')
+    .in('team_id', teamIds);
+
+  if (error) {
+    console.error('Active season roster memberships are unavailable for matchday.', {
+      seasonId,
+      teamIds,
+      error: error.message,
+    });
+    return rosterPlayerIdsByTeam;
+  }
+
+  for (const membership of data ?? []) {
+    rosterPlayerIdsByTeam.get(membership.team_id)?.add(membership.player_id);
+  }
+
+  return rosterPlayerIdsByTeam;
 }
 
 function readParam(value: string | string[] | undefined): string | undefined {

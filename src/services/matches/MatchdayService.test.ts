@@ -64,15 +64,28 @@ const courses: Course[] = [{
   updatedAt: '2026-07-01T00:00:00.000Z',
 }];
 
-test('resolves teams, players, and courses only by stable IDs after display-name changes', () => {
+test('resolves match rosters from season memberships, not legacy current team ids', () => {
   const players = Array.from({length: 14}, (_, index) => launchPlayer(
     `away-${index}`,
     `Away Player ${String(index).padStart(2, '0')}`,
-    'team-away',
+    'team-other',
   ));
-  players.push(launchPlayer('home-1', 'Home Player', 'team-home'));
+  players.push(launchPlayer('home-1', 'Home Player', 'team-other'));
+  players.push(launchPlayer('legacy-only', 'Legacy Team Player', 'team-away'));
 
-  const resolved = resolveMatchday(event, match, teams, players, courses, false);
+  const rosterPlayerIdsByTeam = new Map<string, ReadonlySet<string>>([
+    ['team-away', new Set(players.slice(0, 14).map((player) => player.id))],
+    ['team-home', new Set(['home-1'])],
+  ]);
+  const resolved = resolveMatchday(
+    event,
+    match,
+    teams,
+    players,
+    courses,
+    false,
+    rosterPlayerIdsByTeam,
+  );
 
   assert.ok(resolved);
   assert.equal(resolved.homeTeam.name, 'Renamed Home');
@@ -80,24 +93,31 @@ test('resolves teams, players, and courses only by stable IDs after display-name
   assert.equal(resolved.courseDetails?.name, 'Renamed Course');
   assert.equal(resolved.awayTeam.roster.length, 14);
   assert.equal(resolved.homeTeam.roster.length, 1);
+  assert.equal(resolved.awayTeam.roster.some((player) => player.id === 'legacy-only'), false);
 });
 
 test('supports a missing logo without changing team identity', () => {
-  const resolved = resolveMatchday(event, match, teams, [], courses, false);
+  const resolved = resolveMatchday(event, match, teams, [], courses, false, emptyRosters());
   assert.ok(resolved);
   assert.equal(resolved.awayTeam.id, 'team-away');
   assert.equal(resolved.awayTeam.logo, '');
 });
 
 test('does not rediscover a missing course by its display name', () => {
-  const resolved = resolveMatchday(event, match, teams, [], [], false);
+  const resolved = resolveMatchday(event, match, teams, [], [], false, emptyRosters());
   assert.ok(resolved);
   assert.equal(resolved.courseDetails, undefined);
 });
 
 test('rejects incomplete match identity data', () => {
-  assert.equal(resolveMatchday(event, {...match, courseId: null}, teams, [], courses, false), undefined);
-  assert.equal(resolveMatchday(event, {...match, awayTeamId: null}, teams, [], courses, false), undefined);
+  assert.equal(
+    resolveMatchday(event, {...match, courseId: null}, teams, [], courses, false, emptyRosters()),
+    undefined,
+  );
+  assert.equal(
+    resolveMatchday(event, {...match, awayTeamId: null}, teams, [], courses, false, emptyRosters()),
+    undefined,
+  );
 });
 
 test('uses only current Patch 1 lifecycle states', () => {
@@ -120,7 +140,7 @@ test('returns only matches involving the captain stable team ID', () => {
 });
 
 test('shows a pending scoreboard when no published result exists', () => {
-  const resolved = resolveMatchday(event, match, teams, [], courses, false);
+  const resolved = resolveMatchday(event, match, teams, [], courses, false, emptyRosters());
   assert.ok(resolved);
   assert.deepEqual(resolveMatchdayScoreboard(resolved, undefined), {
     heading: 'Scoreboard pending',
@@ -129,7 +149,7 @@ test('shows a pending scoreboard when no published result exists', () => {
 });
 
 test('shows the published away and home final score', () => {
-  const resolved = resolveMatchday(event, match, teams, [], courses, true);
+  const resolved = resolveMatchday(event, match, teams, [], courses, true, emptyRosters());
   assert.ok(resolved);
   assert.deepEqual(resolveMatchdayScoreboard(resolved, {
     matchId: match.id,
@@ -145,6 +165,13 @@ test('shows the published away and home final score', () => {
     detail: 'Renamed Away at Renamed Home · Final',
   });
 });
+
+function emptyRosters(): Map<string, ReadonlySet<string>> {
+  return new Map([
+    ['team-home', new Set<string>()],
+    ['team-away', new Set<string>()],
+  ]);
+}
 
 function launchTeam(id: string, name: string, logo = '/logo.svg'): LaunchTeam {
   return {
