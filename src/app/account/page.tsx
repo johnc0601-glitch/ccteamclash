@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import {PlayerRecordSelect} from '@/components/launch/PlayerRecordSelect';
 import {ThemeToggle} from '@/components/ThemeToggle';
+import {ensureLaunchSignupProfile} from '@/domain/launch/LaunchAccountSetup';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import type {LaunchPlayer, LaunchProfile} from '@/domain/launch/LaunchData';
 import {hasSupabaseConfig} from '@/lib/supabase';
@@ -87,10 +88,20 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
     );
   }
 
-  const [profile, players] = await Promise.all([
-    repository.getProfileByUserId(user.id),
-    repository.getPlayers(),
-  ]);
+  let profile = await repository.getProfileByUserId(user.id);
+  let profileSetupError: string | undefined;
+  if (!profile) {
+    const setupError = await ensureLaunchSignupProfile(supabase, user);
+    if (setupError) {
+      profileSetupError = setupError;
+    } else {
+      profile = await repository.getProfileByUserId(user.id);
+      if (!profile) {
+        profileSetupError = 'Your account is verified, but its league profile could not be created automatically. Ask a commissioner to review the account.';
+      }
+    }
+  }
+  const players = await repository.getPlayers();
 
   let playedBefore: boolean | null = null;
   let registrationSeason: RegistrationSeason | null = null;
@@ -176,7 +187,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
   return (
     <AccountPageLayout
       description="Manage your player profile, season registration, league history, and access."
-      error={error}
+      error={error ?? profileSetupError}
       notice={notice}
       title="My account"
     >
@@ -203,8 +214,8 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
       ) : (
         <article className={styles.panel}>
           <span className={styles.eyebrow}>Player setup</span>
-          <h2>Profile is being created</h2>
-          <p className={styles.muted}>Reload this page in a moment. Your verified account should receive its league profile automatically.</p>
+          <h2>Profile setup needs attention</h2>
+          <p className={styles.muted}>{profileSetupError ?? 'Your verified account does not have a league profile yet.'}</p>
         </article>
       )}
     </AccountPageLayout>
@@ -268,11 +279,16 @@ function MemberProfile({
                   </>
                 ) : (
                   <>
-                    <label htmlFor="accountPlayerType">Player type</label>
-                    <select id="accountPlayerType" name="playerType" required defaultValue="Adult">
-                      <option value="Adult">Adult</option>
-                      <option value="Junior">Junior</option>
-                    </select>
+                    <label style={{display: 'flex', alignItems: 'center', gap: '10px', textTransform: 'none'}}>
+                      <input
+                        name="playerType"
+                        type="checkbox"
+                        value="Junior"
+                        style={{width: 'auto', minHeight: 'auto'}}
+                      />
+                      <input name="playerType" type="hidden" value="Adult" />
+                      <span>Junior</span>
+                    </label>
                     <label htmlFor="accountGender">Division</label>
                     <select id="accountGender" name="gender" required defaultValue="">
                       <option value="" disabled>Choose division</option>
