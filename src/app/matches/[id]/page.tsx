@@ -10,13 +10,18 @@ import {CommissionerSnapshotPanel} from '@/components/matches/CommissionerSnapsh
 import {OfficialRosterExportPanel} from '@/components/matches/OfficialRosterExportPanel';
 import {createServerResultsService} from '@/core/createServerResultsService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
+import {SupabaseCourseRepository} from '@/domain/course/SupabaseCourseRepository';
+import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
+import type {AttendanceActor} from '@/domain/match-roster/MatchAttendance';
+import type {OfficialRosterExport} from '@/domain/match-roster/MatchRosterExport';
 import {MatchRosterService} from '@/domain/match-roster/MatchRosterService';
 import {isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
-import type {OfficialSnapshotState} from '@/domain/match-roster/MatchRosterSnapshot';
+import type {OfficialMatchRoster, OfficialSnapshotState} from '@/domain/match-roster/MatchRosterSnapshot';
 import {parseMatchRosterSnapshotStartAt, snapshotErrorClass} from '@/domain/match-roster/MatchRosterSnapshotAutomation';
 import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
 import {SupabaseMatchRosterRepository} from '@/domain/match-roster/SupabaseMatchRosterRepository';
+import type {Match} from '@/domain/schedule/Match';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 import {resolveMatchday} from '@/services/matches/MatchdayService';
@@ -37,6 +42,11 @@ type MatchdayPageProps = {
   }>;
 };
 
+type LockedControls = {
+  canCorrectSnapshot: boolean;
+  rosterExport?: {ok: true; data: OfficialRosterExport};
+};
+
 export default async function MatchdayPage({params, searchParams}: MatchdayPageProps) {
   const {id: matchId} = await params;
   const query = await searchParams;
@@ -46,26 +56,35 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     createClient(),
   ]);
   const launchRepository = new SupabaseLaunchRepository(supabase);
+  const courseRepository = new SupabaseCourseRepository(supabase);
   const matchRosterRepository = new SeasonAwareMatchRosterRepository(supabase);
   const matchRosterService = new MatchRosterService(matchRosterRepository);
   const userPromise = supabase.auth.getUser();
-  const [event, match, publishedResult, teams, players, courses, userResult] = await Promise.all([
+  const [event, match, publishedResult, userResult] = await Promise.all([
     scheduleService.getPublishedEventById(matchId),
     scheduleService.getMatch(matchId),
     resultsService.getPublishedResult(matchId),
-    launchRepository.getTeams(),
-    launchRepository.getPlayers(),
-    scheduleService.getCourses(),
     userPromise,
   ]);
 
-  if (!event || !match || !match.homeTeamId || !match.awayTeamId) notFound();
-  const rosterPlayerIdsByTeam = await getSeasonRosterPlayerIdsByTeam(
-    supabase,
-    match.seasonId,
-    [match.homeTeamId, match.awayTeamId],
-  );
+  if (!event || !match || !match.homeTeamId || !match.awayTeamId || !match.courseId) notFound();
+
+  const teamIds = [match.homeTeamId, match.awayTeamId];
+  const [rosterPlayerIdsByTeam, teamResults, course] = await Promise.all([
+    getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds),
+    Promise.all(teamIds.map((teamId) => launchRepository.getTeam(teamId))),
+    courseRepository.getById(match.courseId),
+  ]);
   const rosterUnavailable = rosterPlayerIdsByTeam === null;
+  const effectiveRosterIds = rosterPlayerIdsByTeam ?? new Map([
+    [match.homeTeamId, new Set<string>()],
+    [match.awayTeamId, new Set<string>()],
+  ]);
+  const matchPlayerIds = [...new Set([...effectiveRosterIds.values()].flatMap((ids) => [...ids]))];
+  const players = await getPlayersByIds(supabase, matchPlayerIds);
+  const teams = teamResults.filter((team): team is NonNullable<typeof team> => Boolean(team));
+  const courses = course ? [course] : [];
+
   const matchday = resolveMatchday(
     event,
     match,
@@ -73,12 +92,10 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     players,
     courses,
     Boolean(publishedResult),
-    rosterPlayerIdsByTeam ?? new Map([
-      [match.homeTeamId, new Set<string>()],
-      [match.awayTeamId, new Set<string>()],
-    ]),
+    effectiveRosterIds,
   );
   if (!matchday) notFound();
+
   const locked = isMatchRosterLocked(match);
   let officialSnapshot: OfficialSnapshotState | undefined;
   if (locked) {
@@ -101,20 +118,24 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
       officialSnapshot = {status: 'unavailable', rosters: []};
     }
   }
+
   const personalAttendance = !locked && userResult.data.user
     ? await matchRosterService.getPersonalAttendance(userResult.data.user.id, matchId)
     : undefined;
   const managedRosters = !locked && userResult.data.user && readParam(query.manage) === 'roster'
     ? await matchRosterService.getManagedTeamRosters(userResult.data.user.id, matchId)
     : [];
-  const canCorrectSnapshot = locked
-    && officialSnapshot?.status === 'complete'
-    && userResult.data.user
-    ? await matchRosterService.canManageOfficialSnapshot(userResult.data.user.id, matchId)
-    : false;
-  const rosterExport = locked && officialSnapshot?.status === 'complete' && userResult.data.user
-    ? await matchRosterService.getOfficialRosterExport(userResult.data.user.id, matchId)
-    : undefined;
+
+  let lockedControls: LockedControls = {canCorrectSnapshot: false};
+  let commissionerPlayers: LaunchPlayer[] = [];
+  if (locked && officialSnapshot?.status === 'complete' && userResult.data.user) {
+    const actor = await new SupabaseMatchRosterRepository(supabase)
+      .getAttendanceActor(userResult.data.user.id);
+    lockedControls = resolveLockedControls(actor, match, officialSnapshot.rosters);
+    if (lockedControls.canCorrectSnapshot) {
+      commissionerPlayers = (await launchRepository.getPlayers()).filter((player) => player.active);
+    }
+  }
 
   return (
     <>
@@ -142,15 +163,17 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
               error={readParam(query.captainError)}
             />
           ) : null}
-          {canCorrectSnapshot && officialSnapshot?.status === 'complete' ? (
+          {lockedControls.canCorrectSnapshot && officialSnapshot?.status === 'complete' ? (
             <CommissionerSnapshotPanel
               rosters={officialSnapshot.rosters}
-              activePlayers={players.filter((player) => player.active)}
+              activePlayers={commissionerPlayers}
               notice={readParam(query.commissionerNotice)}
               error={readParam(query.commissionerError)}
             />
           ) : null}
-          {rosterExport?.ok ? <OfficialRosterExportPanel exportData={rosterExport.data} /> : null}
+          {lockedControls.rosterExport?.ok ? (
+            <OfficialRosterExportPanel exportData={lockedControls.rosterExport.data} />
+          ) : null}
           <MatchRosterBoard matchday={matchday} official={officialSnapshot} rosterUnavailable={rosterUnavailable} />
           {!publishedResult ? <MatchScoreboard matchday={matchday} result={undefined} /> : null}
         </div>
@@ -158,6 +181,84 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
       <Footer />
     </>
   );
+}
+
+function resolveLockedControls(
+  actor: AttendanceActor | undefined,
+  match: Match,
+  rosters: OfficialMatchRoster[],
+): LockedControls {
+  const approved = actor?.profileStatus === 'Approved';
+  const teamIds = [match.homeTeamId, match.awayTeamId].filter((teamId): teamId is string => Boolean(teamId));
+  const canCorrectSnapshot = Boolean(
+    approved
+    && actor?.profileRole === 'Commissioner'
+    && match.status !== 'Cancelled'
+    && teamIds.length === 2,
+  );
+  const canExport = Boolean(
+    approved
+    && match.date
+    && teamIds.length === 2
+    && (
+      actor?.profileRole === 'Commissioner'
+      || (actor?.profileRole === 'Captain' && actor.captainTeamId && teamIds.includes(actor.captainTeamId))
+    ),
+  );
+  if (!canExport || !match.date || !match.homeTeamId || !match.awayTeamId) return {canCorrectSnapshot};
+
+  const home = rosters.find((roster) => roster.teamId === match.homeTeamId);
+  const away = rosters.find((roster) => roster.teamId === match.awayTeamId);
+  if (!home || !away) return {canCorrectSnapshot};
+
+  return {
+    canCorrectSnapshot,
+    rosterExport: {
+      ok: true,
+      data: {
+        matchId: match.id,
+        matchDate: match.date,
+        homeTeam: toExportTeam(home),
+        awayTeam: toExportTeam(away),
+        generatedAt: new Date().toISOString(),
+      },
+    },
+  };
+}
+
+function toExportTeam(roster: OfficialMatchRoster) {
+  return {
+    name: roster.teamNameSnapshot,
+    playerNames: roster.players
+      .map((player) => player.playerNameSnapshot)
+      .sort((left, right) => left.localeCompare(right, 'en', {sensitivity: 'base'})),
+  };
+}
+
+async function getPlayersByIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  playerIds: string[],
+): Promise<LaunchPlayer[]> {
+  if (!playerIds.length) return [];
+  const {data, error} = await supabase
+    .from('launch_players')
+    .select('*')
+    .in('id', playerIds)
+    .order('name');
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    name: row.name,
+    gender: row.gender as LaunchPlayer['gender'],
+    pdgaNumber: row.pdga_number,
+    pdgaRating: row.pdga_rating,
+    currentTeamId: row.current_team_id,
+    homeArea: row.home_area,
+    active: row.active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
 }
 
 async function getSeasonRosterPlayerIdsByTeam(
