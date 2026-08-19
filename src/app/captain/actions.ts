@@ -7,7 +7,12 @@ import {createClient} from '@/lib/supabase/server';
 type CaptainReviewClient = {
   rpc: (
     fn: 'captain_review_launch_player_application',
-    args: {target_application_id: string; target_status: 'Approved' | 'Rejected'},
+    args: {
+      target_application_id: string;
+      target_status: 'Approved' | 'Rejected';
+      target_gender: string | null;
+      target_player_type: string | null;
+    },
   ) => Promise<{error: {message: string} | null}>;
 };
 
@@ -23,13 +28,27 @@ async function reviewTeamApplication(formData: FormData, status: 'Approved' | 'R
   const applicationId = readFormValue(formData, 'applicationId');
   if (!applicationId) redirect('/captain?error=Registration is required.');
 
+  const gender = status === 'Approved' ? readFormValue(formData, 'gender') : '';
+  const playerType = status === 'Approved' ? readFormValue(formData, 'playerType') : '';
+  if (status === 'Approved' && gender !== 'Male' && gender !== 'Female') {
+    redirect('/captain?error=Choose Male or Female before approving.');
+  }
+  if (status === 'Approved' && playerType !== 'Adult' && playerType !== 'Junior') {
+    redirect('/captain?error=Player type must be Adult or Junior.');
+  }
+
   const supabase = await createClient();
   const {data, error} = await supabase.auth.getUser();
   if (error || !data.user) redirect('/account?error=Sign in first.');
 
   const {error: reviewError} = await (supabase as unknown as CaptainReviewClient).rpc(
     'captain_review_launch_player_application',
-    {target_application_id: applicationId, target_status: status},
+    {
+      target_application_id: applicationId,
+      target_status: status,
+      target_gender: status === 'Approved' ? gender : null,
+      target_player_type: status === 'Approved' ? playerType : null,
+    },
   );
   if (reviewError) redirect(`/captain?error=${encodeURIComponent(reviewError.message)}`);
 
