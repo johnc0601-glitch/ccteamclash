@@ -1,6 +1,5 @@
 import {NextResponse} from 'next/server';
 import {INTRO_COOKIE_NAME} from '@/components/intro/intro.config';
-import {ensureLaunchSignupProfile} from '@/domain/launch/LaunchAccountSetup';
 import {createClient} from '@/lib/supabase/server';
 
 export async function GET(request: Request) {
@@ -12,7 +11,7 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const {data, error} = await supabase.auth.exchangeCodeForSession(code);
+    const {error} = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       const resetFlow = next === '/account/reset-password';
       const message = encodeURIComponent(resetFlow
@@ -22,13 +21,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL(`${destination}?error=${message}`, requestUrl.origin));
     }
 
-    if (data.user) {
-      magicLinkAuthenticated = flow === 'magic-link';
-      const setupError = await ensureLaunchSignupProfile(supabase, data.user);
-      if (setupError) {
-        return NextResponse.redirect(new URL(`/account?error=${encodeURIComponent(setupError)}`, requestUrl.origin));
-      }
-    }
+    magicLinkAuthenticated = flow === 'magic-link';
   }
 
   const response = NextResponse.redirect(new URL(next, requestUrl.origin));
