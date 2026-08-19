@@ -26,7 +26,8 @@ export class SeasonAwareMatchRosterRepository extends SupabaseMatchRosterReposit
     if (seasonError) throw seasonError;
     if (!activeSeason) return {...actor, teamId: null};
 
-    const {data: membership, error: membershipError} = await this.seasonSupabase
+    const launchSupabase = this.seasonSupabase as any;
+    const {data: membership, error: membershipError} = await launchSupabase
       .from('launch_season_roster_memberships')
       .select('team_id')
       .eq('season_id', activeSeason.id)
@@ -48,7 +49,8 @@ export class SeasonAwareMatchRosterRepository extends SupabaseMatchRosterReposit
     if (matchError) throw matchError;
     if (!match) return [];
 
-    const {data: memberships, error: membershipError} = await this.seasonSupabase
+    const launchSupabase = this.seasonSupabase as any;
+    const {data: memberships, error: membershipError} = await launchSupabase
       .from('launch_season_roster_memberships')
       .select('player_id')
       .eq('season_id', match.season_id)
@@ -56,10 +58,9 @@ export class SeasonAwareMatchRosterRepository extends SupabaseMatchRosterReposit
       .eq('status', 'Active');
     if (membershipError) throw membershipError;
 
-    const playerIds = (memberships ?? []).map((membership) => membership.player_id);
+    const playerIds = (memberships ?? []).map((membership: {player_id: string}) => membership.player_id);
     if (!playerIds.length) return [];
 
-    const attendanceClient = this.seasonSupabase as any;
     const [{data: players, error: playerError}, {data: attendanceRows, error: attendanceError}] = await Promise.all([
       this.seasonSupabase
         .from('launch_players')
@@ -67,7 +68,7 @@ export class SeasonAwareMatchRosterRepository extends SupabaseMatchRosterReposit
         .in('id', playerIds)
         .eq('active', true)
         .order('name'),
-      attendanceClient
+      launchSupabase
         .from('launch_match_attendance')
         .select('player_id,status')
         .eq('match_id', matchId)
