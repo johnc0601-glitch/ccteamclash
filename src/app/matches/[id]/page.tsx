@@ -15,6 +15,7 @@ import {MatchRosterService} from '@/domain/match-roster/MatchRosterService';
 import {isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
 import type {OfficialSnapshotState} from '@/domain/match-roster/MatchRosterSnapshot';
 import {parseMatchRosterSnapshotStartAt, snapshotErrorClass} from '@/domain/match-roster/MatchRosterSnapshotAutomation';
+import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
 import {SupabaseMatchRosterRepository} from '@/domain/match-roster/SupabaseMatchRosterRepository';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
@@ -45,7 +46,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     createClient(),
   ]);
   const launchRepository = new SupabaseLaunchRepository(supabase);
-  const matchRosterRepository = new SupabaseMatchRosterRepository(supabase);
+  const matchRosterRepository = new SeasonAwareMatchRosterRepository(supabase);
   const matchRosterService = new MatchRosterService(matchRosterRepository);
   const userPromise = supabase.auth.getUser();
   const [event, match, publishedResult, teams, players, courses, userResult] = await Promise.all([
@@ -64,6 +65,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     match.seasonId,
     [match.homeTeamId, match.awayTeamId],
   );
+  const rosterUnavailable = rosterPlayerIdsByTeam === null;
   const matchday = resolveMatchday(
     event,
     match,
@@ -71,7 +73,10 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     players,
     courses,
     Boolean(publishedResult),
-    rosterPlayerIdsByTeam,
+    rosterPlayerIdsByTeam ?? new Map([
+      [match.homeTeamId, new Set<string>()],
+      [match.awayTeamId, new Set<string>()],
+    ]),
   );
   if (!matchday) notFound();
   const locked = isMatchRosterLocked(match);
@@ -146,7 +151,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             />
           ) : null}
           {rosterExport?.ok ? <OfficialRosterExportPanel exportData={rosterExport.data} /> : null}
-          <MatchRosterBoard matchday={matchday} official={officialSnapshot} />
+          <MatchRosterBoard matchday={matchday} official={officialSnapshot} rosterUnavailable={rosterUnavailable} />
           {!publishedResult ? <MatchScoreboard matchday={matchday} result={undefined} /> : null}
         </div>
       </main>
@@ -159,7 +164,7 @@ async function getSeasonRosterPlayerIdsByTeam(
   supabase: Awaited<ReturnType<typeof createClient>>,
   seasonId: string,
   teamIds: string[],
-): Promise<Map<string, Set<string>>> {
+): Promise<Map<string, Set<string>> | null> {
   const rosterPlayerIdsByTeam = new Map(teamIds.map((teamId) => [teamId, new Set<string>()]));
   const {data, error} = await supabase
     .from('launch_season_roster_memberships')
@@ -174,7 +179,7 @@ async function getSeasonRosterPlayerIdsByTeam(
       teamIds,
       error: error.message,
     });
-    return rosterPlayerIdsByTeam;
+    return null;
   }
 
   for (const membership of data ?? []) {

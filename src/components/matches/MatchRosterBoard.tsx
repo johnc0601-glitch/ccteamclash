@@ -3,7 +3,15 @@ import {TeamRosterColumn} from '@/components/matches/TeamRosterColumn';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 import type {OfficialSnapshotState, OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
 
-export function MatchRosterBoard({matchday, official}: {matchday: PublicMatchday; official?: OfficialSnapshotState}) {
+export function MatchRosterBoard({
+  matchday,
+  official,
+  rosterUnavailable = false,
+}: {
+  matchday: PublicMatchday;
+  official?: OfficialSnapshotState;
+  rosterUnavailable?: boolean;
+}) {
   if (official?.status === 'unavailable') {
     return (
       <section className={styles.sectionCard}>
@@ -26,6 +34,17 @@ export function MatchRosterBoard({matchday, official}: {matchday: PublicMatchday
           <OfficialRosterColumn roster={findRoster(official.rosters, matchday.awayTeam.id)} label="Away team" />
           <OfficialRosterColumn roster={findRoster(official.rosters, matchday.homeTeam.id)} label="Home team" />
         </div>
+      </section>
+    );
+  }
+
+  if (rosterUnavailable) {
+    return (
+      <section className={styles.sectionCard}>
+        <header className={styles.sectionHeader}>
+          <div><span>Match roster</span><h2>Roster temporarily unavailable</h2></div>
+        </header>
+        <p className={styles.empty}>The match page remains available while the active season roster is recovered.</p>
       </section>
     );
   }
