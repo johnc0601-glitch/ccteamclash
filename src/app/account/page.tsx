@@ -258,14 +258,14 @@ function MemberProfile({
             <>
               <p className={styles.linkingNote}>
                 {establishedRegistration
-                  ? 'Choose your team. Your established player type and division carry forward automatically.'
-                  : 'Choose your team and division for this season.'}
+                  ? 'MUST PICK A TEAM. Your established player type and division carry forward automatically.'
+                  : 'MUST PICK A TEAM. Then confirm your division for this season.'}
               </p>
               <form className={styles.form} action={submitSeasonApplication}>
                 <input name="seasonId" type="hidden" value={registrationSeason.id} />
-                <label htmlFor="accountRequestedTeam">Team</label>
+                <label htmlFor="accountRequestedTeam">Team — MUST PICK A TEAM</label>
                 <select id="accountRequestedTeam" name="requestedTeamId" required defaultValue="">
-                  <option value="" disabled>Choose a team</option>
+                  <option value="" disabled>MUST PICK A TEAM</option>
                   {registrationTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
                 </select>
                 {establishedRegistration ? (
