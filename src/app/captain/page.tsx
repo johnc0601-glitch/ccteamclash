@@ -101,25 +101,43 @@ function CaptainDashboard({
           <header className={styles.panelHeader}>
             <span>Captain confirmation</span>
             <h2>Season requests</h2>
-            <p className={styles.muted}>Approve or reject players who selected {team.name} during season registration.</p>
+            <p className={styles.muted}>Confirm Male/Female and Junior status before approving players for {team.name}.</p>
           </header>
           <div className={styles.list}>
             {pendingApplications.length ? pendingApplications.map((application) => (
               <article className={styles.row} key={application.id}>
                 <strong>{application.displayName}</strong>
-                <span className={styles.muted}>
-                  {application.playerType} · {application.gender}
-                </span>
-                <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
-                  <form action={confirmTeamApplication}>
-                    <input name="applicationId" type="hidden" value={application.id} />
-                    <button className={styles.primaryButton} type="submit">Approve</button>
-                  </form>
-                  <form action={rejectTeamApplication}>
-                    <input name="applicationId" type="hidden" value={application.id} />
-                    <button type="submit">Reject</button>
-                  </form>
-                </div>
+                <form action={confirmTeamApplication} style={{display: 'grid', gap: '10px'}}>
+                  <input name="applicationId" type="hidden" value={application.id} />
+                  <label style={{display: 'grid', gap: '4px'}}>
+                    <span className={styles.muted}>Male / Female</span>
+                    <select
+                      name="gender"
+                      required
+                      defaultValue={application.gender === 'Male' || application.gender === 'Female' ? application.gender : ''}
+                    >
+                      <option value="" disabled>Choose</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </label>
+                  <label style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                    <input
+                      name="playerType"
+                      type="checkbox"
+                      value="Junior"
+                      defaultChecked={application.playerType === 'Junior'}
+                      style={{width: 'auto', minHeight: 'auto'}}
+                    />
+                    <input name="playerType" type="hidden" value="Adult" />
+                    <span className={styles.muted}>Junior</span>
+                  </label>
+                  <button className={styles.primaryButton} type="submit">Approve</button>
+                </form>
+                <form action={rejectTeamApplication}>
+                  <input name="applicationId" type="hidden" value={application.id} />
+                  <button type="submit">Reject</button>
+                </form>
               </article>
             )) : (
               <p className={styles.empty}>No season requests need captain confirmation.</p>
