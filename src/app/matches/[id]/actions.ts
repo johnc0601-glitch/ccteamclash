@@ -3,7 +3,7 @@
 import {revalidatePath} from 'next/cache';
 import {redirect} from 'next/navigation';
 import {MatchRosterService} from '@/domain/match-roster/MatchRosterService';
-import {SupabaseMatchRosterRepository} from '@/domain/match-roster/SupabaseMatchRosterRepository';
+import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
 import type {AttendanceResult, PersonalAttendance} from '@/domain/match-roster/MatchAttendance';
 import type {ManagedTeamRoster} from '@/domain/match-roster/MatchAttendance';
 import {createClient} from '@/lib/supabase/server';
@@ -21,7 +21,7 @@ export async function setOwnMatchAttendance(formData: FormData) {
 
   let result: AttendanceResult<PersonalAttendance>;
   try {
-    const service = new MatchRosterService(new SupabaseMatchRosterRepository(supabase));
+    const service = new MatchRosterService(new SeasonAwareMatchRosterRepository(supabase));
     result = await service.setOwnAttendance(user.id, matchId, status);
   } catch {
     redirect(`${path}?attendanceError=${encodeURIComponent('Attendance could not be saved. Try again.')}`);
@@ -106,7 +106,7 @@ async function getMatchRosterService() {
   if (error || !user) redirect(`/account?error=${encodeURIComponent('Sign in with an approved captain account.')}`);
 
   return {
-    service: new MatchRosterService(new SupabaseMatchRosterRepository(supabase)),
+    service: new MatchRosterService(new SeasonAwareMatchRosterRepository(supabase)),
     userId: user.id,
   };
 }
