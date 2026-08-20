@@ -3,25 +3,27 @@ import type {AttendanceMatch} from '@/domain/match-roster/MatchAttendance';
 const ATTENDANCE_OPEN_STATUSES = new Set(['Scheduled', 'Postponed', 'Rain Delay']);
 
 export function getMatchAttendanceOpenAt(matchDate: string): Date | undefined {
-  const parsed = parseMatchDate(matchDate);
-  if (!parsed) return undefined;
+  const friday = getMatchWeekFriday(matchDate);
+  if (!friday) return undefined;
+  return easternDateTime(friday.year, friday.month, friday.day, 0);
+}
 
-  const matchDateUtc = new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day));
-  const daysSinceFriday = (matchDateUtc.getUTCDay() - 5 + 7) % 7;
-  const fridayUtc = new Date(matchDateUtc.getTime() - daysSinceFriday * 24 * 60 * 60 * 1000);
-
-  return easternDateTime(
-    fridayUtc.getUTCFullYear(),
-    fridayUtc.getUTCMonth() + 1,
-    fridayUtc.getUTCDate(),
-    0,
-  );
+export function getPlayerAttendanceLockAt(matchDate: string): Date | undefined {
+  const friday = getMatchWeekFriday(matchDate);
+  if (!friday) return undefined;
+  return easternDateTime(friday.year, friday.month, friday.day, 12);
 }
 
 export function getMatchRosterLockAt(matchDate: string): Date | undefined {
   const parsed = parseMatchDate(matchDate);
   if (!parsed) return undefined;
   return easternDateTime(parsed.year, parsed.month, parsed.day, 15);
+}
+
+export function isPlayerAttendanceOpen(match: AttendanceMatch, now = new Date()): boolean {
+  if (!match.date || !ATTENDANCE_OPEN_STATUSES.has(match.status)) return false;
+  const lockAt = getPlayerAttendanceLockAt(match.date);
+  return Boolean(lockAt && now.getTime() < lockAt.getTime());
 }
 
 export function isMatchAttendanceOpen(match: AttendanceMatch, now = new Date()): boolean {
@@ -40,6 +42,21 @@ export function isMatchRosterLocked(match: AttendanceMatch, now = new Date()): b
   if (!match.date) return false;
   const lockAt = getMatchRosterLockAt(match.date);
   return Boolean(lockAt && now.getTime() >= lockAt.getTime());
+}
+
+function getMatchWeekFriday(matchDate: string) {
+  const parsed = parseMatchDate(matchDate);
+  if (!parsed) return undefined;
+
+  const matchDateUtc = new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day));
+  const daysSinceFriday = (matchDateUtc.getUTCDay() - 5 + 7) % 7;
+  const fridayUtc = new Date(matchDateUtc.getTime() - daysSinceFriday * 24 * 60 * 60 * 1000);
+
+  return {
+    year: fridayUtc.getUTCFullYear(),
+    month: fridayUtc.getUTCMonth() + 1,
+    day: fridayUtc.getUTCDate(),
+  };
 }
 
 function parseMatchDate(matchDate: string) {
