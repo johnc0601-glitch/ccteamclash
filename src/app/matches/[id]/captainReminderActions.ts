@@ -65,7 +65,9 @@ export async function emailCaptainUnconfirmed(formData: FormData) {
       if (error || !data.user?.email) return undefined;
       return [profile.player_id, data.user.email] as const;
     }));
-    const emailByPlayerId = new Map(emailEntries.filter((entry): entry is readonly [string, string] => Boolean(entry)));
+    const emailByPlayerId = new Map<string, string>(
+      emailEntries.filter((entry): entry is readonly [string, string] => Boolean(entry)),
+    );
     const recipients = buildCaptainReminderRecipients(roster.players, emailByPlayerId);
     if (!recipients.length) {
       redirect(`${path}&captainError=${encodeURIComponent('None of the unconfirmed players have a linked email account.')}`);
@@ -77,7 +79,9 @@ export async function emailCaptainUnconfirmed(formData: FormData) {
       .select('id,name')
       .in('id', teamIds);
     if (teamError) throw teamError;
-    const teamNames = new Map((teams ?? []).map((team: {id: string; name: string}) => [team.id, team.name]));
+    const teamNames = new Map<string, string>(
+      (teams ?? []).map((team: {id: string; name: string}) => [team.id, team.name] as const),
+    );
     const awayTeamName = match.awayTeamId ? teamNames.get(match.awayTeamId) : undefined;
     const homeTeamName = match.homeTeamId ? teamNames.get(match.homeTeamId) : undefined;
     if (!awayTeamName || !homeTeamName || !match.date) throw new Error('Match reminder details are incomplete.');
