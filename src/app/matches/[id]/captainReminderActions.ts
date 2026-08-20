@@ -48,6 +48,22 @@ export async function emailCaptainUnconfirmed(formData: FormData) {
     redirect(`${path}&captainNotice=${encodeURIComponent('No unconfirmed players remain.')}`);
   }
 
+  const {data: reminderAllowed, error: reminderLimitError} = await (supabase as any).rpc(
+    'claim_captain_reminder_send',
+    {target_match_id: matchId},
+  );
+  if (reminderLimitError) {
+    console.error('Captain reminder rate-limit check failed.', {
+      matchId,
+      captainTeamId: actor.captainTeamId,
+      errorClass: reminderLimitError.code ?? 'UnknownError',
+    });
+    redirect(`${path}&captainError=${encodeURIComponent('Reminder sending is temporarily unavailable.')}`);
+  }
+  if (!reminderAllowed) {
+    redirect(`${path}&captainError=${encodeURIComponent('Reminder limit reached for this match. Try again later.')}`);
+  }
+
   try {
     const admin = createAdminClient();
     const adminDb = admin as any;
