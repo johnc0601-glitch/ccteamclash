@@ -307,6 +307,7 @@ async function getPlayersByIds(
     gender: row.gender as LaunchPlayer['gender'],
     pdgaNumber: row.pdga_number,
     pdgaRating: row.pdga_rating,
+    clashIndex: row.clash_index,
     currentTeamId: row.current_team_id,
     homeArea: row.home_area,
     active: row.active,
