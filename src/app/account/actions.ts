@@ -34,7 +34,7 @@ export async function createLeagueAccount(formData: FormData) {
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/callback?next=/account`,
+      emailRedirectTo: `${origin}/auth/callback?flow=signup-confirm&next=/`,
       data: {displayName},
     },
   });
