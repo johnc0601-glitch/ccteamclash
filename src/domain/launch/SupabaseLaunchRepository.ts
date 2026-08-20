@@ -263,12 +263,14 @@ function fromPlayerClaim(claim: PlayerClaim): PlayerClaimRow {
 }
 
 function toPlayer(row: PlayerRow): LaunchPlayer {
+  const clashIndex = (row as PlayerRow & {clash_index?: number | null}).clash_index ?? null;
   return {
     id: row.id,
     name: row.name,
     gender: row.gender as LaunchPlayer['gender'],
     pdgaNumber: row.pdga_number,
     pdgaRating: row.pdga_rating,
+    clashIndex,
     currentTeamId: row.current_team_id,
     homeArea: row.home_area,
     active: row.active,
