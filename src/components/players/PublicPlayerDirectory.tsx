@@ -91,7 +91,10 @@ export function PublicPlayerDirectory({
                 <span className={styles.expandLabel}>View stats</span>
               </summary>
               <div className={styles.details}>
-                <PublicPlayerProfileCard profile={createProfileFromPublicPlayerView(playerView)} />
+                <PublicPlayerProfileCard
+                  profile={createProfileFromPublicPlayerView(playerView)}
+                  showClashIndex={false}
+                />
               </div>
             </details>
           );
