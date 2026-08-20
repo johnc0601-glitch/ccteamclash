@@ -13,9 +13,14 @@ import styles from '@/app/players/Players.module.css';
 type PublicPlayerProfileCardProps = {
   profile: PlayerProfile;
   compact?: boolean;
+  showClashIndex?: boolean;
 };
 
-export function PublicPlayerProfileCard({profile, compact = false}: PublicPlayerProfileCardProps) {
+export function PublicPlayerProfileCard({
+  profile,
+  compact = false,
+  showClashIndex = true,
+}: PublicPlayerProfileCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [fullHistory, setFullHistory] = useState<PlayerProfileMatchHistoryItem[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -46,7 +51,9 @@ export function PublicPlayerProfileCard({profile, compact = false}: PublicPlayer
     <div className={styles.profileCard}>
       <div className={styles.identity}>
         <span>{formatGender(profile.player.gender)}</span>
-        {profile.player.clashIndex != null ? <span>Clash Index {profile.player.clashIndex}</span> : null}
+        {showClashIndex && profile.player.clashIndex != null
+          ? <span>Clash Index {profile.player.clashIndex}</span>
+          : null}
       </div>
 
       <section className={styles.profileStats}>
