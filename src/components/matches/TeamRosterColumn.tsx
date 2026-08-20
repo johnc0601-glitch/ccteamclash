@@ -30,6 +30,7 @@ export function TeamRosterColumn({team, label}: {team: PublicMatchdayTeam; label
           <div className={styles.playerRow} key={player.id}>
             <b>{initials(player.name)}</b>
             <strong>{player.name}</strong>
+            {player.clashIndex != null ? <span>Clash Index: {player.clashIndex}</span> : null}
           </div>
         )) : <p className={styles.empty}>No active players are assigned to this team.</p>}
       </div>
