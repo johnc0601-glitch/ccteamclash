@@ -6,20 +6,21 @@ import {
 import {emailCaptainUnconfirmed} from '@/app/matches/[id]/captainReminderActions';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 import type {ManagedTeamRoster} from '@/domain/match-roster/MatchAttendance';
+import {isResendConfigured} from '@/lib/email/resend';
 
 export function CaptainRosterPanel({
   rosters,
   teamNames,
-  emailReminderOpen,
   notice,
   error,
 }: {
   rosters: ManagedTeamRoster[];
   teamNames: Record<string, string>;
-  emailReminderOpen: boolean;
   notice?: string;
   error?: string;
 }) {
+  const emailConfigured = isResendConfigured();
+
   return (
     <section className={styles.captainPanel} aria-labelledby="captain-roster-heading">
       <header className={styles.sectionHeader}>
@@ -34,7 +35,7 @@ export function CaptainRosterPanel({
       <div className={styles.captainRosterGrid}>
         {rosters.map((roster) => (
           <CaptainTeamRoster
-            emailReminderOpen={emailReminderOpen}
+            emailConfigured={emailConfigured}
             key={roster.teamId}
             roster={roster}
             teamName={teamNames[roster.teamId] ?? 'Team'}
@@ -48,17 +49,22 @@ export function CaptainRosterPanel({
 function CaptainTeamRoster({
   roster,
   teamName,
-  emailReminderOpen,
+  emailConfigured,
 }: {
   roster: ManagedTeamRoster;
   teamName: string;
-  emailReminderOpen: boolean;
+  emailConfigured: boolean;
 }) {
   const counts = roster.players.reduce((result, player) => {
     result[player.status] += 1;
     return result;
   }, {Playing: 0, NotPlaying: 0, Unconfirmed: 0});
-  const canEmailUnconfirmed = emailReminderOpen && roster.attendanceOpen && counts.Unconfirmed > 0;
+  const canEmailUnconfirmed = Boolean(
+    emailConfigured
+    && roster.emailReminderOpen
+    && roster.attendanceOpen
+    && counts.Unconfirmed > 0
+  );
 
   return (
     <article className={styles.captainTeamRoster}>
