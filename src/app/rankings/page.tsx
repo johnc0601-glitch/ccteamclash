@@ -33,11 +33,8 @@ export default async function RankingsPage() {
       <SiteHeader />
       <main className={`shell page-shell ${styles.rankingsPage}`}>
         <header className={styles.pageHeader}>
-          <div>
-            <span className="eyebrow">League leaderboard</span>
-            <h1>Player Rankings</h1>
-          </div>
-          {current ? <p>{current.seasonName}</p> : null}
+          <h1>Player Rankings</h1>
+          {current ? <p>Coastal Clash Match Play · {current.seasonName}</p> : null}
         </header>
 
         <RankingsClient
