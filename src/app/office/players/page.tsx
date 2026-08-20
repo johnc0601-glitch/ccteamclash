@@ -1,4 +1,5 @@
 import {OfficePage} from '@/components/commissioner/OfficePage';
+import {PdgaRatingSyncButton} from '@/components/commissioner/PdgaRatingSyncButton';
 import {LaunchPlayerManagement} from '@/components/launch/LaunchPlayerManagement';
 import {MemberManagement} from '@/components/launch/MemberManagement';
 import {
@@ -144,6 +145,7 @@ export default async function OfficePlayersPage({searchParams}: OfficePlayersPag
 
   return (
     <OfficePage sectionId="players">
+      <PdgaRatingSyncButton />
       <SeasonRegistrationReview
         registrations={rejectedRegistrations}
         teams={teams.map((team) => ({id: team.id, name: team.name}))}
