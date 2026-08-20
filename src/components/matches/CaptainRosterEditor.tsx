@@ -60,7 +60,7 @@ export function CaptainRosterEditor({
     <article className={styles.captainTeamRoster}>
       <header className={styles.captainTeamHeader}>
         <div>
-          <span>{roster.rosterStatus}</span>
+          <span>Open</span>
           <h3>{teamName}</h3>
         </div>
         <p>{counts.Playing} yes · {counts.NotPlaying} no · {counts.Unconfirmed} unconfirmed</p>
