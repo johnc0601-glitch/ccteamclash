@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, type KeyboardEvent} from 'react';
+import {useState, type KeyboardEvent, type ReactNode} from 'react';
 import {PublicPlayerProfileCard} from '@/components/players/PublicPlayerProfileCard';
 import {DialogShell} from '@/components/teams/DialogShell';
 import type {HistoricalPlayerSeasonSummary} from '@/data/historicalSeed';
@@ -97,7 +97,7 @@ export function RankingsClient({current, history, clash}: RankingsClientProps) {
   );
 }
 
-function TabButton({active, onClick, children}: {active: boolean; onClick: () => void; children: React.ReactNode}) {
+function TabButton({active, onClick, children}: {active: boolean; onClick: () => void; children: ReactNode}) {
   return (
     <button type="button" className={active ? styles.activeTab : undefined} onClick={onClick}>
       {children}
