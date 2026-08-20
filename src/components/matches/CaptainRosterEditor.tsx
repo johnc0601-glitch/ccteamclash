@@ -11,6 +11,12 @@ import type {ManagedTeamRoster} from '@/domain/match-roster/MatchAttendance';
 
 type Status = ManagedTeamRoster['players'][number]['status'];
 
+const compactButtonStyle = {
+  minHeight: 30,
+  padding: '4px 8px',
+  fontSize: 11,
+};
+
 export function CaptainRosterEditor({
   roster,
   teamName,
@@ -43,7 +49,7 @@ export function CaptainRosterEditor({
     && counts.Unconfirmed > 0
     && dirtyCount === 0
   );
-  const selectedBox = '0 0 0 3px var(--cc-heading)';
+  const selectedBox = '0 0 0 2px var(--cc-heading)';
 
   function choose(playerId: string, status: Status) {
     setDraft((current) => ({...current, [playerId]: status}));
@@ -75,16 +81,21 @@ export function CaptainRosterEditor({
           const status = draft[player.playerId] ?? player.status;
           const changed = status !== player.status;
           return (
-            <div className={styles.captainPlayerRow} key={player.playerId}>
+            <div
+              className={styles.captainPlayerRow}
+              key={player.playerId}
+              style={{minHeight: 48, padding: '6px 10px', gap: 8}}
+            >
               <div>
                 <strong>{player.playerName}</strong>
                 <span>{formatStatus(status)}{changed ? ' · unsaved' : ''}</span>
               </div>
-              <div className={styles.captainPlayerActions}>
+              <span className={styles.captainPlayerActions} style={{display: 'flex', gap: 4, whiteSpace: 'nowrap'}}>
                 <button
                   aria-pressed={status === 'Playing'}
                   onClick={() => choose(player.playerId, 'Playing')}
                   style={{
+                    ...compactButtonStyle,
                     background: '#4f7f32',
                     borderColor: '#4f7f32',
                     boxShadow: status === 'Playing' ? selectedBox : 'none',
@@ -96,6 +107,7 @@ export function CaptainRosterEditor({
                   aria-pressed={status === 'NotPlaying'}
                   onClick={() => choose(player.playerId, 'NotPlaying')}
                   style={{
+                    ...compactButtonStyle,
                     background: '#b64040',
                     borderColor: '#b64040',
                     boxShadow: status === 'NotPlaying' ? selectedBox : 'none',
@@ -106,10 +118,10 @@ export function CaptainRosterEditor({
                 <button
                   aria-pressed={status === 'Unconfirmed'}
                   onClick={() => choose(player.playerId, 'Unconfirmed')}
-                  style={{boxShadow: status === 'Unconfirmed' ? selectedBox : 'none'}}
+                  style={{...compactButtonStyle, boxShadow: status === 'Unconfirmed' ? selectedBox : 'none'}}
                   type="button"
                 >Unconfirmed</button>
-              </div>
+              </span>
             </div>
           );
         })}
@@ -123,21 +135,22 @@ export function CaptainRosterEditor({
             zIndex: 4,
             display: 'grid',
             gridTemplateColumns: '1fr auto',
-            gap: 10,
+            gap: 8,
             alignItems: 'center',
-            padding: 14,
+            padding: '8px 10px',
             borderTop: '1px solid var(--cc-card-border)',
             background: 'var(--cc-table-head-bg)',
+            fontSize: 12,
           }}
         >
           <strong>{dirtyCount} unsaved change{dirtyCount === 1 ? '' : 's'}</strong>
-          <div style={{display: 'flex', gap: 8}}>
-            <button onClick={discard} type="button">Discard</button>
+          <div style={{display: 'flex', gap: 6}}>
+            <button onClick={discard} style={{minHeight: 32, padding: '5px 9px'}} type="button">Discard</button>
             <form action={saveCaptainRosterAvailabilityBatch}>
               <input name="matchId" type="hidden" value={roster.matchId} />
               <input name="teamId" type="hidden" value={roster.teamId} />
               <input name="changes" type="hidden" value={JSON.stringify(changes)} />
-              <button type="submit">Save changes ({dirtyCount})</button>
+              <button style={{minHeight: 32, padding: '5px 9px'}} type="submit">Save changes ({dirtyCount})</button>
             </form>
           </div>
         </div>
