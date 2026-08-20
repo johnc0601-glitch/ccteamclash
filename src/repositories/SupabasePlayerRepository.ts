@@ -56,6 +56,7 @@ function toPlayer(row: Row): Player {
     teamId: row.current_team_id ?? '',
     pdgaNumber: row.pdga_number,
     pdgaRating: row.pdga_rating,
+    clashIndex: (row as Row & {clash_index: number | null}).clash_index,
     gender: row.gender as Player['gender'],
     active: row.active,
     createdAt: row.created_at,
