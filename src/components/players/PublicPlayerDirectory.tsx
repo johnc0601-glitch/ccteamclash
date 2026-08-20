@@ -80,7 +80,10 @@ export function PublicPlayerDirectory({
           return (
             <details className={styles.player} key={player.id}>
               <summary>
-                <span><strong>{player.name}</strong><small>{teamName}</small></span>
+                <span>
+                  <strong>{player.name}</strong>
+                  <small>{teamName}{player.clashIndex != null ? ` · Clash Index: ${player.clashIndex}` : ''}</small>
+                </span>
                 <span className={styles.summaryStats}>
                   <b>{formatRecord(currentStatistics ?? careerStatistics)}</b>
                   <small>{currentStatistics ? currentSeasonName : 'Career'}</small>
