@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type {PersonalAttendance} from '@/domain/match-roster/MatchAttendance';
 import {PlayerAvailabilityService} from '@/domain/match-roster/PlayerAvailabilityService';
 import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
@@ -15,15 +16,24 @@ export async function PersonalAttendanceCard({
   error?: string;
 }) {
   let current = attendance;
+  let canManageRoster = false;
 
   try {
     const supabase = await createClient();
     const {data: {user}} = await supabase.auth.getUser();
     if (user) {
-      const refreshed = await new PlayerAvailabilityService(
-        new SeasonAwareMatchRosterRepository(supabase),
-      ).getPersonalAttendance(user.id, attendance.matchId);
+      const repository = new SeasonAwareMatchRosterRepository(supabase);
+      const [refreshed, actor] = await Promise.all([
+        new PlayerAvailabilityService(repository).getPersonalAttendance(user.id, attendance.matchId),
+        repository.getAttendanceActor(user.id),
+      ]);
       if (refreshed) current = refreshed;
+      canManageRoster = Boolean(
+        actor?.profileStatus === 'Approved'
+        && actor.profileRole === 'Captain'
+        && actor.captainTeamId
+        && actor.captainTeamId === current.teamId
+      );
     }
   } catch {
     // Keep the parent-provided status if the refresh is unavailable.
@@ -85,6 +95,26 @@ export async function PersonalAttendanceCard({
             No
           </button>
         </form>
+        {canManageRoster ? (
+          <Link
+            href={`/matches/${encodeURIComponent(current.matchId)}?manage=roster`}
+            style={{
+              alignItems: 'center',
+              border: '1px solid var(--cc-teal)',
+              borderRadius: '6px',
+              color: 'var(--cc-heading)',
+              display: 'flex',
+              fontSize: '13px',
+              fontWeight: 900,
+              justifyContent: 'center',
+              minHeight: '42px',
+              padding: '9px 14px',
+              textDecoration: 'none',
+            }}
+          >
+            Manage roster
+          </Link>
+        ) : null}
       </div>
     </section>
   );
