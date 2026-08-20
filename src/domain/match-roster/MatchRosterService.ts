@@ -7,7 +7,7 @@ import {
   type ManagedTeamRoster,
   type PersonalAttendance,
 } from '@/domain/match-roster/MatchAttendance';
-import {isMatchAttendanceOpen, isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
+import {isMatchAttendanceOpen, isMatchRosterLocked, isPlayerAttendanceOpen} from '@/domain/match-roster/MatchRosterLock';
 import type {MatchRosterRepository} from '@/domain/match-roster/MatchRosterRepository';
 import type {
   OfficialMatchRoster,
@@ -208,6 +208,7 @@ export class MatchRosterService {
     const context = await this.getManagerContext(userId, matchId);
     if (!context) return [];
 
+    const now = this.now();
     return Promise.all(context.teamIds.map(async (teamId) => {
       const [players, roster] = await Promise.all([
         this.repository.getTeamAttendance(matchId, teamId),
@@ -216,7 +217,12 @@ export class MatchRosterService {
       return {
         matchId,
         teamId,
-        attendanceOpen: isMatchAttendanceOpen(context.match, this.now()),
+        attendanceOpen: isMatchAttendanceOpen(context.match, now),
+        emailReminderOpen: Boolean(
+          context.actor.profileRole === 'Captain'
+          && context.actor.captainTeamId === teamId
+          && isPlayerAttendanceOpen(context.match, now)
+        ),
         rosterStatus: roster?.status ?? 'Draft',
         confirmedAt: roster?.confirmedAt ?? null,
         players,
@@ -401,23 +407,9 @@ export class MatchRosterService {
       || !isMatchRosterLocked(match, this.now())
     ) return undefined;
     const teamIds = [match.awayTeamId, match.homeTeamId].filter((id): id is string => Boolean(id));
-    const snapshotTeamIds = new Set(rosters.map((roster) => roster.teamId));
-    if (
-      teamIds.length !== 2
-      || !teamIds.includes(teamId)
-      || !teamIds.every((participatingTeamId) => snapshotTeamIds.has(participatingTeamId))
-    ) return undefined;
+    if (!teamIds.includes(teamId)) return undefined;
     return {actor, match, rosters};
   }
-}
-
-function toExportTeam(roster: OfficialMatchRoster): OfficialRosterExportTeam {
-  return {
-    name: roster.teamNameSnapshot,
-    playerNames: roster.players
-      .map((player) => player.playerNameSnapshot)
-      .sort((left, right) => left.localeCompare(right, 'en', {sensitivity: 'base'})),
-  };
 }
 
 type AuthorizedActor = AttendanceActor & {
@@ -427,12 +419,22 @@ type AuthorizedActor = AttendanceActor & {
 };
 
 function isAuthorizedPlayer(actor: AttendanceActor): actor is AuthorizedActor {
-  return actor.profileStatus === 'Approved'
-    && actor.profileRole === 'Player'
+  return Boolean(
+    actor.profileStatus === 'Approved'
+    && actor.playerId
+    && actor.teamId
+    && actor.playerName
     && actor.playerActive
-    && Boolean(actor.playerId && actor.teamId && actor.playerName);
+  );
 }
 
 function isAttendanceStatus(status: string): status is MatchAttendanceStatus {
-  return MATCH_ATTENDANCE_STATUSES.some((candidate) => candidate === status);
+  return (MATCH_ATTENDANCE_STATUSES as readonly string[]).includes(status);
+}
+
+function toExportTeam(roster: OfficialMatchRoster): OfficialRosterExportTeam {
+  return {
+    name: roster.teamNameSnapshot,
+    playerNames: roster.players.map((player) => player.playerNameSnapshot),
+  };
 }
