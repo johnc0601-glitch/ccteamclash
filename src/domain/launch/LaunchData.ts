@@ -44,6 +44,7 @@ export type LaunchPlayer = {
   gender: 'Male' | 'Female' | 'Unknown';
   pdgaNumber: string;
   pdgaRating: number | null;
+  clashIndex?: number | null;
   currentTeamId: string | null;
   homeArea: string;
   active: boolean;
