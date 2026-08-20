@@ -49,6 +49,7 @@ export type ManagedTeamRoster = {
   matchId: string;
   teamId: string;
   attendanceOpen: boolean;
+  emailReminderOpen?: boolean;
   rosterStatus: MatchRosterStatus;
   confirmedAt: string | null;
   players: TeamAttendanceMember[];
