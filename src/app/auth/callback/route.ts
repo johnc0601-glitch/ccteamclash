@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code');
   const flow = requestUrl.searchParams.get('flow');
   const next = getSafeDestination(requestUrl.searchParams.get('next'));
-  let magicLinkAuthenticated = false;
+  let shouldShowIntro = false;
 
   if (code) {
     const supabase = await createClient();
@@ -21,12 +21,12 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL(`${destination}?error=${message}`, requestUrl.origin));
     }
 
-    magicLinkAuthenticated = flow === 'magic-link';
+    shouldShowIntro = flow === 'magic-link' || flow === 'signup-confirm';
   }
 
   const response = NextResponse.redirect(new URL(next, requestUrl.origin));
 
-  if (magicLinkAuthenticated) {
+  if (shouldShowIntro) {
     response.cookies.set(INTRO_COOKIE_NAME, '1', {
       httpOnly: false,
       maxAge: 120,
