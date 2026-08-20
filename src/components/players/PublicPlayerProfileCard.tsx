@@ -46,8 +46,6 @@ export function PublicPlayerProfileCard({profile, compact = false}: PublicPlayer
     <div className={styles.profileCard}>
       <div className={styles.identity}>
         <span>{formatGender(profile.player.gender)}</span>
-        {profile.player.pdgaNumber ? <span>PDGA #{profile.player.pdgaNumber}</span> : null}
-        {profile.player.pdgaRating ? <span>Rating {profile.player.pdgaRating}</span> : null}
         {profile.player.clashIndex != null ? <span>Clash Index {profile.player.clashIndex}</span> : null}
       </div>
 
