@@ -138,19 +138,49 @@ export function CaptainRosterEditor({
             gap: 8,
             alignItems: 'center',
             padding: '8px 10px',
-            borderTop: '1px solid var(--cc-card-border)',
-            background: 'var(--cc-table-head-bg)',
+            borderTop: '1px solid rgba(255,255,255,.16)',
+            background: '#101820',
+            color: '#fff',
             fontSize: 12,
           }}
         >
-          <strong>{dirtyCount} unsaved change{dirtyCount === 1 ? '' : 's'}</strong>
+          <strong style={{color: '#fff'}}>{dirtyCount} unsaved change{dirtyCount === 1 ? '' : 's'}</strong>
           <div style={{display: 'flex', gap: 6}}>
-            <button onClick={discard} style={{minHeight: 32, padding: '5px 9px'}} type="button">Discard</button>
+            <button
+              onClick={discard}
+              style={{
+                minHeight: 32,
+                padding: '5px 9px',
+                border: '1px solid rgba(255,255,255,.35)',
+                borderRadius: 5,
+                background: '#fff',
+                color: '#101820',
+                fontWeight: 900,
+                cursor: 'pointer',
+              }}
+              type="button"
+            >
+              Discard
+            </button>
             <form action={saveCaptainRosterAvailabilityBatch}>
               <input name="matchId" type="hidden" value={roster.matchId} />
               <input name="teamId" type="hidden" value={roster.teamId} />
               <input name="changes" type="hidden" value={JSON.stringify(changes)} />
-              <button style={{minHeight: 32, padding: '5px 9px'}} type="submit">Save changes ({dirtyCount})</button>
+              <button
+                style={{
+                  minHeight: 32,
+                  padding: '5px 10px',
+                  border: '1px solid var(--cc-teal)',
+                  borderRadius: 5,
+                  background: 'var(--cc-teal)',
+                  color: '#fff',
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                }}
+                type="submit"
+              >
+                Save changes ({dirtyCount})
+              </button>
             </form>
           </div>
         </div>
