@@ -8,6 +8,75 @@ import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwar
 import {createClient} from '@/lib/supabase/server';
 
 const MANAGER_STATUSES = new Set(['Scheduled', 'Postponed', 'Rain Delay']);
+type BatchStatus = MatchAttendanceStatus | 'Unconfirmed';
+type BatchChange = {playerId: string; status: BatchStatus};
+
+export async function saveCaptainRosterAvailabilityBatch(formData: FormData) {
+  const matchId = readFormValue(formData, 'matchId');
+  const teamId = readFormValue(formData, 'teamId');
+  const rawChanges = readFormValue(formData, 'changes');
+  if (!matchId || !teamId || !rawChanges) {
+    redirect('/captain?error=Match, team, and availability changes are required.');
+  }
+
+  const path = `/matches/${encodeURIComponent(matchId)}?manage=roster`;
+  const changes = parseBatchChanges(rawChanges);
+  if (!changes?.length) redirect(`${path}&captainNotice=${encodeURIComponent('No roster changes to save.')}`);
+
+  const context = await getManagementContext(matchId);
+  if (!context || !context.teamIds.includes(teamId)) {
+    redirect(`${path}&captainError=${encodeURIComponent('You cannot manage that team roster.')}`);
+  }
+
+  const teamPlayers = await context.repository.getTeamAttendance(matchId, teamId);
+  const allowedPlayerIds = new Set(teamPlayers.map((player) => player.playerId));
+  if (changes.some((change) => !allowedPlayerIds.has(change.playerId))) {
+    redirect(`${path}&captainError=${encodeURIComponent('One or more players are not on the roster you manage.')}`);
+  }
+
+  const attendanceClient = context.supabase as any;
+  const upserts = changes
+    .filter((change): change is BatchChange & {status: MatchAttendanceStatus} => change.status !== 'Unconfirmed')
+    .map((change) => ({
+      match_id: matchId,
+      team_id: teamId,
+      player_id: change.playerId,
+      status: change.status,
+      updated_by: context.actor.profileId,
+    }));
+  const clearIds = changes
+    .filter((change) => change.status === 'Unconfirmed')
+    .map((change) => change.playerId);
+
+  try {
+    if (upserts.length) {
+      const {error} = await attendanceClient
+        .from('launch_match_attendance')
+        .upsert(upserts, {onConflict: 'match_id,player_id'});
+      if (error) throw error;
+    }
+    if (clearIds.length) {
+      const {error} = await attendanceClient
+        .from('launch_match_attendance')
+        .delete()
+        .eq('match_id', matchId)
+        .eq('team_id', teamId)
+        .in('player_id', clearIds);
+      if (error) throw error;
+    }
+  } catch (error) {
+    console.error('Captain batch availability update failed.', {
+      matchId,
+      teamId,
+      changeCount: changes.length,
+      errorClass: error instanceof Error ? error.name : 'UnknownError',
+    });
+    redirect(`${path}&captainError=${encodeURIComponent('Roster changes could not be saved.')}`);
+  }
+
+  revalidatePath(`/matches/${matchId}`);
+  redirect(`${path}&captainNotice=${encodeURIComponent(`${changes.length} roster change${changes.length === 1 ? '' : 's'} saved.`)}`);
+}
 
 export async function setCaptainRosterAvailability(formData: FormData) {
   const matchId = readFormValue(formData, 'matchId');
@@ -155,6 +224,30 @@ function isManagementOpen(match: AttendanceMatch): boolean {
     && MANAGER_STATUSES.has(match.status)
     && !isMatchRosterLocked(match)
   );
+}
+
+function parseBatchChanges(raw: string): BatchChange[] | undefined {
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length > 100) return undefined;
+    const seen = new Set<string>();
+    const changes: BatchChange[] = [];
+    for (const item of parsed) {
+      if (!item || typeof item !== 'object') return undefined;
+      const playerId = typeof item.playerId === 'string' ? item.playerId.trim() : '';
+      const status = item.status;
+      if (
+        !playerId
+        || seen.has(playerId)
+        || (status !== 'Playing' && status !== 'NotPlaying' && status !== 'Unconfirmed')
+      ) return undefined;
+      seen.add(playerId);
+      changes.push({playerId, status});
+    }
+    return changes;
+  } catch {
+    return undefined;
+  }
 }
 
 function readFormValue(formData: FormData, key: string): string {
