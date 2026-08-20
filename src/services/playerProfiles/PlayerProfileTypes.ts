@@ -21,7 +21,7 @@ export type PlayerProfileMatchHistoryItem = {
 };
 
 export type PlayerProfile = {
-  player: Pick<Player, 'id' | 'name' | 'gender' | 'pdgaNumber' | 'pdgaRating'>;
+  player: Pick<Player, 'id' | 'name' | 'gender' | 'pdgaNumber' | 'pdgaRating' | 'clashIndex'>;
   teamName: string;
   seasonName: string;
   matchesPlayed: number;
