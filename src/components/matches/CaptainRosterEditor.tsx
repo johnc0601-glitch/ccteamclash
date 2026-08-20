@@ -1,10 +1,7 @@
 'use client';
 
 import {useMemo, useState} from 'react';
-import {
-  confirmCaptainManagedRoster,
-  saveCaptainRosterAvailabilityBatch,
-} from '@/app/matches/[id]/captainRosterManagementActions';
+import {saveCaptainRosterAvailabilityBatch} from '@/app/matches/[id]/captainRosterManagementActions';
 import {emailCaptainUnconfirmed} from '@/app/matches/[id]/captainReminderActions';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 import type {ManagedTeamRoster} from '@/domain/match-roster/MatchAttendance';
@@ -179,20 +176,12 @@ export function CaptainRosterEditor({
                 }}
                 type="submit"
               >
-                Save changes ({dirtyCount})
+                Save roster ({dirtyCount})
               </button>
             </form>
           </div>
         </div>
       ) : null}
-
-      <form action={confirmCaptainManagedRoster} className={styles.confirmRosterForm}>
-        <input name="matchId" type="hidden" value={roster.matchId} />
-        <input name="teamId" type="hidden" value={roster.teamId} />
-        <button disabled={dirtyCount > 0} type="submit">
-          {roster.rosterStatus === 'Confirmed' ? 'Update confirmed roster' : 'Confirm match roster'}
-        </button>
-      </form>
     </article>
   );
 }
