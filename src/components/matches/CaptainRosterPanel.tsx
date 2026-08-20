@@ -3,17 +3,20 @@ import {
   confirmCaptainMatchRoster,
   setCaptainMatchAttendance,
 } from '@/app/matches/[id]/actions';
+import {emailCaptainUnconfirmed} from '@/app/matches/[id]/captainReminderActions';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 import type {ManagedTeamRoster} from '@/domain/match-roster/MatchAttendance';
 
 export function CaptainRosterPanel({
   rosters,
   teamNames,
+  emailReminderOpen,
   notice,
   error,
 }: {
   rosters: ManagedTeamRoster[];
   teamNames: Record<string, string>;
+  emailReminderOpen: boolean;
   notice?: string;
   error?: string;
 }) {
@@ -31,6 +34,7 @@ export function CaptainRosterPanel({
       <div className={styles.captainRosterGrid}>
         {rosters.map((roster) => (
           <CaptainTeamRoster
+            emailReminderOpen={emailReminderOpen}
             key={roster.teamId}
             roster={roster}
             teamName={teamNames[roster.teamId] ?? 'Team'}
@@ -41,11 +45,20 @@ export function CaptainRosterPanel({
   );
 }
 
-function CaptainTeamRoster({roster, teamName}: {roster: ManagedTeamRoster; teamName: string}) {
+function CaptainTeamRoster({
+  roster,
+  teamName,
+  emailReminderOpen,
+}: {
+  roster: ManagedTeamRoster;
+  teamName: string;
+  emailReminderOpen: boolean;
+}) {
   const counts = roster.players.reduce((result, player) => {
     result[player.status] += 1;
     return result;
   }, {Playing: 0, NotPlaying: 0, Unconfirmed: 0});
+  const canEmailUnconfirmed = emailReminderOpen && roster.attendanceOpen && counts.Unconfirmed > 0;
 
   return (
     <article className={styles.captainTeamRoster}>
@@ -56,6 +69,12 @@ function CaptainTeamRoster({roster, teamName}: {roster: ManagedTeamRoster; teamN
         </div>
         <p>{counts.Playing} playing · {counts.NotPlaying} not playing · {counts.Unconfirmed} unconfirmed</p>
       </header>
+      {canEmailUnconfirmed ? (
+        <form action={emailCaptainUnconfirmed} className={styles.confirmRosterForm}>
+          <input name="matchId" type="hidden" value={roster.matchId} />
+          <button type="submit">Email {counts.Unconfirmed} unconfirmed</button>
+        </form>
+      ) : null}
       <div className={styles.captainPlayerList}>
         {roster.players.map((player) => (
           <div className={styles.captainPlayerRow} key={player.playerId}>
