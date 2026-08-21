@@ -114,28 +114,24 @@
 
 .tableWrap {
   max-width: 100%;
-  overflow-x: auto;
-  border: 1px solid #e0e5e2;
-  border-radius: 10px;
-  background: #fff;
+  overflow-x: hidden;
+  background: transparent;
 }
 
 .rankingTable {
   width: 100%;
-  min-width: 620px;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0 8px;
 }
 
 .rankingTable th,
 .rankingTable td {
-  padding: 14px;
-  border-bottom: 1px solid #e7ebe8;
+  padding: 12px 14px;
   text-align: left;
   white-space: nowrap;
 }
 
 .rankingTable th {
-  background: #f6f8f7;
   color: #6a7571;
   font-size: 10px;
   font-weight: 950;
@@ -145,18 +141,20 @@
 .rankingTable td {
   color: #182421;
   font-size: 13px;
-}
-
-.rankingTable tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-.rankingTable tbody tr:nth-child(even) {
-  background: #fbfcfb;
+  background: #fff;
+  border-top: 1px solid #e3e7e5;
+  border-bottom: 1px solid #e3e7e5;
 }
 
 .rankingTable td:first-child {
   width: 64px;
+  border-left: 5px solid var(--team-accent, #006f71);
+  border-radius: 12px 0 0 12px;
+}
+
+.rankingTable td:last-child {
+  border-right: 1px solid #e3e7e5;
+  border-radius: 0 12px 12px 0;
 }
 
 .rankingTable td:first-child strong {
@@ -164,12 +162,31 @@
   min-height: 30px;
   display: inline-grid;
   place-items: center;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #b6885f, #9a6d47);
+  border-radius: 8px;
+  background: var(--team-accent, #006f71);
   color: #fff;
   font-family: var(--cc-font-display);
-  font-size: 17px;
+  font-size: 16px;
+  box-shadow: 0 2px 7px rgba(16, 24, 32, .12);
 }
+
+.rankingTable tbody tr {
+  --team-accent: #006f71;
+}
+
+.rankingTable tbody tr[data-team="Unassigned"] { --team-accent: #8a9692; }
+.rankingTable tbody tr[data-team="Dark Knights"] { --team-accent: #232b36; }
+.rankingTable tbody tr[data-team="Wild Turkey"] { --team-accent: #9c5a32; }
+.rankingTable tbody tr[data-team="Riptide"] { --team-accent: #137f99; }
+.rankingTable tbody tr[data-team="Beast Mode"] { --team-accent: #8d3d46; }
+.rankingTable tbody tr[data-team="KB"] { --team-accent: #3c6e9e; }
+.rankingTable tbody tr[data-team="Kure Beach"] { --team-accent: #3c6e9e; }
+.rankingTable tbody tr[data-team="Hayneous OG's"] { --team-accent: #66558a; }
+.rankingTable tbody tr[data-team="Hayneous OG’s"] { --team-accent: #66558a; }
+.rankingTable tbody tr[data-team="Team Focus"] { --team-accent: #3d7c55; }
+.rankingTable tbody tr[data-team="Jacksonville"] { --team-accent: #a2732f; }
+.rankingTable tbody tr[data-team="Myrtle Beach"] { --team-accent: #2f7d78; }
+.rankingTable tbody tr[data-team="Cougar Country"] { --team-accent: #7c5d33; }
 
 .clashValue {
   color: #10232a !important;
@@ -179,21 +196,26 @@
 
 .clickableRow {
   cursor: pointer;
-  transition: background-color .18s ease;
 }
 
-.clickableRow:hover,
-.clickableRow:focus {
-  background: #f2f7f5 !important;
+.clickableRow td {
+  transition: transform .16s ease, background-color .16s ease, border-color .16s ease;
+}
+
+.clickableRow:hover td,
+.clickableRow:focus td {
+  background: #f7faf9;
+  border-color: #d8e1dd;
   outline: none;
 }
 
-.clickableRow:focus-visible {
-  box-shadow: inset 0 0 0 2px #a27752;
+.clickableRow:focus-visible td:first-child {
+  box-shadow: inset 3px 0 0 #a27752;
 }
 
 .viewAll {
-  margin-top: 14px;
+  width: 100%;
+  margin-top: 10px;
   border-color: #006f71;
   background: #fff;
   color: #006f71;
@@ -215,7 +237,7 @@
 
 .historySeason {
   border: 1px solid #dfe5e2;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fff;
   overflow: hidden;
 }
@@ -328,119 +350,180 @@
   }
 
   .pageHeader h1 {
-    font-size: clamp(36px, 11vw, 50px);
+    font-size: clamp(34px, 10vw, 46px);
   }
 
   .pageHeader p {
-    font-size: 11px;
-    letter-spacing: .08em;
+    font-size: 10px;
+    letter-spacing: .07em;
   }
 
   .sectionHeading {
     align-items: flex-start;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+  }
+
+  .sectionHeading h2 {
+    font-size: 28px;
   }
 
   .sectionHeading p {
     margin: 0;
+    font-size: 12px;
   }
 
   .mainTabs {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
-    overflow: visible;
+    margin-bottom: 14px;
   }
 
   .mainTabs button {
-    min-height: 42px;
-    padding: 0 7px;
-    font-size: 10px;
+    min-height: 40px;
+    padding: 0 5px;
+    border-radius: 9px;
+    font-size: 9.5px;
   }
 
   .divisionTabs {
     gap: 6px;
+    margin-bottom: 12px;
   }
 
   .divisionTabs button {
-    min-height: 38px;
-    padding: 0 11px;
-    font-size: 10px;
+    min-height: 36px;
+    padding: 0 10px;
+    border-radius: 9px;
+    font-size: 9.5px;
   }
 
   .tabPanel {
     padding: 10px;
+    border-radius: 14px;
   }
 
-  .tableWrap {
+  .rankingTable,
+  .rankingTable tbody,
+  .rankingTable tr,
+  .rankingTable td {
+    display: block;
     width: 100%;
-    overflow-x: hidden;
   }
 
   .rankingTable {
-    width: 100%;
-    min-width: 0;
-    table-layout: fixed;
+    border-spacing: 0;
   }
 
-  .rankingTable th,
+  .rankingTable thead {
+    display: none;
+  }
+
+  .rankingTable tbody {
+    display: grid;
+    gap: 8px;
+  }
+
+  .rankingTable tr {
+    position: relative;
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 3px;
+    padding: 10px 11px 10px 8px;
+    border: 1px solid #e1e6e3;
+    border-left: 5px solid var(--team-accent, #006f71);
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(16, 24, 32, .055);
+    overflow: hidden;
+  }
+
   .rankingTable td {
-    padding: 8px 4px;
+    padding: 0;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
     white-space: normal;
     overflow-wrap: anywhere;
-    line-height: 1.18;
+    line-height: 1.15;
   }
 
-  .rankingTable th {
-    font-size: 8px;
-  }
-
-  .rankingTable td {
-    font-size: 10.5px;
-  }
-
-  .rankingTable th:nth-child(1),
   .rankingTable td:nth-child(1) {
-    width: 10%;
+    grid-column: 1;
+    grid-row: 1 / 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .rankingTable th:nth-child(2),
+  .rankingTable td:nth-child(1) strong {
+    min-width: 28px;
+    min-height: 28px;
+    border-radius: 9px;
+    font-size: 13px;
+  }
+
   .rankingTable td:nth-child(2) {
-    width: 29%;
-  }
-
-  .rankingTable th:nth-child(3),
-  .rankingTable td:nth-child(3) {
-    width: 25%;
-  }
-
-  .rankingTable th:nth-child(4),
-  .rankingTable td:nth-child(4) {
-    width: 20%;
-  }
-
-  .rankingTable th:nth-child(5),
-  .rankingTable td:nth-child(5) {
-    width: 16%;
-  }
-
-  .rankingTable td:first-child {
-    width: 10%;
-  }
-
-  .rankingTable td:first-child strong {
-    min-width: 22px;
-    min-height: 22px;
-    border-radius: 4px;
+    grid-column: 2;
+    grid-row: 1;
+    color: #10232a;
     font-size: 12px;
+    font-weight: 900;
   }
 
-  .clashValue {
-    font-size: 12px !important;
+  .rankingTable td:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+    color: #71807a;
+    font-size: 9.5px;
+    font-weight: 800;
+  }
+
+  .rankingTable td:nth-child(4) {
+    grid-column: 3;
+    grid-row: 2;
+    color: #66746f;
+    font-size: 9.5px;
+    font-weight: 850;
+    text-align: right;
+  }
+
+  .rankingTable td:nth-child(5) {
+    grid-column: 3;
+    grid-row: 1;
+    color: #10232a;
+    font-size: 13px;
+    font-weight: 950;
+    text-align: right;
+  }
+
+  .rankingTable tr:has(td:nth-child(4):last-child) td:nth-child(4) {
+    grid-column: 3;
+    grid-row: 1 / 3;
+    align-self: center;
+    color: #10232a;
+    font-size: 14px !important;
+    font-weight: 950;
+  }
+
+  .clickableRow:hover,
+  .clickableRow:focus {
+    background: #f7faf9;
   }
 
   .historyBody {
     padding: 10px;
+  }
+
+  .historySeason > summary {
+    padding: 13px 14px;
+  }
+
+  .historySeason > summary span {
+    font-size: 19px;
   }
 }
 
