@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type {PublicMatchdayTeam} from '@/services/matches/MatchdayService';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 
+// Keep Matchday roster rows compact on production deployments.
 export function TeamRosterColumn({team, label}: {team: PublicMatchdayTeam; label: string}) {
   const heading = (
     <>
