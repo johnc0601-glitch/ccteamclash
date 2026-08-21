@@ -178,7 +178,7 @@ function CaptainDashboard({
             {roster.length ? roster.map((player) => (
               <div className={styles.rosterRow} key={player.id}>
                 <strong>{player.name}</strong>
-                <span className={styles.rosterMeta}>{player.pdgaRating ? `Rating ${player.pdgaRating}` : 'Rating pending'}</span>
+                <span className={styles.rosterMeta}>CI: {player.clashIndex ?? '—'}</span>
               </div>
             )) : (
               <p className={styles.empty}>No players are on this season roster yet.</p>
