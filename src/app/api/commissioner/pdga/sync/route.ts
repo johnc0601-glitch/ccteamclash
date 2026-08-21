@@ -1,12 +1,13 @@
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
-import {createPdgaClient, type PdgaClient} from '@/lib/pdga/client';
+import {createPdgaClient, PdgaRequestError, type PdgaClient} from '@/lib/pdga/client';
 import {createClient} from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const PDGA_CONCURRENCY = 5;
+const PDGA_CONCURRENCY = 2;
+const PDGA_BATCH_DELAY_MS = 150;
 
 type PlayerRow = {
   id: string;
@@ -14,12 +15,14 @@ type PlayerRow = {
   pdga_rating: number | null;
 };
 
+type SyncStatus = 'updated' | 'unchanged' | 'no-current-rating' | 'not-found' | 'deferred' | 'error';
+
 type SyncResult = {
   playerId: string;
   pdgaNumber: string;
   previousRating: number | null;
   rating: number | null;
-  status: 'updated' | 'unchanged' | 'no-current-rating' | 'not-found' | 'error';
+  status: SyncStatus;
   error?: string;
 };
 
@@ -62,14 +65,48 @@ export async function POST() {
   }
 
   const results: SyncResult[] = [];
+  let stoppedEarly = false;
+  let stopReason: string | undefined;
 
   try {
     for (let index = 0; index < eligiblePlayers.length; index += PDGA_CONCURRENCY) {
       const batch = eligiblePlayers.slice(index, index + PDGA_CONCURRENCY);
-      const batchResults = await Promise.all(
+      const settled = await Promise.allSettled(
         batch.map((player) => syncPlayer(player, pdga, supabase)),
       );
-      results.push(...batchResults);
+
+      let authenticationFailed = false;
+      settled.forEach((outcome, batchIndex) => {
+        if (outcome.status === 'fulfilled') {
+          results.push(outcome.value);
+          return;
+        }
+
+        const player = batch[batchIndex];
+        if (isPdgaAuthenticationError(outcome.reason)) {
+          authenticationFailed = true;
+          stopReason = 'PDGA authentication expired during the sync. Run the sync again to continue.';
+          return;
+        }
+
+        results.push({
+          playerId: player.id,
+          pdgaNumber: String(player.pdga_number).trim(),
+          previousRating: player.pdga_rating,
+          rating: player.pdga_rating,
+          status: 'error',
+          error: outcome.reason instanceof Error ? outcome.reason.message : 'PDGA sync failed for this player.',
+        });
+      });
+
+      if (authenticationFailed) {
+        stoppedEarly = true;
+        break;
+      }
+
+      if (index + PDGA_CONCURRENCY < eligiblePlayers.length) {
+        await delay(PDGA_BATCH_DELAY_MS);
+      }
     }
   } finally {
     await pdga.close();
@@ -85,14 +122,32 @@ export async function POST() {
       unchanged: 0,
       'no-current-rating': 0,
       'not-found': 0,
+      deferred: 0,
       error: 0,
-    } as Record<SyncResult['status'], number>,
+    } as Record<SyncStatus, number>,
   );
 
+  const unprocessed = eligiblePlayers.length - results.length;
+  if (stoppedEarly && unprocessed > 0) summary.deferred += unprocessed;
+
+  if (summary.deferred > 0 || summary.error > 0 || stoppedEarly) {
+    console.warn('PDGA rating sync completed with incomplete lookups.', {
+      total: eligiblePlayers.length,
+      processed: results.length,
+      deferred: summary.deferred,
+      errors: summary.error,
+      stoppedEarly,
+      stopReason,
+    });
+  }
+
   return Response.json({
-    ok: summary.error === 0,
-    total: results.length,
+    ok: summary.error === 0 && !stoppedEarly,
+    total: eligiblePlayers.length,
+    processed: results.length,
     summary,
+    stoppedEarly,
+    stopReason,
     results,
   });
 }
@@ -144,9 +199,7 @@ async function syncPlayer(
       .update({pdga_rating: parsedRating, updated_at: new Date().toISOString()})
       .eq('id', player.id);
 
-    if (updateError) {
-      throw updateError;
-    }
+    if (updateError) throw updateError;
 
     return {
       playerId: player.id,
@@ -156,6 +209,19 @@ async function syncPlayer(
       status: 'updated',
     };
   } catch (error) {
+    if (isPdgaAuthenticationError(error)) throw error;
+
+    if (error instanceof PdgaRequestError && isTemporaryPdgaStatus(error.status)) {
+      return {
+        playerId: player.id,
+        pdgaNumber,
+        previousRating,
+        rating: previousRating,
+        status: 'deferred',
+        error: error.message,
+      };
+    }
+
     return {
       playerId: player.id,
       pdgaNumber,
@@ -165,4 +231,16 @@ async function syncPlayer(
       error: error instanceof Error ? error.message : 'PDGA sync failed for this player.',
     };
   }
+}
+
+function isPdgaAuthenticationError(error: unknown): boolean {
+  return error instanceof PdgaRequestError && (error.status === 401 || error.status === 403);
+}
+
+function isTemporaryPdgaStatus(status: number): boolean {
+  return status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
