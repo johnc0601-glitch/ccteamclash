@@ -93,7 +93,11 @@ export class SupabaseLaunchRepository implements LaunchRepository {
   }
 
   async savePlayer(player: LaunchPlayer): Promise<LaunchPlayer> {
-    const {data, error} = await this.supabase.from('launch_players').upsert(fromPlayer(player)).select().single();
+    const existingPlayer = await this.getPlayer(player.id);
+    const query = existingPlayer
+      ? this.supabase.from('launch_players').update(fromPlayer(player)).eq('id', player.id)
+      : this.supabase.from('launch_players').insert(fromPlayer(player));
+    const {data, error} = await query.select().single();
     if (error) throw error;
     return toPlayer(data);
   }
