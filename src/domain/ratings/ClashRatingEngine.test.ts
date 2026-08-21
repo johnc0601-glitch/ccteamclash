@@ -36,16 +36,25 @@ test('new players use current PDGA first and historical PDGA when current is una
   assert.equal(historical.source, 'HistoricalPDGA');
 });
 
-test('returning Clash history gains weight as the number of prior results grows', () => {
-  const lightlyEstablished = resolveStartingRating({
-    playerId: 'light', division: 'Open', pdgaRating: 900, priorClashRating: 940, priorRatedResults: 2,
-  });
-  const established = resolveStartingRating({
-    playerId: 'established', division: 'Open', pdgaRating: 900, priorClashRating: 940, priorRatedResults: 10,
-  });
+test('returning starts use 50 percent Clash through five prior results and 60 percent after five', () => {
+  const expectedByResults = new Map([
+    [1, 920],
+    [5, 920],
+    [6, 924],
+    [10, 924],
+  ]);
 
-  assert.equal(lightlyEstablished.rating, 910);
-  assert.equal(established.rating, 930);
+  for (const [priorRatedResults, expectedRating] of expectedByResults) {
+    const start = resolveStartingRating({
+      playerId: `player-${priorRatedResults}`,
+      division: 'Open',
+      pdgaRating: 900,
+      priorClashRating: 940,
+      priorRatedResults,
+    });
+    assert.equal(start.rating, expectedRating);
+    assert.equal(start.source, 'ReturningBlend');
+  }
 });
 
 test('home advantage is temporary and increases expectation without changing stored rating', () => {
