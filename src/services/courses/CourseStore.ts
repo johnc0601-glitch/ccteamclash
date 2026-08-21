@@ -1,4 +1,5 @@
-import {list, put} from '@vercel/blob';
+import 'server-only';
+
 import type {
   Course,
   CourseImportInput,
@@ -10,197 +11,153 @@ import type {
 import type {CourseRepository} from '@/domain/course/CourseRepository';
 import {MockCourseRepository} from '@/domain/course/CourseRepository';
 import {CourseService} from '@/domain/course/CourseService';
+import {hasSupabaseConfig} from '@/lib/supabase';
+import {createClient} from '@/lib/supabase/server';
 
-const COURSE_STORE_PATH = 'content/courses.json';
-const COURSE_STORE_TIMEOUT_MS = 2500;
-
-type CoursePayload = {
-  courses: Course[];
+type LaunchCourseRow = {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+  address: string;
+  map_url: string;
+  udisc_url: string;
+  photo_url: string;
+  description: string;
+  home_team_id: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
-class CourseListRepository implements CourseRepository {
-  private courses: Course[];
-
-  constructor(courses: Course[]) {
-    this.courses = courses.map(cloneCourse);
-  }
-
+class SupabaseCourseRepository implements CourseRepository {
   async getAll(): Promise<Course[]> {
-    return this.courses.map(cloneCourse);
+    if (!hasSupabaseConfig()) return getSeedCourses();
+    const supabase = await createClient();
+    const {data, error} = await (supabase as any).from('launch_courses').select('*').order('name');
+    if (error) throw error;
+    return (data ?? []).map(toCourse);
   }
 
   async getById(id: string): Promise<Course | undefined> {
-    const course = this.courses.find((candidate) => candidate.id === id);
-    return course ? cloneCourse(course) : undefined;
+    if (!hasSupabaseConfig()) return (await getSeedCourses()).find((course) => course.id === id);
+    const supabase = await createClient();
+    const {data, error} = await (supabase as any).from('launch_courses').select('*').eq('id', id).maybeSingle();
+    if (error) throw error;
+    return data ? toCourse(data) : undefined;
   }
 
   async create(course: Course): Promise<Course> {
-    this.courses.push(cloneCourse(course));
-    return cloneCourse(course);
+    const supabase = await requireSupabase();
+    const {data, error} = await (supabase as any).from('launch_courses').insert(fromCourse(course)).select('*').single();
+    if (error) throw error;
+    return toCourse(data);
   }
 
   async update(course: Course): Promise<Course | undefined> {
-    const index = this.courses.findIndex((candidate) => candidate.id === course.id);
-    if (index === -1) return undefined;
-
-    this.courses[index] = cloneCourse(course);
-    return cloneCourse(this.courses[index]);
+    const supabase = await requireSupabase();
+    const {data, error} = await (supabase as any)
+      .from('launch_courses')
+      .update(fromCourse(course))
+      .eq('id', course.id)
+      .select('*')
+      .maybeSingle();
+    if (error) throw error;
+    return data ? toCourse(data) : undefined;
   }
 
   async setActive(id: string, active: boolean): Promise<Course | undefined> {
-    const course = this.courses.find((candidate) => candidate.id === id);
-    if (!course) return undefined;
-
-    course.active = active;
-    course.updatedAt = new Date().toISOString();
-    return cloneCourse(course);
+    const supabase = await requireSupabase();
+    const {data, error} = await (supabase as any)
+      .from('launch_courses')
+      .update({active, updated_at: new Date().toISOString()})
+      .eq('id', id)
+      .select('*')
+      .maybeSingle();
+    if (error) throw error;
+    return data ? toCourse(data) : undefined;
   }
 }
 
 export async function getStoredCourses(query: Partial<CourseQuery> = {}): Promise<Course[]> {
-  const repository = new CourseListRepository(await loadCourses());
-  const service = new CourseService(repository);
-  return service.getAll(query);
+  return new CourseService(new SupabaseCourseRepository()).getAll(query);
 }
 
 export async function createStoredCourse(input: CourseInput): Promise<CourseServiceResult<Course>> {
-  return mutateCourses((service) => service.create(input));
+  return runCourseMutation((service) => service.create(input));
 }
 
 export async function updateStoredCourse(id: string, input: CourseInput): Promise<CourseServiceResult<Course>> {
-  return mutateCourses((service) => service.update(id, input));
+  return runCourseMutation((service) => service.update(id, input));
 }
 
 export async function archiveStoredCourse(id: string): Promise<CourseServiceResult<Course>> {
-  return mutateCourses((service) => service.archive(id));
+  return runCourseMutation((service) => service.archive(id));
 }
 
 export async function restoreStoredCourse(id: string): Promise<CourseServiceResult<Course>> {
-  return mutateCourses((service) => service.restore(id));
+  return runCourseMutation((service) => service.restore(id));
 }
 
 export async function importStoredCourses(inputs: CourseImportInput[]): Promise<CourseImportResult> {
-  const repository = new CourseListRepository(await loadCourses());
-  const service = new CourseService(repository);
-  const result = await service.importCourses(inputs);
-  await saveCourses(await repository.getAll());
-  return result;
+  if (!hasSupabaseConfig()) return {created: 0, updated: 0, skipped: inputs.length, errors: ['Course storage is not connected yet.']};
+  const service = new CourseService(new SupabaseCourseRepository());
+  return service.importCourses(inputs);
 }
 
-async function mutateCourses(
+async function runCourseMutation(
   action: (service: CourseService) => Promise<CourseServiceResult<Course>>,
 ): Promise<CourseServiceResult<Course>> {
-  const repository = new CourseListRepository(await loadCourses());
-  const service = new CourseService(repository);
-  const result = await action(service);
-
-  if (result.ok) {
-    await saveCourses(await repository.getAll());
-  }
-
-  return result;
-}
-
-async function loadCourses(): Promise<Course[]> {
+  if (!hasSupabaseConfig()) return {ok: false, message: 'Course storage is not connected yet.'};
   try {
-    const result = await withTimeout(list({
-      prefix: COURSE_STORE_PATH,
-      limit: 1,
-    }));
-    const courseBlob = result.blobs.find((blob) => blob.pathname === COURSE_STORE_PATH);
-
-    if (!courseBlob) {
-      return getSeedCourses();
-    }
-
-    const response = await fetch(courseBlob.url, {
-      cache: 'no-store',
-      signal: AbortSignal.timeout(COURSE_STORE_TIMEOUT_MS),
-    });
-    if (!response.ok) {
-      return getSeedCourses();
-    }
-
-    const payload = await response.json() as Partial<CoursePayload>;
-    return normalizeCourses(payload.courses);
-  } catch {
-    return getSeedCourses();
+    return await action(new CourseService(new SupabaseCourseRepository()));
+  } catch (error) {
+    return {ok: false, message: error instanceof Error ? error.message : 'Course could not be saved.'};
   }
 }
 
-async function saveCourses(courses: Course[]): Promise<Course[]> {
-  const normalizedCourses = normalizeCourses(courses);
-  await put(COURSE_STORE_PATH, JSON.stringify({courses: normalizedCourses}, null, 2), {
-    access: 'public',
-    allowOverwrite: true,
-    cacheControlMaxAge: 60,
-    contentType: 'application/json',
-  });
+async function requireSupabase() {
+  if (!hasSupabaseConfig()) throw new Error('Course storage is not connected yet.');
+  return createClient();
+}
 
-  return normalizedCourses;
+function toCourse(row: LaunchCourseRow): Course {
+  return {
+    id: row.id,
+    name: row.name,
+    city: row.city,
+    state: row.state,
+    address: row.address,
+    mapUrl: row.map_url,
+    udiscUrl: row.udisc_url,
+    photoUrl: row.photo_url,
+    description: row.description,
+    homeTeamId: row.home_team_id ?? undefined,
+    active: row.active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function fromCourse(course: Course) {
+  return {
+    id: course.id,
+    name: course.name,
+    city: course.city,
+    state: course.state,
+    address: course.address,
+    map_url: course.mapUrl,
+    udisc_url: course.udiscUrl,
+    photo_url: course.photoUrl,
+    description: course.description,
+    home_team_id: course.homeTeamId ?? null,
+    active: course.active,
+    created_at: course.createdAt,
+    updated_at: course.updatedAt,
+  };
 }
 
 async function getSeedCourses(): Promise<Course[]> {
   const repository = new MockCourseRepository();
-  return normalizeCourses(await repository.getAll());
-}
-
-function normalizeCourses(courses: unknown): Course[] {
-  if (!Array.isArray(courses)) return [];
-
-  return courses
-    .map(normalizeCourse)
-    .filter((course): course is Course => Boolean(course));
-}
-
-function normalizeCourse(value: unknown): Course | null {
-  if (!value || typeof value !== 'object') return null;
-
-  const course = value as Partial<Course>;
-  const id = cleanText(course.id);
-  const name = cleanText(course.name);
-  const city = cleanText(course.city);
-  const state = cleanText(course.state).toUpperCase();
-  const mapUrl = cleanText(course.mapUrl);
-
-  if (!id || !name || !city || !state || !mapUrl) return null;
-
-  return {
-    id,
-    name,
-    city,
-    state,
-    address: cleanText(course.address),
-    mapUrl,
-    udiscUrl: cleanText(course.udiscUrl),
-    photoUrl: cleanText(course.photoUrl),
-    description: cleanText(course.description),
-    homeTeamId: cleanText(course.homeTeamId) || undefined,
-    active: course.active !== false,
-    createdAt: cleanText(course.createdAt) || new Date().toISOString(),
-    updatedAt: cleanText(course.updatedAt) || new Date().toISOString(),
-  };
-}
-
-function cloneCourse(course: Course): Course {
-  return {...course};
-}
-
-function cleanText(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : '';
-}
-
-async function withTimeout<T>(promise: Promise<T>): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error('Course storage timed out.')), COURSE_STORE_TIMEOUT_MS);
-  });
-
-  try {
-    return await Promise.race([promise, timeout]);
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  }
+  return repository.getAll();
 }
