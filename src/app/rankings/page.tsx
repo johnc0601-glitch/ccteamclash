@@ -1,3 +1,4 @@
+import type {SupabaseClient} from '@supabase/supabase-js';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {
   RankingsClient,
@@ -111,9 +112,10 @@ async function getClashRankings(): Promise<{
   try {
     const supabase = await createClient();
     const repository = new SupabaseLaunchRepository(supabase);
-    const [players, teams] = await Promise.all([
+    const [players, teams, ratingChanges] = await Promise.all([
       repository.getPlayers(),
       repository.getTeams(),
+      getLatestClashChanges(supabase as unknown as SupabaseClient),
     ]);
     const teamNames = new Map(teams.map((team) => [team.id, team.name]));
     const ranked = players
@@ -127,6 +129,7 @@ async function getClashRankings(): Promise<{
       playerName: player.name,
       teamName: player.currentTeamId ? teamNames.get(player.currentTeamId) ?? 'Unassigned' : 'Unassigned',
       clashIndex: player.clashIndex ?? 0,
+      ratingChange: ratingChanges.get(player.id) ?? null,
       gender: player.gender,
     })));
 
@@ -138,6 +141,33 @@ async function getClashRankings(): Promise<{
   } catch (error) {
     console.error('Clash Index rankings are unavailable.', error);
     return {open: [], women: [], junior: []};
+  }
+}
+
+async function getLatestClashChanges(supabase: SupabaseClient): Promise<Map<string, number>> {
+  try {
+    const {data: season, error: seasonError} = await supabase
+      .from('launch_seasons')
+      .select('id')
+      .eq('active', true)
+      .eq('published', true)
+      .eq('archived', false)
+      .maybeSingle();
+
+    if (seasonError || !season) return new Map();
+
+    const {data, error} = await supabase
+      .from('clash_rating_latest_changes')
+      .select('player_id,rating_change')
+      .eq('season_id', season.id);
+
+    if (error || !data) return new Map();
+
+    const rows = data as Array<{player_id: string; rating_change: number}>;
+    return new Map(rows.map((row) => [row.player_id, row.rating_change]));
+  } catch (error) {
+    console.error('Latest Clash Index movement is unavailable.', error);
+    return new Map();
   }
 }
 

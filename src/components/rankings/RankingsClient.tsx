@@ -18,6 +18,7 @@ export type ClashRankingEntry = {
   playerName: string;
   teamName: string;
   clashIndex: number;
+  ratingChange: number | null;
   gender: 'Male' | 'Female' | 'Unknown';
 };
 
@@ -278,12 +279,36 @@ function ClashTable({entries}: {entries: ClashRankingEntry[]}) {
             <td><strong>{entry.rank}</strong></td>
             <td>{entry.playerName}</td>
             <td>{entry.teamName}</td>
-            <td className={styles.clashValue}>{entry.clashIndex}</td>
+            <td className={styles.clashValue}>
+              <span>{entry.clashIndex}</span>
+              {entry.ratingChange !== null ? (
+                <span
+                  style={{
+                    marginLeft: 8,
+                    fontSize: 12,
+                    fontWeight: 950,
+                    color: entry.ratingChange > 0
+                      ? '#16834d'
+                      : entry.ratingChange < 0
+                        ? '#c33b35'
+                        : '#78807d',
+                  }}
+                  aria-label={`${entry.ratingChange >= 0 ? 'plus ' : 'minus '}${Math.abs(entry.ratingChange)} from the latest event`}
+                >
+                  {formatRatingChange(entry.ratingChange)}
+                </span>
+              ) : null}
+            </td>
           </tr>
         ))}</tbody>
       </table>
     </div>
   );
+}
+
+function formatRatingChange(change: number): string {
+  if (change > 0) return `+${change}`;
+  return `${change}`;
 }
 
 function formatRecord(summary: HistoricalPlayerSeasonSummary): string {
