@@ -2,7 +2,7 @@
 -- Calculation happens in application code; this function validates commissioner
 -- access/order and commits event snapshots + current player ratings together.
 
-create or replace function private.finalize_clash_rating_event(
+create or replace function public.finalize_clash_rating_event(
   p_season_id text,
   p_event_key text,
   p_event_order integer,
@@ -13,7 +13,7 @@ create or replace function private.finalize_clash_rating_event(
 returns uuid
 language plpgsql
 security definer
-set search_path = public, private, pg_temp
+set search_path = ''
 as $$
 declare
   v_run_id uuid;
@@ -21,15 +21,15 @@ declare
   v_row_count integer;
 begin
   if not private.is_launch_commissioner() then
-    raise exception 'Approved commissioner access is required.';
+    raise exception 'Approved commissioner access is required.' using errcode = '42501';
   end if;
 
   if p_event_order < 1 then
-    raise exception 'Event order must be at least 1.';
+    raise exception 'Event order must be at least 1.' using errcode = '23514';
   end if;
 
   if jsonb_typeof(p_rows) <> 'array' or jsonb_array_length(p_rows) = 0 then
-    raise exception 'Finalization requires at least one player rating row.';
+    raise exception 'Finalization requires at least one player rating row.' using errcode = '23514';
   end if;
 
   if exists (
@@ -38,7 +38,7 @@ begin
     where season_id = p_season_id
       and event_key = p_event_key
   ) then
-    raise exception 'This event has already been finalized.';
+    raise exception 'This event has already been finalized.' using errcode = '23505';
   end if;
 
   select max(event_order)
@@ -48,16 +48,16 @@ begin
 
   if v_last_event_order is null then
     if p_event_order <> 1 then
-      raise exception 'The first finalized event for a season must be event 1.';
+      raise exception 'The first finalized event for a season must be event 1.' using errcode = '23514';
     end if;
   elsif p_event_order <> v_last_event_order + 1 then
-    raise exception 'Events must be finalized in order. Last finalized event is %.', v_last_event_order;
+    raise exception 'Events must be finalized in order. Last finalized event is %.', v_last_event_order using errcode = '23514';
   end if;
 
   if not exists (
     select 1 from public.clash_rating_versions where id = p_algorithm_version
   ) then
-    raise exception 'Unknown Clash rating algorithm version: %', p_algorithm_version;
+    raise exception 'Unknown Clash rating algorithm version: %', p_algorithm_version using errcode = '23514';
   end if;
 
   insert into public.clash_rating_runs (
@@ -160,5 +160,5 @@ begin
 end;
 $$;
 
-revoke all on function private.finalize_clash_rating_event(text, text, integer, text, text, jsonb) from public;
-grant execute on function private.finalize_clash_rating_event(text, text, integer, text, text, jsonb) to authenticated;
+revoke all on function public.finalize_clash_rating_event(text, text, integer, text, text, jsonb) from public;
+grant execute on function public.finalize_clash_rating_event(text, text, integer, text, text, jsonb) to authenticated;
