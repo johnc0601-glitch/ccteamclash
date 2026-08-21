@@ -40,7 +40,7 @@ insert into public.clash_rating_versions (
   provisional_min_events,
   provisional_min_results
 ) values (
-  'cr-2026-v1',
+  'CR-2026-v1',
   100,
   1.8,
   2,
@@ -152,8 +152,7 @@ alter table public.clash_rating_event_players enable row level security;
 alter table public.clash_rating_ledger enable row level security;
 
 -- Internal first: approved commissioners may read and write the audit tables.
--- Player-facing history can later be exposed through a read-only view without
--- weakening the write policies on the underlying ledger.
+-- Player-facing history is exposed separately through a narrow read-only view.
 do $$ begin
   create policy "Commissioners read Clash rating versions"
     on public.clash_rating_versions for select to authenticated
