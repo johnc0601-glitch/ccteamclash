@@ -22,7 +22,8 @@ export async function GET(request: Request) {
     return Response.json({error: 'roundId is required.'}, {status: 400});
   }
 
-  const {data, error} = await access.supabase
+  const db = access.supabase as any;
+  const {data, error} = await db
     .from('clash_rating_event_players')
     .select('event_order,event_label,calculated_at')
     .eq('event_key', roundId)
