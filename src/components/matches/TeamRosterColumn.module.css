@@ -1,0 +1,36 @@
+.playerRow {
+  min-height: 40px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-top: 1px solid var(--cc-card-border);
+}
+
+.playerRow:first-child {
+  border-top: 0;
+}
+
+.playerRow strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--cc-heading);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playerRow span {
+  flex: 0 0 auto;
+  color: var(--cc-muted);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .playerRow {
+    padding-inline: 12px;
+    gap: 10px;
+  }
+}
