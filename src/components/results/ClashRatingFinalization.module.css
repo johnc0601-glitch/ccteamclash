@@ -26,6 +26,20 @@
   font-size: 13px;
 }
 
+.copy .message,
+.copy .error {
+  margin-top: 9px;
+  font-weight: 800;
+}
+
+.copy .message {
+  color: #19713a;
+}
+
+.copy .error {
+  color: #a42c2c;
+}
+
 .eyebrow {
   color: #006f71;
   font-size: 10px;
@@ -50,11 +64,18 @@
   color: #fff;
   font-weight: 950;
   text-transform: uppercase;
+  cursor: pointer;
 }
 
 .actionArea button:disabled {
   opacity: .45;
   cursor: not-allowed;
+}
+
+.actionArea button.secondary {
+  border: 1px solid #cfd8d3;
+  background: #fff;
+  color: #33413d;
 }
 
 .actionArea small {
@@ -84,6 +105,33 @@
   color: #69736f;
 }
 
+.confirmation {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #dce4df;
+  border-radius: 8px;
+  background: #f8faf9;
+}
+
+.confirmation strong {
+  color: #10232a;
+  font-size: 13px;
+}
+
+.confirmation p {
+  margin: 0;
+  color: #66746f;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.confirmActions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+}
+
 @media (max-width: 760px) {
   .panel {
     grid-template-columns: 1fr;
@@ -92,5 +140,9 @@
 
   .actionArea {
     min-width: 0;
+  }
+
+  .confirmActions {
+    grid-template-columns: 1fr;
   }
 }
