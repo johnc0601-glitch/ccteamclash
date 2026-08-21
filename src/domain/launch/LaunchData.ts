@@ -57,8 +57,8 @@ export type LaunchTeam = {
   name: string;
   shortName: string;
   logo: string;
-  primaryColor: string;
-  secondaryColor: string;
+  primaryColor?: string;
+  secondaryColor?: string;
   active: boolean;
   createdAt: string;
   updatedAt: string;
