@@ -8,7 +8,7 @@ import {createProfileFromHistoricalSummary} from '@/services/playerProfiles';
 import styles from '@/app/rankings/Rankings.module.css';
 
 export type HistoricalRankingEntry = {rank: number; summary: HistoricalPlayerSeasonSummary};
-export type ClashRankingEntry = {rank: number; playerId: string; playerName: string; teamName: string; clashIndex: number; gender: 'Male' | 'Female' | 'Unknown'};
+export type ClashRankingEntry = {rank: number; playerId: string; playerName: string; teamName: string; clashIndex: number; gender: 'Male' | 'Female' | 'Unknown'; provisional: boolean};
 export type SeasonRankingGroup = {seasonId: string; seasonName: string; open: HistoricalRankingEntry[]; women: HistoricalRankingEntry[]; junior?: HistoricalRankingEntry[]};
 type RankingsClientProps = {current?: SeasonRankingGroup; history: SeasonRankingGroup[]; clash: {open: ClashRankingEntry[]; women: ClashRankingEntry[]; junior: ClashRankingEntry[]}; teamColors: Record<string, string>};
 type MainTab = 'season' | 'history' | 'clash';
@@ -52,7 +52,7 @@ function HistoricalSeason({group, defaultOpen, onOpen, teamColors}: {group: Seas
 
 function ClashSection({rankings, teamColors}: {rankings: RankingsClientProps['clash']; teamColors: Record<string, string>}) {
   const [division, setDivision] = useState<Division>('open'); const [showAll, setShowAll] = useState(false); const entries = rankings[division]; const defaultCount = division === 'open' ? 25 : 5; const visible = showAll ? entries : entries.slice(0, defaultCount);
-  return <section className={styles.tabPanel}><header className={styles.sectionHeading}><div><span className="eyebrow">Current ratings</span><h2>Clash Index</h2></div><p>Clash Index is a match-play rating and is separate from season standings.</p></header><DivisionTabs division={division} onChange={(next) => {setDivision(next); setShowAll(false);}} includeJunior /><ClashTable entries={visible} teamColors={teamColors} />{entries.length > defaultCount ? <button type="button" className={styles.viewAll} onClick={() => setShowAll((value) => !value)}>{showAll ? `Show Top ${defaultCount}` : `View All ${entries.length}`}</button> : null}</section>;
+  return <section className={styles.tabPanel}><header className={styles.sectionHeading}><div><span className="eyebrow">Current ratings</span><h2>Clash Index</h2></div><p>Clash Index is a match-play rating and is separate from season standings. * = ghost/provisional start.</p></header><DivisionTabs division={division} onChange={(next) => {setDivision(next); setShowAll(false);}} includeJunior /><ClashTable entries={visible} teamColors={teamColors} />{entries.length > defaultCount ? <button type="button" className={styles.viewAll} onClick={() => setShowAll((value) => !value)}>{showAll ? `Show Top ${defaultCount}` : `View All ${entries.length}`}</button> : null}</section>;
 }
 
 function DivisionTabs({division, onChange, includeJunior}: {division: Division; onChange: (division: Division) => void; includeJunior: boolean}) {return <div className={styles.divisionTabs} role="tablist" aria-label="Ranking division"><TabButton active={division === 'open'} onClick={() => onChange('open')}>Open</TabButton><TabButton active={division === 'women'} onClick={() => onChange('women')}>Women</TabButton>{includeJunior ? <TabButton active={division === 'junior'} onClick={() => onChange('junior')}>Junior</TabButton> : null}</div>;}
@@ -65,7 +65,7 @@ function SeasonTable({entries, onOpen, teamColors}: {entries: HistoricalRankingE
 
 function ClashTable({entries, teamColors}: {entries: ClashRankingEntry[]; teamColors: Record<string, string>}) {
   if (!entries.length) return <p className={styles.emptyState}>No Clash Index ratings are available in this division yet.</p>;
-  return <div className={styles.tableWrap}><table className={styles.rankingTable}><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Clash Index</th></tr></thead><tbody>{entries.map((entry) => <tr key={entry.playerId} data-team={entry.teamName} style={teamAccentStyle(teamColors[entry.teamName])}><td><strong>{entry.rank}</strong></td><td>{entry.playerName}</td><td>{entry.teamName}</td><td className={styles.clashValue}>{entry.clashIndex}</td></tr>)}</tbody></table></div>;
+  return <div className={styles.tableWrap}><table className={styles.rankingTable}><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Clash Index</th></tr></thead><tbody>{entries.map((entry) => <tr key={entry.playerId} data-team={entry.teamName} style={teamAccentStyle(teamColors[entry.teamName])}><td><strong>{entry.rank}</strong></td><td>{entry.playerName}</td><td>{entry.teamName}</td><td className={styles.clashValue}>{entry.clashIndex}{entry.provisional ? '*' : ''}</td></tr>)}</tbody></table></div>;
 }
 
 function teamAccentStyle(color?: string): CSSProperties {return color ? ({'--team-accent': color} as CSSProperties) : {};}
