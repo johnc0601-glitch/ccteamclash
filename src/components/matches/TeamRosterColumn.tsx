@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type {PublicMatchdayTeam} from '@/services/matches/MatchdayService';
 import styles from '@/app/matches/[id]/Matchday.module.css';
+import rosterStyles from './TeamRosterColumn.module.css';
 
 export function TeamRosterColumn({team, label}: {team: PublicMatchdayTeam; label: string}) {
   const heading = (
@@ -27,7 +28,7 @@ export function TeamRosterColumn({team, label}: {team: PublicMatchdayTeam; label
       </div>
       <div className={styles.playerList}>
         {team.roster.length ? team.roster.map((player) => (
-          <div className={styles.playerRow} key={player.id}>
+          <div className={rosterStyles.playerRow} key={player.id}>
             <strong>{player.name}</strong>
             <span>CI: {player.clashIndex ?? '—'}</span>
           </div>
