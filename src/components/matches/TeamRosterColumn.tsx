@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import type {PublicMatchdayTeam} from '@/services/matches/MatchdayService';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 
@@ -40,13 +41,23 @@ export function TeamRosterColumn({team, label}: {team: PublicMatchdayTeam; label
           >
             <strong>{player.name}</strong>
             <span style={{color: 'var(--cc-muted)', fontSize: 12, fontWeight: 850, whiteSpace: 'nowrap'}}>
-              CI: {player.clashIndex ?? '—'}
+              CI: {formatClashIndex(player)}
             </span>
           </div>
         )) : <p className={styles.empty}>No active players are assigned to this team.</p>}
       </div>
     </article>
   );
+}
+
+function formatClashIndex(player: LaunchPlayer): string {
+  if (player.clashIndex == null) return '—';
+  const ghost = player.clashIndexProvisional === true || (
+    player.pdgaRating == null
+    && ((player.gender === 'Female' && player.clashIndex === 725)
+      || (player.gender === 'Male' && player.clashIndex === 850))
+  );
+  return `${player.clashIndex}${ghost ? '*' : ''}`;
 }
 
 function TeamLogo({name, logo}: {name: string; logo: string}) {
