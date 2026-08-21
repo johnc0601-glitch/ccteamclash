@@ -347,25 +347,100 @@
   }
 
   .mainTabs {
-    grid-template-columns: repeat(3, minmax(110px, 1fr));
-    overflow-x: auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    overflow: visible;
   }
 
   .mainTabs button {
-    min-height: 46px;
+    min-height: 42px;
+    padding: 0 7px;
+    font-size: 10px;
+  }
+
+  .divisionTabs {
+    gap: 6px;
+  }
+
+  .divisionTabs button {
+    min-height: 38px;
+    padding: 0 11px;
+    font-size: 10px;
   }
 
   .tabPanel {
-    padding: 16px;
+    padding: 10px;
+  }
+
+  .tableWrap {
+    width: 100%;
+    overflow-x: hidden;
   }
 
   .rankingTable {
-    min-width: 540px;
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
   }
 
   .rankingTable th,
   .rankingTable td {
-    padding: 11px 10px;
+    padding: 8px 4px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.18;
+  }
+
+  .rankingTable th {
+    font-size: 8px;
+  }
+
+  .rankingTable td {
+    font-size: 10.5px;
+  }
+
+  .rankingTable th:nth-child(1),
+  .rankingTable td:nth-child(1) {
+    width: 10%;
+  }
+
+  .rankingTable th:nth-child(2),
+  .rankingTable td:nth-child(2) {
+    width: 29%;
+  }
+
+  .rankingTable th:nth-child(3),
+  .rankingTable td:nth-child(3) {
+    width: 25%;
+  }
+
+  .rankingTable th:nth-child(4),
+  .rankingTable td:nth-child(4) {
+    width: 20%;
+  }
+
+  .rankingTable th:nth-child(5),
+  .rankingTable td:nth-child(5) {
+    width: 16%;
+  }
+
+  .rankingTable td:first-child {
+    width: 10%;
+  }
+
+  .rankingTable td:first-child strong {
+    min-width: 22px;
+    min-height: 22px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  .clashValue {
+    font-size: 12px !important;
+  }
+
+  .historyBody {
+    padding: 10px;
   }
 }
 
