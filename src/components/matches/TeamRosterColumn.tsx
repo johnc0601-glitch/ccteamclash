@@ -27,10 +27,20 @@ export function TeamRosterColumn({team, label}: {team: PublicMatchdayTeam; label
       </div>
       <div className={styles.playerList}>
         {team.roster.length ? team.roster.map((player) => (
-          <div className={styles.playerRow} key={player.id}>
-            <b>{initials(player.name)}</b>
+          <div
+            className={styles.playerRow}
+            key={player.id}
+            style={{
+              minHeight: 40,
+              padding: '7px 14px',
+              gridTemplateColumns: 'minmax(0, 1fr) auto',
+              gap: 12,
+            }}
+          >
             <strong>{player.name}</strong>
-            {player.clashIndex != null ? <span>Clash Index: {player.clashIndex}</span> : null}
+            <span style={{color: 'var(--cc-muted)', fontSize: 12, fontWeight: 850, whiteSpace: 'nowrap'}}>
+              CI: {player.clashIndex ?? '—'}
+            </span>
           </div>
         )) : <p className={styles.empty}>No active players are assigned to this team.</p>}
       </div>
