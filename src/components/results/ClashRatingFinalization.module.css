@@ -86,7 +86,8 @@
 }
 
 .ready,
-.waiting {
+.waiting,
+.finalized {
   width: fit-content;
   padding: 4px 8px;
   border-radius: 999px;
@@ -103,6 +104,11 @@
 .waiting {
   background: #f0f2f1;
   color: #69736f;
+}
+
+.finalized {
+  background: #e5eef7;
+  color: #245a86;
 }
 
 .confirmation {
