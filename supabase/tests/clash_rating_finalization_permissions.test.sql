@@ -23,9 +23,9 @@ insert into public.launch_profiles (
   ('clash-rating-test-commissioner-profile', '20000000-0000-0000-0000-000000000002', 'Clash Rating Test Commissioner', 'Commissioner', 'Approved', null, null);
 
 insert into public.launch_seasons (
-  id, name, year, start_date, end_date, active, published, archived, registration_open
+  id, league_id, name, year, start_date, end_date, active, published, archived, registration_open
 ) values (
-  'clash-rating-test-season', 'Clash Rating Test Season', 2099, '2099-01-01', '2099-12-31', false, true, false, false
+  'clash-rating-test-season', 'cc-team-clash', 'Clash Rating Test Season', 2099, '2099-01-01', '2099-12-31', false, true, false, false
 );
 
 insert into public.launch_schedules (
