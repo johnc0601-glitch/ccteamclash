@@ -4,7 +4,7 @@ import {createClient} from '@/lib/supabase/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-type RecoveredPdga = {id: string; pdgaNumber: string};
+type RecoveredPdga = {id: string; pdgaNumber: string; rating?: number};
 
 const RECOVERED_PDGA: RecoveredPdga[] = [
   {id: 'abel-jimenez', pdgaNumber: '284579'},
@@ -90,6 +90,12 @@ const RECOVERED_PDGA: RecoveredPdga[] = [
   {id: 'shannon-johnson', pdgaNumber: '169659'},
   {id: 'travis-bochum', pdgaNumber: '103594'},
   {id: 'hubert-cheers', pdgaNumber: '63405'},
+  {id: 'eric-pierre', pdgaNumber: '257351', rating: 822},
+  {id: 'david-redlon', pdgaNumber: '111234', rating: 937},
+  {id: 'derrick-young', pdgaNumber: '95129', rating: 910},
+  {id: 'jeffrey-grier', pdgaNumber: '99208', rating: 902},
+  {id: 'tim-mason', pdgaNumber: '6274', rating: 853},
+  {id: 'marty-adams', pdgaNumber: '46188', rating: 948},
 ];
 
 export async function POST() {
@@ -106,11 +112,14 @@ export async function POST() {
   const ids = RECOVERED_PDGA.map((entry) => entry.id);
   const {data: rows, error: readError} = await supabase
     .from('launch_players')
-    .select('id,pdga_number')
+    .select('id,pdga_number,pdga_rating')
     .in('id', ids);
   if (readError) return Response.json({error: readError.message}, {status: 500});
 
-  const currentById = new Map((rows ?? []).map((row) => [row.id, String(row.pdga_number ?? '').trim()]));
+  const currentById = new Map((rows ?? []).map((row) => [row.id, {
+    number: String(row.pdga_number ?? '').trim(),
+    rating: row.pdga_rating as number | null,
+  }]));
   let updated = 0;
   let unchanged = 0;
   const conflicts: Array<{id: string; current: string; recovered: string}> = [];
@@ -122,19 +131,34 @@ export async function POST() {
       continue;
     }
 
-    const current = currentById.get(entry.id) ?? '';
-    if (current === entry.pdgaNumber) {
-      unchanged += 1;
+    const current = currentById.get(entry.id)!;
+    if (current.number && current.number !== entry.pdgaNumber) {
+      conflicts.push({id: entry.id, current: current.number, recovered: entry.pdgaNumber});
       continue;
     }
-    if (current) {
-      conflicts.push({id: entry.id, current, recovered: entry.pdgaNumber});
+
+    const update: {pdga_number?: string; pdga_rating?: number; updated_at: string} = {
+      updated_at: new Date().toISOString(),
+    };
+    let changed = false;
+
+    if (!current.number) {
+      update.pdga_number = entry.pdgaNumber;
+      changed = true;
+    }
+    if (current.rating == null && entry.rating != null) {
+      update.pdga_rating = entry.rating;
+      changed = true;
+    }
+
+    if (!changed) {
+      unchanged += 1;
       continue;
     }
 
     const {error} = await supabase
       .from('launch_players')
-      .update({pdga_number: entry.pdgaNumber, updated_at: new Date().toISOString()})
+      .update(update)
       .eq('id', entry.id);
     if (error) return Response.json({error: error.message, playerId: entry.id}, {status: 500});
     updated += 1;
