@@ -7,9 +7,9 @@ import type {Match} from '@/domain/schedule/Match';
 import type {Round} from '@/domain/schedule/Round';
 import styles from './ClashRatingFinalization.module.css';
 
-// Keep write actions invisible until the staging HTTP flows have been verified.
-const FINALIZATION_ACTION_ENABLED = false;
-const CORRECTION_ACTION_ENABLED = false;
+// Feature-branch preview only. Keep this branch out of production until explicitly approved.
+const FINALIZATION_ACTION_ENABLED = true;
+const CORRECTION_ACTION_ENABLED = true;
 
 type ClashRatingFinalizationProps = {
   rounds: Round[];
