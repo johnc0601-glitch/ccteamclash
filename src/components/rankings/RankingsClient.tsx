@@ -247,6 +247,7 @@ function SeasonTable({entries, onOpen}: {entries: HistoricalRankingEntry[]; onOp
           <tr
             key={`${entry.summary.seasonId}-${entry.summary.playerId}`}
             className={styles.clickableRow}
+            data-team={entry.summary.teamName}
             tabIndex={0}
             role="button"
             onClick={() => onOpen(entry)}
@@ -273,7 +274,7 @@ function ClashTable({entries}: {entries: ClashRankingEntry[]}) {
       <table className={styles.rankingTable}>
         <thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Clash Index</th></tr></thead>
         <tbody>{entries.map((entry) => (
-          <tr key={entry.playerId}>
+          <tr key={entry.playerId} data-team={entry.teamName}>
             <td><strong>{entry.rank}</strong></td>
             <td>{entry.playerName}</td>
             <td>{entry.teamName}</td>
