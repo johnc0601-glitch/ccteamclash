@@ -100,7 +100,13 @@ export async function restoreStoredCourse(id: string): Promise<CourseServiceResu
 }
 
 export async function importStoredCourses(inputs: CourseImportInput[]): Promise<CourseImportResult> {
-  if (!hasSupabaseConfig()) return {created: 0, updated: 0, skipped: inputs.length, errors: ['Course storage is not connected yet.']};
+  if (!hasSupabaseConfig()) {
+    return {
+      created: [],
+      updated: [],
+      skipped: inputs.map((_, index) => ({row: index + 1, message: 'Course storage is not connected yet.'})),
+    };
+  }
   const service = new CourseService(new SupabaseCourseRepository());
   return service.importCourses(inputs);
 }
