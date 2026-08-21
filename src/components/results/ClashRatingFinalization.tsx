@@ -29,11 +29,19 @@ type PreviewSummary = {
   ratedContests: number;
 };
 
+type RebuildSummary = {
+  correctionId: string | null;
+  rebuiltEvents: number;
+  failedEvent: {eventKey: string; eventOrder: number; message: string} | null;
+  remainingEvents: number;
+};
+
 type FinalizeResponse = {
   ok?: boolean;
   mode?: 'preview' | 'finalize';
   runId?: string;
   preview?: PreviewSummary;
+  rebuild?: RebuildSummary;
   error?: string;
 };
 
@@ -47,6 +55,7 @@ type FinalizationStatus = {
 };
 
 type CorrectionSummary = {
+  correctionId?: string;
   seasonId: string;
   startingEventOrder: number;
   invalidatedEvents: number;
@@ -141,7 +150,17 @@ export function ClashRatingFinalization({
       const response = await requestFinalization(selectedRoundId, 'finalize');
       setPreview(null);
       setFinalized(true);
-      setMessage(`Round ${response.preview?.eventOrder ?? round?.number ?? ''} Clash Index ratings finalized.`);
+
+      const roundNumber = response.preview?.eventOrder ?? round?.number ?? '';
+      const rebuild = response.rebuild;
+      if (rebuild?.failedEvent) {
+        setMessage(`Round ${roundNumber} finalized. Automatic rebuild stopped at Round ${rebuild.failedEvent.eventOrder}.`);
+        setError(rebuild.failedEvent.message);
+      } else if (rebuild?.correctionId && rebuild.rebuiltEvents > 1) {
+        setMessage(`Round ${roundNumber} finalized and ${rebuild.rebuiltEvents - 1} later rating event${rebuild.rebuiltEvents === 2 ? '' : 's'} rebuilt automatically.`);
+      } else {
+        setMessage(`Round ${roundNumber} Clash Index ratings finalized.`);
+      }
       router.refresh();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Unable to finalize Clash ratings.');
@@ -162,7 +181,7 @@ export function ClashRatingFinalization({
       setFinalized(false);
       setMessage(
         `Clash ratings reset from Round ${response.summary.startingEventOrder}. `
-        + `${response.summary.invalidatedEvents} event${response.summary.invalidatedEvents === 1 ? '' : 's'} must be finalized again after the result is corrected.`,
+        + `${response.summary.invalidatedEvents} event${response.summary.invalidatedEvents === 1 ? '' : 's'} will rebuild after the corrected result is republished and finalized.`,
       );
       router.refresh();
     } catch (requestError) {
