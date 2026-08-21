@@ -4,6 +4,9 @@ import {revalidatePath} from 'next/cache';
 import {redirect} from 'next/navigation';
 import {createClient} from '@/lib/supabase/server';
 
+const MAX_LOGO_SIZE_BYTES = 5_000_000;
+const ALLOWED_LOGO_TYPES = new Set(['image/webp', 'image/png', 'image/jpeg', 'image/svg+xml']);
+
 type CaptainReviewClient = {
   rpc: (
     fn: 'captain_review_launch_player_application',
@@ -22,6 +25,80 @@ export async function confirmTeamApplication(formData: FormData) {
 
 export async function rejectTeamApplication(formData: FormData) {
   await reviewTeamApplication(formData, 'Rejected');
+}
+
+export async function saveTeamAppearance(formData: FormData) {
+  const primaryColor = normalizeHexColor(readFormValue(formData, 'primaryColor'));
+  const secondaryColor = normalizeHexColor(readFormValue(formData, 'secondaryColor'));
+  if (!primaryColor || !secondaryColor) {
+    redirect('/captain?error=Choose valid primary and secondary colors.');
+  }
+
+  const supabase = await createClient();
+  const {data: authData, error: authError} = await supabase.auth.getUser();
+  if (authError || !authData.user) redirect('/account?error=Sign in first.');
+
+  const {data: profile, error: profileError} = await (supabase as any)
+    .from('launch_profiles')
+    .select('role, status, captain_team_id')
+    .eq('user_id', authData.user.id)
+    .maybeSingle();
+  if (profileError || !profile || profile.status !== 'Approved') {
+    redirect('/captain?error=Captain access is required.');
+  }
+  if ((profile.role !== 'Captain' && profile.role !== 'Commissioner') || !profile.captain_team_id) {
+    redirect('/captain?error=No captain team is assigned to this account.');
+  }
+
+  const teamId = profile.captain_team_id as string;
+  const {data: currentTeam, error: teamError} = await (supabase as any)
+    .from('launch_teams')
+    .select('id, logo')
+    .eq('id', teamId)
+    .maybeSingle();
+  if (teamError || !currentTeam) redirect('/captain?error=Team could not be found.');
+
+  let logo = typeof currentTeam.logo === 'string' ? currentTeam.logo : '';
+  const file = formData.get('logoFile');
+  if (file instanceof File && file.size > 0) {
+    if (!ALLOWED_LOGO_TYPES.has(file.type)) {
+      redirect('/captain?error=Logo must be PNG, JPG, SVG, or WebP.');
+    }
+    if (file.size > MAX_LOGO_SIZE_BYTES) {
+      redirect('/captain?error=Logo file is too large.');
+    }
+
+    const extension = file.type === 'image/png'
+      ? 'png'
+      : file.type === 'image/jpeg'
+        ? 'jpg'
+        : file.type === 'image/svg+xml'
+          ? 'svg'
+          : 'webp';
+    const path = `teams/${teamId}/logo.${extension}`;
+    const {error: uploadError} = await supabase.storage
+      .from('team-logos')
+      .upload(path, file, {upsert: true, contentType: file.type, cacheControl: '3600'});
+    if (uploadError) redirect(`/captain?error=${encodeURIComponent(uploadError.message)}`);
+    logo = supabase.storage.from('team-logos').getPublicUrl(path).data.publicUrl;
+  }
+
+  const {error: updateError} = await (supabase as any)
+    .from('launch_teams')
+    .update({
+      primary_color: primaryColor,
+      secondary_color: secondaryColor,
+      logo,
+    })
+    .eq('id', teamId);
+  if (updateError) redirect(`/captain?error=${encodeURIComponent(updateError.message)}`);
+
+  revalidatePath('/captain');
+  revalidatePath('/teams');
+  revalidatePath(`/teams/${teamId}`);
+  revalidatePath('/rankings');
+  revalidatePath('/office/teams');
+  redirect('/captain?notice=Team appearance updated.');
 }
 
 async function reviewTeamApplication(formData: FormData, status: 'Approved' | 'Rejected') {
@@ -64,4 +141,9 @@ async function reviewTeamApplication(formData: FormData, status: 'Approved' | 'R
 function readFormValue(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function normalizeHexColor(value: string): string | null {
+  const normalized = value.trim().toLowerCase();
+  return /^#[0-9a-f]{6}$/.test(normalized) ? normalized : null;
 }
