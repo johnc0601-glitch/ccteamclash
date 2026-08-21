@@ -114,7 +114,7 @@ function CaptainDashboard({events, pendingApplications, roster, team}: {events: 
           <header className={styles.panelHeader}><span>Roster</span><h2>{team.name}</h2><p className={styles.muted}>Remove sends a player to the commissioner for removal or reassignment.</p></header>
           <div className={styles.list}>{roster.length ? roster.map((player) => (
             <div className={styles.rosterRow} key={player.id}>
-              <div><strong>{player.name}</strong><span className={styles.rosterMeta}>CI: {player.clashIndex ?? '—'}</span></div>
+              <div><strong>{player.name}</strong><span className={styles.rosterMeta}>CI: {formatClashIndex(player)}</span></div>
               <form action={returnRosteredPlayerToCommissioner}>
                 <input name="playerId" type="hidden" value={player.id} />
                 <button type="submit">Remove</button>
@@ -125,6 +125,16 @@ function CaptainDashboard({events, pendingApplications, roster, team}: {events: 
       </div>
     </>
   );
+}
+
+function formatClashIndex(player: LaunchPlayer): string {
+  if (player.clashIndex == null) return '—';
+  const ghost = player.clashIndexProvisional === true || (
+    player.pdgaRating == null
+    && ((player.gender === 'Female' && player.clashIndex === 725)
+      || (player.gender === 'Male' && player.clashIndex === 850))
+  );
+  return `${player.clashIndex}${ghost ? '*' : ''}`;
 }
 
 function SummaryCard({label, value}: {label: string; value: string}) {return <article className={styles.quickCard}><span>{label}</span><strong>{value}</strong></article>;}
