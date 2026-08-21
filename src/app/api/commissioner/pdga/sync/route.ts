@@ -1,9 +1,18 @@
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
-import {createPdgaClient} from '@/lib/pdga/client';
+import {createPdgaClient, type PdgaClient} from '@/lib/pdga/client';
 import {createClient} from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+
+const PDGA_CONCURRENCY = 5;
+
+type PlayerRow = {
+  id: string;
+  pdga_number: string | number | null;
+  pdga_rating: number | null;
+};
 
 type SyncResult = {
   playerId: string;
@@ -38,78 +47,29 @@ export async function POST() {
     return Response.json({error: playerError.message}, {status: 500});
   }
 
-  const eligiblePlayers = players.filter((player) => String(player.pdga_number ?? '').trim().length > 0);
+  const eligiblePlayers = ((players ?? []) as PlayerRow[]).filter(
+    (player) => String(player.pdga_number ?? '').trim().length > 0,
+  );
+
+  let pdga: PdgaClient;
+  try {
+    pdga = await createPdgaClient();
+  } catch (error) {
+    return Response.json(
+      {error: error instanceof Error ? error.message : 'Unable to sign in to PDGA.'},
+      {status: 502},
+    );
+  }
+
   const results: SyncResult[] = [];
-  const pdga = await createPdgaClient();
 
   try {
-    for (const player of eligiblePlayers) {
-      const pdgaNumber = String(player.pdga_number).trim();
-      const previousRating = player.pdga_rating;
-
-      try {
-        const pdgaPlayer = await pdga.getPlayer(pdgaNumber);
-
-        if (!pdgaPlayer) {
-          results.push({
-            playerId: player.id,
-            pdgaNumber,
-            previousRating,
-            rating: previousRating,
-            status: 'not-found',
-          });
-          continue;
-        }
-
-        const parsedRating = pdgaPlayer.rating ? Number.parseInt(pdgaPlayer.rating, 10) : null;
-        if (!parsedRating || !Number.isFinite(parsedRating)) {
-          results.push({
-            playerId: player.id,
-            pdgaNumber,
-            previousRating,
-            rating: previousRating,
-            status: 'no-current-rating',
-          });
-          continue;
-        }
-
-        if (parsedRating === previousRating) {
-          results.push({
-            playerId: player.id,
-            pdgaNumber,
-            previousRating,
-            rating: parsedRating,
-            status: 'unchanged',
-          });
-          continue;
-        }
-
-        const {error: updateError} = await supabase
-          .from('launch_players')
-          .update({pdga_rating: parsedRating, updated_at: new Date().toISOString()})
-          .eq('id', player.id);
-
-        if (updateError) {
-          throw updateError;
-        }
-
-        results.push({
-          playerId: player.id,
-          pdgaNumber,
-          previousRating,
-          rating: parsedRating,
-          status: 'updated',
-        });
-      } catch (error) {
-        results.push({
-          playerId: player.id,
-          pdgaNumber,
-          previousRating,
-          rating: previousRating,
-          status: 'error',
-          error: error instanceof Error ? error.message : 'PDGA sync failed for this player.',
-        });
-      }
+    for (let index = 0; index < eligiblePlayers.length; index += PDGA_CONCURRENCY) {
+      const batch = eligiblePlayers.slice(index, index + PDGA_CONCURRENCY);
+      const batchResults = await Promise.all(
+        batch.map((player) => syncPlayer(player, pdga, supabase)),
+      );
+      results.push(...batchResults);
     }
   } finally {
     await pdga.close();
@@ -135,4 +95,74 @@ export async function POST() {
     summary,
     results,
   });
+}
+
+async function syncPlayer(
+  player: PlayerRow,
+  pdga: PdgaClient,
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<SyncResult> {
+  const pdgaNumber = String(player.pdga_number).trim();
+  const previousRating = player.pdga_rating;
+
+  try {
+    const pdgaPlayer = await pdga.getPlayer(pdgaNumber);
+
+    if (!pdgaPlayer) {
+      return {
+        playerId: player.id,
+        pdgaNumber,
+        previousRating,
+        rating: previousRating,
+        status: 'not-found',
+      };
+    }
+
+    const parsedRating = pdgaPlayer.rating ? Number.parseInt(pdgaPlayer.rating, 10) : null;
+    if (!parsedRating || !Number.isFinite(parsedRating)) {
+      return {
+        playerId: player.id,
+        pdgaNumber,
+        previousRating,
+        rating: previousRating,
+        status: 'no-current-rating',
+      };
+    }
+
+    if (parsedRating === previousRating) {
+      return {
+        playerId: player.id,
+        pdgaNumber,
+        previousRating,
+        rating: parsedRating,
+        status: 'unchanged',
+      };
+    }
+
+    const {error: updateError} = await supabase
+      .from('launch_players')
+      .update({pdga_rating: parsedRating, updated_at: new Date().toISOString()})
+      .eq('id', player.id);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    return {
+      playerId: player.id,
+      pdgaNumber,
+      previousRating,
+      rating: parsedRating,
+      status: 'updated',
+    };
+  } catch (error) {
+    return {
+      playerId: player.id,
+      pdgaNumber,
+      previousRating,
+      rating: previousRating,
+      status: 'error',
+      error: error instanceof Error ? error.message : 'PDGA sync failed for this player.',
+    };
+  }
 }
