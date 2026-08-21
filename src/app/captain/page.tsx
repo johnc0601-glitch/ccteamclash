@@ -6,7 +6,7 @@ import type {TeamScheduleEvent} from '@/domain/schedule/ScheduleService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
-import {confirmTeamApplication, rejectTeamApplication} from './actions';
+import {confirmTeamApplication, rejectTeamApplication, returnRosteredPlayerToCommissioner} from './actions';
 import styles from './Captain.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -172,13 +172,19 @@ function CaptainDashboard({
           <header className={styles.panelHeader}>
             <span>Roster</span>
             <h2>{team.name}</h2>
-            <p className={styles.muted}>Active players on your current season roster.</p>
+            <p className={styles.muted}>Remove sends a player to the commissioner for removal or reassignment.</p>
           </header>
           <div className={styles.list}>
             {roster.length ? roster.map((player) => (
               <div className={styles.rosterRow} key={player.id}>
-                <strong>{player.name}</strong>
-                <span className={styles.rosterMeta}>{player.pdgaRating ? `Rating ${player.pdgaRating}` : 'Rating pending'}</span>
+                <div>
+                  <strong>{player.name}</strong>
+                  <span className={styles.rosterMeta}>{player.pdgaRating ? `Rating ${player.pdgaRating}` : 'Rating pending'}</span>
+                </div>
+                <form action={returnRosteredPlayerToCommissioner}>
+                  <input name="playerId" type="hidden" value={player.id} />
+                  <button type="submit">Remove</button>
+                </form>
               </div>
             )) : (
               <p className={styles.empty}>No players are on this season roster yet.</p>
