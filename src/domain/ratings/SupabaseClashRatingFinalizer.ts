@@ -1,5 +1,6 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
+import {buildClashContestLedger} from '@/domain/ratings/ClashRatingAudit';
 import {calculateEventRatings, type ClashRatingState} from '@/domain/ratings/ClashRatingEngine';
 import {assessClashFinalization, finalizeClashEvent} from '@/domain/ratings/ClashRatingFinalizationService';
 import {
@@ -29,6 +30,31 @@ type FinalizationRow = {
   provisional_after: boolean;
 };
 
+type LedgerRow = {
+  source_key: string;
+  source_contest_id: string;
+  player_id: string;
+  format: 'Singles' | 'Doubles';
+  side: 'Home' | 'Away';
+  outcome: 'W' | 'L' | 'T';
+  rating_before: number;
+  partner_player_id: string | null;
+  partner_rating: number | null;
+  opponent_one_player_id: string;
+  opponent_one_rating: number;
+  opponent_two_player_id: string | null;
+  opponent_two_rating: number | null;
+  own_pair_rating: number | null;
+  opponent_pair_rating: number | null;
+  home_adjustment: number;
+  expected_score: number;
+  actual_score: 0 | 0.5 | 1;
+  competitive_delta: number;
+  provisional_multiplier: number;
+  provisional_adjustment: number;
+  total_delta: number;
+};
+
 export type ClashFinalizationPreview = {
   roundId: string;
   seasonId: string;
@@ -37,7 +63,9 @@ export type ClashFinalizationPreview = {
   eligibleMatches: number;
   publishedMatches: number;
   participatingPlayers: number;
+  ratedContests: number;
   rows: FinalizationRow[];
+  ledger: LedgerRow[];
 };
 
 export class SupabaseClashRatingFinalizer {
@@ -83,6 +111,32 @@ export class SupabaseClashRatingFinalizer {
     const states = resolveEventStartStates({players, priorSeason, latestPriorByPlayer});
     const event = finalizeClashEvent({round, matches, results, contestsByMatch, states});
     const rows = buildFinalizationRows(event.contests, states, event.result.nextStates);
+    const ledger = buildClashContestLedger(event.contests, states).map((row) => ({
+      source_key: row.sourceKey,
+      source_contest_id: row.sourceContestId,
+      player_id: row.playerId,
+      format: row.format,
+      side: row.side,
+      outcome: row.outcome,
+      rating_before: row.ratingBefore,
+      partner_player_id: row.partnerPlayerId,
+      partner_rating: row.partnerRating,
+      opponent_one_player_id: row.opponentOnePlayerId,
+      opponent_one_rating: row.opponentOneRating,
+      opponent_two_player_id: row.opponentTwoPlayerId,
+      opponent_two_rating: row.opponentTwoRating,
+      own_pair_rating: row.ownPairRating,
+      opponent_pair_rating: row.opponentPairRating,
+      home_adjustment: row.homeAdjustment,
+      expected_score: row.expectedScore,
+      actual_score: row.actualScore,
+      competitive_delta: row.competitiveDelta,
+      provisional_multiplier: row.provisionalMultiplier,
+      provisional_adjustment: row.provisionalAdjustment,
+      total_delta: row.totalDelta,
+    }));
+
+    assertLedgerMatchesRows(rows, ledger);
 
     return {
       roundId: round.id,
@@ -92,7 +146,9 @@ export class SupabaseClashRatingFinalizer {
       eligibleMatches: readiness.eligibleMatchIds.length,
       publishedMatches: readiness.publishedMatchIds.length,
       participatingPlayers: rows.length,
+      ratedContests: event.contests.length,
       rows,
+      ledger,
     };
   }
 
@@ -105,6 +161,7 @@ export class SupabaseClashRatingFinalizer {
       p_event_label: preview.eventLabel,
       p_algorithm_version: CLASH_ALGORITHM_VERSION,
       p_rows: preview.rows,
+      p_ledger: preview.ledger,
     });
     if (error) throw error;
     if (typeof data !== 'string' || !data) throw new Error('Clash rating finalization did not return a run id.');
@@ -235,4 +292,16 @@ function buildFinalizationRows(
       provisional_after: end.provisional,
     };
   });
+}
+
+function assertLedgerMatchesRows(rows: FinalizationRow[], ledger: LedgerRow[]) {
+  const totals = new Map<string, number>();
+  for (const row of ledger) totals.set(row.player_id, (totals.get(row.player_id) ?? 0) + row.total_delta);
+  for (const row of rows) {
+    const ledgerTotal = totals.get(row.player_id) ?? 0;
+    const eventTotal = row.rating_after - row.rating_before;
+    if (Math.abs(ledgerTotal - eventTotal) > 0.001) {
+      throw new Error(`Clash ledger mismatch for ${row.player_id}: event ${eventTotal}, ledger ${ledgerTotal}.`);
+    }
+  }
 }
