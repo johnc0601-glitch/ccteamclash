@@ -7,8 +7,9 @@ import type {Match} from '@/domain/schedule/Match';
 import type {Round} from '@/domain/schedule/Round';
 import styles from './ClashRatingFinalization.module.css';
 
-// Keep the write action invisible until the staging HTTP flow has been verified.
+// Keep write actions invisible until the staging HTTP flows have been verified.
 const FINALIZATION_ACTION_ENABLED = false;
+const CORRECTION_ACTION_ENABLED = false;
 
 type ClashRatingFinalizationProps = {
   rounds: Round[];
@@ -45,6 +46,20 @@ type FinalizationStatus = {
   error?: string;
 };
 
+type CorrectionSummary = {
+  seasonId: string;
+  startingEventOrder: number;
+  invalidatedEvents: number;
+  invalidatedPlayerRows: number;
+  affectedPlayers: number;
+};
+
+type CorrectionResponse = {
+  ok?: boolean;
+  summary?: CorrectionSummary;
+  error?: string;
+};
+
 export function ClashRatingFinalization({
   rounds,
   matches,
@@ -53,6 +68,7 @@ export function ClashRatingFinalization({
 }: ClashRatingFinalizationProps) {
   const router = useRouter();
   const [preview, setPreview] = useState<PreviewSummary | null>(null);
+  const [correctionArmed, setCorrectionArmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -76,6 +92,7 @@ export function ClashRatingFinalization({
   useEffect(() => {
     let cancelled = false;
     setPreview(null);
+    setCorrectionArmed(false);
     setMessage('');
     setError('');
     setFinalized(false);
@@ -133,6 +150,28 @@ export function ClashRatingFinalization({
     }
   }
 
+  async function prepareCorrection() {
+    if (!selectedRoundId || !finalized || !correctionArmed || busy) return;
+    setBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      const response = await requestCorrection(selectedRoundId);
+      if (!response.summary) throw new Error('The correction reset returned no summary.');
+      setCorrectionArmed(false);
+      setFinalized(false);
+      setMessage(
+        `Clash ratings reset from Round ${response.summary.startingEventOrder}. `
+        + `${response.summary.invalidatedEvents} event${response.summary.invalidatedEvents === 1 ? '' : 's'} must be finalized again after the result is corrected.`,
+      );
+      router.refresh();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Unable to prepare Clash rating correction.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const statusLabel = finalized
     ? 'Finalized'
     : checkingStatus
@@ -183,9 +222,32 @@ export function ClashRatingFinalization({
           </div>
         ) : null}
 
-        {!FINALIZATION_ACTION_ENABLED ? (
+        {CORRECTION_ACTION_ENABLED && finalized && !correctionArmed ? (
+          <button type="button" className={styles.secondary} disabled={busy} onClick={() => setCorrectionArmed(true)}>
+            Correct Finalized Results
+          </button>
+        ) : null}
+
+        {CORRECTION_ACTION_ENABLED && finalized && correctionArmed ? (
+          <div className={styles.confirmation}>
+            <strong>Prepare rating correction?</strong>
+            <p>
+              This removes Clash rating updates for this event and every later finalized event. Match results stay in place until you reopen the result you need to fix.
+            </p>
+            <div className={styles.confirmActions}>
+              <button type="button" className={styles.secondary} disabled={busy} onClick={() => setCorrectionArmed(false)}>
+                Cancel
+              </button>
+              <button type="button" disabled={busy} onClick={() => void prepareCorrection()}>
+                {busy ? 'Resetting ratings…' : 'Confirm Rating Reset'}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {!FINALIZATION_ACTION_ENABLED || !CORRECTION_ACTION_ENABLED ? (
           <small>
-            Rating finalization is being verified in staging. No write action is exposed yet.
+            Rating finalization and correction are being verified in staging. No rating write action is exposed yet.
           </small>
         ) : finalized ? (
           <small>This event has already been finalized.</small>
@@ -215,5 +277,16 @@ async function requestFinalization(roundId: string, mode: 'preview' | 'finalize'
   });
   const body = await response.json() as FinalizeResponse;
   if (!response.ok) throw new Error(body.error || 'Clash rating request failed.');
+  return body;
+}
+
+async function requestCorrection(roundId: string): Promise<CorrectionResponse> {
+  const response = await fetch('/api/commissioner/clash-ratings/correction', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({roundId}),
+  });
+  const body = await response.json() as CorrectionResponse;
+  if (!response.ok) throw new Error(body.error || 'Clash rating correction request failed.');
   return body;
 }
