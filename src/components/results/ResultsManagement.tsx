@@ -2,6 +2,7 @@
 
 import {useMemo, useState} from 'react';
 import {services} from '@/core/ServiceContainer';
+import {ClashRatingFinalization} from '@/components/results/ClashRatingFinalization';
 import type {Course} from '@/domain/course/Course';
 import type {
   MatchResult,
@@ -207,6 +208,13 @@ export function ResultsManagement({
           </select>
         </label>
       </div>
+
+      <ClashRatingFinalization
+        rounds={rounds}
+        matches={matches}
+        results={results}
+        selectedRoundId={roundId}
+      />
 
       <section className={styles.list}>
         <header>
