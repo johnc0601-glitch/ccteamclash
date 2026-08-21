@@ -15,7 +15,7 @@
     "test:courses": "node --loader ./scripts/ts-paths-loader.mjs --test src/domain/course/CourseService.test.ts",
     "test:schedule": "node --loader ./scripts/ts-paths-loader.mjs --test src/domain/schedule/ScheduleService.test.ts src/domain/schedule/ScheduleIntegration.test.ts src/domain/schedule/ScheduleImportAdapters.test.ts",
     "test:results": "node --loader ./scripts/ts-paths-loader.mjs --test src/domain/results/ResultsIntegration.test.ts",
-    "test:ratings": "node --loader ./scripts/ts-paths-loader.mjs --test src/domain/ratings/ClashRatingEngine.test.ts src/domain/ratings/ClashRatingFinalizationService.test.ts src/domain/ratings/ClashRatingStateResolver.test.ts src/domain/ratings/HistoricalClashRatingSource.test.ts",
+    "test:ratings": "node --loader ./scripts/ts-paths-loader.mjs --test src/domain/ratings/ClashRatingEngine.test.ts src/domain/ratings/ClashRatingAudit.test.ts src/domain/ratings/ClashRatingFinalizationService.test.ts src/domain/ratings/ClashRatingStateResolver.test.ts src/domain/ratings/HistoricalClashRatingSource.test.ts",
     "test:playoffs": "node --loader ./scripts/ts-paths-loader.mjs --test src/domain/playoffs/PlayoffService.test.ts",
     "test:league": "node --loader ./scripts/ts-paths-loader.mjs --test src/domain/league/LeagueService.test.ts",
     "test:launch": "node --loader ./scripts/ts-paths-loader.mjs --test src/domain/launch/LaunchService.test.ts",
