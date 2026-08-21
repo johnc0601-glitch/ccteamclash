@@ -45,6 +45,7 @@ export type LaunchPlayer = {
   pdgaNumber: string;
   pdgaRating: number | null;
   clashIndex?: number | null;
+  clashIndexProvisional?: boolean;
   currentTeamId: string | null;
   homeArea: string;
   active: boolean;
