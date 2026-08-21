@@ -2,6 +2,7 @@ import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {RankingsClient, type ClashRankingEntry, type HistoricalRankingEntry, type SeasonRankingGroup} from '@/components/rankings/RankingsClient';
 import {getHistoricalSeasonArchives, isHistoricalFemalePlayer, type HistoricalPlayerSeasonSummary} from '@/data/historicalSeed';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
+import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
 import styles from './Rankings.module.css';
@@ -48,12 +49,20 @@ async function getClashData(): Promise<{rankings: {open: ClashRankingEntry[]; wo
     const teamNames = new Map(teams.map((team) => [team.id, team.name]));
     const teamColors = Object.fromEntries(teams.map((team) => [team.name, team.primary_color || '#006f71']));
     const ranked = players.filter((player) => player.active && player.clashIndex != null).sort((first, second) => (second.clashIndex ?? 0) - (first.clashIndex ?? 0) || first.name.localeCompare(second.name, undefined, {sensitivity: 'base'}));
-    const withRanks = toClashEntries(ranked.map((player) => ({playerId: player.id, playerName: player.name, teamName: player.currentTeamId ? teamNames.get(player.currentTeamId) ?? 'Unassigned' : 'Unassigned', clashIndex: player.clashIndex ?? 0, gender: player.gender})));
+    const withRanks = toClashEntries(ranked.map((player) => ({playerId: player.id, playerName: player.name, teamName: player.currentTeamId ? teamNames.get(player.currentTeamId) ?? 'Unassigned' : 'Unassigned', clashIndex: player.clashIndex ?? 0, gender: player.gender, provisional: isGhostSeed(player)})));
     return {rankings: {open: withRanks, women: toClashEntries(withRanks.filter((entry) => entry.gender === 'Female')), junior: []}, teamColors};
   } catch (error) {
     console.error('Clash Index rankings are unavailable.', error);
     return empty;
   }
+}
+
+function isGhostSeed(player: LaunchPlayer): boolean {
+  if (player.clashIndexProvisional === true) return true;
+  return player.pdgaRating == null && (
+    (player.gender === 'Female' && player.clashIndex === 725)
+    || (player.gender === 'Male' && player.clashIndex === 850)
+  );
 }
 
 function toClashEntries(entries: Array<Omit<ClashRankingEntry, 'rank'>>): ClashRankingEntry[] {
