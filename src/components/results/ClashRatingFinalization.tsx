@@ -36,6 +36,15 @@ type FinalizeResponse = {
   error?: string;
 };
 
+type FinalizationStatus = {
+  ok?: boolean;
+  finalized?: boolean;
+  eventOrder?: number | null;
+  eventLabel?: string | null;
+  finalizedAt?: string | null;
+  error?: string;
+};
+
 export function ClashRatingFinalization({
   rounds,
   matches,
@@ -47,6 +56,8 @@ export function ClashRatingFinalization({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [finalized, setFinalized] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(false);
   const round = rounds.find((candidate) => candidate.id === selectedRoundId);
   const roundMatches = useMemo(
     () => matches.filter((match) =>
@@ -63,13 +74,33 @@ export function ClashRatingFinalization({
   const complete = roundMatches.length > 0 && publishedCount === roundMatches.length;
 
   useEffect(() => {
+    let cancelled = false;
     setPreview(null);
     setMessage('');
     setError('');
+    setFinalized(false);
+
+    if (!selectedRoundId) return () => { cancelled = true; };
+
+    setCheckingStatus(true);
+    void requestFinalizationStatus(selectedRoundId)
+      .then((status) => {
+        if (!cancelled) setFinalized(Boolean(status.finalized));
+      })
+      .catch((requestError) => {
+        if (!cancelled) {
+          setError(requestError instanceof Error ? requestError.message : 'Unable to check Clash rating status.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCheckingStatus(false);
+      });
+
+    return () => { cancelled = true; };
   }, [selectedRoundId]);
 
   async function reviewFinalization() {
-    if (!selectedRoundId || !complete || busy) return;
+    if (!selectedRoundId || !complete || finalized || busy) return;
     setBusy(true);
     setError('');
     setMessage('');
@@ -85,13 +116,14 @@ export function ClashRatingFinalization({
   }
 
   async function finalizeRatings() {
-    if (!selectedRoundId || !preview || busy) return;
+    if (!selectedRoundId || !preview || finalized || busy) return;
     setBusy(true);
     setError('');
     setMessage('');
     try {
       const response = await requestFinalization(selectedRoundId, 'finalize');
       setPreview(null);
+      setFinalized(true);
       setMessage(`Round ${response.preview?.eventOrder ?? round?.number ?? ''} Clash Index ratings finalized.`);
       router.refresh();
     } catch (requestError) {
@@ -100,6 +132,14 @@ export function ClashRatingFinalization({
       setBusy(false);
     }
   }
+
+  const statusLabel = finalized
+    ? 'Finalized'
+    : checkingStatus
+      ? 'Checking status'
+      : complete
+        ? 'Ready to finalize'
+        : 'Waiting for results';
 
   return (
     <section className={styles.panel} aria-labelledby="clash-rating-finalization-title">
@@ -111,21 +151,22 @@ export function ClashRatingFinalization({
             ? `${publishedCount} of ${roundMatches.length} eligible match results are published for Round ${round.number}.`
             : 'Select a round to review rating readiness.'}
         </p>
+        {finalized ? <p className={styles.message}>This event&apos;s Clash Index ratings are finalized.</p> : null}
         {message ? <p className={styles.message} role="status">{message}</p> : null}
         {error ? <p className={styles.error} role="alert">{error}</p> : null}
       </div>
       <div className={styles.actionArea}>
-        <span className={complete ? styles.ready : styles.waiting}>
-          {complete ? 'Ready to finalize' : 'Waiting for results'}
+        <span className={finalized ? styles.finalized : complete ? styles.ready : styles.waiting}>
+          {statusLabel}
         </span>
 
-        {FINALIZATION_ACTION_ENABLED && complete && !preview ? (
-          <button type="button" disabled={busy} onClick={() => void reviewFinalization()}>
+        {FINALIZATION_ACTION_ENABLED && complete && !finalized && !preview ? (
+          <button type="button" disabled={busy || checkingStatus} onClick={() => void reviewFinalization()}>
             {busy ? 'Checking ratings…' : 'Finalize Event & Update Clash Index'}
           </button>
         ) : null}
 
-        {FINALIZATION_ACTION_ENABLED && preview ? (
+        {FINALIZATION_ACTION_ENABLED && preview && !finalized ? (
           <div className={styles.confirmation}>
             <strong>Confirm {preview.eventLabel}</strong>
             <p>
@@ -146,12 +187,24 @@ export function ClashRatingFinalization({
           <small>
             Rating finalization is being verified in staging. No write action is exposed yet.
           </small>
+        ) : finalized ? (
+          <small>This event has already been finalized.</small>
         ) : !complete ? (
           <small>Publish every eligible match result before ratings can be finalized.</small>
         ) : null}
       </div>
     </section>
   );
+}
+
+async function requestFinalizationStatus(roundId: string): Promise<FinalizationStatus> {
+  const response = await fetch(`/api/commissioner/clash-ratings/finalize?roundId=${encodeURIComponent(roundId)}`, {
+    method: 'GET',
+    cache: 'no-store',
+  });
+  const body = await response.json() as FinalizationStatus;
+  if (!response.ok) throw new Error(body.error || 'Clash rating status request failed.');
+  return body;
 }
 
 async function requestFinalization(roundId: string, mode: 'preview' | 'finalize'): Promise<FinalizeResponse> {
