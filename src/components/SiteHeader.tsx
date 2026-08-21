@@ -96,6 +96,7 @@ export function Footer() {
           <Link href="/playoffs">Playoffs</Link>
           <Link href="/rankings">Rankings</Link>
           <Link href="/history">History</Link>
+          <Link href="/teams">Teams</Link>
           <Link href="/courses">Courses</Link>
           <Link href="/admin">Post</Link>
         </div>
