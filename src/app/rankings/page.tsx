@@ -156,34 +156,15 @@ async function getLatestClashChanges(supabase: SupabaseClient): Promise<Map<stri
 
     if (seasonError || !season) return new Map();
 
-    const {data: latestEvent, error: eventError} = await supabase
-      .from('clash_rating_event_players')
-      .select('event_order')
-      .eq('season_id', season.id)
-      .order('event_order', {ascending: false})
-      .limit(1)
-      .maybeSingle();
-
-    if (eventError || !latestEvent) return new Map();
-
     const {data, error} = await supabase
-      .from('clash_rating_event_players')
-      .select('player_id,rating_before,rating_after')
-      .eq('season_id', season.id)
-      .eq('event_order', latestEvent.event_order);
+      .from('clash_rating_latest_changes')
+      .select('player_id,rating_change')
+      .eq('season_id', season.id);
 
     if (error || !data) return new Map();
 
-    const rows = data as Array<{
-      player_id: string;
-      rating_before: number;
-      rating_after: number;
-    }>;
-
-    return new Map(rows.map((row) => [
-      row.player_id,
-      Math.round(row.rating_after - row.rating_before),
-    ]));
+    const rows = data as Array<{player_id: string; rating_change: number}>;
+    return new Map(rows.map((row) => [row.player_id, row.rating_change]));
   } catch (error) {
     console.error('Latest Clash Index movement is unavailable.', error);
     return new Map();
