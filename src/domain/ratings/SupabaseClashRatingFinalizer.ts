@@ -233,27 +233,53 @@ export class SupabaseClashRatingFinalizer {
     eventOrder: number,
     participantIds: Set<string>,
   ): Promise<PriorEventRatingSnapshot[]> {
-    if (eventOrder <= 1 || !participantIds.size) return [];
-    const {data, error} = await this.db
-      .from('clash_rating_event_players')
-      .select('player_id,event_order,rating_after,rated_results_after,provisional_events_after,provisional_after')
-      .eq('season_id', seasonId)
-      .lt('event_order', eventOrder)
-      .in('player_id', [...participantIds])
-      .order('event_order', {ascending: false});
-    if (error) throw error;
+    if (!participantIds.size) return [];
 
     const latest = new Map<string, PriorEventRatingSnapshot>();
-    for (const row of data ?? []) {
-      if (latest.has(row.player_id)) continue;
-      latest.set(row.player_id, {
-        playerId: row.player_id,
-        ratingAfter: row.rating_after,
-        ratedResultsAfter: row.rated_results_after,
-        provisionalEventsAfter: row.provisional_events_after,
-        provisionalAfter: row.provisional_after,
-      });
+
+    if (eventOrder > 1) {
+      const {data, error} = await this.db
+        .from('clash_rating_event_players')
+        .select('player_id,event_order,rating_after,rated_results_after,provisional_events_after,provisional_after')
+        .eq('season_id', seasonId)
+        .lt('event_order', eventOrder)
+        .in('player_id', [...participantIds])
+        .order('event_order', {ascending: false});
+      if (error) throw error;
+
+      for (const row of data ?? []) {
+        if (latest.has(row.player_id)) continue;
+        latest.set(row.player_id, {
+          playerId: row.player_id,
+          ratingAfter: row.rating_after,
+          ratedResultsAfter: row.rated_results_after,
+          provisionalEventsAfter: row.provisional_events_after,
+          provisionalAfter: row.provisional_after,
+        });
+      }
     }
+
+    const missingIds = [...participantIds].filter((playerId) => !latest.has(playerId));
+    if (missingIds.length) {
+      const {data: starts, error: startsError} = await this.db
+        .from('clash_rating_season_starts')
+        .select('player_id,rating,rated_results,provisional_events,provisional')
+        .eq('season_id', seasonId)
+        .eq('algorithm_version', CLASH_ALGORITHM_VERSION)
+        .in('player_id', missingIds);
+      if (startsError) throw startsError;
+
+      for (const row of starts ?? []) {
+        latest.set(row.player_id, {
+          playerId: row.player_id,
+          ratingAfter: row.rating,
+          ratedResultsAfter: row.rated_results,
+          provisionalEventsAfter: row.provisional_events,
+          provisionalAfter: row.provisional,
+        });
+      }
+    }
+
     return [...latest.values()];
   }
 }
