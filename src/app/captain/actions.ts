@@ -19,12 +19,41 @@ type CaptainReviewClient = {
   ) => Promise<{error: {message: string} | null}>;
 };
 
+type CaptainReturnClient = {
+  rpc: (
+    fn: 'captain_return_rostered_player_to_commissioner',
+    args: {target_player_id: string},
+  ) => Promise<{error: {message: string} | null}>;
+};
+
 export async function confirmTeamApplication(formData: FormData) {
   await reviewTeamApplication(formData, 'Approved');
 }
 
 export async function rejectTeamApplication(formData: FormData) {
   await reviewTeamApplication(formData, 'Rejected');
+}
+
+export async function returnRosteredPlayerToCommissioner(formData: FormData) {
+  const playerId = readFormValue(formData, 'playerId');
+  if (!playerId) redirect('/captain?error=Player is required.');
+
+  const supabase = await createClient();
+  const {data, error} = await supabase.auth.getUser();
+  if (error || !data.user) redirect('/account?error=Sign in first.');
+
+  const {error: returnError} = await (supabase as unknown as CaptainReturnClient).rpc(
+    'captain_return_rostered_player_to_commissioner',
+    {target_player_id: playerId},
+  );
+  if (returnError) redirect(`/captain?error=${encodeURIComponent(returnError.message)}`);
+
+  revalidatePath('/captain');
+  revalidatePath('/office/players');
+  revalidatePath('/players');
+  revalidatePath('/account');
+  revalidatePath('/teams');
+  redirect(`/captain?notice=${encodeURIComponent('Player removed from your roster and sent to the commissioner for review.')}`);
 }
 
 export async function saveTeamAppearance(formData: FormData) {
