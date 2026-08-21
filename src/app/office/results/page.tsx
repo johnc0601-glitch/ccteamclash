@@ -1,4 +1,5 @@
 import {OfficePage} from '@/components/commissioner/OfficePage';
+import {ClashRatingFinalization} from '@/components/results/ClashRatingFinalization';
 import {ResultsExplorer} from '@/components/results/ResultsExplorer';
 import {ResultsManagement} from '@/components/results/ResultsManagement';
 import {createServerResultsService} from '@/core/createServerResultsService';
@@ -34,6 +35,12 @@ export default async function OfficeResultsPage() {
 
   return (
     <OfficePage sectionId="results">
+      <ClashRatingFinalization
+        rounds={rounds}
+        matches={allMatches}
+        results={results}
+        selectedRoundId={initialRoundId}
+      />
       <ResultsExplorer
         schedules={schedules}
         rounds={rounds}
