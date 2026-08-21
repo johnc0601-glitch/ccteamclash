@@ -240,10 +240,7 @@ function provisionalMultiplier(state: ClashRatingState): number {
 }
 
 function priorClashWeight(priorRatedResults: number): number {
-  if (priorRatedResults <= 2) return 0.25;
-  if (priorRatedResults <= 5) return 0.5;
-  if (priorRatedResults <= 9) return 0.65;
-  return 0.75;
+  return priorRatedResults <= 5 ? 0.5 : 0.6;
 }
 
 function provisionalStartForDivision(division: ClashDivision): number {
