@@ -3,6 +3,7 @@ import {
   SupabaseClashRatingFinalizer,
   type ClashFinalizationPreview,
 } from '@/domain/ratings/SupabaseClashRatingFinalizer';
+import {SupabaseClashRatingRebuilder} from '@/domain/ratings/SupabaseClashRatingRebuilder';
 import {createClient} from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
@@ -63,7 +64,8 @@ export async function POST(request: Request) {
     return Response.json({error: 'mode must be preview or finalize.'}, {status: 400});
   }
 
-  const finalizer = new SupabaseClashRatingFinalizer(access.supabase as never);
+  const db = access.supabase as any;
+  const finalizer = new SupabaseClashRatingFinalizer(db);
 
   try {
     if (mode === 'preview') {
@@ -72,11 +74,15 @@ export async function POST(request: Request) {
     }
 
     const result = await finalizer.finalize(roundId);
+    const rebuilder = new SupabaseClashRatingRebuilder(db, finalizer);
+    const rebuild = await rebuilder.continueAfterFinalization(roundId, result.runId);
+
     return Response.json({
       ok: true,
       mode,
       runId: result.runId,
       preview: summarizePreview(result.preview),
+      rebuild,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Clash rating finalization failed.';
