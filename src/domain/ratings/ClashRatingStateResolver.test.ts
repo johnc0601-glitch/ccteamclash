@@ -34,11 +34,14 @@ test('new player without PDGA starts provisional by division', () => {
   assert.equal(women[0].provisional, true);
 });
 
-test('later events continue from previous finalized event state', () => {
+test('later events continue from each players latest finalized appearance', () => {
   const states = resolveEventStartStates({
-    players: [player('p1', 999)],
-    priorSeason: [{playerId: 'p1', rating: 940, ratedResults: 6}],
-    priorEvent: [{
+    players: [player('p1', 999), player('p2', 900)],
+    priorSeason: [
+      {playerId: 'p1', rating: 940, ratedResults: 6},
+      {playerId: 'p2', rating: 880, ratedResults: 6},
+    ],
+    latestPriorByPlayer: [{
       playerId: 'p1',
       ratingAfter: 951,
       ratedResultsAfter: 9,
@@ -54,6 +57,7 @@ test('later events continue from previous finalized event state', () => {
     provisionalEventsPlayed: 0,
     provisional: false,
   });
+  assert.equal(states[1].rating, 892);
 });
 
 function player(
