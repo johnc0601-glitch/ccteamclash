@@ -18,26 +18,25 @@ export type PriorEventRatingSnapshot = {
 export function resolveEventStartStates(input: {
   players: LaunchPlayer[];
   priorSeason: PriorSeasonRatingSnapshot[];
-  priorEvent?: PriorEventRatingSnapshot[];
+  latestPriorByPlayer?: PriorEventRatingSnapshot[];
 }): ClashRatingState[] {
-  if (input.priorEvent?.length) {
-    const priorByPlayer = new Map(input.priorEvent.map((row) => [row.playerId, row]));
-    return input.players.map((player) => {
-      const prior = priorByPlayer.get(player.id);
-      if (prior) {
-        return {
-          playerId: player.id,
-          rating: Math.round(prior.ratingAfter),
-          ratedResults: prior.ratedResultsAfter,
-          provisionalEventsPlayed: prior.provisionalEventsAfter,
-          provisional: prior.provisionalAfter,
-        };
-      }
-      return firstEventState(player, input.priorSeason);
-    });
-  }
+  const priorByPlayer = new Map(
+    (input.latestPriorByPlayer ?? []).map((row) => [row.playerId, row]),
+  );
 
-  return input.players.map((player) => firstEventState(player, input.priorSeason));
+  return input.players.map((player) => {
+    const prior = priorByPlayer.get(player.id);
+    if (prior) {
+      return {
+        playerId: player.id,
+        rating: Math.round(prior.ratingAfter),
+        ratedResults: prior.ratedResultsAfter,
+        provisionalEventsPlayed: prior.provisionalEventsAfter,
+        provisional: prior.provisionalAfter,
+      };
+    }
+    return firstEventState(player, input.priorSeason);
+  });
 }
 
 function firstEventState(player: LaunchPlayer, priorSeason: PriorSeasonRatingSnapshot[]): ClashRatingState {
