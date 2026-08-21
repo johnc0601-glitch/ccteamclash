@@ -13,7 +13,7 @@ import {
 } from '@/data/historicalSeed';
 import type {TeamScheduleEvent} from '@/domain/schedule/ScheduleService';
 import {getStoredCourses} from '@/services/courses/CourseStore';
-import {getStoredTeamById, getStoredTeams} from '@/services/teams/TeamStore';
+import {getStoredTeamById} from '@/services/teams/TeamStore';
 import {buildPublicTeamRoster} from '@/services/public/PublicRosterService';
 import type {RecordSummary} from '@/services/statistics';
 import {createSlug} from '@/shared/utils';
@@ -31,11 +31,6 @@ function formatRecord(record: RecordSummary): string {
   return record.ties
     ? `${record.wins}-${record.losses}-${record.ties}`
     : `${record.wins}-${record.losses}`;
-}
-
-export async function generateStaticParams() {
-  const teams = await getStoredTeams({status: 'active'});
-  return teams.map((team) => ({id: team.id}));
 }
 
 export default async function TeamPage({params}: TeamPageProps) {
