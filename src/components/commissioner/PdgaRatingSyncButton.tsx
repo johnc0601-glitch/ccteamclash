@@ -7,13 +7,17 @@ type SyncSummary = {
   unchanged: number;
   'no-current-rating': number;
   'not-found': number;
+  deferred: number;
   error: number;
 };
 
 type SyncResponse = {
   ok?: boolean;
   total?: number;
+  processed?: number;
   summary?: SyncSummary;
+  stoppedEarly?: boolean;
+  stopReason?: string;
   error?: string;
 };
 
@@ -32,13 +36,13 @@ export function PdgaRatingSyncButton() {
   const [message, setMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
 
-  async function runSync() {
+  async function runSync(): Promise<SyncResponse> {
     const response = await fetch('/api/commissioner/pdga/sync', {method: 'POST'});
     const payload = await response.json() as SyncResponse;
     if (!response.ok || !payload.summary) {
       throw new Error(payload.error ?? 'PDGA rating sync failed.');
     }
-    return payload.summary;
+    return payload;
   }
 
   async function handleSync() {
@@ -47,12 +51,10 @@ export function PdgaRatingSyncButton() {
     setIsError(false);
 
     try {
-      const summary = await runSync();
-      setMessage(
-        `PDGA sync complete: ${summary.updated} updated, ${summary.unchanged} unchanged, ` +
-        `${summary['no-current-rating']} without a current rating, ${summary['not-found']} not found, ${summary.error} errors.`,
-      );
-      setIsError(summary.error > 0);
+      const result = await runSync();
+      const summary = result.summary!;
+      setMessage(formatSyncSummary('PDGA sync complete:', summary, result.stopReason));
+      setIsError(summary.error > 0 || summary.deferred > 0 || Boolean(result.stoppedEarly));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'PDGA rating sync failed.');
       setIsError(true);
@@ -73,16 +75,21 @@ export function PdgaRatingSyncButton() {
         throw new Error(imported.error ?? 'Recovered PDGA import failed.');
       }
 
-      const summary = await runSync();
+      const sync = await runSync();
+      const summary = sync.summary!;
       const conflicts = imported.conflicts?.length ?? 0;
       const missing = imported.missing?.length ?? 0;
-      setMessage(
+      const importPrefix =
         `Imported ${imported.updated ?? 0} recovered PDGA numbers, ${imported.unchanged ?? 0} already matched, ` +
-        `${conflicts} conflicts, ${missing} missing records. Ratings: ${summary.updated} updated, ` +
-        `${summary.unchanged} unchanged, ${summary['no-current-rating']} without a current rating, ` +
-        `${summary['not-found']} not found, ${summary.error} errors.`,
+        `${conflicts} conflicts, ${missing} missing records. Ratings:`;
+      setMessage(formatSyncSummary(importPrefix, summary, sync.stopReason));
+      setIsError(
+        conflicts > 0
+        || missing > 0
+        || summary.error > 0
+        || summary.deferred > 0
+        || Boolean(sync.stoppedEarly)
       );
-      setIsError(conflicts > 0 || missing > 0 || summary.error > 0);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Recovered PDGA import failed.');
       setIsError(true);
@@ -126,4 +133,12 @@ export function PdgaRatingSyncButton() {
       ) : null}
     </section>
   );
+}
+
+function formatSyncSummary(prefix: string, summary: SyncSummary, stopReason?: string): string {
+  const base =
+    `${prefix} ${summary.updated} updated, ${summary.unchanged} unchanged, ` +
+    `${summary['no-current-rating']} without a current rating, ${summary['not-found']} not found, ` +
+    `${summary.deferred} deferred, ${summary.error} errors.`;
+  return stopReason ? `${base} ${stopReason}` : base;
 }
