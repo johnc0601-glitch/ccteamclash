@@ -282,11 +282,16 @@ function ClashTable({entries}: {entries: ClashRankingEntry[]}) {
               <span>{entry.clashIndex}</span>
               {entry.ratingChange !== null ? (
                 <span
-                  className={entry.ratingChange > 0
-                    ? styles.ratingGain
-                    : entry.ratingChange < 0
-                      ? styles.ratingLoss
-                      : styles.ratingEven}
+                  style={{
+                    marginLeft: 8,
+                    fontSize: 12,
+                    fontWeight: 950,
+                    color: entry.ratingChange > 0
+                      ? '#16834d'
+                      : entry.ratingChange < 0
+                        ? '#c33b35'
+                        : '#78807d',
+                  }}
                   aria-label={`${entry.ratingChange >= 0 ? 'plus ' : 'minus '}${Math.abs(entry.ratingChange)} from the latest event`}
                 >
                   {formatRatingChange(entry.ratingChange)}
