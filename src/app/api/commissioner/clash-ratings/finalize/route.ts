@@ -1,5 +1,8 @@
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
-import {SupabaseClashRatingFinalizer} from '@/domain/ratings/SupabaseClashRatingFinalizer';
+import {
+  SupabaseClashRatingFinalizer,
+  type ClashFinalizationPreview,
+} from '@/domain/ratings/SupabaseClashRatingFinalizer';
 import {createClient} from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
@@ -46,7 +49,7 @@ export async function POST(request: Request) {
   try {
     if (mode === 'preview') {
       const preview = await finalizer.preview(roundId);
-      return Response.json({ok: true, mode, preview});
+      return Response.json({ok: true, mode, preview: summarizePreview(preview)});
     }
 
     const result = await finalizer.finalize(roundId);
@@ -54,11 +57,24 @@ export async function POST(request: Request) {
       ok: true,
       mode,
       runId: result.runId,
-      preview: result.preview,
+      preview: summarizePreview(result.preview),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Clash rating finalization failed.';
     const conflict = /already been finalized|must be finalized|cannot be finalized|missing|not published/i.test(message);
     return Response.json({error: message}, {status: conflict ? 409 : 500});
   }
+}
+
+function summarizePreview(preview: ClashFinalizationPreview) {
+  return {
+    roundId: preview.roundId,
+    seasonId: preview.seasonId,
+    eventOrder: preview.eventOrder,
+    eventLabel: preview.eventLabel,
+    eligibleMatches: preview.eligibleMatches,
+    publishedMatches: preview.publishedMatches,
+    participatingPlayers: preview.participatingPlayers,
+    ratedContests: preview.ratedContests,
+  };
 }
