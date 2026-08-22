@@ -34,7 +34,7 @@ export async function createLeagueAccount(formData: FormData) {
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/callback?flow=signup-confirm&next=/`,
+      emailRedirectTo: `${origin}/auth/callback?flow=signup-confirm&next=/account`,
       data: {displayName},
     },
   });
@@ -42,9 +42,9 @@ export async function createLeagueAccount(formData: FormData) {
   if (error) redirect(`/account/create?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
   if (data.user && data.session) {
     revalidatePath('/account');
-    redirect('/account?notice=Account created. Complete your one-time Player Setup, then register for the season.');
+    redirect('/account?notice=Account created. Finish registration by connecting your player record and choosing a team.');
   }
-  redirect('/account?notice=Account created. Confirm your email, then complete Player Setup and season registration.');
+  redirect('/account?notice=Account created. Confirm your email to continue registration.');
 }
 
 export async function completePlayerSetup(formData: FormData) {
@@ -96,7 +96,7 @@ export async function completePlayerSetup(formData: FormData) {
   revalidatePath('/account');
   revalidatePath('/players');
   revalidatePath('/office/players');
-  redirect(`/account?notice=${encodeURIComponent(playedBefore ? 'Player Setup complete. Your previous Coastal Clash history is connected.' : 'Player Setup complete. Your new Coastal Clash player record is ready.')}`);
+  redirect('/account?notice=Player record connected. Next, choose your team to finish registration.');
 }
 
 export async function submitSeasonApplication(formData: FormData) {
@@ -104,7 +104,7 @@ export async function submitSeasonApplication(formData: FormData) {
   const requestedTeamId = readFormValue(formData, 'requestedTeamId');
   let playerType = readPlayerType(readFormValue(formData, 'playerType'));
   let gender = readApplicationGender(readFormValue(formData, 'gender'));
-  if (!seasonId || !requestedTeamId) redirect('/account?error=Complete all season registration fields.');
+  if (!seasonId || !requestedTeamId) redirect('/account?error=Choose a team and complete all registration fields.');
 
   const supabase = await createClient();
   const {data: {user}, error: userError} = await supabase.auth.getUser();
@@ -118,7 +118,7 @@ export async function submitSeasonApplication(formData: FormData) {
     .maybeSingle();
   if (profileError) redirect(`/account?error=${encodeURIComponent(profileError.message)}`);
   if (!profile?.player_id || typeof profile.played_before !== 'boolean') {
-    redirect('/account?error=Finish your one-time Player Setup before registering for the season.');
+    redirect('/account?error=Connect your player record before choosing a team.');
   }
 
   const [{data: priorApplication}, {data: playerRow}] = await Promise.all([
@@ -162,7 +162,7 @@ export async function submitSeasonApplication(formData: FormData) {
   revalidatePath('/captain');
   revalidatePath('/office/players');
   revalidatePath('/players');
-  redirect('/account?notice=Season registration submitted. Your selected team captain must approve it before you are added to the roster.');
+  redirect('/account?notice=Registration submitted. Your selected team captain must approve it before you are added to the roster.');
 }
 
 export async function signInWithPassword(formData: FormData) {
