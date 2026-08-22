@@ -12,8 +12,8 @@ export function buildMatchdayRatingSnapshots(
   capturedAt = new Date().toISOString(),
 ): MatchRatingSnapshot[] {
   const players: MatchSnapshotPlayer[] = [
-    ...matchday.homeTeam.roster.map((player) => toSnapshotPlayer(player, matchday.homeTeam.id, 'Home')),
-    ...matchday.awayTeam.roster.map((player) => toSnapshotPlayer(player, matchday.awayTeam.id, 'Away')),
+    ...matchday.homeTeam.roster.map((player) => toSnapshotPlayer(player, matchday.homeTeam.id, matchday.homeTeam.name, 'Home')),
+    ...matchday.awayTeam.roster.map((player) => toSnapshotPlayer(player, matchday.awayTeam.id, matchday.awayTeam.name, 'Away')),
   ];
 
   return buildMatchRatingSnapshots(matchday.id, players, capturedAt);
@@ -22,6 +22,7 @@ export function buildMatchdayRatingSnapshots(
 function toSnapshotPlayer(
   player: LaunchPlayer,
   teamId: string,
+  teamName: string,
   side: 'Home' | 'Away',
 ): MatchSnapshotPlayer {
   if (player.clashIndex == null) {
@@ -34,7 +35,7 @@ function toSnapshotPlayer(
     playerId: player.id,
     teamId,
     playerName: player.name,
-    teamName: '', // Snapshot persistence can resolve/fill the immutable team display name.
+    teamName,
     side,
     clashIndex: player.clashIndex,
     ciSource: sourceForPlayer(player),
