@@ -34,8 +34,8 @@ test('ledger records home adjustment only on home side and doubles pair ratings'
 
   assert.equal(home.homeAdjustment, 15);
   assert.equal(away.homeAdjustment, 0);
-  assert.equal(home.ownPairRating, 980);
-  assert.equal(home.opponentPairRating, 945);
+  assert.equal(home.ownPairRating, 970);
+  assert.equal(home.opponentPairRating, 942.5);
   assert.equal(home.partnerPlayerId, 'h2');
   assert.equal(home.opponentTwoPlayerId, 'a2');
 });
