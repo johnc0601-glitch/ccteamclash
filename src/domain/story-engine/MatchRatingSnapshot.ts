@@ -1,5 +1,7 @@
 import {CLASH_MODEL_VERSION} from './ClashPrediction';
 
+export type ClashIndexSource = 'Established' | 'GhostAverage';
+
 export type MatchRatingSnapshot = {
   matchId: string;
   playerId: string;
@@ -8,7 +10,7 @@ export type MatchRatingSnapshot = {
   teamName: string;
   side: 'Home' | 'Away';
   clashIndexBefore: number;
-  provisionalBefore: boolean;
+  ciSourceBefore: ClashIndexSource;
   algorithmVersion: string;
   capturedAt: string;
 };
@@ -19,21 +21,21 @@ export type MatchSnapshotPlayer = {
   playerName: string;
   teamName: string;
   side: 'Home' | 'Away';
-  clashIndex: number | null;
-  provisional: boolean;
+  clashIndex: number;
+  ciSource: ClashIndexSource;
 };
 
 /**
- * Builds the immutable rating state for a team match before any of that match's
- * contests are applied. Players without a CI are deliberately excluded rather
- * than silently assigning a synthetic rating.
+ * Every active Matchday player has a numeric CI. A ghost CI is an averaged
+ * starting value, not a missing rating. Preserve its source independently so
+ * the same numeric pipeline can rate everyone while retaining provenance.
  */
 export function buildMatchRatingSnapshots(
   matchId: string,
   players: MatchSnapshotPlayer[],
   capturedAt = new Date().toISOString(),
 ): MatchRatingSnapshot[] {
-  return players.flatMap((player) => player.clashIndex === null ? [] : [{
+  return players.map((player) => ({
     matchId,
     playerId: player.playerId,
     teamId: player.teamId,
@@ -41,8 +43,8 @@ export function buildMatchRatingSnapshots(
     teamName: player.teamName,
     side: player.side,
     clashIndexBefore: player.clashIndex,
-    provisionalBefore: player.provisional,
+    ciSourceBefore: player.ciSource,
     algorithmVersion: CLASH_MODEL_VERSION,
     capturedAt,
-  }]);
+  }));
 }
