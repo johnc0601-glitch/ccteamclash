@@ -65,10 +65,10 @@ test('home advantage is temporary and increases expectation without changing sto
   assert.ok(home > 0.58 && home < 0.59);
 });
 
-test('doubles team rating gives 80 percent weight to the stronger player', () => {
-  assert.equal(doublesTeamRating(1000, 900), 980);
+test('doubles team rating gives 70 percent weight to the stronger player', () => {
+  assert.equal(doublesTeamRating(1000, 900), 970);
   assert.equal(doublesTeamRating(950, 950), 950);
-  assert.equal(doublesTeamRating(800, 1000), 960);
+  assert.equal(doublesTeamRating(800, 1000), 940);
 });
 
 test('an event uses one frozen rating snapshot for singles and doubles and then aggregates deltas', () => {
