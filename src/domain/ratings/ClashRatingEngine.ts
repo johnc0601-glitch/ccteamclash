@@ -6,8 +6,8 @@ export const CLASH_RATING_CONFIG = {
   minMovement: 2,
   maxMovement: 28,
   homeAdvantage: 15,
-  doublesStrongPlayerWeight: 0.8,
-  doublesWeakPlayerWeight: 0.2,
+  doublesStrongPlayerWeight: 0.7,
+  doublesWeakPlayerWeight: 0.3,
   openProvisionalStart: 850,
   womenProvisionalStart: 725,
 } as const;
