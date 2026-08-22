@@ -44,7 +44,7 @@ export async function createLeagueAccount(formData: FormData) {
     revalidatePath('/account');
     redirect('/account?notice=Account created. Finish registration by connecting your player record and choosing a team.');
   }
-  redirect('/account?notice=Account created. Confirm your email to continue registration.');
+  redirect(`/account/check-email?email=${encodeURIComponent(email)}`);
 }
 
 export async function completePlayerSetup(formData: FormData) {
@@ -172,7 +172,12 @@ export async function signInWithPassword(formData: FormData) {
   if (!password) redirect('/account?error=Enter your password.');
   const supabase = await createClient();
   const {error} = await supabase.auth.signInWithPassword({email, password});
-  if (error) redirect(`/account?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
+  if (error) {
+    if (isEmailNotConfirmed(error)) {
+      redirect(`/account/check-email?email=${encodeURIComponent(email)}&error=${encodeURIComponent('Your account exists, but your email has not been confirmed. Open the confirmation email we sent you before signing in.')}`);
+    }
+    redirect(`/account?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
+  }
   revalidatePath('/account');
   redirect('/account?notice=You are signed in.');
 }
@@ -253,8 +258,13 @@ function normalizePlayerName(value: string): string { return value.trim().replac
 function readPlayerType(value: string): 'Adult' | 'Junior' | null { return value === 'Adult' || value === 'Junior' ? value : null; }
 function readApplicationGender(value: string): 'Male' | 'Female' | null { return value === 'Male' || value === 'Female' ? value : null; }
 function readPlayedBefore(value: string): boolean | null { if (value === 'true') return true; if (value === 'false') return false; return null; }
+function isEmailNotConfirmed(error: {message?: string; code?: string}): boolean {
+  const message = error.message?.trim().toLocaleLowerCase();
+  return error.code === 'email_not_confirmed' || message === 'email not confirmed';
+}
 function getAuthErrorMessage(error: {message?: string; code?: string; status?: number}): string {
   const message = error.message?.trim();
+  if (isEmailNotConfirmed(error)) return 'Your account exists, but your email has not been confirmed. Open the confirmation email we sent you before signing in.';
   if (message === 'Invalid login credentials') return 'Email or password is wrong. Use password reset if needed.';
   if (message && message !== '{}') return message;
   if (error.code === 'over_email_send_rate_limit') return 'Email rate limit exceeded. Wait a few minutes before requesting another sign-in link.';
