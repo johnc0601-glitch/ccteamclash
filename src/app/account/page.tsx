@@ -325,29 +325,31 @@ function MemberProfile({
         {!playerSetupComplete ? (
           <div style={{marginTop: '1rem'}}>
             <span className={styles.eyebrow}>One-time player setup</span>
-            <h3>Have you played Coastal Clash before?</h3>
-            <p className={styles.linkingNote}>Answer this once. It connects your account to the correct player history before season registration.</p>
+            <h3>Find your Coastal Clash player record</h3>
+            <p className={styles.linkingNote}>Most players already have a record. Search for your name first so your history, rankings, and team records stay connected.</p>
 
             <form className={styles.form} action={completePlayerSetup}>
-              <input name="playedBefore" type="hidden" value="false" />
-              <button className={styles.secondaryButton} type="submit">No — I&apos;m a new Coastal Clash player</button>
+              <input name="playedBefore" type="hidden" value="true" />
+              <label htmlFor="setupRequestedPlayerId">Your previous player record</label>
+              <PlayerRecordSelect
+                emptyLabel="Choose your previous league name"
+                id="setupRequestedPlayerId"
+                name="requestedPlayerId"
+                players={players}
+                searchLabel="Search player names"
+                searchPlaceholder="Type your name"
+                required
+              />
+              <button className={styles.primaryButton} type="submit">Connect my player record</button>
             </form>
 
             <details style={{marginTop: '1rem'}}>
-              <summary><strong>Yes — connect my previous player record</strong></summary>
-              <form className={styles.form} action={completePlayerSetup} style={{marginTop: '0.75rem'}}>
-                <input name="playedBefore" type="hidden" value="true" />
-                <label htmlFor="setupRequestedPlayerId">Previous player record</label>
-                <PlayerRecordSelect
-                  emptyLabel="Choose your previous league name"
-                  id="setupRequestedPlayerId"
-                  name="requestedPlayerId"
-                  players={players}
-                  searchLabel="Search previous league names"
-                  searchPlaceholder="Type your old name"
-                  required
-                />
-                <button className={styles.primaryButton} type="submit">Connect previous history</button>
+              <summary><strong>I have never played Coastal Clash before</strong></summary>
+              <p className={styles.linkingNote}>Only use this if you do not have an existing Coastal Clash player record. This creates a new player with no previous league history.</p>
+              <form className={styles.form} action={completePlayerSetup}>
+                <input name="playedBefore" type="hidden" value="false" />
+                <input name="confirmNewPlayer" type="hidden" value="yes" />
+                <button className={styles.secondaryButton} type="submit">Create a new player record</button>
               </form>
             </details>
           </div>
