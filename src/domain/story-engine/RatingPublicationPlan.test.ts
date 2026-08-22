@@ -12,7 +12,7 @@ function fact(contestId: string, delta: number): ContestRatingFact {
   return {
     contestId, matchId: 'm1', playerId: 'p1', teamId: 't1', playerName: 'Player', teamName: 'Team', side: 'Home',
     clashIndexBefore: 850, format: 'Singles', outcome: 'W', opponentEffectiveCi: 900, winProbability: .4,
-    actualPoints: 1, expectedPoints: .4, performanceVsExpected: .6, ciDelta: delta, clashIndexAfter: 850 + delta,
+    actualPoints: 1, expectedPoints: .4, performanceVsExpected: .6, ciDelta: delta,
     algorithmVersion: 'v1', calculatedAt: '2026-08-22T13:00:00Z',
   };
 }
