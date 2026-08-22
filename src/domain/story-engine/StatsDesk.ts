@@ -1,36 +1,51 @@
 import {rankingsForScope, type StoryScope} from './StoryScope';
 import type {RankedStoryFact, StoryFact} from './StoryRankings';
 
+export const STATS_DESK_PREVIEW_LIMIT = 5;
+
 export type StatsDeskCategory = {
   id: string;
   label: string;
   help: string;
+  /** Top five shown by default. */
   rows: RankedStoryFact[];
+  /** Full ranking retained for the category dropdown/expander. */
+  allRows: RankedStoryFact[];
+  hasMore: boolean;
 };
 
+function category(id: string, label: string, help: string, allRows: RankedStoryFact[]): StatsDeskCategory {
+  return {
+    id,
+    label,
+    help,
+    rows: allRows.slice(0, STATS_DESK_PREVIEW_LIMIT),
+    allRows,
+    hasMore: allRows.length > STATS_DESK_PREVIEW_LIMIT,
+  };
+}
+
 /**
- * Commissioner-facing category order. This intentionally contains no editorial
- * suppression: the desk shows the ranked facts and lets a commissioner choose.
+ * Commissioner-facing category order. Each category opens with its top five,
+ * while the complete ranking remains available from a simple dropdown/expander.
  */
 export function buildStatsDesk(facts: StoryFact[], scope: StoryScope): StatsDeskCategory[] {
   const rankings = rankingsForScope(facts, scope);
   return [
-    {id: 'upsets', label: 'Biggest Upsets', help: 'Wins ranked by lowest pre-match win chance.', rows: rankings.upsetWins},
-    {id: 'ci-gaps', label: 'CI Gaps Overcome', help: 'Wins ranked by rating disadvantage overcome.', rows: rankings.ciGapsOvercome},
-    {id: 'singles-upsets', label: 'Singles Upsets', help: 'Singles wins ranked by lowest pre-match win chance.', rows: rankings.singlesUpsets},
-    {id: 'doubles-upsets', label: 'Doubles Upsets', help: 'Doubles wins using the locked 80/20 pair model.', rows: rankings.doublesUpsets},
-    {id: 'road-wins', label: 'Road Wins', help: 'Away wins ranked by lowest pre-match win chance.', rows: rankings.roadWins},
-    {id: 'home-wins', label: 'Home Wins', help: 'Home wins ranked by lowest pre-match win chance.', rows: rankings.homeWins},
-    {id: 'above-expected', label: 'Above Expectation', help: 'Results that most exceeded the model expectation.', rows: rankings.aboveExpectation},
-    {id: 'ci-gains', label: 'Biggest CI Gains', help: 'Largest positive CI changes from a contest.', rows: rankings.positiveCiChanges},
-    {id: 'ci-losses', label: 'Biggest CI Losses', help: 'Largest negative CI changes from a contest.', rows: rankings.negativeCiChanges},
-    {id: 'favorite-losses', label: 'Favorite Losses', help: 'Losses by players or pairs the model favored.', rows: rankings.favoriteLosses},
-    {id: 'closest', label: 'Closest on Paper', help: 'Contests whose pre-match probability was nearest 50/50.', rows: rankings.closestMatchups},
+    category('upsets', 'Biggest Upsets', 'Wins ranked by lowest pre-match win chance.', rankings.upsetWins),
+    category('ci-gaps', 'CI Gaps Overcome', 'Wins ranked by rating disadvantage overcome.', rankings.ciGapsOvercome),
+    category('singles-upsets', 'Singles Upsets', 'Singles wins ranked by lowest pre-match win chance.', rankings.singlesUpsets),
+    category('doubles-upsets', 'Doubles Upsets', 'Doubles wins using the locked 80/20 pair model.', rankings.doublesUpsets),
+    category('road-wins', 'Road Wins', 'Away wins ranked by lowest pre-match win chance.', rankings.roadWins),
+    category('home-wins', 'Home Wins', 'Home wins ranked by lowest pre-match win chance.', rankings.homeWins),
+    category('above-expected', 'Above Expectation', 'Results that most exceeded the model expectation.', rankings.aboveExpectation),
+    category('ci-gains', 'Biggest CI Gains', 'Largest positive CI changes from a contest.', rankings.positiveCiChanges),
+    category('ci-losses', 'Biggest CI Losses', 'Largest negative CI changes from a contest.', rankings.negativeCiChanges),
+    category('favorite-losses', 'Favorite Losses', 'Losses by players or pairs the model favored.', rankings.favoriteLosses),
+    category('closest', 'Closest on Paper', 'Contests whose pre-match probability was nearest 50/50.', rankings.closestMatchups),
   ];
 }
 
 export function defaultStatsDeskScope(eventId: string): StoryScope {
-  // Around the Clash opens directly on the current round; commissioners should
-  // not have to configure filters before seeing useful results.
   return {kind: 'Round', eventId};
 }
