@@ -1,4 +1,4 @@
-export const CLASH_MODEL_VERSION = '2026-27-v1-home15-doubles80-20' as const;
+import {CLASH_MODEL_VERSION} from './ClashPrediction';
 
 export type MatchRatingSnapshot = {
   matchId: string;
