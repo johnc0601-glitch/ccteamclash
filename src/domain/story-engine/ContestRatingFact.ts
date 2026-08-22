@@ -1,4 +1,5 @@
 import {
+  CLASH_MODEL_VERSION,
   doublesPairCi,
   eloProbability,
   performanceAboveExpectation,
@@ -6,7 +7,6 @@ import {
   type ClashFormat,
   type ClashSide,
 } from './ClashPrediction';
-import {CLASH_MODEL_VERSION} from './MatchRatingSnapshot';
 
 export type ContestOutcome = 'W' | 'L' | 'T';
 
@@ -41,11 +41,6 @@ export function outcomePoints(outcome: ContestOutcome): number {
   return 0;
 }
 
-/**
- * Calculates the immutable analytical facts for one player in a singles contest.
- * `ciDelta` is supplied by the canonical Clash Index rating calculator so this
- * module does not accidentally create a second Elo-update formula.
- */
 export function buildSinglesRatingFact(input: {
   contestId: string;
   matchId: string;
@@ -55,25 +50,15 @@ export function buildSinglesRatingFact(input: {
   ciDelta: number;
   calculatedAt?: string;
 }): ContestRatingFact {
-  const homeAdjustedPlayerCi = input.player.clashIndexBefore
+  const playerEffectiveCi = input.player.clashIndexBefore
     + (input.player.side === 'Home' ? SINGLES_HOME_BONUS : 0);
-  const homeAdjustedOpponentCi = input.opponent.clashIndexBefore
+  const opponentEffectiveCi = input.opponent.clashIndexBefore
     + (input.opponent.side === 'Home' ? SINGLES_HOME_BONUS : 0);
-  const probability = eloProbability(homeAdjustedPlayerCi, homeAdjustedOpponentCi);
+  const probability = eloProbability(playerEffectiveCi, opponentEffectiveCi);
 
-  return buildFact({
-    ...input,
-    format: 'Singles',
-    opponentEffectiveCi: homeAdjustedOpponentCi,
-    probability,
-  });
+  return buildFact({...input, format: 'Singles', opponentEffectiveCi, probability});
 }
 
-/**
- * Doubles expectation uses the locked 80/20 pair strength and no home bonus.
- * Each player receives the same pair win probability. CI movement remains an
- * input from the canonical rating calculator.
- */
 export function buildDoublesRatingFacts(input: {
   contestId: string;
   matchId: string;
@@ -83,21 +68,14 @@ export function buildDoublesRatingFacts(input: {
   ciDeltas: readonly [number, number];
   calculatedAt?: string;
 }): readonly [ContestRatingFact, ContestRatingFact] {
-  const playerPairCi = doublesPairCi(
-    input.players[0].clashIndexBefore,
-    input.players[1].clashIndexBefore,
-  );
-  const opponentPairCi = doublesPairCi(
-    input.opponents[0].clashIndexBefore,
-    input.opponents[1].clashIndexBefore,
-  );
+  const playerPairCi = doublesPairCi(input.players[0].clashIndexBefore, input.players[1].clashIndexBefore);
+  const opponentPairCi = doublesPairCi(input.opponents[0].clashIndexBefore, input.opponents[1].clashIndexBefore);
   const probability = eloProbability(playerPairCi, opponentPairCi);
 
   return input.players.map((player, index) => buildFact({
     contestId: input.contestId,
     matchId: input.matchId,
     player,
-    opponent: input.opponents[0],
     outcome: input.outcome,
     ciDelta: input.ciDeltas[index],
     calculatedAt: input.calculatedAt,
@@ -111,7 +89,6 @@ function buildFact(input: {
   contestId: string;
   matchId: string;
   player: RatedContestPlayer;
-  opponent: RatedContestPlayer;
   outcome: ContestOutcome;
   ciDelta: number;
   calculatedAt?: string;
