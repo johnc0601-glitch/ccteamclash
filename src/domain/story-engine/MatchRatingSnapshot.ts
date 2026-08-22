@@ -1,6 +1,5 @@
 import {CLASH_MODEL_VERSION} from './ClashPrediction';
-
-export type ClashIndexSource = 'Established' | 'GhostAverage';
+import type {ClashIndexSource} from './ClashIndexSource';
 
 export type MatchRatingSnapshot = {
   matchId: string;
