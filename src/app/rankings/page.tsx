@@ -1,23 +1,99 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {RankingsClient, type ClashRankingEntry, type HistoricalRankingEntry, type SeasonRankingGroup} from '@/components/rankings/RankingsClient';
 import {getHistoricalSeasonArchives, isHistoricalFemalePlayer, type HistoricalPlayerSeasonSummary} from '@/data/historicalSeed';
-import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
+import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
+import {SeasonService} from '@/domain/season/SeasonService';
+import {SupabaseSeasonRepository} from '@/domain/season/SupabaseSeasonRepository';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
+import {SupabasePlayerRepository} from '@/repositories/SupabasePlayerRepository';
+import {SupabaseScheduleTeamRepository} from '@/repositories/SupabaseScheduleTeamRepository';
+import {PlayerService} from '@/services/PlayerService';
+import {RankingsService} from '@/services/rankings';
+import type {RankingEntry} from '@/services/rankings/RankingTypes';
+import {StatisticsEngine} from '@/services/statistics';
+import {SupabaseStatisticsRepository} from '@/services/statistics/SupabaseStatisticsRepository';
+import {TeamService} from '@/services/TeamService';
 import styles from './Rankings.module.css';
 
 export const dynamic = 'force-dynamic';
 
 export default async function RankingsPage() {
   const archives = getHistoricalSeasonArchives();
-  const currentArchive = archives[0];
-  const historyArchives = archives.slice(1);
-  const current = currentArchive ? buildSeasonGroup(currentArchive.seasonId, currentArchive.seasonName, currentArchive.playerSummaries, true) : undefined;
-  const history = historyArchives.map((archive) => buildSeasonGroup(archive.seasonId, archive.seasonName, archive.playerSummaries, false));
-  const {rankings: clashRankings, teamColors} = await getClashData();
+  const history = archives.map((archive) => buildSeasonGroup(archive.seasonId, archive.seasonName, archive.playerSummaries, false));
+  const [{current, error: seasonError}, {rankings: clashRankings, teamColors}] = await Promise.all([
+    getLiveSeasonRankings(),
+    getClashData(),
+  ]);
 
-  return <><SiteHeader /><main className={`shell page-shell ${styles.rankingsPage}`}><header className={styles.pageHeader}><h1>Player Rankings</h1>{current ? <p>Coastal Clash Match Play · {current.seasonName}</p> : null}</header><RankingsClient current={current} history={history} clash={clashRankings} teamColors={teamColors} /></main><Footer /></>;
+  return <><SiteHeader /><main className={`shell page-shell ${styles.rankingsPage}`}><header className={styles.pageHeader}><h1>Player Rankings</h1>{current ? <p>Coastal Clash Match Play · {current.seasonName}</p> : null}</header>{seasonError ? <p className={styles.emptyState}>{seasonError}</p> : null}<RankingsClient current={current} history={history} clash={clashRankings} teamColors={teamColors} /></main><Footer /></>;
+}
+
+async function getLiveSeasonRankings(): Promise<{current?: SeasonRankingGroup; error?: string}> {
+  if (!hasSupabaseConfig()) {
+    return {error: 'Current-season rankings are unavailable because live league data is not configured.'};
+  }
+
+  try {
+    const supabase = await createClient();
+    const teams = new TeamService(new SupabaseScheduleTeamRepository(supabase));
+    const players = new PlayerService(new SupabasePlayerRepository(supabase), teams);
+    const seasons = new SeasonService(new SupabaseSeasonRepository(supabase));
+    const statistics = new StatisticsEngine(new SupabaseStatisticsRepository(supabase));
+    const rankings = new RankingsService(players, statistics);
+    const activeSeason = await seasons.getActive();
+
+    if (!activeSeason) return {};
+
+    const [rankedPlayers, activeTeams] = await Promise.all([
+      rankings.getTotalRankings(activeSeason.id),
+      teams.getAll({status: 'active'}),
+    ]);
+    const teamNames = new Map(activeTeams.map((team) => [team.id, team.name]));
+    const open = rankedPlayers.map((entry) => toLiveRankingEntry(entry, activeSeason.name, teamNames));
+    const women = rankedPlayers
+      .filter((entry) => entry.player.gender === 'Female')
+      .map((entry, index) => toLiveRankingEntry(entry, activeSeason.name, teamNames, index + 1));
+
+    return {
+      current: {
+        seasonId: activeSeason.id,
+        seasonName: activeSeason.name,
+        open,
+        women,
+        junior: [],
+      },
+    };
+  } catch (error) {
+    console.error('Current-season rankings are unavailable.', error);
+    return {error: 'Current-season rankings are temporarily unavailable. Historical rankings and Clash Index are still available.'};
+  }
+}
+
+function toLiveRankingEntry(
+  entry: RankingEntry,
+  seasonName: string,
+  teamNames: Map<string, string>,
+  rank = entry.rank,
+): HistoricalRankingEntry {
+  const teamId = entry.player.teamId || entry.statistics.teamIds[0] || '';
+  return {
+    rank,
+    summary: {
+      playerId: entry.player.id,
+      playerName: entry.player.name,
+      teamId,
+      teamName: teamNames.get(teamId) ?? 'Unassigned',
+      seasonId: entry.statistics.seasonId,
+      seasonName,
+      matchesPlayed: entry.statistics.matchesPlayed,
+      singlesRecord: entry.statistics.singlesRecord,
+      doublesRecord: entry.statistics.doublesRecord,
+      overallRecord: entry.statistics.overallRecord,
+      winPercentage: entry.statistics.winPercentage,
+    },
+  };
 }
 
 function buildSeasonGroup(seasonId: string, seasonName: string, summaries: HistoricalPlayerSeasonSummary[], includeJunior: boolean): SeasonRankingGroup {
