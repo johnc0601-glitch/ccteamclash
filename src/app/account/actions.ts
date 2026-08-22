@@ -50,12 +50,42 @@ export async function createLeagueAccount(formData: FormData) {
 export async function completePlayerSetup(formData: FormData) {
   const playedBefore = readPlayedBefore(readFormValue(formData, 'playedBefore'));
   const requestedPlayerId = readFormValue(formData, 'requestedPlayerId');
+  const confirmNewPlayer = readFormValue(formData, 'confirmNewPlayer');
   if (playedBefore === null) redirect('/account?error=Choose whether you have played Coastal Clash before.');
   if (playedBefore && !requestedPlayerId) redirect('/account?error=Choose the player record you used before.');
+  if (!playedBefore && confirmNewPlayer !== 'yes') {
+    redirect('/account?error=Confirm that you have never played Coastal Clash before creating a new player record.');
+  }
 
   const supabase = await createClient();
   const {data: {user}, error: userError} = await supabase.auth.getUser();
   if (userError || !user) redirect('/account?error=Sign in first.');
+
+  if (!playedBefore) {
+    const launchSupabase = supabase as any;
+    const [{data: profile}, {data: existingPlayers, error: playerLookupError}] = await Promise.all([
+      launchSupabase
+        .from('launch_profiles')
+        .select('display_name')
+        .eq('user_id', user.id)
+        .maybeSingle(),
+      launchSupabase
+        .from('launch_players')
+        .select('id, name'),
+    ]);
+
+    if (playerLookupError) redirect(`/account?error=${encodeURIComponent(playerLookupError.message)}`);
+
+    const displayName = typeof profile?.display_name === 'string' ? profile.display_name : '';
+    const normalizedDisplayName = normalizePlayerName(displayName);
+    const existingMatch = normalizedDisplayName
+      ? (existingPlayers ?? []).find((player: {id: string; name: string}) => normalizePlayerName(player.name) === normalizedDisplayName)
+      : null;
+
+    if (existingMatch) {
+      redirect(`/account?error=${encodeURIComponent(`We found an existing Coastal Clash player record named ${existingMatch.name}. Search for your name and connect that record instead of creating a new player.`)}`);
+    }
+  }
 
   const {error} = await supabase.rpc('complete_launch_player_setup' as never, {
     target_played_before: playedBefore,
@@ -219,6 +249,7 @@ function readFormValue(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === 'string' ? value.trim() : '';
 }
+function normalizePlayerName(value: string): string { return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase(); }
 function readPlayerType(value: string): 'Adult' | 'Junior' | null { return value === 'Adult' || value === 'Junior' ? value : null; }
 function readApplicationGender(value: string): 'Male' | 'Female' | null { return value === 'Male' || value === 'Female' ? value : null; }
 function readPlayedBefore(value: string): boolean | null { if (value === 'true') return true; if (value === 'false') return false; return null; }
