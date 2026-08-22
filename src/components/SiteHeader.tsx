@@ -31,7 +31,7 @@ export async function SiteHeader() {
           <Link href="/teams">Teams</Link>
           <Link href="/players">Players</Link>
           <Link href="/courses">Courses</Link>
-          <Link className="post-nav" href="/admin">Create post</Link>
+          {canOpenOffice ? <Link className="post-nav" href="/admin">Create post</Link> : null}
           {canOpenOffice ? <Link href="/office">Office</Link> : null}
           {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
           <Link href="/account">Account</Link>
@@ -51,6 +51,7 @@ export async function SiteHeader() {
               <Link href="/playoffs">Playoffs</Link>
               <Link href="/history">History</Link>
               <Link href="/stories">Stories</Link>
+              {canOpenOffice ? <Link href="/admin">Create post</Link> : null}
               {canOpenOffice ? <Link href="/office">Office</Link> : null}
               {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
             </nav>
@@ -79,7 +80,9 @@ async function getHeaderAccess(): Promise<'commissioner' | 'captain' | null> {
   }
 }
 
-export function Footer() {
+export async function Footer() {
+  const canCreatePost = await getHeaderAccess() === 'commissioner';
+
   return (
     <footer>
       <div className="shell footer-wrap">
@@ -98,7 +101,7 @@ export function Footer() {
           <Link href="/history">History</Link>
           <Link href="/teams">Teams</Link>
           <Link href="/courses">Courses</Link>
-          <Link href="/admin">Post</Link>
+          {canCreatePost ? <Link href="/admin">Post</Link> : null}
         </div>
       </div>
     </footer>
