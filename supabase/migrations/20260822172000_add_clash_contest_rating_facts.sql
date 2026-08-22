@@ -1,5 +1,7 @@
 -- Immutable per-player/per-contest facts used by CI history and Around the Clash.
 -- Kept separate from launch_result_*: Matchday owns results; CI owns derived analytics.
+-- Important: a player may play more than once in a Matchday. Every contest fact
+-- uses the same frozen pre-match CI; only the aggregate match publication changes CI.
 
 create table if not exists public.clash_contest_rating_facts (
   contest_id text not null references public.launch_result_contests(id) on delete restrict,
@@ -18,7 +20,6 @@ create table if not exists public.clash_contest_rating_facts (
   expected_points numeric not null check (expected_points between 0 and 1),
   performance_vs_expected numeric not null,
   ci_delta integer not null,
-  clash_index_after integer not null,
   algorithm_version text not null,
   calculated_at timestamptz not null,
   primary key (contest_id, player_id),
@@ -37,3 +38,5 @@ alter table public.clash_contest_rating_facts enable row level security;
 
 comment on table public.clash_contest_rating_facts is
   'Immutable CI facts derived from a published Matchday contest and its frozen pre-match CI snapshot.';
+comment on column public.clash_contest_rating_facts.ci_delta is
+  'This contest contribution only. Final player CI is frozen pre-match CI plus all contest deltas from the Matchday.';
