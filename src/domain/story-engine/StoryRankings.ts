@@ -20,30 +20,58 @@ export type StoryFact = {
 
 export type RankedStoryFact = StoryFact & {rank: number};
 
-function rank(facts: StoryFact[], score: (fact: StoryFact) => number): RankedStoryFact[] {
+type Score = (fact: StoryFact) => number;
+
+/** Stable ranking: story score, then stronger secondary signal, then immutable id. */
+function rank(facts: StoryFact[], score: Score, secondary: Score = () => 0): RankedStoryFact[] {
   return [...facts]
-    .sort((a, b) => score(b) - score(a) || a.id.localeCompare(b.id))
+    .sort((a, b) =>
+      score(b) - score(a)
+      || secondary(b) - secondary(a)
+      || a.id.localeCompare(b.id))
     .map((fact, index) => ({...fact, rank: index + 1}));
 }
 
+function surprise(fact: StoryFact): number {
+  return 1 - fact.winProbability;
+}
+
+function overExpectation(fact: StoryFact): number {
+  return fact.actualPoints - fact.expectedPoints;
+}
+
+/** One representative side for categories describing the contest rather than a side. */
+function onePerContest(facts: StoryFact[]): StoryFact[] {
+  const rows = new Map<string, StoryFact>();
+  for (const fact of facts) {
+    const key = `${fact.matchId}\u0000${fact.id.replace(/:(home|away)$/i, '')}`;
+    const current = rows.get(key);
+    // Prefer the winner when there is one; otherwise use Home for a deterministic tie row.
+    if (!current || (fact.won && !current.won) || (!fact.won && !current.won && fact.side === 'Home')) {
+      rows.set(key, fact);
+    }
+  }
+  return [...rows.values()];
+}
+
 export function rankUpsetWins(facts: StoryFact[]): RankedStoryFact[] {
-  return rank(facts.filter((fact) => fact.won), (fact) => 1 - fact.winProbability);
+  return rank(facts.filter((fact) => fact.won), surprise, (fact) => fact.ciDeficit);
 }
 
 export function rankCiGapsOvercome(facts: StoryFact[]): RankedStoryFact[] {
-  return rank(facts.filter((fact) => fact.won && fact.ciDeficit > 0), (fact) => fact.ciDeficit);
+  return rank(facts.filter((fact) => fact.won && fact.ciDeficit > 0), (fact) => fact.ciDeficit, surprise);
 }
 
 export function rankAboveExpectation(facts: StoryFact[]): RankedStoryFact[] {
-  return rank(facts, (fact) => fact.actualPoints - fact.expectedPoints);
+  return rank(facts, overExpectation, surprise);
 }
 
 export function rankRoadWins(facts: StoryFact[]): RankedStoryFact[] {
-  return rank(facts.filter((fact) => fact.won && fact.side === 'Away'), (fact) => 1 - fact.winProbability);
+  return rank(facts.filter((fact) => fact.won && fact.side === 'Away'), surprise, (fact) => fact.ciDeficit);
 }
 
 export function rankHomeWins(facts: StoryFact[]): RankedStoryFact[] {
-  return rank(facts.filter((fact) => fact.won && fact.side === 'Home'), (fact) => 1 - fact.winProbability);
+  return rank(facts.filter((fact) => fact.won && fact.side === 'Home'), surprise, (fact) => fact.ciDeficit);
 }
 
 export function rankSinglesUpsets(facts: StoryFact[]): RankedStoryFact[] {
@@ -55,19 +83,19 @@ export function rankDoublesUpsets(facts: StoryFact[]): RankedStoryFact[] {
 }
 
 export function rankClosestMatchups(facts: StoryFact[]): RankedStoryFact[] {
-  return rank(facts, (fact) => -Math.abs(0.5 - fact.winProbability));
+  return rank(onePerContest(facts), (fact) => -Math.abs(0.5 - fact.winProbability));
 }
 
 export function rankPositiveCiChanges(facts: StoryFact[]): RankedStoryFact[] {
-  return rank(facts.filter((fact) => fact.ciDelta > 0), (fact) => fact.ciDelta);
+  return rank(facts.filter((fact) => fact.ciDelta > 0), (fact) => fact.ciDelta, overExpectation);
 }
 
 export function rankNegativeCiChanges(facts: StoryFact[]): RankedStoryFact[] {
-  return rank(facts.filter((fact) => fact.ciDelta < 0), (fact) => -fact.ciDelta);
+  return rank(facts.filter((fact) => fact.ciDelta < 0), (fact) => -fact.ciDelta, (fact) => fact.expectedPoints - fact.actualPoints);
 }
 
 export function rankFavoriteLosses(facts: StoryFact[]): RankedStoryFact[] {
-  return rank(facts.filter((fact) => !fact.won && fact.winProbability > 0.5), (fact) => fact.winProbability);
+  return rank(facts.filter((fact) => !fact.won && fact.actualPoints === 0 && fact.winProbability > 0.5), (fact) => fact.winProbability, (fact) => -fact.ciDelta);
 }
 
 export type PlayerExpectation = {
@@ -84,14 +112,7 @@ export function aggregatePlayerExpectation(facts: StoryFact[]): PlayerExpectatio
   for (const fact of facts) {
     for (const subjectName of fact.subjectNames) {
       const key = `${fact.teamName}\u0000${subjectName}`;
-      const current = players.get(key) ?? {
-        subjectName,
-        teamName: fact.teamName,
-        contests: 0,
-        expectedPoints: 0,
-        actualPoints: 0,
-        performanceVsExpected: 0,
-      };
+      const current = players.get(key) ?? {subjectName, teamName: fact.teamName, contests: 0, expectedPoints: 0, actualPoints: 0, performanceVsExpected: 0};
       current.contests += 1;
       current.expectedPoints += fact.expectedPoints;
       current.actualPoints += fact.actualPoints;
@@ -99,8 +120,7 @@ export function aggregatePlayerExpectation(facts: StoryFact[]): PlayerExpectatio
       players.set(key, current);
     }
   }
-  return [...players.values()].sort((a, b) =>
-    b.performanceVsExpected - a.performanceVsExpected || a.subjectName.localeCompare(b.subjectName));
+  return [...players.values()].sort((a, b) => b.performanceVsExpected - a.performanceVsExpected || a.subjectName.localeCompare(b.subjectName));
 }
 
 export type TeamExpectation = {
@@ -113,19 +133,13 @@ export type TeamExpectation = {
 export function aggregateTeamExpectation(facts: StoryFact[]): TeamExpectation[] {
   const teams = new Map<string, TeamExpectation>();
   for (const fact of facts) {
-    const current = teams.get(fact.teamName) ?? {
-      teamName: fact.teamName,
-      expectedPoints: 0,
-      actualPoints: 0,
-      performanceVsExpected: 0,
-    };
+    const current = teams.get(fact.teamName) ?? {teamName: fact.teamName, expectedPoints: 0, actualPoints: 0, performanceVsExpected: 0};
     current.expectedPoints += fact.expectedPoints;
     current.actualPoints += fact.actualPoints;
     current.performanceVsExpected = current.actualPoints - current.expectedPoints;
     teams.set(fact.teamName, current);
   }
-  return [...teams.values()].sort((a, b) =>
-    b.performanceVsExpected - a.performanceVsExpected || a.teamName.localeCompare(b.teamName));
+  return [...teams.values()].sort((a, b) => b.performanceVsExpected - a.performanceVsExpected || a.teamName.localeCompare(b.teamName));
 }
 
 export type StoryRankings = {
