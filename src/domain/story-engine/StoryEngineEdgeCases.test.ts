@@ -41,8 +41,8 @@ describe('story engine edge cases', () => {
     const snapshot: MatchRatingSnapshot = {matchId: 'm1', playerId: 'p1', teamId: 'Away-team', playerName: 'p1', teamName: 'Away Team', side: 'Away', clashIndexBefore: 900, ciSourceBefore: 'Established', algorithmVersion: 'v1', capturedAt: '2026-08-22T12:00:00Z'};
     const base = {matchId: 'm1', playerId: 'p1', teamId: 'Away-team', playerName: 'p1', teamName: 'Away Team', side: 'Away' as const, clashIndexBefore: 900, outcome: 'W' as const, opponentEffectiveCi: 920, winProbability: .45, actualPoints: 1, expectedPoints: .45, performanceVsExpected: .55, algorithmVersion: 'v1', calculatedAt: '2026-08-22T13:00:00Z'};
     const facts = [
-      {...base, contestId: 's1', format: 'Singles' as const, ciDelta: 6, clashIndexAfter: 906},
-      {...base, contestId: 'd1', format: 'Doubles' as const, ciDelta: 4, clashIndexAfter: 904},
+      {...base, contestId: 's1', format: 'Singles' as const, ciDelta: 6},
+      {...base, contestId: 'd1', format: 'Doubles' as const, ciDelta: 4},
     ];
     const plan = buildRatingPublicationPlan({matchId: 'm1', snapshots: [snapshot], facts});
     expect(plan.playerUpdates[0]).toEqual({playerId: 'p1', clashIndexBefore: 900, totalDelta: 10, clashIndexAfter: 910});
