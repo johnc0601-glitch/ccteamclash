@@ -184,12 +184,18 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
     }
   }
 
+  const linkedPlayer = profile ? players.find((player) => player.id === profile.playerId) : null;
+  const playerSetupComplete = Boolean(linkedPlayer && playedBefore !== null);
+  const registrationIncomplete = Boolean(profile && (!playerSetupComplete || (registrationSeason && !application)));
+
   return (
     <AccountPageLayout
-      description="Manage your player profile, season registration, league history, and access."
+      description={registrationIncomplete
+        ? 'Complete each required step to register for the Coastal Clash season.'
+        : 'Manage your player profile, season registration, league history, and access.'}
       error={error ?? profileSetupError}
       notice={notice}
-      title="My account"
+      title={registrationIncomplete ? 'Finish registration' : 'My account'}
     >
       <section className={styles.accountBar} aria-label="Signed in account">
         <div>
@@ -213,7 +219,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
         />
       ) : (
         <article className={styles.panel}>
-          <span className={styles.eyebrow}>Player setup</span>
+          <span className={styles.eyebrow}>Registration</span>
           <h2>Profile setup needs attention</h2>
           <p className={styles.muted}>{profileSetupError ?? 'Your verified account does not have a league profile yet.'}</p>
         </article>
@@ -243,64 +249,107 @@ function MemberProfile({
   const playerSetupComplete = Boolean(linkedPlayer && playedBefore !== null);
   const requestedTeam = registrationTeams.find((team) => team.id === application?.requested_team_id);
 
+  if (!playerSetupComplete) {
+    return (
+      <section className={styles.grid}>
+        <article className={styles.panel}>
+          <span className={styles.eyebrow}>Step 1 of 2 · Player record</span>
+          <h2>Find your Coastal Clash player record</h2>
+          <p className={styles.linkingNote}>Most players already have a record. Search for your name first so your history, rankings, and team records stay connected.</p>
+
+          <form className={styles.form} action={completePlayerSetup}>
+            <input name="playedBefore" type="hidden" value="true" />
+            <label htmlFor="setupRequestedPlayerId">Your player record</label>
+            <PlayerRecordSelect
+              emptyLabel="Choose your previous league name"
+              id="setupRequestedPlayerId"
+              name="requestedPlayerId"
+              players={players}
+              searchLabel="Search player names"
+              searchPlaceholder="Type your name"
+              required
+            />
+            <button className={styles.primaryButton} type="submit">Connect and continue</button>
+          </form>
+
+          <details style={{marginTop: '1rem'}}>
+            <summary><strong>I have never played Coastal Clash before</strong></summary>
+            <p className={styles.linkingNote}>Only use this if you do not have an existing Coastal Clash player record. This creates a new player with no previous league history.</p>
+            <form className={styles.form} action={completePlayerSetup}>
+              <input name="playedBefore" type="hidden" value="false" />
+              <input name="confirmNewPlayer" type="hidden" value="yes" />
+              <button className={styles.secondaryButton} type="submit">Create new player and continue</button>
+            </form>
+          </details>
+        </article>
+      </section>
+    );
+  }
+
+  if (registrationSeason && !application) {
+    return (
+      <section className={styles.grid}>
+        <article className={styles.panel}>
+          <span className={styles.eyebrow}>Step 2 of 2 · Team registration</span>
+          <h2>{registrationSeason.name}</h2>
+          <p className={styles.linkingNote}>
+            {establishedRegistration
+              ? `Player record connected as ${linkedPlayer?.name}. Choose a team to finish registration. Your established player type and division carry forward automatically.`
+              : `Player record connected as ${linkedPlayer?.name}. Choose a team and division to finish registration.`}
+          </p>
+          <form className={styles.form} action={submitSeasonApplication}>
+            <input name="seasonId" type="hidden" value={registrationSeason.id} />
+            <label htmlFor="accountRequestedTeam">Team</label>
+            <select id="accountRequestedTeam" name="requestedTeamId" required defaultValue="">
+              <option value="" disabled>Choose your team</option>
+              {registrationTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+            </select>
+            {establishedRegistration ? (
+              <>
+                <input name="playerType" type="hidden" value={establishedRegistration.playerType} />
+                <input name="gender" type="hidden" value={establishedRegistration.gender} />
+                <label>Player type</label>
+                <div className={styles.connected}><strong>{establishedRegistration.playerType}</strong></div>
+                <label>Division</label>
+                <div className={styles.connected}><strong>{establishedRegistration.gender}</strong></div>
+              </>
+            ) : (
+              <>
+                <label style={{display: 'flex', alignItems: 'center', gap: '10px', textTransform: 'none'}}>
+                  <input
+                    name="playerType"
+                    type="checkbox"
+                    value="Junior"
+                    style={{width: 'auto', minHeight: 'auto'}}
+                  />
+                  <input name="playerType" type="hidden" value="Adult" />
+                  <span>Junior</span>
+                </label>
+                <label htmlFor="accountGender">Division</label>
+                <select id="accountGender" name="gender" required defaultValue="">
+                  <option value="" disabled>Choose division</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </>
+            )}
+            <button className={styles.primaryButton} type="submit">Submit registration</button>
+          </form>
+        </article>
+      </section>
+    );
+  }
+
   return (
     <section className={styles.grid}>
-      {playerSetupComplete && registrationSeason ? (
+      {registrationSeason && application ? (
         <article className={styles.panel}>
           <span className={styles.eyebrow}>Season registration</span>
           <h2>{registrationSeason.name}</h2>
-          {application ? (
-            <div className={styles.connected}>
-              <strong>{application.status === 'Approved' ? 'Registered' : application.status}</strong>
-              {requestedTeam?.name ?? application.requested_team_id} · {application.player_type} · {application.gender}
-            </div>
-          ) : (
-            <>
-              <p className={styles.linkingNote}>
-                {establishedRegistration
-                  ? 'Choose your team. Your established player type and division carry forward automatically.'
-                  : 'Choose your team and division for this season.'}
-              </p>
-              <form className={styles.form} action={submitSeasonApplication}>
-                <input name="seasonId" type="hidden" value={registrationSeason.id} />
-                <label htmlFor="accountRequestedTeam">Team</label>
-                <select id="accountRequestedTeam" name="requestedTeamId" required defaultValue="">
-                  <option value="" disabled>Choose a team</option>
-                  {registrationTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
-                </select>
-                {establishedRegistration ? (
-                  <>
-                    <input name="playerType" type="hidden" value={establishedRegistration.playerType} />
-                    <input name="gender" type="hidden" value={establishedRegistration.gender} />
-                    <label>Player type</label>
-                    <div className={styles.connected}><strong>{establishedRegistration.playerType}</strong></div>
-                    <label>Division</label>
-                    <div className={styles.connected}><strong>{establishedRegistration.gender}</strong></div>
-                  </>
-                ) : (
-                  <>
-                    <label style={{display: 'flex', alignItems: 'center', gap: '10px', textTransform: 'none'}}>
-                      <input
-                        name="playerType"
-                        type="checkbox"
-                        value="Junior"
-                        style={{width: 'auto', minHeight: 'auto'}}
-                      />
-                      <input name="playerType" type="hidden" value="Adult" />
-                      <span>Junior</span>
-                    </label>
-                    <label htmlFor="accountGender">Division</label>
-                    <select id="accountGender" name="gender" required defaultValue="">
-                      <option value="" disabled>Choose division</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                    </select>
-                  </>
-                )}
-                <button className={styles.primaryButton} type="submit">Register for season</button>
-              </form>
-            </>
-          )}
+          <div className={styles.connected}>
+            <strong>{application.status === 'Approved' ? 'Registered' : application.status}</strong>
+            {requestedTeam?.name ?? application.requested_team_id} · {application.player_type} · {application.gender}
+          </div>
         </article>
       ) : null}
 
@@ -322,39 +371,6 @@ function MemberProfile({
           </div>
         </dl>
 
-        {!playerSetupComplete ? (
-          <div style={{marginTop: '1rem'}}>
-            <span className={styles.eyebrow}>One-time player setup</span>
-            <h3>Find your Coastal Clash player record</h3>
-            <p className={styles.linkingNote}>Most players already have a record. Search for your name first so your history, rankings, and team records stay connected.</p>
-
-            <form className={styles.form} action={completePlayerSetup}>
-              <input name="playedBefore" type="hidden" value="true" />
-              <label htmlFor="setupRequestedPlayerId">Your previous player record</label>
-              <PlayerRecordSelect
-                emptyLabel="Choose your previous league name"
-                id="setupRequestedPlayerId"
-                name="requestedPlayerId"
-                players={players}
-                searchLabel="Search player names"
-                searchPlaceholder="Type your name"
-                required
-              />
-              <button className={styles.primaryButton} type="submit">Connect my player record</button>
-            </form>
-
-            <details style={{marginTop: '1rem'}}>
-              <summary><strong>I have never played Coastal Clash before</strong></summary>
-              <p className={styles.linkingNote}>Only use this if you do not have an existing Coastal Clash player record. This creates a new player with no previous league history.</p>
-              <form className={styles.form} action={completePlayerSetup}>
-                <input name="playedBefore" type="hidden" value="false" />
-                <input name="confirmNewPlayer" type="hidden" value="yes" />
-                <button className={styles.secondaryButton} type="submit">Create a new player record</button>
-              </form>
-            </details>
-          </div>
-        ) : null}
-
         <form className={styles.form} action={updateProfileName} style={{marginTop: '1rem'}}>
           <label htmlFor="profileDisplayName">Display name</label>
           <input
@@ -374,18 +390,16 @@ function MemberProfile({
         ) : null}
       </article>
 
-      {playerSetupComplete ? (
-        <article className={styles.panel}>
-          <span className={styles.eyebrow}>League history</span>
-          <h2>{playedBefore ? 'History connected' : 'Player record ready'}</h2>
-          <div className={styles.connected}>
-            <strong>{linkedPlayer?.name}</strong>
-            {playedBefore
-              ? 'Your past results, rankings, and team history are connected to this account.'
-              : 'This is your Coastal Clash player record. Future seasons will stay connected to this account.'}
-          </div>
-        </article>
-      ) : null}
+      <article className={styles.panel}>
+        <span className={styles.eyebrow}>League history</span>
+        <h2>{playedBefore ? 'History connected' : 'Player record ready'}</h2>
+        <div className={styles.connected}>
+          <strong>{linkedPlayer?.name}</strong>
+          {playedBefore
+            ? 'Your past results, rankings, and team history are connected to this account.'
+            : 'This is your Coastal Clash player record. Future seasons will stay connected to this account.'}
+        </div>
+      </article>
 
       <article className={styles.panel}>
         <span className={styles.eyebrow}>Display</span>

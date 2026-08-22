@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL(`${destination}?error=${message}`, requestUrl.origin));
     }
 
-    shouldShowIntro = flow === 'magic-link' || flow === 'signup-confirm';
+    shouldShowIntro = flow === 'magic-link';
   }
 
   const response = NextResponse.redirect(new URL(next, requestUrl.origin));
