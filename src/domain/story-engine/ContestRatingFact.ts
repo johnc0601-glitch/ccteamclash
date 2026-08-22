@@ -29,8 +29,8 @@ export type ContestRatingFact = RatedContestPlayer & {
   actualPoints: number;
   expectedPoints: number;
   performanceVsExpected: number;
+  /** This contest's contribution only. Final CI is calculated once per Matchday. */
   ciDelta: number;
-  clashIndexAfter: number;
   algorithmVersion: string;
   calculatedAt: string;
 };
@@ -109,7 +109,6 @@ function buildFact(input: {
     expectedPoints: input.probability,
     performanceVsExpected: performanceAboveExpectation(actual, input.probability),
     ciDelta: input.ciDelta,
-    clashIndexAfter: input.player.clashIndexBefore + input.ciDelta,
     algorithmVersion: CLASH_MODEL_VERSION,
     calculatedAt: input.calculatedAt ?? new Date().toISOString(),
   };
