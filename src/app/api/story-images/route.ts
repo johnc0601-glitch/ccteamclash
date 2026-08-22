@@ -1,3 +1,4 @@
+import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {createClient} from '@/lib/supabase/server';
 import {createSlug} from '@/shared/utils';
 
@@ -7,6 +8,16 @@ const ALLOWED_STORY_IMAGE_TYPES = new Set(['image/webp', 'image/png', 'image/jpe
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
+  const supabase = await createClient();
+  const {data: {user}} = await supabase.auth.getUser();
+  if (!user) return Response.json({error: 'Commissioner sign-in required.'}, {status: 401});
+
+  const repository = new SupabaseLaunchRepository(supabase);
+  const profile = await repository.getProfileByUserId(user.id);
+  if (profile?.role !== 'Commissioner' || profile.status !== 'Approved') {
+    return Response.json({error: 'Commissioner access required.'}, {status: 403});
+  }
+
   const formData = await request.formData();
   const file = formData.get('file');
   const title = formData.get('title');
@@ -14,10 +25,6 @@ export async function POST(request: Request) {
   if (!(file instanceof File)) return Response.json({error: 'Choose an image file.'}, {status: 400});
   if (!ALLOWED_STORY_IMAGE_TYPES.has(file.type)) return Response.json({error: 'Choose a PNG, JPG, or WebP image.'}, {status: 400});
   if (file.size > MAX_STORY_IMAGE_SIZE_BYTES) return Response.json({error: 'Story photo is too large.'}, {status: 400});
-
-  const supabase = await createClient();
-  const {data: {user}} = await supabase.auth.getUser();
-  if (!user) return Response.json({error: 'Sign in to upload a story photo.'}, {status: 401});
 
   const storySlug = createSlug(typeof title === 'string' ? title : file.name) || 'story-photo';
   const extension = file.type === 'image/png' ? 'png' : file.type === 'image/jpeg' ? 'jpg' : 'webp';
