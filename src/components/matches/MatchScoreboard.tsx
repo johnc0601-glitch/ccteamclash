@@ -50,9 +50,13 @@ export function MatchScoreboard({
 }
 
 function ContestSection({title, contests}: {title: string; contests: ResultContest[]}) {
+  const totals = sectionTotals(contests);
   return (
     <section className={styles.contestSection}>
-      <div className={styles.contestHeading}><strong>{title}</strong><span>{contests.length} matchups</span></div>
+      <div className={styles.contestHeading}>
+        <strong>{title}</strong>
+        <span>{contests.length ? `${formatPoint(totals.away)} – ${formatPoint(totals.home)}` : 'No matchups'}</span>
+      </div>
       {contests.length ? contests.map((contest) => <ContestRow contest={contest} key={contest.id} />) : <p className={styles.scoreEmpty}>No {title.toLowerCase()} details were published.</p>}
     </section>
   );
@@ -63,15 +67,34 @@ function ContestRow({contest}: {contest: ResultContest}) {
   const homePlayers = contest.players.filter((player) => player.side === 'Home').sort((a, b) => a.slot - b.slot);
   const awayWon = contest.awayOutcome === 'W';
   const homeWon = contest.homeOutcome === 'W';
+  const tied = contest.awayOutcome === 'T' && contest.homeOutcome === 'T';
   const score = contest.format === 'Singles' && contest.awayScore !== null && contest.homeScore !== null
     ? `${contest.awayScore}/${contest.homeScore}`
-    : contest.awayOutcome === 'T' ? 'T' : `${contest.awayOutcome}/${contest.homeOutcome}`;
+    : tied ? 'T' : `${contest.awayOutcome}/${contest.homeOutcome}`;
 
   return (
-    <div className={styles.contestRow}>
+    <div className={styles.contestRow} data-tied={tied || undefined}>
       <div className={awayWon ? styles.winner : undefined}>{awayPlayers.map((player) => player.playerName).join(' / ')}</div>
       <strong className={styles.contestScore}>{score}</strong>
       <div className={homeWon ? styles.winner : undefined}>{homePlayers.map((player) => player.playerName).join(' / ')}</div>
     </div>
   );
+}
+
+function sectionTotals(contests: ResultContest[]) {
+  return contests.reduce((totals, contest) => {
+    totals.away += outcomePoints(contest.awayOutcome);
+    totals.home += outcomePoints(contest.homeOutcome);
+    return totals;
+  }, {away: 0, home: 0});
+}
+
+function outcomePoints(outcome: ResultContest['awayOutcome']) {
+  if (outcome === 'W') return 1;
+  if (outcome === 'T') return 0.5;
+  return 0;
+}
+
+function formatPoint(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
