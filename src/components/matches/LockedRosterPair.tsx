@@ -35,9 +35,15 @@ export function LockedRosterPair({away, home}: {away: LockedRosterTeam; home: Lo
 function LockedRosterCard({team, expanded}: {team: LockedRosterTeam; expanded: boolean}) {
   const visible = expanded ? team.players : team.players.slice(0, PREVIEW_COUNT);
   const remaining = Math.max(0, team.players.length - PREVIEW_COUNT);
-  const headerStyle = team.accent
-    ? {background: `linear-gradient(110deg, ${team.accent} 0%, ${team.accent} 62%, #071012 100%)`}
-    : undefined;
+  const isAway = team.label === 'Away';
+  const headerStyle = {
+    background: isAway
+      ? 'linear-gradient(110deg, #0b2e59 0%, #113f72 72%, #071012 100%)'
+      : 'linear-gradient(110deg, #481343 0%, #711f58 72%, #071012 100%)',
+    boxShadow: isAway
+      ? 'inset 0 0 0 1px rgba(74,140,214,.28)'
+      : 'inset 0 0 0 1px rgba(184,77,150,.28)',
+  };
 
   return (
     <article className={v1.previewTeam}>
