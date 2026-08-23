@@ -138,9 +138,11 @@ function RosterShell({
 function RosterPreview({teamName, label, names, logo, accent}: {teamName: string; label: string; names: string[]; logo?: string; accent?: string}) {
   const visible = names.slice(0, PREVIEW_COUNT);
   const remaining = Math.max(0, names.length - visible.length);
+  const colorStyle = accent ? {borderTop: `5px solid ${accent}`} : undefined;
+  const headerStyle = accent ? {background: `linear-gradient(110deg, ${accent} 0%, ${accent} 55%, #071012 100%)`} : undefined;
   return (
-    <article className={v1.previewTeam} style={accent ? {borderTop: `5px solid ${accent}`} : undefined}>
-      <div className={accent || logo ? `${v1.previewTeamHead} ${v1.previewTeamHeadColor}` : v1.previewTeamHead}>
+    <article className={v1.previewTeam} style={colorStyle}>
+      <div className={accent || logo ? `${v1.previewTeamHead} ${v1.previewTeamHeadColor}` : v1.previewTeamHead} style={headerStyle}>
         <div className={v1.previewTeamIdentity}>
           {logo ? <img src={logo} alt={`${teamName} logo`} className={v1.previewTeamLogo} /> : null}
           <span>{teamName}</span>
@@ -193,9 +195,10 @@ function AvailabilityPlayer({player}: {player: TeamAttendanceMember}) {
 }
 
 function OfficialRosterColumn({roster, label, accent}: {roster: OfficialMatchRoster; label: string; accent?: string}) {
+  const headerStyle = accent ? {background: `linear-gradient(110deg, ${accent} 0%, ${accent} 55%, #071012 100%)`} : undefined;
   return (
     <article className={styles.rosterTeam} style={accent ? {borderTop: `5px solid ${accent}`} : undefined}>
-      <div className={styles.rosterTeamHeader}><div><span>{label}</span><h3>{roster.teamNameSnapshot}</h3></div></div>
+      <div className={styles.rosterTeamHeader} style={headerStyle}><div><span>{label}</span><h3>{roster.teamNameSnapshot}</h3></div></div>
       <div className={styles.rosterTitle}><span>Official players</span><span>{roster.players.length}</span></div>
       <div className={styles.playerList}>
         {roster.players.length ? roster.players.map((player) => (
