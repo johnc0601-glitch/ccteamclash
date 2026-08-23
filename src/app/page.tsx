@@ -7,7 +7,7 @@ import {parseIntroQuery} from '@/components/intro/introDecision';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchCard, type MatchFeedPreview} from '@/components/MatchCard';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
-import {createAdminClient} from '@/lib/supabase/admin';
+import {createClient} from '@/lib/supabase/server';
 import {getStoredTeams} from '@/services/teams/TeamStore';
 import {getStories} from '@/services/stories/StoryService';
 
@@ -90,8 +90,9 @@ async function getMatchFeedPreviews(matchIds: string[]): Promise<Map<string, Mat
   const previews = new Map<string, MatchFeedPreview>();
   if (!matchIds.length) return previews;
   try {
-    const admin = createAdminClient() as any;
-    const {data: posts, error} = await admin.from('launch_match_feed_posts')
+    const supabase = await createClient();
+    const db = supabase as any;
+    const {data: posts, error} = await db.from('launch_match_feed_posts')
       .select('id,match_id,author_name_snapshot,body,image_path,last_activity_at,deleted_at')
       .in('match_id', matchIds)
       .is('deleted_at', null)
@@ -103,14 +104,14 @@ async function getMatchFeedPreviews(matchIds: string[]): Promise<Map<string, Mat
     for (const post of posts) if (!latestByMatch.has(post.match_id)) latestByMatch.set(post.match_id, post);
     const postIds = [...latestByMatch.values()].map((post) => post.id);
     const [{data: comments}, {data: reactions}] = await Promise.all([
-      admin.from('launch_match_feed_comments').select('post_id,id,deleted_at').in('post_id', postIds),
-      admin.from('launch_match_feed_post_reactions').select('post_id,profile_id').in('post_id', postIds),
+      db.from('launch_match_feed_comments').select('post_id,id,deleted_at').in('post_id', postIds),
+      db.from('launch_match_feed_post_reactions').select('post_id,profile_id').in('post_id', postIds),
     ]);
 
     for (const [matchId, post] of latestByMatch) {
       const commentCount = (comments ?? []).filter((comment: {post_id: string; deleted_at: string | null}) => comment.post_id === post.id && !comment.deleted_at).length;
       const reactionCount = (reactions ?? []).filter((reaction: {post_id: string}) => reaction.post_id === post.id).length;
-      const imageUrl = post.image_path ? admin.storage.from('match-feed').getPublicUrl(post.image_path).data.publicUrl : null;
+      const imageUrl = post.image_path ? supabase.storage.from('match-feed').getPublicUrl(post.image_path).data.publicUrl : null;
       previews.set(matchId, {
         author: post.author_name_snapshot || 'Member',
         excerpt: String(post.body ?? '').trim().slice(0, 140),
