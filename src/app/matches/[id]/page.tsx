@@ -91,10 +91,10 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const matchday = resolveMatchday(event, match, teams, players, courses, Boolean(publishedResult), effectiveRosterIds);
   if (!matchday) notFound();
 
-  const awayColor = matchday.awayTeam.team?.primaryColor || '#113f72';
-  const homeColor = matchday.homeTeam.team?.primaryColor || '#711f58';
+  const awayColor = matchday.awayTeam.team?.primaryColor || '#0b4fb3';
+  const homeColor = matchday.homeTeam.team?.primaryColor || '#a20b78';
   const pageBackground = {
-    background: `linear-gradient(90deg, color-mix(in srgb, ${awayColor} 58%, #f6f3ea) 0%, color-mix(in srgb, ${awayColor} 28%, #f6f3ea) 42%, #f6f3ea 49.5%, #f6f3ea 50.5%, color-mix(in srgb, ${homeColor} 28%, #f6f3ea) 58%, color-mix(in srgb, ${homeColor} 58%, #f6f3ea) 100%)`,
+    background: `radial-gradient(circle at 50% 4%, rgba(4,8,14,.34) 0%, transparent 32rem), linear-gradient(90deg, color-mix(in srgb, ${awayColor} 92%, #06111c) 0%, color-mix(in srgb, ${awayColor} 86%, #081827) 38%, color-mix(in srgb, ${awayColor} 58%, #101019) 48.5%, #101019 50%, color-mix(in srgb, ${homeColor} 58%, #101019) 51.5%, color-mix(in srgb, ${homeColor} 86%, #1a0718) 62%, color-mix(in srgb, ${homeColor} 92%, #170515) 100%)`,
     backgroundAttachment: 'fixed',
   };
 
