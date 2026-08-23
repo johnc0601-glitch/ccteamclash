@@ -145,6 +145,10 @@
   font-size: 13px;
 }
 
+.contestRow[data-tied="true"] {
+  background: rgba(127, 127, 127, .055);
+}
+
 .contestRow > div:last-child {
   text-align: right;
 }
@@ -285,16 +289,27 @@
   }
 
   .scoreTop {
-    padding: 15px;
-    gap: 10px;
+    padding: 14px 12px;
+    gap: 8px;
+  }
+
+  .teamName {
+    font-size: 10px;
+    letter-spacing: .02em;
   }
 
   .scoreValue {
-    font-size: 34px;
+    font-size: 36px;
   }
 
   .scoreMiddle {
-    font-size: 10px;
+    font-size: 9px;
+  }
+
+  .scoreDetails summary,
+  .rosterDetails summary {
+    min-height: 44px;
+    padding: 10px 13px;
   }
 
   .feedPlaceholder {
@@ -302,19 +317,25 @@
     padding: 18px;
   }
 
-  .contestRow {
-    min-height: 58px;
+  .contestHeading {
     padding: 9px 10px;
-    grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr);
-    gap: 8px;
+  }
+
+  .contestRow {
+    min-height: 56px;
+    padding: 8px 10px;
+    grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr);
+    gap: 7px;
     font-size: 12px;
+    line-height: 1.25;
   }
 
   .contestScore {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .finalBand {
+    padding: 12px;
     align-items: flex-start;
     flex-direction: column;
   }
@@ -326,8 +347,8 @@
 
   .previewTeamHead,
   .previewPlayer {
-    padding-left: 10px;
-    padding-right: 10px;
+    padding-left: 9px;
+    padding-right: 9px;
   }
 
   .previewTeamHead {
@@ -337,6 +358,10 @@
   .previewPlayer {
     min-height: 38px;
     font-size: 12px;
+  }
+
+  .previewMore {
+    font-size: 10px;
   }
 
   .fullRosterGrid {
