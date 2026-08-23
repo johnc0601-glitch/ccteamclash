@@ -7,6 +7,13 @@ import {isMatchFeedOpen, matchFeedClosedMessage} from '@/services/matches/MatchF
 
 const REACTIONS = new Set(['like', 'love', 'laugh', 'fire']);
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
+const IMAGE_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/heic': 'heic',
+  'image/heif': 'heif',
+};
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 export async function createMatchFeedPost(formData: FormData) {
@@ -22,7 +29,7 @@ export async function createMatchFeedPost(formData: FormData) {
     if (!IMAGE_TYPES.has(photo.type) || photo.size > MAX_IMAGE_BYTES) {
       redirect(feedUrl(matchId, 'feedError', 'Photo must be JPG, PNG, WebP, HEIC, or HEIF and 8 MB or smaller.'));
     }
-    const extension = photo.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const extension = IMAGE_EXTENSIONS[photo.type] || 'jpg';
     imagePath = `${matchId}/${crypto.randomUUID()}.${extension}`;
     const {error} = await account.supabase.storage.from('match-feed').upload(imagePath, photo, {contentType: photo.type, upsert: false});
     if (error) redirect(feedUrl(matchId, 'feedError', 'Photo upload failed.'));
@@ -186,7 +193,7 @@ async function requireAccount(matchId: string) {
 
 async function requireFeedOpen(supabase: Awaited<ReturnType<typeof createClient>>, matchId: string) {
   const {data: match} = await supabase.from('launch_schedule_matches').select('date').eq('id', matchId).maybeSingle();
-  if (match?.date && !isMatchFeedOpen(match.date)) redirect(feedUrl(matchId, 'feedError', matchFeedClosedMessage()));
+  if (!match?.date || !isMatchFeedOpen(match.date)) redirect(feedUrl(matchId, 'feedError', matchFeedClosedMessage()));
 }
 
 function refresh(matchId: string) {
