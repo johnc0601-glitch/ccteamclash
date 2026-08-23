@@ -1,6 +1,6 @@
 import {CLASH_EXPECTATION_DIVISOR} from './ClashRatingDelta';
 
-export const CLASH_MODEL_VERSION = '2026-27-v1-d100-exp1.8-move2-28-home15-doubles80-20' as const;
+export const CLASH_MODEL_VERSION = '2026-27-v1-d100-exp1.8-move2-28-home15-doubles80-20-move75' as const;
 export const SINGLES_HOME_BONUS = 15;
 export const DOUBLES_STRONG_WEIGHT = 0.8;
 
