@@ -4,6 +4,8 @@ import {revalidatePath} from 'next/cache';
 import {redirect} from 'next/navigation';
 import {createClient} from '@/lib/supabase/server';
 
+const CORRECTABLE_STATUSES = new Set(['Scheduled', 'Postponed', 'Rain Delay']);
+
 export async function unlockCaptainRoster(formData: FormData) {
   const matchId = read(formData, 'matchId');
   const teamId = read(formData, 'teamId');
@@ -11,7 +13,7 @@ export async function unlockCaptainRoster(formData: FormData) {
   const {supabase, profile} = await requireCommissioner(matchId);
   const db = supabase as any;
   const {data: match} = await supabase.from('launch_schedule_matches').select('home_team_id,away_team_id,status').eq('id', matchId).maybeSingle();
-  if (!match || match.status === 'Cancelled' || ![match.home_team_id, match.away_team_id].includes(teamId)) {
+  if (!match || !CORRECTABLE_STATUSES.has(match.status) || ![match.home_team_id, match.away_team_id].includes(teamId)) {
     redirect(`/matches/${encodeURIComponent(matchId)}?commissionerError=${encodeURIComponent('That roster cannot be unlocked.')}`);
   }
   const {data: existing} = await db.from('launch_match_roster_unlocks').select('id').eq('match_id', matchId).eq('team_id', teamId).is('relocked_at', null).maybeSingle();
