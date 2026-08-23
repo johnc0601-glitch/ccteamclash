@@ -72,8 +72,8 @@ export async function addMatchFeedComment(formData: FormData) {
   await requireFeedOpen(account.supabase, matchId);
   const db = account.supabase as any;
   if (parentCommentId) {
-    const {data: parent} = await db.from('launch_match_feed_comments').select('id,parent_comment_id,post_id').eq('id', parentCommentId).eq('post_id', postId).maybeSingle();
-    if (!parent || parent.parent_comment_id) redirect(feedUrl(matchId, 'feedError', 'Replies are limited to one level.'));
+    const {data: parent} = await db.from('launch_match_feed_comments').select('id,parent_comment_id,post_id,deleted_at').eq('id', parentCommentId).eq('post_id', postId).maybeSingle();
+    if (!parent || parent.parent_comment_id || parent.deleted_at) redirect(feedUrl(matchId, 'feedError', 'That comment cannot be replied to.'));
   }
   const {error} = await db.from('launch_match_feed_comments').insert({
     post_id: postId,
@@ -112,30 +112,35 @@ export async function setMatchFeedPostReaction(formData: FormData) {
   const account = await requireAccount(matchId);
   await requireFeedOpen(account.supabase, matchId);
   const db = account.supabase as any;
-  const {data: existing} = await db.from('launch_match_feed_post_reactions').select('reaction_type').eq('post_id', postId).eq('profile_id', account.profile.id).maybeSingle();
-  if (existing?.reaction_type === reactionType) {
-    await db.from('launch_match_feed_post_reactions').delete().eq('post_id', postId).eq('profile_id', account.profile.id);
-  } else {
-    await db.from('launch_match_feed_post_reactions').upsert({post_id: postId, profile_id: account.profile.id, reaction_type: reactionType});
-  }
+  const {data: existing, error: readError} = await db.from('launch_match_feed_post_reactions').select('reaction_type').eq('post_id', postId).eq('profile_id', account.profile.id).maybeSingle();
+  if (readError) redirect(feedUrl(matchId, 'feedError', 'Reaction could not be updated.'));
+  const mutation = existing?.reaction_type === reactionType
+    ? db.from('launch_match_feed_post_reactions').delete().eq('post_id', postId).eq('profile_id', account.profile.id)
+    : db.from('launch_match_feed_post_reactions').upsert({post_id: postId, profile_id: account.profile.id, reaction_type: reactionType});
+  const {error} = await mutation;
+  if (error) redirect(feedUrl(matchId, 'feedError', 'Reaction could not be updated.'));
   refresh(matchId);
+  redirect(`/matches/${encodeURIComponent(matchId)}#post-${postId}`);
 }
 
 export async function setMatchFeedCommentReaction(formData: FormData) {
   const matchId = read(formData, 'matchId');
   const commentId = read(formData, 'commentId');
+  const postId = read(formData, 'postId');
   const reactionType = read(formData, 'reactionType');
   if (!matchId || !commentId || !REACTIONS.has(reactionType)) return;
   const account = await requireAccount(matchId);
   await requireFeedOpen(account.supabase, matchId);
   const db = account.supabase as any;
-  const {data: existing} = await db.from('launch_match_feed_comment_reactions').select('reaction_type').eq('comment_id', commentId).eq('profile_id', account.profile.id).maybeSingle();
-  if (existing?.reaction_type === reactionType) {
-    await db.from('launch_match_feed_comment_reactions').delete().eq('comment_id', commentId).eq('profile_id', account.profile.id);
-  } else {
-    await db.from('launch_match_feed_comment_reactions').upsert({comment_id: commentId, profile_id: account.profile.id, reaction_type: reactionType});
-  }
+  const {data: existing, error: readError} = await db.from('launch_match_feed_comment_reactions').select('reaction_type').eq('comment_id', commentId).eq('profile_id', account.profile.id).maybeSingle();
+  if (readError) redirect(feedUrl(matchId, 'feedError', 'Reaction could not be updated.'));
+  const mutation = existing?.reaction_type === reactionType
+    ? db.from('launch_match_feed_comment_reactions').delete().eq('comment_id', commentId).eq('profile_id', account.profile.id)
+    : db.from('launch_match_feed_comment_reactions').upsert({comment_id: commentId, profile_id: account.profile.id, reaction_type: reactionType});
+  const {error} = await mutation;
+  if (error) redirect(feedUrl(matchId, 'feedError', 'Reaction could not be updated.'));
   refresh(matchId);
+  redirect(postId ? `/matches/${encodeURIComponent(matchId)}#post-${postId}` : `/matches/${encodeURIComponent(matchId)}#match-feed`);
 }
 
 export async function softDeleteMatchFeedPost(formData: FormData) {
@@ -146,15 +151,20 @@ export async function softDeleteMatchFeedPost(formData: FormData) {
   if (account.profile.role !== 'Commissioner' || account.profile.status !== 'Approved') redirect(feedUrl(matchId, 'feedError', 'Commissioner access is required.'));
   const db = account.supabase as any;
   const {data: post} = await db.from('launch_match_feed_posts').select('image_path').eq('id', postId).eq('match_id', matchId).maybeSingle();
-  if (post?.image_path) await account.supabase.storage.from('match-feed').remove([post.image_path]);
   const {error} = await db.from('launch_match_feed_posts').update({deleted_at: new Date().toISOString(), deleted_by: account.profile.id, image_path: null}).eq('id', postId).eq('match_id', matchId);
   if (error) redirect(feedUrl(matchId, 'feedError', 'Post could not be removed.'));
+  if (post?.image_path) {
+    const {error: storageError} = await account.supabase.storage.from('match-feed').remove([post.image_path]);
+    if (storageError) console.error('Removed Matchday post left an orphaned image.', {matchId, postId});
+  }
   refresh(matchId);
+  redirect(`/matches/${encodeURIComponent(matchId)}#post-${postId}`);
 }
 
 export async function softDeleteMatchFeedComment(formData: FormData) {
   const matchId = read(formData, 'matchId');
   const commentId = read(formData, 'commentId');
+  const postId = read(formData, 'postId');
   if (!matchId || !commentId) return;
   const account = await requireAccount(matchId);
   if (account.profile.role !== 'Commissioner' || account.profile.status !== 'Approved') redirect(feedUrl(matchId, 'feedError', 'Commissioner access is required.'));
@@ -162,6 +172,7 @@ export async function softDeleteMatchFeedComment(formData: FormData) {
   const {error} = await db.from('launch_match_feed_comments').update({deleted_at: new Date().toISOString(), deleted_by: account.profile.id}).eq('id', commentId);
   if (error) redirect(feedUrl(matchId, 'feedError', 'Comment could not be removed.'));
   refresh(matchId);
+  redirect(postId ? `/matches/${encodeURIComponent(matchId)}#post-${postId}` : `/matches/${encodeURIComponent(matchId)}#match-feed`);
 }
 
 async function requireAccount(matchId: string) {
