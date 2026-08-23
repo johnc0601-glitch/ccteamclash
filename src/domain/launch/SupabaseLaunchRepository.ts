@@ -175,6 +175,25 @@ export class SupabaseLaunchRepository implements LaunchRepository {
     return data.map(toEventRosterPlayer);
   }
 
+  async replaceEventRosterPlayers(
+    eventRosterId: string,
+    players: EventRosterPlayer[],
+  ): Promise<EventRosterPlayer[]> {
+    const deleteResult = await this.supabase
+      .from('launch_event_roster_players')
+      .delete()
+      .eq('event_roster_id', eventRosterId);
+    if (deleteResult.error) throw deleteResult.error;
+    if (!players.length) return [];
+
+    const {data, error} = await this.supabase
+      .from('launch_event_roster_players')
+      .insert(players.map(fromEventRosterPlayer))
+      .select();
+    if (error) throw error;
+    return data.map(toEventRosterPlayer);
+  }
+
   async saveEventRosterPlayer(player: EventRosterPlayer): Promise<EventRosterPlayer> {
     const {data, error} = await this.supabase
       .from('launch_event_roster_players')
@@ -196,6 +215,12 @@ export class SupabaseLaunchRepository implements LaunchRepository {
     const {data, error} = await query.order('created_at');
     if (error) throw error;
     return data.map(toEventPost);
+  }
+
+  async getEventPost(id: string): Promise<EventPost | undefined> {
+    const {data, error} = await this.supabase.from('launch_event_posts').select('*').eq('id', id).maybeSingle();
+    if (error) throw error;
+    return data ? toEventPost(data) : undefined;
   }
 
   async saveEventPost(post: EventPost): Promise<EventPost> {
