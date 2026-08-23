@@ -10,6 +10,7 @@ import {
   softDeleteMatchFeedComment,
   softDeleteMatchFeedPost,
 } from '@/app/matches/[id]/feedActions';
+import {isMatchFeedOpen} from '@/services/matches/MatchFeedLifecycle';
 import styles from './MatchFeed.module.css';
 
 const REACTION_LABELS: Record<string, string> = {like: 'Like', love: 'Love', laugh: 'Laugh', fire: 'Fire'};
@@ -80,7 +81,7 @@ export async function MatchFeed({matchId, matchDate, notice, error}: MatchFeedPr
   const commentReactions = (commentReactionsData ?? []) as Reaction[];
   const profile = profileResult.data as {id: string; role: string; status: string} | null;
   const commissioner = profile?.role === 'Commissioner' && profile.status === 'Approved';
-  const open = isFeedOpen(matchDate);
+  const open = isMatchFeedOpen(matchDate);
   const publicUrl = (path: string) => supabase.storage.from('match-feed').getPublicUrl(path).data.publicUrl;
 
   return (
@@ -216,11 +217,4 @@ function countReactions(reactions: Reaction[]) {
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('en-US', {month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}).format(new Date(value));
-}
-
-function isFeedOpen(matchDate: string | null) {
-  if (!matchDate) return true;
-  const closesAt = new Date(`${matchDate}T23:59:59-04:00`);
-  closesAt.setDate(closesAt.getDate() + 30);
-  return Date.now() <= closesAt.getTime();
 }
