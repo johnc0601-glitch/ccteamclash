@@ -1,5 +1,5 @@
 import {cancelCaptainRosterUnlock, unlockCaptainRoster} from '@/app/matches/[id]/rosterUnlockActions';
-import styles from '@/app/matches/[id]/MatchdayV1.module.css';
+import styles from './CommissionerRosterUnlockPanel.module.css';
 
 export function CommissionerRosterUnlockPanel({matchId, teams, openTeamIds}: {
   matchId: string;
