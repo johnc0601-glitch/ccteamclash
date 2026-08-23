@@ -11,7 +11,7 @@ export function CommissionerRosterUnlockPanel({matchId, teams, openTeamIds}: {
       <div>
         <span>Commissioner</span>
         <h2>Roster correction</h2>
-        <p>Unlock a team for its captain. The roster locks again when the captain confirms.</p>
+        <p>Unlock a team for its captain. The roster locks again as soon as the captain saves the correction.</p>
       </div>
       <div className={styles.unlockActions}>
         {teams.map((team) => openTeamIds.has(team.id) ? (
