@@ -20,7 +20,7 @@ export async function unlockCaptainRoster(formData: FormData) {
     if (error) redirect(`/matches/${encodeURIComponent(matchId)}?commissionerError=${encodeURIComponent('Roster unlock failed.')}`);
   }
   revalidatePath(`/matches/${matchId}`);
-  redirect(`/matches/${encodeURIComponent(matchId)}?commissionerNotice=${encodeURIComponent('Roster unlocked for the captain. It will lock again when the captain confirms.')}`);
+  redirect(`/matches/${encodeURIComponent(matchId)}?commissionerNotice=${encodeURIComponent('Roster unlocked for the captain. It will lock again when the captain saves the correction.')}`);
 }
 
 export async function cancelCaptainRosterUnlock(formData: FormData) {
