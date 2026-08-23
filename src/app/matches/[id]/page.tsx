@@ -6,7 +6,6 @@ import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
 import {PersonalAttendanceCard} from '@/components/matches/PersonalAttendanceCard';
 import {CaptainRosterPanel} from '@/components/matches/CaptainRosterPanel';
-import {CommissionerSnapshotPanel} from '@/components/matches/CommissionerSnapshotPanel';
 import {CommissionerRosterUnlockPanel} from '@/components/matches/CommissionerRosterUnlockPanel';
 import {OfficialRosterExportPanel} from '@/components/matches/OfficialRosterExportPanel';
 import {createServerResultsService} from '@/core/createServerResultsService';
@@ -30,6 +29,8 @@ import styles from './Matchday.module.css';
 
 export const dynamic = 'force-dynamic';
 
+const ROSTER_CORRECTION_STATUSES = new Set(['Scheduled', 'Postponed', 'Rain Delay']);
+
 type MatchdayPageProps = {
   params: Promise<{id: string}>;
   searchParams: Promise<{
@@ -46,7 +47,7 @@ type MatchdayPageProps = {
 };
 
 type LockedControls = {
-  canCorrectSnapshot: boolean;
+  canUnlockRoster: boolean;
   rosterExport?: {ok: true; data: OfficialRosterExport};
 };
 
@@ -127,12 +128,9 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
       : [];
   }
 
-  let lockedControls: LockedControls = {canCorrectSnapshot: false};
-  let commissionerPlayers: LaunchPlayer[] = [];
-  if (locked && officialSnapshot?.status === 'complete' && actor) {
-    lockedControls = resolveLockedControls(actor, match, officialSnapshot.rosters);
-    if (lockedControls.canCorrectSnapshot) commissionerPlayers = (await launchRepository.getPlayers()).filter((player) => player.active);
-  }
+  const lockedControls = locked && officialSnapshot?.status === 'complete'
+    ? resolveLockedControls(actor, match, officialSnapshot.rosters)
+    : {canUnlockRoster: false};
 
   return (
     <>
@@ -162,7 +160,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             error={readParam(query.feedError)}
           />
 
-          {lockedControls.canCorrectSnapshot && officialSnapshot?.status === 'complete' ? (
+          {lockedControls.canUnlockRoster && officialSnapshot?.status === 'complete' ? (
             <CommissionerRosterUnlockPanel
               matchId={matchId}
               teams={[{id: matchday.awayTeam.id, name: matchday.awayTeam.name}, {id: matchday.homeTeam.id, name: matchday.homeTeam.name}]}
@@ -178,9 +176,6 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             availabilityUnavailable={availabilityUnavailable}
           />
 
-          {lockedControls.canCorrectSnapshot && officialSnapshot?.status === 'complete' ? (
-            <CommissionerSnapshotPanel rosters={officialSnapshot.rosters} activePlayers={commissionerPlayers} notice={readParam(query.commissionerNotice)} error={readParam(query.commissionerError)} />
-          ) : null}
           {lockedControls.rosterExport?.ok ? <OfficialRosterExportPanel exportData={lockedControls.rosterExport.data} /> : null}
         </div>
       </main>
@@ -192,13 +187,18 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 function resolveLockedControls(actor: AttendanceActor | undefined, match: Match, rosters: OfficialMatchRoster[]): LockedControls {
   const approved = actor?.profileStatus === 'Approved';
   const teamIds = [match.homeTeamId, match.awayTeamId].filter((teamId): teamId is string => Boolean(teamId));
-  const canCorrectSnapshot = Boolean(approved && actor?.profileRole === 'Commissioner' && match.status !== 'Cancelled' && teamIds.length === 2);
+  const canUnlockRoster = Boolean(
+    approved
+    && actor?.profileRole === 'Commissioner'
+    && ROSTER_CORRECTION_STATUSES.has(match.status)
+    && teamIds.length === 2
+  );
   const canExport = Boolean(approved && match.date && teamIds.length === 2 && (actor?.profileRole === 'Commissioner' || (actor?.profileRole === 'Captain' && actor.captainTeamId && teamIds.includes(actor.captainTeamId))));
-  if (!canExport || !match.date || !match.homeTeamId || !match.awayTeamId) return {canCorrectSnapshot};
+  if (!canExport || !match.date || !match.homeTeamId || !match.awayTeamId) return {canUnlockRoster};
   const home = rosters.find((roster) => roster.teamId === match.homeTeamId);
   const away = rosters.find((roster) => roster.teamId === match.awayTeamId);
-  if (!home || !away) return {canCorrectSnapshot};
-  return {canCorrectSnapshot, rosterExport: {ok: true, data: {matchId: match.id, matchDate: match.date, homeTeam: toExportTeam(home), awayTeam: toExportTeam(away), generatedAt: new Date().toISOString()}}};
+  if (!home || !away) return {canUnlockRoster};
+  return {canUnlockRoster, rosterExport: {ok: true, data: {matchId: match.id, matchDate: match.date, homeTeam: toExportTeam(home), awayTeam: toExportTeam(away), generatedAt: new Date().toISOString()}}};
 }
 
 function toExportTeam(roster: OfficialMatchRoster) {
