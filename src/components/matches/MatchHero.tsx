@@ -1,5 +1,5 @@
 import type {PublicMatchday} from '@/services/matches/MatchdayService';
-import styles from '@/app/matches/[id]/MatchdayV1.module.css';
+import styles from './MatchHeroV1.module.css';
 
 export function MatchHero({matchday}: {matchday: PublicMatchday}) {
   const courseName = matchday.courseDetails?.name ?? 'Course details pending';
