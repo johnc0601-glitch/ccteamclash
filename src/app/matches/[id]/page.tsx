@@ -109,7 +109,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
   const attendanceRepository = new SupabaseMatchRosterRepository(supabase);
   const actor = userResult.data.user ? await attendanceRepository.getAttendanceActor(userResult.data.user.id) : undefined;
-  const openUnlockTeamIds = locked ? await getOpenRosterUnlockTeamIds(matchId) : new Set<string>();
+  const openUnlockTeamIds = locked ? await getOpenRosterUnlockTeamIds(supabase, matchId) : new Set<string>();
 
   const personalAttendance = !locked && userResult.data.user ? await matchRosterService.getPersonalAttendance(userResult.data.user.id, matchId) : undefined;
   let managedRosters = userResult.data.user && readParam(query.manage) === 'roster'
@@ -202,9 +202,8 @@ function toExportTeam(roster: OfficialMatchRoster) {
   return {name: roster.teamNameSnapshot, playerNames: roster.players.map((player) => player.playerNameSnapshot).sort((left, right) => left.localeCompare(right, 'en', {sensitivity: 'base'}))};
 }
 
-async function getOpenRosterUnlockTeamIds(matchId: string): Promise<Set<string>> {
-  const admin = createAdminClient() as any;
-  const {data, error} = await admin.from('launch_match_roster_unlocks').select('team_id').eq('match_id', matchId).is('relocked_at', null);
+async function getOpenRosterUnlockTeamIds(supabase: Awaited<ReturnType<typeof createClient>>, matchId: string): Promise<Set<string>> {
+  const {data, error} = await (supabase as any).from('launch_match_roster_unlocks').select('team_id').eq('match_id', matchId).is('relocked_at', null);
   if (error) return new Set();
   return new Set((data ?? []).map((row: {team_id: string}) => row.team_id));
 }
