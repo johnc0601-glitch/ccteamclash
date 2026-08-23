@@ -1,7 +1,9 @@
 import type {TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import type {OfficialMatchRoster, OfficialSnapshotState} from '@/domain/match-roster/MatchRosterSnapshot';
 import type {PublicMatchday} from '@/services/matches/MatchdayService';
+import {getStoredTeamById} from '@/services/teams/TeamStore';
 import {TeamRosterColumn} from '@/components/matches/TeamRosterColumn';
+import {LockedRosterPair} from '@/components/matches/LockedRosterPair';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 import v1 from '@/app/matches/[id]/MatchdayV1.module.css';
 
@@ -9,7 +11,7 @@ export type PublicMatchAvailability = ReadonlyMap<string, TeamAttendanceMember[]
 
 const PREVIEW_COUNT = 5;
 
-export function MatchRosterBoard({
+export async function MatchRosterBoard({
   matchday,
   official,
   rosterUnavailable = false,
@@ -37,24 +39,33 @@ export function MatchRosterBoard({
   if (official?.status === 'complete') {
     const away = findRoster(official.rosters, matchday.awayTeam.id);
     const home = findRoster(official.rosters, matchday.homeTeam.id);
-    const awayAccent = matchday.awayTeam.team?.primaryColor;
-    const homeAccent = matchday.homeTeam.team?.primaryColor;
+    const [awayStoredTeam, homeStoredTeam] = await Promise.all([
+      getStoredTeamById(matchday.awayTeam.id),
+      getStoredTeamById(matchday.homeTeam.id),
+    ]);
+
     return (
-      <RosterShell
-        label="Official match roster"
-        title="Locked roster"
-        awayPreview={away.players.map((player) => player.playerNameSnapshot)}
-        homePreview={home.players.map((player) => player.playerNameSnapshot)}
-        awayName={away.teamNameSnapshot}
-        homeName={home.teamNameSnapshot}
-        awayLogo={matchday.awayTeam.logo}
-        homeLogo={matchday.homeTeam.logo}
-        awayAccent={awayAccent}
-        homeAccent={homeAccent}
-      >
-        <OfficialRosterColumn roster={away} label="Away team" accent={awayAccent} />
-        <OfficialRosterColumn roster={home} label="Home team" accent={homeAccent} />
-      </RosterShell>
+      <section className={styles.sectionCard}>
+        <header className={styles.sectionHeader}>
+          <div><span>Official match roster</span><h2>Locked roster</h2></div>
+        </header>
+        <LockedRosterPair
+          away={{
+            name: away.teamNameSnapshot,
+            label: 'Away',
+            logo: matchday.awayTeam.logo,
+            accent: awayStoredTeam?.primaryColor,
+            players: away.players.map((player) => player.playerNameSnapshot),
+          }}
+          home={{
+            name: home.teamNameSnapshot,
+            label: 'Home',
+            logo: matchday.homeTeam.logo,
+            accent: homeStoredTeam?.primaryColor,
+            players: home.players.map((player) => player.playerNameSnapshot),
+          }}
+        />
+      </section>
     );
   }
 
@@ -98,10 +109,6 @@ function RosterShell({
   homePreview,
   awayName,
   homeName,
-  awayLogo,
-  homeLogo,
-  awayAccent,
-  homeAccent,
   children,
 }: {
   label: string;
@@ -110,10 +117,6 @@ function RosterShell({
   homePreview: string[];
   awayName: string;
   homeName: string;
-  awayLogo?: string;
-  homeLogo?: string;
-  awayAccent?: string;
-  homeAccent?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -123,8 +126,8 @@ function RosterShell({
       </header>
 
       <div className={v1.previewGrid}>
-        <RosterPreview teamName={awayName} label="Away" names={awayPreview} logo={awayLogo} accent={awayAccent} />
-        <RosterPreview teamName={homeName} label="Home" names={homePreview} logo={homeLogo} accent={homeAccent} />
+        <RosterPreview teamName={awayName} label="Away" names={awayPreview} />
+        <RosterPreview teamName={homeName} label="Home" names={homePreview} />
       </div>
 
       <details className={v1.rosterDetails}>
@@ -135,20 +138,12 @@ function RosterShell({
   );
 }
 
-function RosterPreview({teamName, label, names, logo, accent}: {teamName: string; label: string; names: string[]; logo?: string; accent?: string}) {
+function RosterPreview({teamName, label, names}: {teamName: string; label: string; names: string[]}) {
   const visible = names.slice(0, PREVIEW_COUNT);
   const remaining = Math.max(0, names.length - visible.length);
-  const colorStyle = accent ? {borderTop: `5px solid ${accent}`} : undefined;
-  const headerStyle = accent ? {background: `linear-gradient(110deg, ${accent} 0%, ${accent} 55%, #071012 100%)`} : undefined;
   return (
-    <article className={v1.previewTeam} style={colorStyle}>
-      <div className={accent || logo ? `${v1.previewTeamHead} ${v1.previewTeamHeadColor}` : v1.previewTeamHead} style={headerStyle}>
-        <div className={v1.previewTeamIdentity}>
-          {logo ? <img src={logo} alt={`${teamName} logo`} className={v1.previewTeamLogo} /> : null}
-          <span>{teamName}</span>
-        </div>
-        <span>{label}</span>
-      </div>
+    <article className={v1.previewTeam}>
+      <div className={v1.previewTeamHead}><span>{teamName}</span><span>{label}</span></div>
       <div className={v1.previewList}>
         {visible.length ? visible.map((name) => <div className={v1.previewPlayer} key={name}><strong>{name}</strong></div>) : (
           <div className={v1.previewPlayer}><span className={v1.previewMore}>No players listed yet</span></div>
@@ -192,21 +187,6 @@ function AvailabilityGroup({title, players, empty}: {title: string; players: Tea
 
 function AvailabilityPlayer({player}: {player: TeamAttendanceMember}) {
   return <div className={styles.playerRow}><b>{initials(player.playerName)}</b><strong>{player.playerName}</strong></div>;
-}
-
-function OfficialRosterColumn({roster, label, accent}: {roster: OfficialMatchRoster; label: string; accent?: string}) {
-  const headerStyle = accent ? {background: `linear-gradient(110deg, ${accent} 0%, ${accent} 55%, #071012 100%)`} : undefined;
-  return (
-    <article className={styles.rosterTeam} style={accent ? {borderTop: `5px solid ${accent}`} : undefined}>
-      <div className={styles.rosterTeamHeader} style={headerStyle}><div><span>{label}</span><h3>{roster.teamNameSnapshot}</h3></div></div>
-      <div className={styles.rosterTitle}><span>Official players</span><span>{roster.players.length}</span></div>
-      <div className={styles.playerList}>
-        {roster.players.length ? roster.players.map((player) => (
-          <div className={styles.playerRow} key={player.playerId}><b>{initials(player.playerNameSnapshot)}</b><strong>{player.playerNameSnapshot}</strong></div>
-        )) : <p className={styles.empty}>No players are listed on this official roster.</p>}
-      </div>
-    </article>
-  );
 }
 
 function Unavailable({title, detail}: {title: string; detail: string}) {
