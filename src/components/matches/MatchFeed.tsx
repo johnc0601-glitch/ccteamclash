@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 import {
   addMatchFeedComment,
@@ -50,10 +49,11 @@ type MatchFeedProps = {
 };
 
 export async function MatchFeed({matchId, matchDate, notice, error}: MatchFeedProps) {
-  const [supabase, admin] = await Promise.all([createClient(), Promise.resolve(createAdminClient() as any)]);
+  const supabase = await createClient();
+  const db = supabase as any;
   const [{data: {user}}, postsResult] = await Promise.all([
     supabase.auth.getUser(),
-    admin.from('launch_match_feed_posts')
+    db.from('launch_match_feed_posts')
       .select('id,match_id,profile_id,author_name_snapshot,body,image_path,created_at,updated_at,edited_at,deleted_at')
       .eq('match_id', matchId)
       .order('created_at', {ascending: false})
@@ -64,24 +64,24 @@ export async function MatchFeed({matchId, matchDate, notice, error}: MatchFeedPr
   const postIds = posts.map((post) => post.id);
   const [{data: commentsData}, {data: postReactionsData}, profileResult] = await Promise.all([
     postIds.length
-      ? admin.from('launch_match_feed_comments').select('id,post_id,profile_id,author_name_snapshot,parent_comment_id,body,created_at,edited_at,deleted_at').in('post_id', postIds).order('created_at', {ascending: true})
+      ? db.from('launch_match_feed_comments').select('id,post_id,profile_id,author_name_snapshot,parent_comment_id,body,created_at,edited_at,deleted_at').in('post_id', postIds).order('created_at', {ascending: true})
       : Promise.resolve({data: []}),
     postIds.length
-      ? admin.from('launch_match_feed_post_reactions').select('post_id,profile_id,reaction_type').in('post_id', postIds)
+      ? db.from('launch_match_feed_post_reactions').select('post_id,profile_id,reaction_type').in('post_id', postIds)
       : Promise.resolve({data: []}),
-    user ? admin.from('launch_profiles').select('id,role,status').eq('user_id', user.id).maybeSingle() : Promise.resolve({data: null}),
+    user ? supabase.from('launch_profiles').select('id,role,status').eq('user_id', user.id).maybeSingle() : Promise.resolve({data: null}),
   ]);
   const comments = (commentsData ?? []) as FeedComment[];
   const commentIds = comments.map((comment) => comment.id);
   const {data: commentReactionsData} = commentIds.length
-    ? await admin.from('launch_match_feed_comment_reactions').select('comment_id,profile_id,reaction_type').in('comment_id', commentIds)
+    ? await db.from('launch_match_feed_comment_reactions').select('comment_id,profile_id,reaction_type').in('comment_id', commentIds)
     : {data: []};
   const postReactions = (postReactionsData ?? []) as Reaction[];
   const commentReactions = (commentReactionsData ?? []) as Reaction[];
   const profile = profileResult.data as {id: string; role: string; status: string} | null;
   const commissioner = profile?.role === 'Commissioner' && profile.status === 'Approved';
   const open = isFeedOpen(matchDate);
-  const publicUrl = (path: string) => admin.storage.from('match-feed').getPublicUrl(path).data.publicUrl;
+  const publicUrl = (path: string) => supabase.storage.from('match-feed').getPublicUrl(path).data.publicUrl;
 
   return (
     <section id="match-feed" className={styles.feed}>
