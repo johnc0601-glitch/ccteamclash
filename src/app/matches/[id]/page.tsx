@@ -95,15 +95,18 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
   let officialSnapshot: OfficialSnapshotState | undefined;
   if (locked) {
-    try {
-      const adminRepository = new SupabaseMatchRosterRepository(createAdminClient());
-      officialSnapshot = await new MatchRosterService(matchRosterRepository, undefined, adminRepository).ensureLockedSnapshot(
-        matchId,
-        parseMatchRosterSnapshotStartAt(process.env.MATCH_ROSTER_SNAPSHOT_START_AT),
-      );
-    } catch (error) {
-      console.error('Official match roster snapshot is unavailable.', {operation: 'lazy-create', matchId, errorClass: snapshotErrorClass(error)});
-      officialSnapshot = {status: 'unavailable', rosters: []};
+    officialSnapshot = await matchRosterService.ensureLockedSnapshot(matchId);
+    if (officialSnapshot.status !== 'complete' && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const adminRepository = new SupabaseMatchRosterRepository(createAdminClient());
+        officialSnapshot = await new MatchRosterService(matchRosterRepository, undefined, adminRepository).ensureLockedSnapshot(
+          matchId,
+          parseMatchRosterSnapshotStartAt(process.env.MATCH_ROSTER_SNAPSHOT_START_AT),
+        );
+      } catch (error) {
+        console.error('Official match roster snapshot is unavailable.', {operation: 'lazy-create', matchId, errorClass: snapshotErrorClass(error)});
+        officialSnapshot = {status: 'unavailable', rosters: []};
+      }
     }
   }
 
