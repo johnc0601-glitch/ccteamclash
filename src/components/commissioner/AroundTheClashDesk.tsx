@@ -1,6 +1,6 @@
 'use client';
 
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 
 type Scope = 'Current Round' | 'Match' | 'Season' | 'All-Time';
 type Category = 'Upsets' | 'CI Gaps' | 'Above Expected' | 'Road' | 'Home' | 'Singles' | 'Doubles' | 'CI +/-' | 'Closest';
@@ -71,7 +71,13 @@ const fixtures = buildPreviewFixtures();
 export function AroundTheClashDesk() {
   const [scope, setScope] = useState<Scope>('Current Round');
   const [matchupId, setMatchupId] = useState('all');
+  const [category, setCategory] = useState<Category>('Upsets');
   const [selected, setSelected] = useState<string[]>([]);
+
+  const visible = useMemo(() => fixtures
+    .filter((item) => item.category === category && (matchupId === 'all' || item.matchupId === matchupId))
+    .sort((a, b) => b.rankScore - a.rankScore)
+    .slice(0, 5), [category, matchupId]);
 
   const selectedItems = fixtures.filter((item) => selected.includes(item.id));
   const currentMatchup = previewMatchups.find((item) => item.id === matchupId);
@@ -85,13 +91,6 @@ export function AroundTheClashDesk() {
     return matchup ? `${matchup.awayTeam} @ ${matchup.homeTeam}` : 'All matchups';
   }
 
-  function categoryResults(category: Category) {
-    return fixtures
-      .filter((item) => item.category === category && (matchupId === 'all' || item.matchupId === matchupId))
-      .sort((a, b) => b.rankScore - a.rankScore)
-      .slice(0, 5);
-  }
-
   return (
     <div style={{display: 'grid', gap: 16}}>
       <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}} aria-label="Stats scope">
@@ -102,7 +101,7 @@ export function AroundTheClashDesk() {
         ))}
       </div>
 
-      <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12}}>
+      <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12}}>
         <label style={{display: 'grid', gap: 5, fontSize: 13, fontWeight: 700}}>
           Round
           <select defaultValue="round-1" aria-label="Round">
@@ -121,46 +120,49 @@ export function AroundTheClashDesk() {
             ))}
           </select>
         </label>
+
+        <label style={{display: 'grid', gap: 5, fontSize: 13, fontWeight: 700}}>
+          Category
+          <select value={category} onChange={(event) => setCategory(event.target.value as Category)} aria-label="Category">
+            {categories.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </label>
       </div>
 
       <div style={{fontSize: 13, opacity: .78}}>
-        Viewing: <strong>{scope}</strong> · <strong>{currentMatchup ? `${currentMatchup.awayTeam} @ ${currentMatchup.homeTeam}` : 'All Round 1 matchups'}</strong> · Preview fixtures
+        Viewing: <strong>{scope}</strong> · <strong>{currentMatchup ? `${currentMatchup.awayTeam} @ ${currentMatchup.homeTeam}` : 'All Round 1 matchups'}</strong> · <strong>{category}</strong>
       </div>
 
-      <div style={{display: 'grid', gap: 10}}>
-        {categories.map((category, categoryIndex) => {
-          const results = categoryResults(category);
-          return (
-            <details key={category} open={categoryIndex === 0} style={{border: '1px solid rgba(127,127,127,.35)', borderRadius: 12, overflow: 'hidden'}}>
-              <summary style={{cursor: 'pointer', listStylePosition: 'inside', padding: 16, fontWeight: 800, fontSize: 17}}>
-                {category} <span style={{fontSize: 12, fontWeight: 600, opacity: .65}}>· Top 5</span>
-              </summary>
-              <div style={{borderTop: '1px solid rgba(127,127,127,.25)'}}>
-                {results.length === 0 ? (
-                  <div style={{padding: 16, fontSize: 13, opacity: .7}}>No preview results for this matchup.</div>
-                ) : results.map((item, index) => {
-                  const isSelected = selected.includes(item.id);
-                  return (
-                    <article key={item.id} style={{display: 'grid', gridTemplateColumns: '32px minmax(0,1fr) auto', gap: 10, alignItems: 'center', padding: 14, borderTop: index ? '1px solid rgba(127,127,127,.18)' : undefined}}>
-                      <strong style={{fontSize: 17, textAlign: 'center'}}>{index + 1}</strong>
-                      <div style={{minWidth: 0}}>
-                        <div style={{fontSize: 12, fontWeight: 800, opacity: .68, marginBottom: 3}}>{matchupLabel(item.matchupId)}</div>
-                        <strong>{item.headline}</strong>
-                        <div style={{fontWeight: 700, marginTop: 5}}>{item.players}</div>
-                        <div style={{fontSize: 13, opacity: .72, marginTop: 3}}>{item.detail}</div>
-                      </div>
-                      <div style={{display: 'grid', gap: 8, justifyItems: 'end'}}>
-                        <strong>{item.value}</strong>
-                        <button type="button" onClick={() => toggleSelected(item.id)}>{isSelected ? 'Remove' : 'Add'}</button>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </details>
-          );
-        })}
-      </div>
+      <section style={{border: '1px solid rgba(127,127,127,.35)', borderRadius: 12, overflow: 'hidden'}}>
+        <header style={{padding: 16, borderBottom: '1px solid rgba(127,127,127,.25)'}}>
+          <h3 style={{margin: 0}}>Top 5 · {category}</h3>
+          <div style={{fontSize: 13, marginTop: 4, opacity: .72}}>
+            {currentMatchup ? `${currentMatchup.awayTeam} @ ${currentMatchup.homeTeam}` : 'Across all Round 1 matchups'}
+          </div>
+        </header>
+        <div>
+          {visible.length === 0 ? (
+            <div style={{padding: 16, fontSize: 13, opacity: .7}}>No preview results for this matchup.</div>
+          ) : visible.map((item, index) => {
+            const isSelected = selected.includes(item.id);
+            return (
+              <article key={item.id} style={{display: 'grid', gridTemplateColumns: '32px minmax(0,1fr) auto', gap: 10, alignItems: 'center', padding: 14, borderTop: index ? '1px solid rgba(127,127,127,.18)' : undefined}}>
+                <strong style={{fontSize: 17, textAlign: 'center'}}>{index + 1}</strong>
+                <div style={{minWidth: 0}}>
+                  <div style={{fontSize: 12, fontWeight: 800, opacity: .68, marginBottom: 3}}>{matchupLabel(item.matchupId)}</div>
+                  <strong>{item.headline}</strong>
+                  <div style={{fontWeight: 700, marginTop: 5}}>{item.players}</div>
+                  <div style={{fontSize: 13, opacity: .72, marginTop: 3}}>{item.detail}</div>
+                </div>
+                <div style={{display: 'grid', gap: 8, justifyItems: 'end'}}>
+                  <strong>{item.value}</strong>
+                  <button type="button" onClick={() => toggleSelected(item.id)}>{isSelected ? 'Remove' : 'Add'}</button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
 
       <aside style={{borderTop: '1px solid rgba(127,127,127,.35)', paddingTop: 14}}>
         <div style={{display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center'}}>
@@ -168,7 +170,7 @@ export function AroundTheClashDesk() {
           {selectedItems.length > 0 && <button type="button" onClick={() => setSelected([])}>Clear</button>}
         </div>
         {selectedItems.length === 0 ? (
-          <p style={{marginBottom: 0}}>Open any category, review its top five results, and add the ones worth using in the recap.</p>
+          <p style={{marginBottom: 0}}>Choose a category, review the exposed top five results, and add the ones worth using in the recap.</p>
         ) : (
           <div style={{display: 'grid', gap: 8, marginTop: 10}}>
             {selectedItems.map((item) => (
