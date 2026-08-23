@@ -1,6 +1,7 @@
 import type {PublicMatchday} from '@/services/matches/MatchdayService';
 import styles from './MatchHeroV1.module.css';
 
+// Matchday theme colors are applied by the hero stylesheet for the current preview experiment.
 export function MatchHero({matchday}: {matchday: PublicMatchday}) {
   const courseName = matchday.courseDetails?.name ?? 'Course details pending';
 
