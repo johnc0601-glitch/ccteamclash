@@ -286,9 +286,10 @@
 }
 
 .previewTeamHeadColor > span:last-child {
-  color: var(--cc-teal);
+  color: #fff;
   font-size: 10px;
   letter-spacing: .12em;
+  opacity: .85;
 }
 
 .previewTeamIdentity {
@@ -338,6 +339,29 @@
   font-weight: 800;
 }
 
+.rosterToggle {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 0;
+  border-top: 1px solid var(--cc-card-border);
+  background: transparent;
+  color: var(--cc-heading);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.rosterToggle span {
+  color: var(--cc-teal);
+  font-size: 16px;
+}
+
 .fullRosterGrid {
   padding-top: 16px;
 }
@@ -366,7 +390,8 @@
   }
 
   .scoreDetails summary,
-  .rosterDetails summary {
+  .rosterDetails summary,
+  .rosterToggle {
     min-height: 44px;
     padding: 10px 13px;
   }
