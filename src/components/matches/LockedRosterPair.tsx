@@ -5,6 +5,7 @@ import v1 from '@/app/matches/[id]/MatchdayV1.module.css';
 
 const PREVIEW_COUNT = 5;
 
+// Locked rosters expand in place so the team cards remain the single source of truth.
 type LockedRosterTeam = {
   name: string;
   label: 'Away' | 'Home';
