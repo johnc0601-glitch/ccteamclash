@@ -38,11 +38,11 @@ function LockedRosterCard({team, expanded}: {team: LockedRosterTeam; expanded: b
   const isAway = team.label === 'Away';
   const headerStyle = {
     background: isAway
-      ? 'linear-gradient(110deg, #0b2e59 0%, #113f72 72%, #071012 100%)'
-      : 'linear-gradient(110deg, #481343 0%, #711f58 72%, #071012 100%)',
+      ? 'linear-gradient(110deg, var(--match-away, #0b2e59) 0%, var(--match-away, #113f72) 78%, #071012 100%)'
+      : 'linear-gradient(110deg, var(--match-home, #481343) 0%, var(--match-home, #711f58) 78%, #071012 100%)',
     boxShadow: isAway
-      ? 'inset 0 0 0 1px rgba(74,140,214,.28)'
-      : 'inset 0 0 0 1px rgba(184,77,150,.28)',
+      ? 'inset 0 0 0 1px color-mix(in srgb, var(--match-away, #113f72) 62%, white)'
+      : 'inset 0 0 0 1px color-mix(in srgb, var(--match-home, #711f58) 62%, white)',
   };
 
   return (
