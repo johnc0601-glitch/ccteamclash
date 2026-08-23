@@ -91,6 +91,13 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const matchday = resolveMatchday(event, match, teams, players, courses, Boolean(publishedResult), effectiveRosterIds);
   if (!matchday) notFound();
 
+  const awayColor = matchday.awayTeam.team?.primaryColor || '#113f72';
+  const homeColor = matchday.homeTeam.team?.primaryColor || '#711f58';
+  const pageBackground = {
+    background: `linear-gradient(90deg, color-mix(in srgb, ${awayColor} 58%, #f6f3ea) 0%, color-mix(in srgb, ${awayColor} 28%, #f6f3ea) 42%, #f6f3ea 49.5%, #f6f3ea 50.5%, color-mix(in srgb, ${homeColor} 28%, #f6f3ea) 58%, color-mix(in srgb, ${homeColor} 58%, #f6f3ea) 100%)`,
+    backgroundAttachment: 'fixed',
+  };
+
   const availability = availabilityOpen && !rosterUnavailable ? await getPublicAvailability(supabase, matchId, matchday) : undefined;
   const availabilityUnavailable = availabilityOpen && availability === null;
 
@@ -135,7 +142,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   return (
     <>
       <SiteHeader />
-      <main className={styles.page}>
+      <main className={styles.page} style={pageBackground}>
         <MatchHero matchday={matchday} />
         <div className={`shell ${styles.content}`}>
           <MatchScoreboard matchday={matchday} result={publishedResult} contests={publishedResult ? contests : []} />
