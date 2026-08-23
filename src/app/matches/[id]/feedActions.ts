@@ -3,11 +3,11 @@
 import {revalidatePath} from 'next/cache';
 import {redirect} from 'next/navigation';
 import {createClient} from '@/lib/supabase/server';
+import {isMatchFeedOpen, matchFeedClosedMessage} from '@/services/matches/MatchFeedLifecycle';
 
 const REACTIONS = new Set(['like', 'love', 'laugh', 'fire']);
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
-const FEED_OPEN_DAYS = 30;
 
 export async function createMatchFeedPost(formData: FormData) {
   const matchId = read(formData, 'matchId');
@@ -175,10 +175,7 @@ async function requireAccount(matchId: string) {
 
 async function requireFeedOpen(supabase: Awaited<ReturnType<typeof createClient>>, matchId: string) {
   const {data: match} = await supabase.from('launch_schedule_matches').select('date').eq('id', matchId).maybeSingle();
-  if (!match?.date) return;
-  const closesAt = new Date(`${match.date}T23:59:59-04:00`);
-  closesAt.setDate(closesAt.getDate() + FEED_OPEN_DAYS);
-  if (Date.now() > closesAt.getTime()) redirect(feedUrl(matchId, 'feedError', 'Match history preserved'));
+  if (match?.date && !isMatchFeedOpen(match.date)) redirect(feedUrl(matchId, 'feedError', matchFeedClosedMessage()));
 }
 
 function refresh(matchId: string) {
