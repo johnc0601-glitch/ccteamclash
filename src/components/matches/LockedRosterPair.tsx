@@ -35,7 +35,7 @@ function LockedRosterCard({team, expanded}: {team: LockedRosterTeam; expanded: b
   const visible = expanded ? team.players : team.players.slice(0, PREVIEW_COUNT);
   const remaining = Math.max(0, team.players.length - PREVIEW_COUNT);
   const headerStyle = team.accent
-    ? {background: `linear-gradient(110deg, ${team.accent} 0%, #071012 78%)`}
+    ? {background: `linear-gradient(110deg, ${team.accent} 0%, ${team.accent} 62%, #071012 100%)`}
     : undefined;
 
   return (
