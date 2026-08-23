@@ -26,6 +26,23 @@ export async function saveCaptainRosterAvailabilityBatch(formData: FormData) {
   const allowedPlayerIds = new Set(teamPlayers.map((player) => player.playerId));
   if (changes.some((change) => !allowedPlayerIds.has(change.playerId))) redirect(`${path}&captainError=${encodeURIComponent('One or more players are not on the roster you manage.')}`);
 
+  if (context.overrideTeamIds.has(teamId)) {
+    try {
+      const {error} = await (context.supabase as any).rpc('captain_save_unlocked_match_roster', {
+        target_match_id: matchId,
+        target_team_id: teamId,
+        p_changes: changes.map((change) => ({player_id: change.playerId, status: change.status})),
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Unlocked captain roster save failed.', {matchId, teamId, changeCount: changes.length, errorClass: error instanceof Error ? error.name : 'UnknownError'});
+      redirect(`${path}&captainError=${encodeURIComponent('Roster changes could not be saved.')}`);
+    }
+    revalidatePath(`/matches/${matchId}`);
+    revalidatePath('/captain');
+    redirect(`/matches/${encodeURIComponent(matchId)}?captainNotice=${encodeURIComponent('Roster updated and locked again.')}`);
+  }
+
   const attendanceClient = context.supabase as any;
   const upserts = changes.filter((change): change is BatchChange & {status: MatchAttendanceStatus} => change.status !== 'Unconfirmed').map((change) => ({match_id: matchId, team_id: teamId, player_id: change.playerId, status: change.status, updated_by: context.actor.profileId}));
   const clearIds = changes.filter((change) => change.status === 'Unconfirmed').map((change) => change.playerId);
@@ -56,6 +73,7 @@ export async function setCaptainRosterAvailability(formData: FormData) {
   if (!context) redirect(`${path}&captainError=${encodeURIComponent('Roster management is closed for this match.')}`);
   const team = await findManagedPlayerTeam(context, playerId);
   if (!team) redirect(`${path}&captainError=${encodeURIComponent('That player is not on a team you manage for this match.')}`);
+  if (context.overrideTeamIds.has(team)) redirect(`${path}&captainError=${encodeURIComponent('Use Save roster to apply the correction and lock it again.')}`);
   try {
     await context.repository.saveAttendance({matchId, teamId: team, playerId, status: status as MatchAttendanceStatus, updatedBy: context.actor.profileId});
   } catch (error) {
@@ -75,6 +93,7 @@ export async function clearCaptainRosterAvailability(formData: FormData) {
   if (!context) redirect(`${path}&captainError=${encodeURIComponent('Roster management is closed for this match.')}`);
   const team = await findManagedPlayerTeam(context, playerId);
   if (!team) redirect(`${path}&captainError=${encodeURIComponent('That player is not on a team you manage for this match.')}`);
+  if (context.overrideTeamIds.has(team)) redirect(`${path}&captainError=${encodeURIComponent('Use Save roster to apply the correction and lock it again.')}`);
   try {
     const attendanceClient = context.supabase as any;
     const {error} = await attendanceClient.from('launch_match_attendance').delete().eq('match_id', matchId).eq('team_id', team).eq('player_id', playerId);
