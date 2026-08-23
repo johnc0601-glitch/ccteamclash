@@ -1,6 +1,6 @@
 import type {TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import type {OfficialMatchRoster, OfficialSnapshotState} from '@/domain/match-roster/MatchRosterSnapshot';
-import type {PublicMatchday, PublicMatchdayTeam} from '@/services/matches/MatchdayService';
+import type {PublicMatchday} from '@/services/matches/MatchdayService';
 import {TeamRosterColumn} from '@/components/matches/TeamRosterColumn';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 import v1 from '@/app/matches/[id]/MatchdayV1.module.css';
@@ -37,6 +37,8 @@ export function MatchRosterBoard({
   if (official?.status === 'complete') {
     const away = findRoster(official.rosters, matchday.awayTeam.id);
     const home = findRoster(official.rosters, matchday.homeTeam.id);
+    const awayAccent = matchday.awayTeam.team?.primaryColor;
+    const homeAccent = matchday.homeTeam.team?.primaryColor;
     return (
       <RosterShell
         label="Official match roster"
@@ -45,9 +47,13 @@ export function MatchRosterBoard({
         homePreview={home.players.map((player) => player.playerNameSnapshot)}
         awayName={away.teamNameSnapshot}
         homeName={home.teamNameSnapshot}
+        awayLogo={matchday.awayTeam.logo}
+        homeLogo={matchday.homeTeam.logo}
+        awayAccent={awayAccent}
+        homeAccent={homeAccent}
       >
-        <OfficialRosterColumn roster={away} label="Away team" />
-        <OfficialRosterColumn roster={home} label="Home team" />
+        <OfficialRosterColumn roster={away} label="Away team" accent={awayAccent} />
+        <OfficialRosterColumn roster={home} label="Home team" accent={homeAccent} />
       </RosterShell>
     );
   }
@@ -92,6 +98,10 @@ function RosterShell({
   homePreview,
   awayName,
   homeName,
+  awayLogo,
+  homeLogo,
+  awayAccent,
+  homeAccent,
   children,
 }: {
   label: string;
@@ -100,6 +110,10 @@ function RosterShell({
   homePreview: string[];
   awayName: string;
   homeName: string;
+  awayLogo?: string;
+  homeLogo?: string;
+  awayAccent?: string;
+  homeAccent?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -109,8 +123,8 @@ function RosterShell({
       </header>
 
       <div className={v1.previewGrid}>
-        <RosterPreview teamName={awayName} label="Away" names={awayPreview} />
-        <RosterPreview teamName={homeName} label="Home" names={homePreview} />
+        <RosterPreview teamName={awayName} label="Away" names={awayPreview} logo={awayLogo} accent={awayAccent} />
+        <RosterPreview teamName={homeName} label="Home" names={homePreview} logo={homeLogo} accent={homeAccent} />
       </div>
 
       <details className={v1.rosterDetails}>
@@ -121,12 +135,18 @@ function RosterShell({
   );
 }
 
-function RosterPreview({teamName, label, names}: {teamName: string; label: string; names: string[]}) {
+function RosterPreview({teamName, label, names, logo, accent}: {teamName: string; label: string; names: string[]; logo?: string; accent?: string}) {
   const visible = names.slice(0, PREVIEW_COUNT);
   const remaining = Math.max(0, names.length - visible.length);
   return (
-    <article className={v1.previewTeam}>
-      <div className={v1.previewTeamHead}><span>{teamName}</span><span>{label}</span></div>
+    <article className={v1.previewTeam} style={accent ? {borderTop: `5px solid ${accent}`} : undefined}>
+      <div className={accent || logo ? `${v1.previewTeamHead} ${v1.previewTeamHeadColor}` : v1.previewTeamHead}>
+        <div className={v1.previewTeamIdentity}>
+          {logo ? <img src={logo} alt={`${teamName} logo`} className={v1.previewTeamLogo} /> : null}
+          <span>{teamName}</span>
+        </div>
+        <span>{label}</span>
+      </div>
       <div className={v1.previewList}>
         {visible.length ? visible.map((name) => <div className={v1.previewPlayer} key={name}><strong>{name}</strong></div>) : (
           <div className={v1.previewPlayer}><span className={v1.previewMore}>No players listed yet</span></div>
@@ -172,9 +192,9 @@ function AvailabilityPlayer({player}: {player: TeamAttendanceMember}) {
   return <div className={styles.playerRow}><b>{initials(player.playerName)}</b><strong>{player.playerName}</strong></div>;
 }
 
-function OfficialRosterColumn({roster, label}: {roster: OfficialMatchRoster; label: string}) {
+function OfficialRosterColumn({roster, label, accent}: {roster: OfficialMatchRoster; label: string; accent?: string}) {
   return (
-    <article className={styles.rosterTeam}>
+    <article className={styles.rosterTeam} style={accent ? {borderTop: `5px solid ${accent}`} : undefined}>
       <div className={styles.rosterTeamHeader}><div><span>{label}</span><h3>{roster.teamNameSnapshot}</h3></div></div>
       <div className={styles.rosterTitle}><span>Official players</span><span>{roster.players.length}</span></div>
       <div className={styles.playerList}>
