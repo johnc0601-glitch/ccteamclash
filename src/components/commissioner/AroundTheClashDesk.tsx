@@ -26,27 +26,85 @@ const matchups: HistoricalMatchup[] = [
   {id: 'riptide-wt', awayTeam: 'Riptide', homeTeam: 'Wild Turkey'},
 ];
 
+// Reconstructed pre-February values from the archived 2025-26 rating workbook.
+// A null value means the workbook does not contain enough rating history to show a reliable CI.
+const preMatchCi: Record<string, number | null> = {
+  'Blake Eadie': 822,
+  'AJ Lehmann': 910,
+  'Jackie Brown-Alcott': 735,
+  'Rosa Carroll': 738,
+  'Jeff Parsley': 837,
+  'Zach Philips': 903,
+  'Ben Morrow': 786,
+  'Tommy Phillips': 920,
+  'Javon Goddard': 969,
+  'Chase Thomley': 881,
+  'Peter Hourigan': 873,
+  'Chad Heacock': 930,
+  'Jamieson Vollbrecht': 784,
+  'Eric Pierre': 808,
+  'Rudy Dixon': 847,
+  'Ernie Raymond': 844,
+  'Chad Crom': 880,
+  'Will Barwick': 907,
+  'Keith Connolly': 840,
+  'Austin Gratton': 903,
+  'Conner Garrett': 919,
+  'Ashlee Hynds': 701,
+  'Ariel Cosmo': 763,
+  'Jeff King': 907,
+  'David Redlon': 959,
+  'Mike Matthews': 859,
+  'Brandon Burckhalter': 905,
+  'Hastin McGill': 915,
+  'David Harding': 862,
+  'Jonathan Glass': 911,
+  'Bruce Baginski': 927,
+  'J Baus': null,
+  'Alex Karp': 959,
+  'Owen Shields': 928,
+  'Keegan Wroten': 970,
+  'Drew Massey': 967,
+  'Anthony Hardee': 861,
+  'Timothy Range': 862,
+  'Daniel Johnson': 919,
+  'Scott Keaton': 884,
+  'Will Deering': 995,
+  'Andrew Lamont': 992,
+  'Nick King': 898,
+  'Aidan Prince': 877,
+};
+
+function playerWithCi(name: string) {
+  const ci = preMatchCi[name];
+  return `${name} (CI ${ci ?? '—'})`;
+}
+
+function playersWithCi(players: string) {
+  return players
+    .split(' vs ')
+    .map((side) => side.split(' + ').map((name) => playerWithCi(name)).join(' + '))
+    .join(' vs ');
+}
+
 const rows: HistoricalStat[] = [
   // Upsets
   {id:'u1',category:'Upsets',rank:1,matchupId:'kb-og',headline:'Biggest upset',players:'Blake Eadie vs AJ Lehmann',detail:'Singles · KB road win · historical expectation',value:'1.9% win chance'},
-  {id:'u2',category:'Upsets',rank:2,matchupId:'dk-ninjas',headline:'Upset win',players:'Jackie Brown-Alcott vs Rosa Carroll',detail:'Singles · Ninjas home win · historical expectation',value:'3.7% win chance'},
-  {id:'u3',category:'Upsets',rank:3,matchupId:'riptide-wt',headline:'Upset win',players:'Jeff Parsley vs Zach Philips',detail:'Singles · Wild Turkey home win · historical expectation',value:'4.0% win chance'},
-  {id:'u4',category:'Upsets',rank:4,matchupId:'riptide-wt',headline:'Doubles upset',players:'Ben Morrow + Tommy Phillips vs Javon Goddard + Chase Thomley',detail:'Doubles · Wild Turkey home win · historical expectation',value:'4.8% win chance'},
-  {id:'u5',category:'Upsets',rank:5,matchupId:'riptide-wt',headline:'Upset win',players:'Peter Hourigan vs Chad Heacock',detail:'Singles · Wild Turkey home win · historical expectation',value:'7.7% win chance'},
+  {id:'u3',category:'Upsets',rank:2,matchupId:'riptide-wt',headline:'Upset win',players:'Jeff Parsley vs Zach Philips',detail:'Singles · Wild Turkey home win · historical expectation',value:'4.0% win chance'},
+  {id:'u4',category:'Upsets',rank:3,matchupId:'riptide-wt',headline:'Doubles upset',players:'Ben Morrow + Tommy Phillips vs Javon Goddard + Chase Thomley',detail:'Doubles · Wild Turkey home win · historical expectation',value:'4.8% win chance'},
+  {id:'u5',category:'Upsets',rank:4,matchupId:'riptide-wt',headline:'Upset win',players:'Peter Hourigan vs Chad Heacock',detail:'Singles · Wild Turkey home win · historical expectation',value:'7.7% win chance'},
 
   // CI gaps — historical rating reconstruction used only for this review.
   {id:'g1',category:'CI Gaps',rank:1,matchupId:'kb-og',headline:'Largest rating gap overcome',players:'Blake Eadie vs AJ Lehmann',detail:'Singles · reconstructed pre-match rating gap',value:'−86 rating'},
-  {id:'g2',category:'CI Gaps',rank:2,matchupId:'dk-ninjas',headline:'Rating gap overcome',players:'Jackie Brown-Alcott vs Rosa Carroll',detail:'Singles · reconstructed pre-match rating gap',value:'−71 rating'},
-  {id:'g3',category:'CI Gaps',rank:3,matchupId:'riptide-wt',headline:'Rating gap overcome',players:'Jeff Parsley vs Zach Philips',detail:'Singles · reconstructed pre-match rating gap',value:'−69 rating'},
-  {id:'g4',category:'CI Gaps',rank:4,matchupId:'riptide-wt',headline:'Rating gap overcome',players:'Ben Morrow + Tommy Phillips vs Javon Goddard + Chase Thomley',detail:'Doubles · reconstructed pre-match team rating gap',value:'−65 rating'},
-  {id:'g5',category:'CI Gaps',rank:5,matchupId:'riptide-wt',headline:'Rating gap overcome',players:'Peter Hourigan vs Chad Heacock',detail:'Singles · reconstructed pre-match rating gap',value:'−54 rating'},
+  {id:'g3',category:'CI Gaps',rank:2,matchupId:'riptide-wt',headline:'Rating gap overcome',players:'Jeff Parsley vs Zach Philips',detail:'Singles · reconstructed pre-match rating gap',value:'−69 rating'},
+  {id:'g4',category:'CI Gaps',rank:3,matchupId:'riptide-wt',headline:'Rating gap overcome',players:'Ben Morrow + Tommy Phillips vs Javon Goddard + Chase Thomley',detail:'Doubles · reconstructed pre-match team rating gap',value:'−65 rating'},
+  {id:'g5',category:'CI Gaps',rank:4,matchupId:'riptide-wt',headline:'Rating gap overcome',players:'Peter Hourigan vs Chad Heacock',detail:'Singles · reconstructed pre-match rating gap',value:'−54 rating'},
 
   // Above expected
   {id:'e1',category:'Above Expected',rank:1,matchupId:'kb-og',headline:'Best result above expectation',players:'Blake Eadie vs AJ Lehmann',detail:'Singles · result versus historical expectation',value:'+98.1 pts'},
-  {id:'e2',category:'Above Expected',rank:2,matchupId:'dk-ninjas',headline:'Result above expectation',players:'Jackie Brown-Alcott vs Rosa Carroll',detail:'Singles · result versus historical expectation',value:'+96.3 pts'},
-  {id:'e3',category:'Above Expected',rank:3,matchupId:'riptide-wt',headline:'Result above expectation',players:'Jeff Parsley vs Zach Philips',detail:'Singles · result versus historical expectation',value:'+96.0 pts'},
-  {id:'e4',category:'Above Expected',rank:4,matchupId:'riptide-wt',headline:'Result above expectation',players:'Ben Morrow + Tommy Phillips vs Javon Goddard + Chase Thomley',detail:'Doubles · result versus historical expectation',value:'+95.2 pts'},
-  {id:'e5',category:'Above Expected',rank:5,matchupId:'riptide-wt',headline:'Result above expectation',players:'Peter Hourigan vs Chad Heacock',detail:'Singles · result versus historical expectation',value:'+92.3 pts'},
+  {id:'e3',category:'Above Expected',rank:2,matchupId:'riptide-wt',headline:'Result above expectation',players:'Jeff Parsley vs Zach Philips',detail:'Singles · result versus historical expectation',value:'+96.0 pts'},
+  {id:'e4',category:'Above Expected',rank:3,matchupId:'riptide-wt',headline:'Result above expectation',players:'Ben Morrow + Tommy Phillips vs Javon Goddard + Chase Thomley',detail:'Doubles · result versus historical expectation',value:'+95.2 pts'},
+  {id:'e5',category:'Above Expected',rank:4,matchupId:'riptide-wt',headline:'Result above expectation',players:'Peter Hourigan vs Chad Heacock',detail:'Singles · result versus historical expectation',value:'+92.3 pts'},
 
   // Road
   {id:'r1',category:'Road',rank:1,matchupId:'kb-og',headline:'Top road performance',players:'Blake Eadie vs AJ Lehmann',detail:'Singles · KB away',value:'+29 rating'},
@@ -57,15 +115,14 @@ const rows: HistoricalStat[] = [
 
   // Home
   {id:'h1',category:'Home',rank:1,matchupId:'riptide-wt',headline:'Top home performance',players:'Jeff Parsley vs Zach Philips',detail:'Singles · Wild Turkey home',value:'+28 rating'},
-  {id:'h2',category:'Home',rank:2,matchupId:'dk-ninjas',headline:'Home performance',players:'Jackie Brown-Alcott vs Rosa Carroll',detail:'Singles · Ninjas home',value:'+28 rating'},
-  {id:'h3',category:'Home',rank:3,matchupId:'riptide-wt',headline:'Home performance',players:'Jeff King vs David Redlon',detail:'Singles · Wild Turkey home',value:'+25 rating'},
-  {id:'h4',category:'Home',rank:4,matchupId:'riptide-wt',headline:'Home performance',players:'Peter Hourigan vs Chad Heacock',detail:'Singles · Wild Turkey home',value:'+25 rating'},
-  {id:'h5',category:'Home',rank:5,matchupId:'cougar-beast',headline:'Home performance',players:'Mike Matthews vs Brandon Burckhalter',detail:'Singles · Beast Mode home',value:'+24 rating'},
+  {id:'h3',category:'Home',rank:2,matchupId:'riptide-wt',headline:'Home performance',players:'Jeff King vs David Redlon',detail:'Singles · Wild Turkey home',value:'+25 rating'},
+  {id:'h4',category:'Home',rank:3,matchupId:'riptide-wt',headline:'Home performance',players:'Peter Hourigan vs Chad Heacock',detail:'Singles · Wild Turkey home',value:'+25 rating'},
+  {id:'h5',category:'Home',rank:4,matchupId:'cougar-beast',headline:'Home performance',players:'Mike Matthews vs Brandon Burckhalter',detail:'Singles · Beast Mode home',value:'+24 rating'},
 
   // Singles
   {id:'s1',category:'Singles',rank:1,matchupId:'kb-og',headline:'Top singles result',players:'Blake Eadie vs AJ Lehmann',detail:'Singles · archived February result',value:'+29 rating'},
   {id:'s2',category:'Singles',rank:2,matchupId:'riptide-wt',headline:'Singles result',players:'Jeff Parsley vs Zach Philips',detail:'Singles · archived February result',value:'+28 rating'},
-  {id:'s3',category:'Singles',rank:3,matchupId:'dk-ninjas',headline:'Singles result',players:'Jackie Brown-Alcott vs Rosa Carroll',detail:'Singles · archived February result',value:'+28 rating'},
+  {id:'s3',category:'Singles',rank:3,matchupId:'dk-ninjas',headline:'Singles result',players:'Jackie Brown-Alcott vs Rosa Carroll',detail:'Singles · archived February result · rating context may be unreliable',value:'+28 rating'},
   {id:'s4',category:'Singles',rank:4,matchupId:'riptide-wt',headline:'Singles result',players:'Jeff King vs David Redlon',detail:'Singles · archived February result',value:'+25 rating'},
   {id:'s5',category:'Singles',rank:5,matchupId:'riptide-wt',headline:'Singles result',players:'Peter Hourigan vs Chad Heacock',detail:'Singles · archived February result',value:'+25 rating'},
 
@@ -74,14 +131,13 @@ const rows: HistoricalStat[] = [
   {id:'d2',category:'Doubles',rank:2,matchupId:'dk-ninjas',headline:'Doubles result',players:'Rudy Dixon + Jamieson Vollbrecht vs Ernie Raymond + Chad Crom',detail:'Doubles · archived February result',value:'+12 rating'},
   {id:'d3',category:'Doubles',rank:3,matchupId:'kb-og',headline:'Doubles result',players:'Will Barwick + Keith Connolly vs Austin Gratton + Conner Garrett',detail:'Doubles · archived February result',value:'+10 rating'},
   {id:'d4',category:'Doubles',rank:4,matchupId:'cougar-beast',headline:'Doubles result',players:'Hastin McGill + David Harding vs Brandon Burckhalter + Jonathan Glass',detail:'Doubles · archived February result',value:'+9 rating'},
-  {id:'d5',category:'Doubles',rank:5,matchupId:'dk-ninjas',headline:'Doubles result',players:'Bruce Baginski + J Baus vs Alex Karp + Owen Shields',detail:'Doubles · archived February result',value:'+9 rating'},
+  {id:'d5',category:'Doubles',rank:5,matchupId:'dk-ninjas',headline:'Doubles result',players:'Bruce Baginski + J Baus vs Alex Karp + Owen Shields',detail:'Doubles · archived February result · one CI unavailable',value:'+9 rating'},
 
   // Rating movement
   {id:'c1',category:'CI +/-',rank:1,matchupId:'kb-og',headline:'Biggest rating gain',players:'Blake Eadie vs AJ Lehmann',detail:'Singles · reconstructed historical movement',value:'+29 rating'},
   {id:'c2',category:'CI +/-',rank:2,matchupId:'riptide-wt',headline:'Rating gain',players:'Jeff Parsley vs Zach Philips',detail:'Singles · reconstructed historical movement',value:'+28 rating'},
-  {id:'c3',category:'CI +/-',rank:3,matchupId:'dk-ninjas',headline:'Rating gain',players:'Jackie Brown-Alcott vs Rosa Carroll',detail:'Singles · reconstructed historical movement',value:'+28 rating'},
-  {id:'c4',category:'CI +/-',rank:4,matchupId:'riptide-wt',headline:'Rating gain',players:'Jeff King vs David Redlon',detail:'Singles · reconstructed historical movement',value:'+25 rating'},
-  {id:'c5',category:'CI +/-',rank:5,matchupId:'riptide-wt',headline:'Rating gain',players:'Peter Hourigan vs Chad Heacock',detail:'Singles · reconstructed historical movement',value:'+25 rating'},
+  {id:'c4',category:'CI +/-',rank:3,matchupId:'riptide-wt',headline:'Rating gain',players:'Jeff King vs David Redlon',detail:'Singles · reconstructed historical movement',value:'+25 rating'},
+  {id:'c5',category:'CI +/-',rank:4,matchupId:'riptide-wt',headline:'Rating gain',players:'Peter Hourigan vs Chad Heacock',detail:'Singles · reconstructed historical movement',value:'+25 rating'},
 
   // Closest
   {id:'q1',category:'Closest',rank:1,matchupId:'riptide-wt',headline:'Closest rated matchup',players:'Keegan Wroten vs Drew Massey',detail:'Singles · tie · historical pre-match expectation',value:'51.2–48.8'},
@@ -123,7 +179,7 @@ export function AroundTheClashDesk() {
       </div>
 
       <div style={{border: '1px solid rgba(127,127,127,.28)', borderRadius: 10, padding: 12, fontSize: 13}}>
-        <strong>February 2026 historical test.</strong> Player results are from the archived 2025–26 matchup data. Rating-based values are reconstructed with the archived historical model for review and are not current Clash Index values.
+        <strong>February 2026 historical test.</strong> Player results are from the archived 2025–26 matchup data. Pre-match CI is shown beside each player when the archived workbook can support a reconstruction; unavailable values are shown as CI —.
       </div>
 
       <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12}}>
@@ -166,7 +222,7 @@ export function AroundTheClashDesk() {
                 <div style={{minWidth: 0}}>
                   <div style={{fontSize: 12, fontWeight: 800, opacity: .68, marginBottom: 3}}>{matchupLabel(item.matchupId)}</div>
                   <strong>{item.headline}</strong>
-                  <div style={{fontWeight: 700, marginTop: 5}}>{item.players}</div>
+                  <div style={{fontWeight: 700, marginTop: 5}}>{playersWithCi(item.players)}</div>
                   <div style={{fontSize: 13, opacity: .72, marginTop: 3}}>{item.detail}</div>
                 </div>
                 <div style={{display: 'grid', gap: 8, justifyItems: 'end'}}>
@@ -187,7 +243,7 @@ export function AroundTheClashDesk() {
         {selectedItems.length === 0 ? <p style={{marginBottom: 0}}>Choose a category, review the top five February results, and add the ones worth using in the recap.</p> : (
           <div style={{display: 'grid', gap: 8, marginTop: 10}}>{selectedItems.map((item) => (
             <div key={item.id} style={{display: 'flex', justifyContent: 'space-between', gap: 12, border: '1px solid rgba(127,127,127,.25)', borderRadius: 8, padding: 10}}>
-              <span><strong>{item.headline}</strong><br /><small>{matchupLabel(item.matchupId)} · {item.players} · {item.category} · {item.value}</small></span>
+              <span><strong>{item.headline}</strong><br /><small>{matchupLabel(item.matchupId)} · {playersWithCi(item.players)} · {item.category} · {item.value}</small></span>
               <button type="button" onClick={() => toggleSelected(item.id)}>Remove</button>
             </div>
           ))}</div>
