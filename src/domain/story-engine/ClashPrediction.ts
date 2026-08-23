@@ -1,4 +1,6 @@
-export const CLASH_MODEL_VERSION = '2026-27-v1-home15-doubles80-20' as const;
+import {CLASH_EXPECTATION_DIVISOR} from './ClashRatingDelta';
+
+export const CLASH_MODEL_VERSION = '2026-27-v1-d100-exp1.8-move2-28-home15-doubles80-20' as const;
 export const SINGLES_HOME_BONUS = 15;
 export const DOUBLES_STRONG_WEIGHT = 0.8;
 
@@ -6,13 +8,10 @@ export type ClashSide = 'Home' | 'Away';
 export type ClashFormat = 'Singles' | 'Doubles';
 
 export function eloProbability(ratingA: number, ratingB: number): number {
-  return 1 / (1 + 10 ** ((ratingB - ratingA) / 400));
+  return 1 / (1 + 10 ** ((ratingB - ratingA) / CLASH_EXPECTATION_DIVISOR));
 }
 
-export function singlesProbability(
-  homeCi: number,
-  awayCi: number,
-): number {
+export function singlesProbability(homeCi: number, awayCi: number): number {
   return eloProbability(homeCi + SINGLES_HOME_BONUS, awayCi);
 }
 
