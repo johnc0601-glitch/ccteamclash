@@ -137,6 +137,7 @@ function PostCard({post, comments, postReactions, commentReactions, currentProfi
 }) {
   const roots = comments.filter((comment) => !comment.parent_comment_id);
   const counts = countReactions(postReactions);
+  const interactive = open && Boolean(currentProfileId) && !post.deleted_at;
   return (
     <article id={`post-${post.id}`} className={styles.post}>
       <header className={styles.postHeader}>
@@ -145,7 +146,7 @@ function PostCard({post, comments, postReactions, commentReactions, currentProfi
           <span>{formatDate(post.created_at)}{post.edited_at ? ' · Edited' : ''}</span>
         </div>
         <div className={styles.postActions}>
-          {open && currentProfileId === post.profile_id && !post.deleted_at ? (
+          {interactive && currentProfileId === post.profile_id ? (
             <details><summary className={styles.editSummary}>Edit</summary><form action={editMatchFeedPost} className={styles.editForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={post.id} /><textarea name="body" defaultValue={post.body} maxLength={3000} /><button type="submit">Save edit</button></form></details>
           ) : null}
           {commissioner && !post.deleted_at ? <form action={softDeleteMatchFeedPost}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={post.id} /><button type="submit">Remove</button></form> : null}
@@ -153,17 +154,17 @@ function PostCard({post, comments, postReactions, commentReactions, currentProfi
       </header>
       {post.deleted_at ? <div className={styles.removed}>Post removed</div> : <>
         {post.body ? <div className={styles.postBody}>{post.body}</div> : null}
-        {imageUrl ? <a href={imageUrl} target="_blank" rel="noreferrer"><img className={styles.photo} src={imageUrl} alt="Match feed upload" /></a> : null}
+        {imageUrl ? <a href={imageUrl} target="_blank" rel="noreferrer"><img className={styles.photo} src={imageUrl} alt="Match feed upload" loading="lazy" /></a> : null}
       </>}
       <div className={styles.reactionBar}>
         {Object.entries(REACTION_LABELS).map(([key, label]) => (
-          open && currentProfileId ? <form action={setMatchFeedPostReaction} key={key}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={post.id} /><input type="hidden" name="reactionType" value={key} /><button type="submit" data-active={postReactions.some((reaction) => reaction.profile_id === currentProfileId && reaction.reaction_type === key)}>{label}{counts[key] ? ` ${counts[key]}` : ''}</button></form> : counts[key] ? <span className={styles.stats} key={key}>{label} {counts[key]}</span> : null
+          interactive ? <form action={setMatchFeedPostReaction} key={key}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={post.id} /><input type="hidden" name="reactionType" value={key} /><button type="submit" data-active={postReactions.some((reaction) => reaction.profile_id === currentProfileId && reaction.reaction_type === key)}>{label}{counts[key] ? ` ${counts[key]}` : ''}</button></form> : counts[key] ? <span className={styles.stats} key={key}>{label} {counts[key]}</span> : null
         ))}
         <span className={styles.stats}>{comments.filter((comment) => !comment.deleted_at).length} comments</span>
       </div>
       <div className={styles.commentArea}>
-        {roots.map((comment) => <CommentCard key={comment.id} comment={comment} replies={comments.filter((candidate) => candidate.parent_comment_id === comment.id)} reactions={commentReactions} currentProfileId={currentProfileId} commissioner={commissioner} open={open} matchId={matchId} postId={post.id} />)}
-        {open && currentProfileId && !post.deleted_at ? <form action={addMatchFeedComment} className={styles.commentForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={post.id} /><input name="body" maxLength={1500} placeholder="Add a comment" /><button type="submit">Comment</button></form> : null}
+        {roots.map((comment) => <CommentCard key={comment.id} comment={comment} replies={comments.filter((candidate) => candidate.parent_comment_id === comment.id)} reactions={commentReactions} currentProfileId={currentProfileId} commissioner={commissioner} open={open && !post.deleted_at} matchId={matchId} postId={post.id} />)}
+        {interactive ? <form action={addMatchFeedComment} className={styles.commentForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={post.id} /><input name="body" maxLength={1500} placeholder="Add a comment" /><button type="submit">Comment</button></form> : null}
       </div>
     </article>
   );
@@ -200,9 +201,9 @@ function CommentBubble({comment, reactions, currentProfileId, commissioner, open
     <div className={styles.commentTop}><strong>{comment.author_name_snapshot || 'Member'}</strong><span>{formatDate(comment.created_at)}{comment.edited_at ? ' · Edited' : ''}</span></div>
     <p>{comment.deleted_at ? 'Comment removed' : comment.body}</p>
     <div className={styles.commentTools}>
-      {!comment.deleted_at && open && currentProfileId ? Object.entries(REACTION_LABELS).map(([key, label]) => <form action={setMatchFeedCommentReaction} key={key}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="commentId" value={comment.id} /><input type="hidden" name="reactionType" value={key} /><button type="submit" data-active={reactions.some((reaction) => reaction.profile_id === currentProfileId && reaction.reaction_type === key)}>{label}{counts[key] ? ` ${counts[key]}` : ''}</button></form>) : null}
+      {!comment.deleted_at && open && currentProfileId ? Object.entries(REACTION_LABELS).map(([key, label]) => <form action={setMatchFeedCommentReaction} key={key}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="commentId" value={comment.id} /><input type="hidden" name="reactionType" value={key} /><button type="submit" data-active={reactions.some((reaction) => reaction.profile_id === currentProfileId && reaction.reaction_type === key)}>{label}{counts[key] ? ` ${counts[key]}` : ''}</button></form>) : null}
       {!comment.deleted_at && open && currentProfileId === comment.profile_id ? <details><summary>Edit</summary><form action={editMatchFeedComment} className={styles.editForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="commentId" value={comment.id} /><textarea name="body" defaultValue={comment.body} maxLength={1500} /><button type="submit">Save edit</button></form></details> : null}
-      {!comment.deleted_at && commissioner ? <form action={softDeleteMatchFeedComment}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="commentId" value={comment.id} /><button type="submit">Remove</button></form> : null}
+      {!comment.deleted_at && commissioner ? <form action={softDeleteMatchFeedComment}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="commentId" value={comment.id} /><button type="submit">Remove</button></form> : null}
       {!comment.deleted_at && canReply && open && currentProfileId ? <details><summary>Reply</summary><form action={addMatchFeedComment} className={styles.replyForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="parentCommentId" value={comment.id} /><input name="body" maxLength={1500} placeholder="Reply" /><button type="submit">Reply</button></form></details> : null}
     </div>
   </div>;
