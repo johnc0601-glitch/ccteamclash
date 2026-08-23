@@ -28,6 +28,7 @@ export function contestRatingFactToStoryFact(
     side: fact.side,
     winProbability: fact.winProbability,
     ciDeficit: Math.max(0, fact.opponentEffectiveCi - fact.clashIndexBefore),
+    ciDelta: fact.ciDelta,
     expectedPoints: fact.expectedPoints,
     actualPoints: fact.actualPoints,
     won: fact.outcome === 'W',
