@@ -23,6 +23,11 @@ type EventRosterRow = Tables['launch_event_rosters']['Row'];
 type EventRosterPlayerRow = Tables['launch_event_roster_players']['Row'];
 type EventPostRow = Tables['launch_event_posts']['Row'];
 
+type PlayerRatingRow = PlayerRow & {
+  clash_index?: number | null;
+  clash_index_provisional?: boolean | null;
+};
+
 export class SupabaseLaunchRepository implements LaunchRepository {
   private readonly supabase: LaunchSupabaseClient;
 
@@ -153,17 +158,19 @@ export class SupabaseLaunchRepository implements LaunchRepository {
   }
 
   async saveEventRoster(roster: EventRoster): Promise<EventRoster> {
-    const {data, error} = await this.supabase.from('launch_event_rosters').upsert(fromEventRoster(roster)).select().single();
+    const existingRoster = await this.getEventRoster(roster.id);
+    const query = existingRoster
+      ? this.supabase.from('launch_event_rosters').update(fromEventRoster(roster)).eq('id', roster.id)
+      : this.supabase.from('launch_event_rosters').insert(fromEventRoster(roster));
+    const {data, error} = await query.select().single();
     if (error) throw error;
     return toEventRoster(data);
   }
 
-  async getEventRosterPlayers(eventRosterId: string): Promise<EventRosterPlayer[]> {
-    const {data, error} = await this.supabase
-      .from('launch_event_roster_players')
-      .select('*')
-      .eq('event_roster_id', eventRosterId)
-      .order('created_at');
+  async getEventRosterPlayers(eventRosterId?: string): Promise<EventRosterPlayer[]> {
+    let query = this.supabase.from('launch_event_roster_players').select('*');
+    if (eventRosterId) query = query.eq('event_roster_id', eventRosterId);
+    const {data, error} = await query.order('created_at');
     if (error) throw error;
     return data.map(toEventRosterPlayer);
   }
@@ -187,12 +194,25 @@ export class SupabaseLaunchRepository implements LaunchRepository {
     return data.map(toEventRosterPlayer);
   }
 
-  async getEventPosts(eventId: string): Promise<EventPost[]> {
+  async saveEventRosterPlayer(player: EventRosterPlayer): Promise<EventRosterPlayer> {
     const {data, error} = await this.supabase
-      .from('launch_event_posts')
-      .select('*')
-      .eq('event_id', eventId)
-      .order('created_at');
+      .from('launch_event_roster_players')
+      .upsert(fromEventRosterPlayer(player), {onConflict: 'id'})
+      .select()
+      .single();
+    if (error) throw error;
+    return toEventRosterPlayer(data);
+  }
+
+  async deleteEventRosterPlayers(eventRosterId: string): Promise<void> {
+    const {error} = await this.supabase.from('launch_event_roster_players').delete().eq('event_roster_id', eventRosterId);
+    if (error) throw error;
+  }
+
+  async getEventPosts(eventId?: string): Promise<EventPost[]> {
+    let query = this.supabase.from('launch_event_posts').select('*');
+    if (eventId) query = query.eq('event_id', eventId);
+    const {data, error} = await query.order('created_at');
     if (error) throw error;
     return data.map(toEventPost);
   }
@@ -204,7 +224,11 @@ export class SupabaseLaunchRepository implements LaunchRepository {
   }
 
   async saveEventPost(post: EventPost): Promise<EventPost> {
-    const {data, error} = await this.supabase.from('launch_event_posts').upsert(fromEventPost(post)).select().single();
+    const {data, error} = await this.supabase
+      .from('launch_event_posts')
+      .upsert(fromEventPost(post), {onConflict: 'id'})
+      .select()
+      .single();
     if (error) throw error;
     return toEventPost(data);
   }
@@ -267,14 +291,15 @@ function fromPlayerClaim(claim: PlayerClaim): PlayerClaimRow {
 }
 
 function toPlayer(row: PlayerRow): LaunchPlayer {
-  const clashIndex = (row as PlayerRow & {clash_index?: number | null}).clash_index ?? null;
+  const rating = row as PlayerRatingRow;
   return {
     id: row.id,
     name: row.name,
     gender: row.gender as LaunchPlayer['gender'],
     pdgaNumber: row.pdga_number,
     pdgaRating: row.pdga_rating,
-    clashIndex,
+    clashIndex: rating.clash_index ?? null,
+    clashIndexProvisional: rating.clash_index_provisional ?? false,
     currentTeamId: row.current_team_id,
     homeArea: row.home_area,
     active: row.active,

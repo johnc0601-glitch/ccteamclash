@@ -5,6 +5,7 @@ import type {PlayerRepository} from '@/repositories/PlayerRepository';
 
 type Client = SupabaseClient<Database>;
 type Row = Database['public']['Tables']['launch_players']['Row'];
+type ClashIndexRow = Row & {clash_index: number | null; clash_index_provisional?: boolean};
 
 export class SupabasePlayerRepository implements PlayerRepository {
   constructor(private readonly supabase: Client) {}
@@ -50,13 +51,15 @@ export class SupabasePlayerRepository implements PlayerRepository {
 }
 
 function toPlayer(row: Row): Player {
+  const clash = row as ClashIndexRow;
   return {
     id: row.id,
     name: row.name,
     teamId: row.current_team_id ?? '',
     pdgaNumber: row.pdga_number,
     pdgaRating: row.pdga_rating,
-    clashIndex: (row as Row & {clash_index: number | null}).clash_index,
+    clashIndex: clash.clash_index,
+    clashIndexProvisional: clash.clash_index_provisional ?? false,
     gender: row.gender as Player['gender'],
     active: row.active,
     createdAt: row.created_at,
