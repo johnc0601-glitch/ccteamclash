@@ -2,7 +2,6 @@
 
 import {revalidatePath} from 'next/cache';
 import {redirect} from 'next/navigation';
-import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 
 const REACTIONS = new Set(['like', 'love', 'laugh', 'fire']);
@@ -15,8 +14,7 @@ export async function createMatchFeedPost(formData: FormData) {
   const body = read(formData, 'body').slice(0, 3000);
   if (!matchId) return;
   const account = await requireAccount(matchId);
-  await requireFeedOpen(matchId);
-  const admin = createAdminClient() as any;
+  await requireFeedOpen(account.supabase, matchId);
   const photo = formData.get('photo');
   let imagePath: string | null = null;
 
@@ -26,12 +24,13 @@ export async function createMatchFeedPost(formData: FormData) {
     }
     const extension = photo.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
     imagePath = `${matchId}/${crypto.randomUUID()}.${extension}`;
-    const {error} = await admin.storage.from('match-feed').upload(imagePath, photo, {contentType: photo.type, upsert: false});
+    const {error} = await account.supabase.storage.from('match-feed').upload(imagePath, photo, {contentType: photo.type, upsert: false});
     if (error) redirect(feedUrl(matchId, 'feedError', 'Photo upload failed.'));
   }
 
   if (!body && !imagePath) redirect(feedUrl(matchId, 'feedError', 'Add a message or photo first.'));
-  const {error} = await admin.from('launch_match_feed_posts').insert({
+  const db = account.supabase as any;
+  const {error} = await db.from('launch_match_feed_posts').insert({
     match_id: matchId,
     profile_id: account.profile.id,
     author_name_snapshot: account.profile.display_name || 'Member',
@@ -39,7 +38,7 @@ export async function createMatchFeedPost(formData: FormData) {
     image_path: imagePath,
   });
   if (error) {
-    if (imagePath) await admin.storage.from('match-feed').remove([imagePath]);
+    if (imagePath) await account.supabase.storage.from('match-feed').remove([imagePath]);
     redirect(feedUrl(matchId, 'feedError', 'Post could not be saved.'));
   }
   refresh(matchId);
@@ -52,12 +51,12 @@ export async function editMatchFeedPost(formData: FormData) {
   const body = read(formData, 'body').slice(0, 3000);
   if (!matchId || !postId) return;
   const account = await requireAccount(matchId);
-  await requireFeedOpen(matchId);
-  const admin = createAdminClient() as any;
-  const {data: post} = await admin.from('launch_match_feed_posts').select('profile_id,image_path,deleted_at').eq('id', postId).eq('match_id', matchId).maybeSingle();
+  await requireFeedOpen(account.supabase, matchId);
+  const db = account.supabase as any;
+  const {data: post} = await db.from('launch_match_feed_posts').select('profile_id,image_path,deleted_at').eq('id', postId).eq('match_id', matchId).maybeSingle();
   if (!post || post.profile_id !== account.profile.id || post.deleted_at) redirect(feedUrl(matchId, 'feedError', 'That post cannot be edited.'));
   if (!body && !post.image_path) redirect(feedUrl(matchId, 'feedError', 'A post needs text or a photo.'));
-  const {error} = await admin.from('launch_match_feed_posts').update({body, edited_at: new Date().toISOString(), updated_at: new Date().toISOString()}).eq('id', postId);
+  const {error} = await db.from('launch_match_feed_posts').update({body, edited_at: new Date().toISOString(), updated_at: new Date().toISOString()}).eq('id', postId);
   if (error) redirect(feedUrl(matchId, 'feedError', 'Post could not be edited.'));
   refresh(matchId);
   redirect(`/matches/${encodeURIComponent(matchId)}#post-${postId}`);
@@ -70,13 +69,13 @@ export async function addMatchFeedComment(formData: FormData) {
   const body = read(formData, 'body').slice(0, 1500);
   if (!matchId || !postId || !body) return;
   const account = await requireAccount(matchId);
-  await requireFeedOpen(matchId);
-  const admin = createAdminClient() as any;
+  await requireFeedOpen(account.supabase, matchId);
+  const db = account.supabase as any;
   if (parentCommentId) {
-    const {data: parent} = await admin.from('launch_match_feed_comments').select('id,parent_comment_id,post_id').eq('id', parentCommentId).eq('post_id', postId).maybeSingle();
+    const {data: parent} = await db.from('launch_match_feed_comments').select('id,parent_comment_id,post_id').eq('id', parentCommentId).eq('post_id', postId).maybeSingle();
     if (!parent || parent.parent_comment_id) redirect(feedUrl(matchId, 'feedError', 'Replies are limited to one level.'));
   }
-  const {error} = await admin.from('launch_match_feed_comments').insert({
+  const {error} = await db.from('launch_match_feed_comments').insert({
     post_id: postId,
     profile_id: account.profile.id,
     author_name_snapshot: account.profile.display_name || 'Member',
@@ -95,11 +94,11 @@ export async function editMatchFeedComment(formData: FormData) {
   const body = read(formData, 'body').slice(0, 1500);
   if (!matchId || !commentId || !postId || !body) return;
   const account = await requireAccount(matchId);
-  await requireFeedOpen(matchId);
-  const admin = createAdminClient() as any;
-  const {data: comment} = await admin.from('launch_match_feed_comments').select('profile_id,deleted_at').eq('id', commentId).eq('post_id', postId).maybeSingle();
+  await requireFeedOpen(account.supabase, matchId);
+  const db = account.supabase as any;
+  const {data: comment} = await db.from('launch_match_feed_comments').select('profile_id,deleted_at').eq('id', commentId).eq('post_id', postId).maybeSingle();
   if (!comment || comment.profile_id !== account.profile.id || comment.deleted_at) redirect(feedUrl(matchId, 'feedError', 'That comment cannot be edited.'));
-  const {error} = await admin.from('launch_match_feed_comments').update({body, edited_at: new Date().toISOString(), updated_at: new Date().toISOString()}).eq('id', commentId);
+  const {error} = await db.from('launch_match_feed_comments').update({body, edited_at: new Date().toISOString(), updated_at: new Date().toISOString()}).eq('id', commentId);
   if (error) redirect(feedUrl(matchId, 'feedError', 'Comment could not be edited.'));
   refresh(matchId);
   redirect(`/matches/${encodeURIComponent(matchId)}#post-${postId}`);
@@ -111,13 +110,13 @@ export async function setMatchFeedPostReaction(formData: FormData) {
   const reactionType = read(formData, 'reactionType');
   if (!matchId || !postId || !REACTIONS.has(reactionType)) return;
   const account = await requireAccount(matchId);
-  await requireFeedOpen(matchId);
-  const admin = createAdminClient() as any;
-  const {data: existing} = await admin.from('launch_match_feed_post_reactions').select('reaction_type').eq('post_id', postId).eq('profile_id', account.profile.id).maybeSingle();
+  await requireFeedOpen(account.supabase, matchId);
+  const db = account.supabase as any;
+  const {data: existing} = await db.from('launch_match_feed_post_reactions').select('reaction_type').eq('post_id', postId).eq('profile_id', account.profile.id).maybeSingle();
   if (existing?.reaction_type === reactionType) {
-    await admin.from('launch_match_feed_post_reactions').delete().eq('post_id', postId).eq('profile_id', account.profile.id);
+    await db.from('launch_match_feed_post_reactions').delete().eq('post_id', postId).eq('profile_id', account.profile.id);
   } else {
-    await admin.from('launch_match_feed_post_reactions').upsert({post_id: postId, profile_id: account.profile.id, reaction_type: reactionType});
+    await db.from('launch_match_feed_post_reactions').upsert({post_id: postId, profile_id: account.profile.id, reaction_type: reactionType});
   }
   refresh(matchId);
 }
@@ -128,13 +127,13 @@ export async function setMatchFeedCommentReaction(formData: FormData) {
   const reactionType = read(formData, 'reactionType');
   if (!matchId || !commentId || !REACTIONS.has(reactionType)) return;
   const account = await requireAccount(matchId);
-  await requireFeedOpen(matchId);
-  const admin = createAdminClient() as any;
-  const {data: existing} = await admin.from('launch_match_feed_comment_reactions').select('reaction_type').eq('comment_id', commentId).eq('profile_id', account.profile.id).maybeSingle();
+  await requireFeedOpen(account.supabase, matchId);
+  const db = account.supabase as any;
+  const {data: existing} = await db.from('launch_match_feed_comment_reactions').select('reaction_type').eq('comment_id', commentId).eq('profile_id', account.profile.id).maybeSingle();
   if (existing?.reaction_type === reactionType) {
-    await admin.from('launch_match_feed_comment_reactions').delete().eq('comment_id', commentId).eq('profile_id', account.profile.id);
+    await db.from('launch_match_feed_comment_reactions').delete().eq('comment_id', commentId).eq('profile_id', account.profile.id);
   } else {
-    await admin.from('launch_match_feed_comment_reactions').upsert({comment_id: commentId, profile_id: account.profile.id, reaction_type: reactionType});
+    await db.from('launch_match_feed_comment_reactions').upsert({comment_id: commentId, profile_id: account.profile.id, reaction_type: reactionType});
   }
   refresh(matchId);
 }
@@ -145,10 +144,11 @@ export async function softDeleteMatchFeedPost(formData: FormData) {
   if (!matchId || !postId) return;
   const account = await requireAccount(matchId);
   if (account.profile.role !== 'Commissioner' || account.profile.status !== 'Approved') redirect(feedUrl(matchId, 'feedError', 'Commissioner access is required.'));
-  const admin = createAdminClient() as any;
-  const {data: post} = await admin.from('launch_match_feed_posts').select('image_path').eq('id', postId).eq('match_id', matchId).maybeSingle();
-  if (post?.image_path) await admin.storage.from('match-feed').remove([post.image_path]);
-  await admin.from('launch_match_feed_posts').update({deleted_at: new Date().toISOString(), deleted_by: account.profile.id, image_path: null}).eq('id', postId).eq('match_id', matchId);
+  const db = account.supabase as any;
+  const {data: post} = await db.from('launch_match_feed_posts').select('image_path').eq('id', postId).eq('match_id', matchId).maybeSingle();
+  if (post?.image_path) await account.supabase.storage.from('match-feed').remove([post.image_path]);
+  const {error} = await db.from('launch_match_feed_posts').update({deleted_at: new Date().toISOString(), deleted_by: account.profile.id, image_path: null}).eq('id', postId).eq('match_id', matchId);
+  if (error) redirect(feedUrl(matchId, 'feedError', 'Post could not be removed.'));
   refresh(matchId);
 }
 
@@ -158,8 +158,9 @@ export async function softDeleteMatchFeedComment(formData: FormData) {
   if (!matchId || !commentId) return;
   const account = await requireAccount(matchId);
   if (account.profile.role !== 'Commissioner' || account.profile.status !== 'Approved') redirect(feedUrl(matchId, 'feedError', 'Commissioner access is required.'));
-  const admin = createAdminClient() as any;
-  await admin.from('launch_match_feed_comments').update({deleted_at: new Date().toISOString(), deleted_by: account.profile.id}).eq('id', commentId);
+  const db = account.supabase as any;
+  const {error} = await db.from('launch_match_feed_comments').update({deleted_at: new Date().toISOString(), deleted_by: account.profile.id}).eq('id', commentId);
+  if (error) redirect(feedUrl(matchId, 'feedError', 'Comment could not be removed.'));
   refresh(matchId);
 }
 
@@ -167,15 +168,13 @@ async function requireAccount(matchId: string) {
   const supabase = await createClient();
   const {data: {user}} = await supabase.auth.getUser();
   if (!user) redirect(`/account?error=${encodeURIComponent('Sign in to join the match feed.')}`);
-  const admin = createAdminClient() as any;
-  const {data: profile} = await admin.from('launch_profiles').select('id,display_name,role,status').eq('user_id', user.id).maybeSingle();
+  const {data: profile} = await supabase.from('launch_profiles').select('id,display_name,role,status').eq('user_id', user.id).maybeSingle();
   if (!profile) redirect(`/account?error=${encodeURIComponent('Your account profile is not ready yet.')}`);
-  return {user, profile};
+  return {supabase, user, profile};
 }
 
-async function requireFeedOpen(matchId: string) {
-  const admin = createAdminClient() as any;
-  const {data: match} = await admin.from('launch_schedule_matches').select('date').eq('id', matchId).maybeSingle();
+async function requireFeedOpen(supabase: Awaited<ReturnType<typeof createClient>>, matchId: string) {
+  const {data: match} = await supabase.from('launch_schedule_matches').select('date').eq('id', matchId).maybeSingle();
   if (!match?.date) return;
   const closesAt = new Date(`${match.date}T23:59:59-04:00`);
   closesAt.setDate(closesAt.getDate() + FEED_OPEN_DAYS);
