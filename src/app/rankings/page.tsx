@@ -1,6 +1,6 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {RankingsClient, type ClashRankingEntry, type HistoricalRankingEntry, type SeasonRankingGroup} from '@/components/rankings/RankingsClient';
-import {getHistoricalSeasonArchives, isHistoricalFemalePlayer, type HistoricalPlayerSeasonSummary} from '@/data/historicalSeed';
+import {getHistoricalSeasonArchives, isHistoricalFemalePlayer, type HistoricalPlayerSeasonSummary, type HistoricalSeasonArchive} from '@/data/historicalSeed';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {SeasonService} from '@/domain/season/SeasonService';
@@ -19,15 +19,25 @@ import styles from './Rankings.module.css';
 
 export const dynamic = 'force-dynamic';
 
-export default async function RankingsPage() {
+type RankingsPageProps = {
+  searchParams: Promise<{view?: string | string[]; season?: string | string[]}>;
+};
+
+export default async function RankingsPage({searchParams}: RankingsPageProps) {
   const archives = getHistoricalSeasonArchives();
   const history = archives.map((archive) => buildSeasonGroup(archive.seasonId, archive.seasonName, archive.playerSummaries, false));
+  const overall = buildOverallGroup(archives);
+  const query = await searchParams;
+  const requestedView = Array.isArray(query.view) ? query.view[0] : query.view;
+  const requestedSeason = Array.isArray(query.season) ? query.season[0] : query.season;
+  const initialView = requestedView === 'stats' || requestedSeason ? 'stats' : requestedView === 'clash' ? 'clash' : 'season';
+
   const [{current, error: seasonError}, {rankings: clashRankings, teamColors}] = await Promise.all([
     getLiveSeasonRankings(),
     getClashData(),
   ]);
 
-  return <><SiteHeader /><main className={`shell page-shell ${styles.rankingsPage}`}><header className={styles.pageHeader}><h1>Player Rankings</h1>{current ? <p>Coastal Clash Match Play · {current.seasonName}</p> : null}</header>{seasonError ? <p className={styles.emptyState}>{seasonError}</p> : null}<RankingsClient current={current} history={history} clash={clashRankings} teamColors={teamColors} /></main><Footer /></>;
+  return <><SiteHeader /><main className={`shell page-shell ${styles.rankingsPage}`}><header className={styles.pageHeader}><h1>Player Rankings</h1>{current ? <p>Coastal Clash Match Play · {current.seasonName}</p> : null}</header>{seasonError ? <p className={styles.emptyState}>{seasonError}</p> : null}<RankingsClient current={current} overall={overall} history={history} clash={clashRankings} teamColors={teamColors} initialView={initialView} initialSeasonId={requestedSeason} /></main><Footer /></>;
 }
 
 async function getLiveSeasonRankings(): Promise<{current?: SeasonRankingGroup; error?: string}> {
@@ -98,6 +108,45 @@ function toLiveRankingEntry(
 
 function buildSeasonGroup(seasonId: string, seasonName: string, summaries: HistoricalPlayerSeasonSummary[], includeJunior: boolean): SeasonRankingGroup {
   return {seasonId, seasonName, open: rankSeasonEntries(summaries), women: rankSeasonEntries(summaries.filter((summary) => isHistoricalFemalePlayer(summary.playerName))), junior: includeJunior ? [] : undefined};
+}
+
+function buildOverallGroup(archives: HistoricalSeasonArchive[]): SeasonRankingGroup {
+  const summaries = new Map<string, HistoricalPlayerSeasonSummary>();
+
+  for (const archive of archives) {
+    for (const summary of archive.playerSummaries) {
+      const existing = summaries.get(summary.playerId);
+      if (!existing) {
+        summaries.set(summary.playerId, {
+          ...summary,
+          seasonId: 'overall',
+          seasonName: 'All seasons',
+          singlesRecord: {...summary.singlesRecord},
+          doublesRecord: {...summary.doublesRecord},
+          overallRecord: {...summary.overallRecord},
+        });
+        continue;
+      }
+
+      existing.matchesPlayed += summary.matchesPlayed;
+      existing.singlesRecord = addRecord(existing.singlesRecord, summary.singlesRecord);
+      existing.doublesRecord = addRecord(existing.doublesRecord, summary.doublesRecord);
+      existing.overallRecord = addRecord(existing.overallRecord, summary.overallRecord);
+      existing.winPercentage = calculateWinPercentage(existing.overallRecord);
+    }
+  }
+
+  const combined = Array.from(summaries.values());
+  return buildSeasonGroup('overall', 'All seasons', combined, false);
+}
+
+function addRecord(first: {wins: number; losses: number; ties: number}, second: {wins: number; losses: number; ties: number}) {
+  return {wins: first.wins + second.wins, losses: first.losses + second.losses, ties: first.ties + second.ties};
+}
+
+function calculateWinPercentage(record: {wins: number; losses: number; ties: number}): number {
+  const matches = record.wins + record.losses + record.ties;
+  return matches ? ((record.wins + record.ties * .5) / matches) * 100 : 0;
 }
 
 function rankSeasonEntries(summaries: HistoricalPlayerSeasonSummary[]): HistoricalRankingEntry[] {
