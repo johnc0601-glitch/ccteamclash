@@ -16,7 +16,7 @@ type HomeCommentFeedProps = {
 
 export function HomeCommentFeed({items}: HomeCommentFeedProps) {
   return (
-    <section className={`shell ${styles.section}`}>
+    <section className={`shell ${styles.section}`} hidden>
       <div className={styles.panel}>
         <header className={styles.header}>
           <div>
