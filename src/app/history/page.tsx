@@ -286,13 +286,15 @@ function SeasonView({archive}: {archive: HistoricalSeasonArchive}) {
 
       <ExploreRecords
         seasonName={compactSeasonName(archive.seasonName)}
+        seasonId={archive.seasonId}
         archiveUrl={SEASON_ARCHIVE_URLS[archive.seasonId]}
       />
     </div>
   );
 }
 
-function ExploreRecords({seasonName, archiveUrl}: {seasonName?: string; archiveUrl?: string}) {
+function ExploreRecords({seasonName, seasonId, archiveUrl}: {seasonName?: string; seasonId?: string; archiveUrl?: string}) {
+  const statsHref = seasonId ? `/rankings?view=stats&season=${seasonId}` : '/rankings?view=stats';
   return (
     <section className={styles.archiveLinks}>
       <div>
@@ -300,7 +302,7 @@ function ExploreRecords({seasonName, archiveUrl}: {seasonName?: string; archiveU
         <span>History preserves league outcomes. Rankings and player pages hold the detailed individual numbers.</span>
       </div>
       <div className={styles.linkActions}>
-        <Link href="/rankings">Stats & rankings →</Link>
+        <Link href={statsHref}>Stats & rankings →</Link>
         <Link href="/players">Player records →</Link>
         <Link href="/teams">Team history →</Link>
         {archiveUrl ? (
