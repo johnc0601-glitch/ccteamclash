@@ -1,3 +1,4 @@
+import type {CSSProperties} from 'react';
 import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
@@ -93,7 +94,9 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
   const awayColor = matchday.awayTeam.team?.primaryColor || '#0b4fb3';
   const homeColor = matchday.homeTeam.team?.primaryColor || '#a20b78';
-  const pageBackground = {
+  const pageBackground: CSSProperties & {'--match-away': string; '--match-home': string} = {
+    '--match-away': awayColor,
+    '--match-home': homeColor,
     background: `radial-gradient(circle at 50% 4%, rgba(4,8,14,.34) 0%, transparent 32rem), linear-gradient(90deg, color-mix(in srgb, ${awayColor} 92%, #06111c) 0%, color-mix(in srgb, ${awayColor} 86%, #081827) 38%, color-mix(in srgb, ${awayColor} 58%, #101019) 48.5%, #101019 50%, color-mix(in srgb, ${homeColor} 58%, #101019) 51.5%, color-mix(in srgb, ${homeColor} 86%, #1a0718) 62%, color-mix(in srgb, ${homeColor} 92%, #170515) 100%)`,
     backgroundAttachment: 'fixed',
   };
