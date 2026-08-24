@@ -5,6 +5,7 @@
   --cc-panel-border: #303538;
   --cc-gold: #ffc400;
   --cc-gold-soft: #e5b300;
+  --cc-gold-ink: #8a6500;
   --cc-text: #f5f5f2;
   --cc-text-muted: #aab1b3;
   --cc-light-bg: #f3f2ed;
@@ -32,6 +33,55 @@ body {
 .site-header nav a:hover,
 .footer-links a:hover {
   color: var(--cc-gold);
+}
+
+.desktop-nav {
+  gap: 20px !important;
+}
+
+.desktop-more {
+  position: relative;
+  color: #f4f4f4;
+}
+
+.desktop-more > summary {
+  cursor: pointer;
+  list-style: none;
+  color: #f4f4f4;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.desktop-more > summary::-webkit-details-marker { display: none; }
+.desktop-more > summary::after { content: ' +'; color: var(--cc-gold); }
+.desktop-more[open] > summary::after { content: ' −'; }
+
+.desktop-more > div {
+  position: absolute;
+  top: 30px;
+  right: 0;
+  min-width: 150px;
+  padding: 8px;
+  display: grid;
+  gap: 2px;
+  border: 1px solid var(--cc-panel-border);
+  border-top: 3px solid var(--cc-gold);
+  border-radius: var(--cc-radius-sm);
+  background: var(--cc-surface);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .28);
+}
+
+.desktop-more > div a {
+  padding: 10px 11px;
+  white-space: nowrap;
+}
+
+.desktop-account {
+  padding: 9px 11px;
+  border: 1px solid #464b4e;
+  border-radius: var(--cc-radius-sm);
 }
 
 .post-nav,
@@ -88,6 +138,11 @@ footer small {
   color: var(--cc-light-text);
 }
 
+.page-shell > .eyebrow,
+.season-archive .eyebrow {
+  color: var(--cc-gold-ink);
+}
+
 .intro,
 .article-lead,
 .article-copy,
@@ -109,8 +164,55 @@ footer small {
   border-radius: var(--cc-radius-sm);
 }
 
+/* Schedule */
+.schedule-page {
+  max-width: 980px;
+}
+
+.schedule-page .list-card {
+  border-top: 4px solid var(--cc-gold);
+  border-radius: var(--cc-radius-md);
+  background: var(--cc-light-surface);
+}
+
+.schedule-page .match-row {
+  position: relative;
+  padding: 22px 24px;
+  border-bottom-color: var(--cc-light-border);
+  transition: background .16s ease;
+}
+
+.schedule-page .match-row:hover { background: #faf8ef; }
+.schedule-page .match-row b { color: var(--cc-light-text); }
+.schedule-page .match-row small { color: var(--cc-light-muted); }
+.schedule-page .match-row small a { font-weight: 800; text-decoration: underline; text-decoration-color: rgba(138, 101, 0, .35); text-underline-offset: 3px; }
+.schedule-page .match-row > strong { font-size: 18px; }
+.schedule-page .match-row em { color: var(--cc-gold-ink); font-weight: 950; text-transform: uppercase; }
+
+/* Standings framing */
+.season-archive-current {
+  padding: 26px;
+  border: 1px solid var(--cc-light-border);
+  border-radius: var(--cc-radius-lg);
+  background: rgba(255, 255, 255, .55);
+}
+
+.season-archive-current > h2 {
+  margin-top: 0;
+  color: var(--cc-light-text);
+}
+
+@media (max-width: 1000px) {
+  .desktop-nav { gap: 14px !important; }
+  .desktop-nav > a,
+  .desktop-more > summary { font-size: 11px !important; }
+}
+
 @media (max-width: 800px) {
   .site-header {
     background: rgba(9, 11, 12, .98);
   }
+  .desktop-more { display: none; }
+  .schedule-page .match-row { padding: 18px; }
+  .season-archive-current { padding: 18px; }
 }
