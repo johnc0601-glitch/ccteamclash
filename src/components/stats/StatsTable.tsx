@@ -50,14 +50,22 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
   const sortedRows = useMemo(() => [...filteredRows].sort((a, b) => compareRows(a, b, sortKey, direction)), [filteredRows, sortKey, direction]);
   const rows = limit === 'all' ? sortedRows : sortedRows.slice(0, limit);
   const leaders = useMemo(() => buildLeaders(contextRows), [contextRows]);
+  const hasCustomView = division !== 'Open' || team !== 'all' || search.trim() !== '' || limit !== 5 || sortKey !== 'points' || direction !== 'desc';
 
   function selectGroup(nextGroupId: string) {
     setGroupId(nextGroupId);
-    setLimit(5);
-    setTeam('all');
-    setSearch('');
+    resetControls();
     const nextUrl = nextGroupId === 'overall' ? '/stats' : `/stats?season=${encodeURIComponent(nextGroupId)}`;
     window.history.replaceState(window.history.state, '', nextUrl);
+  }
+
+  function resetControls() {
+    setDivision('Open');
+    setTeam('all');
+    setSearch('');
+    setLimit(5);
+    setSortKey('points');
+    setDirection('desc');
   }
 
   function toggleSort(next: SortKey) {
@@ -156,15 +164,18 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
           <strong>{group.label} · {division}{team !== 'all' ? ` · ${team}` : ''}</strong>
           <span>{filteredRows.length} players · ranked by {sortLabel(sortKey)} {direction === 'desc' ? '↓' : '↑'}</span>
         </div>
-        <details className={styles.statsHelp}>
-          <summary>How stats work</summary>
-          <div>
-            <p><strong>Points:</strong> 1 per win, 0.5 per tie.</p>
-            <p><strong>Win %:</strong> wins plus half of ties divided by recorded results.</p>
-            <p><strong>Best Win %:</strong> requires at least 5 recorded results.</p>
-            <p>Table rank always reflects the active sort and filters. Search narrows the table but does not redefine the record leaders.</p>
-          </div>
-        </details>
+        <div className={styles.metaActions}>
+          {hasCustomView ? <button type="button" className={styles.resetButton} onClick={resetControls}>Reset view</button> : null}
+          <details className={styles.statsHelp}>
+            <summary>How stats work</summary>
+            <div>
+              <p><strong>Points:</strong> 1 per win, 0.5 per tie.</p>
+              <p><strong>Win %:</strong> wins plus half of ties divided by recorded results.</p>
+              <p><strong>Best Win %:</strong> requires at least 5 recorded results.</p>
+              <p>Table rank always reflects the active sort and filters. Search narrows the table but does not redefine the record leaders.</p>
+            </div>
+          </details>
+        </div>
       </div>
 
       <div className={styles.tableWrap}>
@@ -189,7 +200,12 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
               return (
                 <tr key={`${group.id}-${row.playerId}`}>
                   <td data-label="Player"><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players/${row.playerId}`}>{row.playerName}</Link></td>
-                  <td data-label="Team"><span title={row.teamNames.join(', ')}>{row.teamName}</span></td>
+                  <td data-label="Team">
+                    <span className={styles.teamCell}>
+                      <span>{row.teamName}</span>
+                      {row.teamNames.length > 1 ? <small>{row.teamNames.join(' · ')}</small> : null}
+                    </span>
+                  </td>
                   <td data-label="Matches">{row.matchesPlayed}</td>
                   <td data-label="Wins">{row.wins}</td>
                   <td data-label="Losses">{row.losses}</td>
