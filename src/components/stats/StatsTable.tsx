@@ -199,7 +199,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
               const rank = sortedRows.findIndex((entry) => entry.playerId === row.playerId) + 1;
               return (
                 <tr key={`${group.id}-${row.playerId}`}>
-                  <td data-label="Player"><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players/${row.playerId}`}>{row.playerName}</Link></td>
+                  <td data-label="Player"><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players?search=${encodeURIComponent(row.playerName)}`}>{row.playerName}</Link></td>
                   <td data-label="Team">
                     <span className={styles.teamCell}>
                       <span>{row.teamName}</span>
@@ -227,7 +227,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
 }
 
 function RecordCard({label, row, value, note}: {label: string; row?: StatsRow; value: string; note?: string}) {
-  return <article><span>{label}</span><strong>{value}</strong>{row ? <Link href={`/players/${row.playerId}`}>{row.playerName}</Link> : <small>No data</small>}{note ? <small>{note}</small> : null}</article>;
+  return <article><span>{label}</span><strong>{value}</strong>{row ? <Link href={`/players?search=${encodeURIComponent(row.playerName)}`}>{row.playerName}</Link> : <small>No data</small>}{note ? <small>{note}</small> : null}</article>;
 }
 
 function buildLeaders(rows: StatsRow[]) {
