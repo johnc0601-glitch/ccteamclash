@@ -20,6 +20,8 @@ type HomeProps = {
   searchParams: Promise<{intro?: string | string[]}>;
 };
 
+type PreviewTeam = {id: string; name: string};
+
 export default async function Home({searchParams}: HomeProps) {
   const [cookieStore, query] = await Promise.all([cookies(), searchParams]);
   const scheduleService = await createServerScheduleService();
@@ -30,9 +32,10 @@ export default async function Home({searchParams}: HomeProps) {
     scheduleService.getHomePageEvents(),
     scheduleService.getPublishedEvents(),
   ]);
-  const visibleHomeEvents = homeEvents.slice(0, 4);
+  const visibleHomeEvents = buildPreviewCarouselEvents(homeEvents, publishedEvents, teamLogos);
+  const realMatchIds = new Set([...homeEvents, ...publishedEvents].map((match) => match.id));
   const [feedPreviews, commentFeed] = await Promise.all([
-    getMatchFeedPreviews(visibleHomeEvents.map((match) => match.id)),
+    getMatchFeedPreviews(visibleHomeEvents.filter((match) => realMatchIds.has(match.id)).map((match) => match.id)),
     getHomeCommentFeed(publishedEvents),
   ]);
 
@@ -96,6 +99,44 @@ export default async function Home({searchParams}: HomeProps) {
       />
     </main>
   );
+}
+
+function buildPreviewCarouselEvents(
+  homeEvents: PublicScheduleEvent[],
+  publishedEvents: PublicScheduleEvent[],
+  teams: PreviewTeam[],
+): PublicScheduleEvent[] {
+  const realEvents = homeEvents.length >= 2
+    ? homeEvents.slice(0, 4)
+    : publishedEvents.slice(0, 4);
+
+  if (realEvents.length >= 3) return realEvents;
+
+  const base = realEvents[0] ?? homeEvents[0] ?? publishedEvents[0];
+  if (!base) return [];
+
+  const availableTeams = teams
+    .filter((team) => team.name !== base.home && team.name !== base.away)
+    .slice(0, 6);
+  const extras: PublicScheduleEvent[] = [];
+
+  for (let index = 0; index + 1 < availableTeams.length && extras.length < 3; index += 2) {
+    const away = availableTeams[index];
+    const home = availableTeams[index + 1];
+    extras.push({
+      ...base,
+      id: `preview-carousel-${extras.length + 1}`,
+      href: '/schedule',
+      away: away.name,
+      home: home.name,
+      awayTeamId: away.id,
+      homeTeamId: home.id,
+      status: 'Scheduled',
+      bucket: 'upcoming',
+    });
+  }
+
+  return [...realEvents, ...extras].slice(0, 4);
 }
 
 async function getMatchFeedPreviews(matchIds: string[]): Promise<Map<string, MatchFeedPreview>> {
