@@ -292,7 +292,7 @@ function ExploreRecords({seasonName}: {seasonName?: string}) {
       </div>
       <div className={styles.linkActions}>
         <Link href="/rankings">Player rankings →</Link>
-        <Link href="/players">Player history →</Link>
+        <Link href="/players">Player records →</Link>
         <Link href="/teams">Team history →</Link>
       </div>
     </section>
