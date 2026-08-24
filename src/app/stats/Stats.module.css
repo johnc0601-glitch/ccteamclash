@@ -200,6 +200,27 @@
   text-transform: uppercase;
 }
 
+.metaActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.resetButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cc-light-muted, #68706f);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.resetButton:hover {
+  color: #8c7200;
+}
+
 .statsHelp {
   position: relative;
   flex: 0 0 auto;
@@ -332,6 +353,17 @@
   color: #8c7200;
 }
 
+.teamCell {
+  display: grid;
+  gap: 2px;
+}
+
+.teamCell small {
+  color: var(--cc-light-muted, #68706f);
+  font-size: 9px;
+  font-weight: 700;
+}
+
 .smallSample {
   margin-left: 2px;
   color: #8c7200;
@@ -446,6 +478,11 @@
     gap: 8px;
   }
 
+  .metaActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   .statsHelp > div {
     position: static;
     width: 100%;
@@ -511,5 +548,10 @@
 
   .statsTable td:first-child::before {
     display: none;
+  }
+
+  .teamCell {
+    max-width: 65%;
+    text-align: right;
   }
 }
