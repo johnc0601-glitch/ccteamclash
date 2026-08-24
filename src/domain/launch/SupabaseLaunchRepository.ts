@@ -359,7 +359,7 @@ function toEventRoster(row: EventRosterRow): EventRoster {
     eventId: row.event_id,
     teamId: row.team_id,
     submittedByProfileId: row.submitted_by_profile_id,
-    status: row.status as LaunchEvent['status'],
+    status: row.status as EventRoster['status'],
     submittedAt: row.submitted_at,
     lockedAt: row.locked_at,
     createdAt: row.created_at,
