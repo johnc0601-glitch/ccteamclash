@@ -74,7 +74,7 @@
 
 .secondaryControls {
   display: grid;
-  grid-template-columns: auto minmax(220px, 1fr) auto;
+  grid-template-columns: auto minmax(140px, 190px) minmax(220px, 1fr) auto;
   gap: 10px;
   align-items: center;
 }
@@ -112,6 +112,18 @@
   color: var(--cc-light-muted, #8a918f);
 }
 
+.teamControl select,
+.limitControl select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--cc-light-border, #dedfd9);
+  border-radius: 7px;
+  background: var(--cc-light-surface, #fff);
+  color: var(--cc-light-text, #14191b);
+  font-weight: 900;
+}
+
 .limitControl {
   display: flex;
   align-items: center;
@@ -120,16 +132,6 @@
   font-size: 10px;
   font-weight: 950;
   text-transform: uppercase;
-}
-
-.limitControl select {
-  min-height: 40px;
-  padding: 0 34px 0 12px;
-  border: 1px solid var(--cc-light-border, #dedfd9);
-  border-radius: 7px;
-  background: var(--cc-light-surface, #fff);
-  color: var(--cc-light-text, #14191b);
-  font-weight: 900;
 }
 
 .recordStrip {
@@ -182,10 +184,65 @@
   font-size: 11px;
 }
 
+.tableMeta > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
 .tableMeta strong {
   color: var(--cc-light-text, #14191b);
   font-size: 12px;
   text-transform: uppercase;
+}
+
+.statsHelp {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.statsHelp summary {
+  cursor: pointer;
+  list-style: none;
+  color: #8c7200;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.statsHelp summary::-webkit-details-marker {
+  display: none;
+}
+
+.statsHelp summary::after {
+  content: ' +';
+}
+
+.statsHelp[open] summary::after {
+  content: ' −';
+}
+
+.statsHelp > div {
+  position: absolute;
+  z-index: 5;
+  right: 0;
+  top: calc(100% + 8px);
+  width: min(340px, 85vw);
+  padding: 14px 16px;
+  border: 1px solid var(--cc-light-border, #dedfd9);
+  border-radius: 10px;
+  background: var(--cc-light-surface, #fff);
+  box-shadow: var(--cc-shadow-card, 0 10px 28px rgba(0, 0, 0, .08));
+}
+
+.statsHelp p {
+  margin: 0 0 7px;
+  color: var(--cc-light-muted, #68706f);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.statsHelp p:last-child {
+  margin-bottom: 0;
 }
 
 .tableWrap {
@@ -290,6 +347,21 @@
   font-size: 12px;
 }
 
+@media (max-width: 1000px) {
+  .secondaryControls {
+    grid-template-columns: auto minmax(140px, 190px) minmax(220px, 1fr);
+  }
+
+  .limitControl {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .limitControl select {
+    width: auto;
+  }
+}
+
 @media (max-width: 900px) {
   .recordStrip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -307,7 +379,12 @@
   }
 
   .limitControl {
+    grid-column: auto;
     justify-content: space-between;
+  }
+
+  .limitControl select {
+    width: auto;
   }
 
   .recordStrip {
@@ -330,7 +407,13 @@
   .tableMeta {
     align-items: flex-start;
     flex-direction: column;
-    gap: 3px;
+    gap: 8px;
+  }
+
+  .statsHelp > div {
+    position: static;
+    width: 100%;
+    margin-top: 8px;
   }
 
   .tableWrap {
