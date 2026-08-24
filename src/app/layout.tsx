@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/shared/constants";
 import "./globals.css";
 import "./theme-preview.css";
+import "./header-preview.css";
 
 export const metadata: Metadata = {
   title: SITE_TITLE,
