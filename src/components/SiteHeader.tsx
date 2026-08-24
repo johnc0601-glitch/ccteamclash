@@ -6,6 +6,8 @@ import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
 import {BRAND_LOGO, BRAND_NAME, BRAND_TAGLINE, FOOTER_COPY} from '@/shared/constants';
 
+const FACEBOOK_GROUP_URL = 'https://facebook.com/groups/780013754161635/';
+
 export async function SiteHeader() {
   const headerAccess = await getHeaderAccess();
   const canOpenOffice = headerAccess === 'commissioner';
@@ -51,6 +53,10 @@ export async function SiteHeader() {
                   <Link href="/courses">Courses</Link>
                   <Link href="/history">History</Link>
                 </div>
+                <div className="mobile-nav-group">
+                  <span>Community</span>
+                  <a href={FACEBOOK_GROUP_URL} target="_blank" rel="noreferrer">Facebook</a>
+                </div>
                 {(canOpenOffice || canOpenCaptain) ? (
                   <div className="mobile-nav-group mobile-nav-tools">
                     <span>Tools</span>
@@ -72,13 +78,25 @@ export async function SiteHeader() {
             <Link href="/courses">Courses</Link>
             <Link href="/history">History</Link>
           </nav>
-          {(canOpenOffice || canOpenCaptain) ? (
-            <nav className="secondary-role-nav" aria-label="Role tools">
-              {canOpenOffice ? <Link className="secondary-post" href="/admin">Create post</Link> : null}
-              {canOpenOffice ? <Link href="/office">Office</Link> : null}
-              {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
-            </nav>
-          ) : null}
+          <div className="secondary-actions">
+            {(canOpenOffice || canOpenCaptain) ? (
+              <nav className="secondary-role-nav" aria-label="Role tools">
+                {canOpenOffice ? <Link className="secondary-post" href="/admin">Create post</Link> : null}
+                {canOpenOffice ? <Link href="/office">Office</Link> : null}
+                {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
+              </nav>
+            ) : null}
+            <a
+              className="facebook-link"
+              href={FACEBOOK_GROUP_URL}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Team Clash Facebook group"
+              title="Facebook group"
+            >
+              <span aria-hidden="true">f</span>
+            </a>
+          </div>
         </div>
       </div>
     </header>
@@ -124,6 +142,7 @@ export async function Footer() {
           <Link href="/history">History</Link>
           <Link href="/teams">Teams</Link>
           <Link href="/courses">Courses</Link>
+          <a href={FACEBOOK_GROUP_URL} target="_blank" rel="noreferrer">Facebook</a>
           {canCreatePost ? <Link href="/admin">Post</Link> : null}
         </div>
       </div>
