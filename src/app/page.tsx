@@ -1,12 +1,14 @@
 import Link from 'next/link';
 import {cookies} from 'next/headers';
 import type {ReactNode} from 'react';
+import {HomeCommentFeed, type HomeCommentFeedItem} from '@/components/HomeCommentFeed';
 import {Intro} from '@/components/intro/Intro';
 import {INTRO_COOKIE_NAME} from '@/components/intro/intro.config';
 import {parseIntroQuery} from '@/components/intro/introDecision';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchCard, type MatchFeedPreview} from '@/components/MatchCard';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
+import type {PublicScheduleEvent} from '@/domain/schedule/ScheduleService';
 import {createClient} from '@/lib/supabase/server';
 import {getStoredTeams} from '@/services/teams/TeamStore';
 import {getStories} from '@/services/stories/StoryService';
@@ -23,8 +25,15 @@ export default async function Home({searchParams}: HomeProps) {
   const stories = await getStories();
   const lead = stories.find((story) => story.featured) ?? stories[0];
   const teamLogos = await getStoredTeams();
-  const homeEvents = (await scheduleService.getHomePageEvents()).slice(0, 4);
-  const feedPreviews = await getMatchFeedPreviews(homeEvents.map((match) => match.id));
+  const [homeEvents, publishedEvents] = await Promise.all([
+    scheduleService.getHomePageEvents(),
+    scheduleService.getPublishedEvents(),
+  ]);
+  const visibleHomeEvents = homeEvents.slice(0, 4);
+  const [feedPreviews, commentFeed] = await Promise.all([
+    getMatchFeedPreviews(visibleHomeEvents.map((match) => match.id)),
+    getHomeCommentFeed(publishedEvents),
+  ]);
 
   return (
     <main className="home-page">
@@ -50,11 +59,13 @@ export default async function Home({searchParams}: HomeProps) {
           <h2>This month&apos;s matches</h2>
         </div>
         <div className="home-match-grid">
-          {homeEvents.map((match) => (
+          {visibleHomeEvents.map((match) => (
             <MatchCard key={match.id} match={match} teams={teamLogos} feedPreview={feedPreviews.get(match.id)} />
           ))}
         </div>
       </section>
+
+      <HomeCommentFeed items={commentFeed} />
 
       <section className="shell story-home-bottom">
         <section className="dark-panel latest-panel">
@@ -124,6 +135,56 @@ async function getMatchFeedPreviews(matchIds: string[]): Promise<Map<string, Mat
     return previews;
   }
   return previews;
+}
+
+async function getHomeCommentFeed(events: PublicScheduleEvent[]): Promise<HomeCommentFeedItem[]> {
+  if (!events.length) return [];
+  try {
+    const supabase = await createClient();
+    const db = supabase as any;
+    const eventById = new Map(events.map((event) => [event.id, event]));
+    const matchIds = [...eventById.keys()];
+
+    const {data: posts, error: postsError} = await db.from('launch_match_feed_posts')
+      .select('id,match_id,deleted_at')
+      .in('match_id', matchIds)
+      .is('deleted_at', null)
+      .limit(250);
+    if (postsError || !posts?.length) return [];
+
+    const postToMatch = new Map<string, string>(posts.map((post: {id: string; match_id: string}) => [post.id, post.match_id]));
+    const {data: comments, error: commentsError} = await db.from('launch_match_feed_comments')
+      .select('id,post_id,author_name_snapshot,body,created_at,deleted_at')
+      .in('post_id', [...postToMatch.keys()])
+      .is('deleted_at', null)
+      .order('created_at', {ascending: false})
+      .limit(6);
+    if (commentsError || !comments?.length) return [];
+
+    return comments.flatMap((comment: {
+      id: string;
+      post_id: string;
+      author_name_snapshot: string | null;
+      body: string;
+      created_at: string;
+    }) => {
+      const matchId = postToMatch.get(comment.post_id);
+      const event = matchId ? eventById.get(matchId) : undefined;
+      if (!event) return [];
+      const body = String(comment.body ?? '').trim();
+      if (!body) return [];
+      return [{
+        id: comment.id,
+        author: comment.author_name_snapshot || 'Member',
+        body: body.length > 180 ? `${body.slice(0, 177)}...` : body,
+        createdAt: comment.created_at,
+        matchLabel: `${event.away} at ${event.home}`,
+        matchHref: event.href,
+      }];
+    });
+  } catch {
+    return [];
+  }
 }
 
 function StoryPhoto({className, image, children}: {className: string; image: string; children?: ReactNode}) {
