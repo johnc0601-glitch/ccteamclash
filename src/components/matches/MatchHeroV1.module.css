@@ -7,22 +7,25 @@
 
 :global(body):has(.matchHero) main {
   background:
-    radial-gradient(circle at 4% 10%, color-mix(in srgb, var(--match-away-deep) 10%, transparent), transparent 28rem),
-    radial-gradient(circle at 96% 14%, color-mix(in srgb, var(--match-home-deep) 10%, transparent), transparent 28rem),
-    linear-gradient(180deg, #f1f3f1 0%, #f8f8f6 42%, #f3f5f3 100%) !important;
+    radial-gradient(ellipse 30rem 62rem at -6% 24%, color-mix(in srgb, var(--match-away-deep) 28%, transparent), transparent 72%),
+    radial-gradient(ellipse 30rem 62rem at 106% 28%, color-mix(in srgb, var(--match-home-deep) 28%, transparent), transparent 72%),
+    linear-gradient(180deg, #f2f4f1 0%, #fbfbf8 43%, #f4f5f2 100%) !important;
+  background-attachment: fixed !important;
 }
 
 :global(body):has(.matchHero) main > :global(.shell) > * {
   border-color: #d5dcda !important;
   background:
     linear-gradient(90deg,
-      color-mix(in srgb, var(--match-away-deep) 3%, #fff) 0%,
+      color-mix(in srgb, var(--match-away-deep) 5%, #fff) 0%,
       #fff 24%,
       #fff 76%,
-      color-mix(in srgb, var(--match-home-deep) 3%, #fff) 100%) !important;
+      color-mix(in srgb, var(--match-home-deep) 5%, #fff) 100%) !important;
   box-shadow:
-    inset 4px 0 0 var(--match-away-deep),
-    inset -4px 0 0 var(--match-home-deep),
+    inset 5px 0 0 var(--match-away-deep),
+    inset -5px 0 0 var(--match-home-deep),
+    -9px 0 26px color-mix(in srgb, var(--match-away-deep) 13%, transparent),
+    9px 0 26px color-mix(in srgb, var(--match-home-deep) 13%, transparent),
     0 10px 28px rgba(11, 24, 20, .08) !important;
 }
 
@@ -210,6 +213,14 @@
 }
 
 @media (max-width: 700px) {
+  :global(body):has(.matchHero) main {
+    background:
+      radial-gradient(ellipse 18rem 46rem at -14% 28%, color-mix(in srgb, var(--match-away-deep) 24%, transparent), transparent 72%),
+      radial-gradient(ellipse 18rem 46rem at 114% 32%, color-mix(in srgb, var(--match-home-deep) 24%, transparent), transparent 72%),
+      linear-gradient(180deg, #f2f4f1 0%, #fbfbf8 43%, #f4f5f2 100%) !important;
+    background-attachment: fixed !important;
+  }
+
   .matchHero {
     padding: 10px 10px 0;
   }
