@@ -65,16 +65,11 @@ function formatRecord(record: {wins: number; losses: number; ties: number}): str
   return record.ties ? `${record.wins}-${record.losses}-${record.ties}` : `${record.wins}-${record.losses}`;
 }
 
-function getRegularSeasonMatchCount(standings: HistoricalTeamSeasonStanding[]): number {
-  return Math.round(standings.reduce((total, team) => total + team.matchesPlayed, 0) / 2);
-}
-
 function getAllTimeTeamRows(archives: HistoricalSeasonArchive[]) {
   const rows = new Map<string, {
     teamId: string;
     teamName: string;
     titles: number;
-    seasons: number;
     wins: number;
     losses: number;
     ties: number;
@@ -86,13 +81,11 @@ function getAllTimeTeamRows(archives: HistoricalSeasonArchive[]) {
         teamId: standing.teamId,
         teamName: standing.teamName,
         titles: 0,
-        seasons: 0,
         wins: 0,
         losses: 0,
         ties: 0,
       };
 
-      existing.seasons += 1;
       existing.wins += standing.record.wins;
       existing.losses += standing.record.losses;
       existing.ties += standing.record.ties;
@@ -122,14 +115,11 @@ export default async function HistoryPage({searchParams}: HistoryProps) {
         <header className={styles.pageHeader}>
           <span className="eyebrow">League archive</span>
           <h1>History</h1>
-          <p>Champions, final standings and postseason results across Coastal Clash seasons.</p>
+          <p>Champions, postseason results, final standings and the season-by-season story of Coastal Clash.</p>
         </header>
 
         <nav className={styles.seasonSelector} aria-label="History season">
-          <Link
-            href="/history"
-            className={activeSeason === 'overall' ? styles.activeSelector : undefined}
-          >
+          <Link href="/history" className={activeSeason === 'overall' ? styles.activeSelector : undefined}>
             Overall
           </Link>
           {archives.map((archive) => (
@@ -152,72 +142,69 @@ export default async function HistoryPage({searchParams}: HistoryProps) {
 
 function OverallView({archives}: {archives: HistoricalSeasonArchive[]}) {
   const allTimeTeams = getAllTimeTeamRows(archives);
-  const uniqueTeams = new Set(archives.flatMap((archive) => archive.standings.map((team) => team.teamId))).size;
-  const regularSeasonMatches = archives.reduce((total, archive) => total + getRegularSeasonMatchCount(archive.standings), 0);
-  const knownPlayoffMatches = Object.values(PLAYOFFS_BY_SEASON).reduce((total, matches) => total + matches.length, 0);
 
   return (
     <div className={styles.viewStack}>
-      <section className={styles.statGrid} aria-label="League totals">
-        <Stat value={archives.length} label="Seasons" />
-        <Stat value={uniqueTeams} label="Teams" />
-        <Stat value={archives.length} label="Championships" />
-        <Stat value={regularSeasonMatches + knownPlayoffMatches} label="Recorded team matches" />
-      </section>
-
       <section className={styles.section}>
         <div className={styles.sectionHeading}>
           <div>
-            <span className="eyebrow">By season</span>
+            <span className="eyebrow">Championship history</span>
             <h2>League timeline</h2>
           </div>
+          <p>Select a season for its standings, playoff path and season summary.</p>
         </div>
 
         <div className={styles.timeline}>
-          {archives.map((archive) => (
-            <article className={styles.timelineCard} key={archive.seasonId}>
-              <div className={styles.timelineSeason}>{compactSeasonName(archive.seasonName)}</div>
-              <div className={styles.timelineChampion}>
-                <span>Champion</span>
-                {archive.championTeamId && archive.championTeamName ? (
-                  <Link href={`/teams/${archive.championTeamId}`}>{archive.championTeamName}</Link>
-                ) : <strong>Not recorded</strong>}
-              </div>
-              <div className={styles.podium}>
-                {archive.standings.slice(0, 3).map((standing) => (
-                  <div key={standing.teamId}>
-                    <span>{standing.rank}</span>
-                    <Link href={`/teams/${standing.teamId}`}>{standing.teamName}</Link>
-                    <small>{formatRecord(standing.record)}</small>
+          {archives.map((archive) => {
+            const championship = (PLAYOFFS_BY_SEASON[archive.seasonId] ?? [])
+              .find((match) => match.round === 'Championship');
+
+            return (
+              <article className={styles.timelineCard} key={archive.seasonId}>
+                <div className={styles.timelineSeason}>{compactSeasonName(archive.seasonName)}</div>
+                <div className={styles.timelineChampion}>
+                  <span>Champion</span>
+                  {archive.championTeamId && archive.championTeamName ? (
+                    <Link href={`/teams/${archive.championTeamId}`}>{archive.championTeamName}</Link>
+                  ) : <strong>Not recorded</strong>}
+                </div>
+                {championship ? (
+                  <div className={styles.championshipRecap}>
+                    <span>Championship</span>
+                    <strong>{championship.homeTeamName} {championship.homeScore}–{championship.awayScore} {championship.awayTeamName}</strong>
                   </div>
-                ))}
-              </div>
-              <Link className={styles.textLink} href={`/history?season=${archive.seasonId}`}>View season →</Link>
-            </article>
-          ))}
+                ) : (
+                  <div className={styles.championshipRecap}>
+                    <span>Season record</span>
+                    <strong>Detailed postseason archive to be added</strong>
+                  </div>
+                )}
+                <Link className={styles.textLink} href={`/history?season=${archive.seasonId}`}>Open season →</Link>
+              </article>
+            );
+          })}
         </div>
       </section>
 
       <section className={styles.section}>
         <div className={styles.sectionHeading}>
           <div>
-            <span className="eyebrow">Record book</span>
-            <h2>All-time teams</h2>
+            <span className="eyebrow">Team history</span>
+            <h2>League record book</h2>
           </div>
-          <p>Regular-season records with championships shown separately.</p>
+          <p>Championships and regular-season team records. Detailed team history remains on each team page.</p>
         </div>
         <div className={styles.tablePanel}>
           <div className={styles.tableWrap}>
             <table>
               <thead>
-                <tr><th>Team</th><th>Titles</th><th>Seasons</th><th>Record</th></tr>
+                <tr><th>Team</th><th>Championships</th><th>Regular-season record</th></tr>
               </thead>
               <tbody>
                 {allTimeTeams.map((team) => (
                   <tr key={team.teamId}>
                     <td><Link href={`/teams/${team.teamId}`}>{team.teamName}</Link></td>
                     <td><strong>{team.titles}</strong></td>
-                    <td>{team.seasons}</td>
                     <td>{formatRecord(team)}</td>
                   </tr>
                 ))}
@@ -227,16 +214,7 @@ function OverallView({archives}: {archives: HistoricalSeasonArchive[]}) {
         </div>
       </section>
 
-      <section className={styles.archiveLinks}>
-        <div>
-          <strong>Looking for individual history?</strong>
-          <span>Team and player career detail stays on the existing record pages.</span>
-        </div>
-        <div className={styles.linkActions}>
-          <Link href="/teams">Team history →</Link>
-          <Link href="/players">Player history →</Link>
-        </div>
-      </section>
+      <ExploreRecords />
     </div>
   );
 }
@@ -254,11 +232,6 @@ function SeasonView({archive}: {archive: HistoricalSeasonArchive}) {
           {archive.championTeamId && archive.championTeamName ? (
             <Link href={`/teams/${archive.championTeamId}`}>{archive.championTeamName}</Link>
           ) : <strong>Champion not recorded</strong>}
-        </div>
-        <div className={styles.heroMeta}>
-          <div><strong>{archive.standings.length}</strong><span>Teams</span></div>
-          <div><strong>{getRegularSeasonMatchCount(archive.standings)}</strong><span>Regular-season matches</span></div>
-          <div><strong>{playoffs.length || '—'}</strong><span>Postseason matches</span></div>
         </div>
       </section>
 
@@ -286,8 +259,8 @@ function SeasonView({archive}: {archive: HistoricalSeasonArchive}) {
             </div>
           ) : (
             <div className={styles.emptyPanel}>
-              <strong>Champion recorded</strong>
-              <p>The detailed semifinal and championship scores for this season are not yet loaded into the league archive.</p>
+              <strong>{archive.championTeamName ?? 'Champion'} is preserved as season champion.</strong>
+              <p>The detailed postseason scores are not yet loaded into this archive, so no matchup results are being inferred.</p>
             </div>
           )}
         </div>
@@ -300,15 +273,29 @@ function SeasonView({archive}: {archive: HistoricalSeasonArchive}) {
           <p>
             {championship
               ? `${championship.homeTeamName} defeated ${championship.awayTeamName} ${championship.homeScore}–${championship.awayScore} in the championship match.`
-              : 'The league champion is preserved here while individual team and player records remain on their dedicated pages.'}
+              : 'This page preserves the league result and final standings while player rankings and career statistics remain in their dedicated areas.'}
           </p>
         </div>
-        <div className={styles.linkActions}>
-          <Link href="/teams">Browse teams →</Link>
-          <Link href="/players">Browse players →</Link>
-        </div>
       </section>
+
+      <ExploreRecords seasonName={compactSeasonName(archive.seasonName)} />
     </div>
+  );
+}
+
+function ExploreRecords({seasonName}: {seasonName?: string}) {
+  return (
+    <section className={styles.archiveLinks}>
+      <div>
+        <strong>{seasonName ? `Explore ${seasonName}` : 'Explore the records'}</strong>
+        <span>History preserves league outcomes. Rankings and player pages hold the detailed individual numbers.</span>
+      </div>
+      <div className={styles.linkActions}>
+        <Link href="/rankings">Player rankings →</Link>
+        <Link href="/players">Player history →</Link>
+        <Link href="/teams">Team history →</Link>
+      </div>
+    </section>
   );
 }
 
@@ -351,8 +338,4 @@ function PlayoffCard({match}: {match: PlayoffMatch}) {
       </div>
     </article>
   );
-}
-
-function Stat({value, label}: {value: string | number; label: string}) {
-  return <div className={styles.stat}><strong>{value}</strong><span>{label}</span></div>;
 }
