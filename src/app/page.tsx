@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {cookies} from 'next/headers';
 import type {ReactNode} from 'react';
 import {HomeCommentFeed, type HomeCommentFeedItem} from '@/components/HomeCommentFeed';
+import {HomeMatchCarousel} from '@/components/HomeMatchCarousel';
 import {Intro} from '@/components/intro/Intro';
 import {INTRO_COOKIE_NAME} from '@/components/intro/intro.config';
 import {parseIntroQuery} from '@/components/intro/introDecision';
@@ -58,11 +59,11 @@ export default async function Home({searchParams}: HomeProps) {
           <span className="panel-title">League schedule</span>
           <h2>This month&apos;s matches</h2>
         </div>
-        <div className="home-match-grid">
+        <HomeMatchCarousel count={visibleHomeEvents.length}>
           {visibleHomeEvents.map((match) => (
             <MatchCard key={match.id} match={match} teams={teamLogos} feedPreview={feedPreviews.get(match.id)} />
           ))}
-        </div>
+        </HomeMatchCarousel>
       </section>
 
       <HomeCommentFeed items={commentFeed} />
