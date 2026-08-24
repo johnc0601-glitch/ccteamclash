@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import {cookies} from 'next/headers';
 import type {ReactNode} from 'react';
-import {HomeCommentFeed, type HomeCommentFeedItem} from '@/components/HomeCommentFeed';
 import {HomeMatchCarousel} from '@/components/HomeMatchCarousel';
 import {Intro} from '@/components/intro/Intro';
 import {INTRO_COOKIE_NAME} from '@/components/intro/intro.config';
@@ -9,7 +8,6 @@ import {parseIntroQuery} from '@/components/intro/introDecision';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchCard, type MatchFeedPreview} from '@/components/MatchCard';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
-import type {PublicScheduleEvent} from '@/domain/schedule/ScheduleService';
 import {createClient} from '@/lib/supabase/server';
 import {getStoredTeams} from '@/services/teams/TeamStore';
 import {getStories} from '@/services/stories/StoryService';
@@ -20,24 +18,14 @@ type HomeProps = {
   searchParams: Promise<{intro?: string | string[]}>;
 };
 
-type PreviewTeam = {id: string; name: string};
-
 export default async function Home({searchParams}: HomeProps) {
   const [cookieStore, query] = await Promise.all([cookies(), searchParams]);
   const scheduleService = await createServerScheduleService();
   const stories = await getStories();
   const lead = stories.find((story) => story.featured) ?? stories[0];
   const teamLogos = await getStoredTeams();
-  const [homeEvents, publishedEvents] = await Promise.all([
-    scheduleService.getHomePageEvents(),
-    scheduleService.getPublishedEvents(),
-  ]);
-  const visibleHomeEvents = buildPreviewCarouselEvents(homeEvents, publishedEvents, teamLogos);
-  const realMatchIds = new Set([...homeEvents, ...publishedEvents].map((match) => match.id));
-  const [feedPreviews, commentFeed] = await Promise.all([
-    getMatchFeedPreviews(visibleHomeEvents.filter((match) => realMatchIds.has(match.id)).map((match) => match.id)),
-    getHomeCommentFeed(publishedEvents),
-  ]);
+  const visibleHomeEvents = (await scheduleService.getHomePageEvents()).slice(0, 4);
+  const feedPreviews = await getMatchFeedPreviews(visibleHomeEvents.map((match) => match.id));
 
   return (
     <main className="home-page">
@@ -69,8 +57,6 @@ export default async function Home({searchParams}: HomeProps) {
         </HomeMatchCarousel>
       </section>
 
-      <HomeCommentFeed items={commentFeed} />
-
       <section className="shell story-home-bottom">
         <section className="dark-panel latest-panel">
           <div className="panel-heading">
@@ -99,44 +85,6 @@ export default async function Home({searchParams}: HomeProps) {
       />
     </main>
   );
-}
-
-function buildPreviewCarouselEvents(
-  homeEvents: PublicScheduleEvent[],
-  publishedEvents: PublicScheduleEvent[],
-  teams: PreviewTeam[],
-): PublicScheduleEvent[] {
-  const realEvents = homeEvents.length >= 2
-    ? homeEvents.slice(0, 4)
-    : publishedEvents.slice(0, 4);
-
-  if (realEvents.length >= 3) return realEvents;
-
-  const base = realEvents[0] ?? homeEvents[0] ?? publishedEvents[0];
-  if (!base) return [];
-
-  const availableTeams = teams
-    .filter((team) => team.name !== base.home && team.name !== base.away)
-    .slice(0, 6);
-  const extras: PublicScheduleEvent[] = [];
-
-  for (let index = 0; index + 1 < availableTeams.length && extras.length < 3; index += 2) {
-    const away = availableTeams[index];
-    const home = availableTeams[index + 1];
-    extras.push({
-      ...base,
-      id: `preview-carousel-${extras.length + 1}`,
-      href: '/schedule',
-      away: away.name,
-      home: home.name,
-      awayTeamId: away.id,
-      homeTeamId: home.id,
-      status: 'Scheduled',
-      bucket: 'upcoming',
-    });
-  }
-
-  return [...realEvents, ...extras].slice(0, 4);
 }
 
 async function getMatchFeedPreviews(matchIds: string[]): Promise<Map<string, MatchFeedPreview>> {
@@ -177,56 +125,6 @@ async function getMatchFeedPreviews(matchIds: string[]): Promise<Map<string, Mat
     return previews;
   }
   return previews;
-}
-
-async function getHomeCommentFeed(events: PublicScheduleEvent[]): Promise<HomeCommentFeedItem[]> {
-  if (!events.length) return [];
-  try {
-    const supabase = await createClient();
-    const db = supabase as any;
-    const eventById = new Map(events.map((event) => [event.id, event]));
-    const matchIds = [...eventById.keys()];
-
-    const {data: posts, error: postsError} = await db.from('launch_match_feed_posts')
-      .select('id,match_id,deleted_at')
-      .in('match_id', matchIds)
-      .is('deleted_at', null)
-      .limit(250);
-    if (postsError || !posts?.length) return [];
-
-    const postToMatch = new Map<string, string>(posts.map((post: {id: string; match_id: string}) => [post.id, post.match_id]));
-    const {data: comments, error: commentsError} = await db.from('launch_match_feed_comments')
-      .select('id,post_id,author_name_snapshot,body,created_at,deleted_at')
-      .in('post_id', [...postToMatch.keys()])
-      .is('deleted_at', null)
-      .order('created_at', {ascending: false})
-      .limit(6);
-    if (commentsError || !comments?.length) return [];
-
-    return comments.flatMap((comment: {
-      id: string;
-      post_id: string;
-      author_name_snapshot: string | null;
-      body: string;
-      created_at: string;
-    }) => {
-      const matchId = postToMatch.get(comment.post_id);
-      const event = matchId ? eventById.get(matchId) : undefined;
-      if (!event) return [];
-      const body = String(comment.body ?? '').trim();
-      if (!body) return [];
-      return [{
-        id: comment.id,
-        author: comment.author_name_snapshot || 'Member',
-        body: body.length > 180 ? `${body.slice(0, 177)}...` : body,
-        createdAt: comment.created_at,
-        matchLabel: `${event.away} at ${event.home}`,
-        matchHref: event.href,
-      }];
-    });
-  } catch {
-    return [];
-  }
 }
 
 function StoryPhoto({className, image, children}: {className: string; image: string; children?: ReactNode}) {
