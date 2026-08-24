@@ -78,25 +78,21 @@ export async function SiteHeader() {
             <Link href="/courses">Courses</Link>
             <Link href="/history">History</Link>
           </nav>
-          <div className="secondary-actions">
-            {(canOpenOffice || canOpenCaptain) ? (
-              <nav className="secondary-role-nav" aria-label="Role tools">
-                {canOpenOffice ? <Link className="secondary-post" href="/admin">Create post</Link> : null}
-                {canOpenOffice ? <Link href="/office">Office</Link> : null}
-                {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
-              </nav>
-            ) : null}
+          <nav className="secondary-role-nav" aria-label="Community and role tools">
+            {canOpenOffice ? <Link className="secondary-post" href="/admin">Create post</Link> : null}
+            {canOpenOffice ? <Link href="/office">Office</Link> : null}
+            {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
             <a
-              className="facebook-link"
               href={FACEBOOK_GROUP_URL}
               target="_blank"
               rel="noreferrer"
               aria-label="Team Clash Facebook group"
               title="Facebook group"
+              style={{color: 'var(--cc-gold)', fontSize: '16px', textTransform: 'none'}}
             >
               <span aria-hidden="true">f</span>
             </a>
-          </div>
+          </nav>
         </div>
       </div>
     </header>
