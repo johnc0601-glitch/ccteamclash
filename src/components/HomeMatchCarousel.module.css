@@ -2,63 +2,49 @@
   position: relative;
 }
 
-.track {
+.desktopTrack {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
-.controls {
+.mobileTrack {
   display: none;
 }
 
 @media (max-width: 800px) {
   .carousel {
+    margin-left: -20px;
     margin-right: -20px;
+    overflow: hidden;
   }
 
-  .controls {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-    margin: 0 20px 12px 0;
-    color: #7b6a5b;
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: .08em;
-    text-transform: uppercase;
+  .desktopTrack {
+    display: none;
   }
 
-  .controls button {
-    width: 34px;
-    height: 34px;
-    border: 1px solid rgba(162,119,82,.55);
-    border-radius: 50%;
-    background: #0b1719;
-    color: #a27752;
-    font: inherit;
-    font-size: 17px;
-    cursor: pointer;
-  }
-
-  .track {
+  .mobileTrack {
     display: flex;
     gap: 14px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     overscroll-behavior-inline: contain;
     scrollbar-width: none;
-    padding: 0 34px 10px 0;
+    padding: 0 36px 10px;
+    scroll-padding-inline: 36px;
   }
 
-  .track::-webkit-scrollbar {
+  .mobileTrack::-webkit-scrollbar {
     display: none;
   }
 
-  .track > * {
-    flex: 0 0 calc(100% - 42px);
-    scroll-snap-align: start;
+  .slide {
+    flex: 0 0 calc(100% - 72px);
+    scroll-snap-align: center;
     scroll-snap-stop: always;
+  }
+
+  .slide > * {
+    height: 100%;
   }
 }
