@@ -1,3 +1,4 @@
+import {HISTORICAL_RECORD_SOURCES} from '@/data/historicalRecords';
 import {getHistoricalSeasonArchives} from '@/data/historicalSeed';
 import assert from 'node:assert/strict';
 import test from 'node:test';
@@ -9,6 +10,10 @@ function recordCount(record: {wins: number; losses: number; ties: number}): numb
 function expectedWinPercentage(record: {wins: number; losses: number; ties: number}): number {
   const total = recordCount(record);
   return total ? ((record.wins + record.ties * 0.5) / total) * 100 : 0;
+}
+
+function normalizeName(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 }
 
 test('historical archives preserve internally consistent player statistics', () => {
@@ -54,5 +59,28 @@ test('historical archive standings and champions are coherent', () => {
       );
       assert.ok(archive.championTeamName, `${archive.seasonId}: champion name is missing`);
     }
+  }
+});
+
+test('raw historical imports flag same-season multi-team player records', () => {
+  for (const source of HISTORICAL_RECORD_SOURCES) {
+    const teamsByPlayer = new Map<string, Set<string>>();
+
+    for (const record of source.playerRecords) {
+      const key = normalizeName(record.playerName);
+      const teams = teamsByPlayer.get(key) ?? new Set<string>();
+      teams.add(record.teamName);
+      teamsByPlayer.set(key, teams);
+    }
+
+    const multiTeamPlayers = Array.from(teamsByPlayer.entries())
+      .filter(([, teams]) => teams.size > 1)
+      .map(([player, teams]) => `${player}: ${Array.from(teams).join(', ')}`);
+
+    assert.deepEqual(
+      multiTeamPlayers,
+      [],
+      `${source.id}: same-season multi-team records need explicit handling before Stats aggregation`,
+    );
   }
 });
