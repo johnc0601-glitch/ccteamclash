@@ -262,8 +262,19 @@
 .previewTeam {
   min-width: 0;
   overflow: hidden;
+  align-self: start;
   border: 1px solid var(--cc-card-border);
   border-radius: 8px;
+  background: var(--cc-card-bg);
+}
+
+.previewTeam > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.previewTeam > summary::-webkit-details-marker {
+  display: none;
 }
 
 .previewTeamHead {
@@ -277,6 +288,21 @@
   font-size: 12px;
   font-weight: 950;
   text-transform: uppercase;
+}
+
+.previewTeamHead::after {
+  content: '⌄';
+  margin-left: 4px;
+  color: var(--cc-teal);
+  font-size: 15px;
+}
+
+.previewTeam[open] .previewTeamHead::after {
+  content: '⌃';
+}
+
+.previewTeamHead > span:last-of-type {
+  margin-left: auto;
 }
 
 .previewTeamHeadColor {
@@ -313,8 +339,21 @@
   object-fit: contain;
 }
 
-.previewList {
+.previewList,
+.expandedRoster {
   display: grid;
+}
+
+.expandedRoster {
+  display: none;
+}
+
+.previewTeam[open] .expandedRoster {
+  display: grid;
+}
+
+.previewTeam[open] .moreCount {
+  display: none;
 }
 
 .previewPlayer {
@@ -333,10 +372,19 @@
   border-top: 0;
 }
 
-.previewMore {
+.expandedRoster .previewPlayer:first-child {
+  border-top: 1px solid var(--cc-card-border);
+}
+
+.previewMore,
+.playerMeta {
   color: var(--cc-muted);
   font-size: 12px;
   font-weight: 800;
+}
+
+.playerMeta {
+  white-space: nowrap;
 }
 
 .rosterToggle {
