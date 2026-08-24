@@ -46,20 +46,20 @@ export async function PersonalAttendanceCard({
   return (
     <section className={styles.attendanceCard} aria-labelledby="personal-attendance-heading">
       <div>
-        <span>Your availability</span>
+        <span style={{fontSize: '12px', letterSpacing: '.1em'}}>Your availability</span>
         <h2 id="personal-attendance-heading">Can you play?</h2>
-        <p>
+        <p style={{fontSize: '15px', lineHeight: 1.55, color: 'var(--cc-heading)', opacity: .78}}>
           {current.attendanceOpen
             ? `${current.playerName}, choose Yes or No. You can change this until Friday at 12:00 PM.`
             : 'Player responses closed Friday at 12:00 PM.'}
         </p>
       </div>
       <div className={styles.attendanceControls}>
-        <p className={styles.attendanceStatus} data-status={current.status}>
+        <p className={styles.attendanceStatus} data-status={current.status} style={{fontSize: '15px', lineHeight: 1.45}}>
           Current answer: <strong>{formatStatus(current.status)}</strong>
         </p>
-        {notice ? <p className={styles.attendanceNotice}>{notice}</p> : null}
-        {error ? <p className={styles.attendanceError}>{error}</p> : null}
+        {notice ? <p className={styles.attendanceNotice} style={{fontSize: '14px'}}>{notice}</p> : null}
+        {error ? <p className={styles.attendanceError} style={{fontSize: '14px'}}>{error}</p> : null}
         <form action={setOwnPlayerAvailability} className={styles.attendanceActions}>
           <input name="matchId" type="hidden" value={current.matchId} />
           <button
@@ -72,6 +72,8 @@ export async function PersonalAttendanceCard({
               borderColor: '#4f7f32',
               boxShadow: yesSelected ? selectedBox : 'none',
               color: '#fff',
+              fontSize: '14px',
+              letterSpacing: '.01em',
             }}
             type="submit"
             value="Playing"
@@ -88,6 +90,8 @@ export async function PersonalAttendanceCard({
               borderColor: '#b64040',
               boxShadow: noSelected ? selectedBox : 'none',
               color: '#fff',
+              fontSize: '14px',
+              letterSpacing: '.01em',
             }}
             type="submit"
             value="NotPlaying"
@@ -104,8 +108,8 @@ export async function PersonalAttendanceCard({
               borderRadius: '6px',
               color: 'var(--cc-heading)',
               display: 'flex',
-              fontSize: '13px',
-              fontWeight: 900,
+              fontSize: '14px',
+              fontWeight: 800,
               justifyContent: 'center',
               minHeight: '42px',
               padding: '9px 14px',
