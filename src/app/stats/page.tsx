@@ -1,6 +1,10 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {StatsTable} from '@/components/stats/StatsTable';
-import {getHistoricalSeasonArchives, type HistoricalPlayerSeasonSummary} from '@/data/historicalSeed';
+import {
+  getHistoricalSeasonArchives,
+  isHistoricalFemalePlayer,
+  type HistoricalPlayerSeasonSummary,
+} from '@/data/historicalSeed';
 import styles from './Stats.module.css';
 
 type StatsPageProps = {
@@ -11,6 +15,7 @@ export type StatsRow = {
   playerId: string;
   playerName: string;
   teamName: string;
+  gender: 'Open' | 'Women';
   matchesPlayed: number;
   wins: number;
   losses: number;
@@ -42,6 +47,7 @@ function toRow(summary: HistoricalPlayerSeasonSummary): StatsRow {
     playerId: summary.playerId,
     playerName: summary.playerName,
     teamName: summary.teamName,
+    gender: isHistoricalFemalePlayer(summary.playerName) ? 'Women' : 'Open',
     matchesPlayed: summary.matchesPlayed,
     wins,
     losses,
@@ -58,7 +64,7 @@ function toRow(summary: HistoricalPlayerSeasonSummary): StatsRow {
 }
 
 function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
-  const players = new Map<string, StatsRow>();
+  const players = new Map<string, StatsRow & {teams: Set<string>}>();
 
   for (const group of groups) {
     for (const row of group.rows) {
@@ -77,9 +83,10 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
         doublesLosses: 0,
         doublesTies: 0,
         points: 0,
+        teams: new Set<string>(),
       };
 
-      existing.teamName = row.teamName;
+      existing.teams.add(row.teamName);
       existing.matchesPlayed += row.matchesPlayed;
       existing.wins += row.wins;
       existing.losses += row.losses;
@@ -97,7 +104,10 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
     }
   }
 
-  return Array.from(players.values());
+  return Array.from(players.values()).map(({teams, ...row}) => ({
+    ...row,
+    teamName: teams.size > 1 ? 'Multiple teams' : Array.from(teams)[0] ?? row.teamName,
+  }));
 }
 
 export default async function StatsPage({searchParams}: StatsPageProps) {
