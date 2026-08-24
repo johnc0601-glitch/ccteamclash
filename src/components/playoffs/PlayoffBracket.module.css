@@ -7,7 +7,7 @@
 .bracket section { display: grid; gap: 14px; }
 .bracket section > span,
 .champion span {
-  color: var(--cc-gold-ink);
+  color: var(--cc-gold);
   font-size: 10px;
   font-weight: 950;
   letter-spacing: .06em;
@@ -21,6 +21,7 @@
   border-top: 4px solid var(--cc-gold);
   border-radius: var(--cc-radius-md);
   background: var(--cc-light-surface);
+  color: var(--cc-text);
   box-shadow: var(--cc-shadow-card);
 }
 .game small {
@@ -43,12 +44,16 @@
 .game a {
   display: inline-block;
   margin-top: 12px;
-  color: var(--cc-gold-ink);
+  color: var(--cc-gold);
   font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
 }
-.winner { color: #111; background: #fff7d6; }
+.winner {
+  color: var(--cc-text);
+  background: rgba(255, 196, 0, .09);
+  box-shadow: inset 3px 0 0 var(--cc-gold);
+}
 
 .champion {
   padding: 22px;
@@ -57,7 +62,7 @@
   background: linear-gradient(145deg, var(--cc-surface-raised), var(--cc-bg));
   color: var(--cc-text);
   text-align: center;
-  box-shadow: 0 16px 38px rgba(0, 0, 0, .18);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, .28);
 }
 .champion span { color: var(--cc-gold); }
 .champion strong {
