@@ -24,7 +24,7 @@ export function MatchScoreboard({
 
   return (
     <section className={styles.scoreCard} aria-label="Match scoring">
-      <div className={styles.scoreTop}>
+      <div className={styles.scoreTop} style={{paddingLeft: '30px', paddingRight: '30px'}}>
         <div className={styles.teamScore}>
           <span className={styles.teamName} style={teamNameStyle}>{matchday.awayTeam.name}</span>
           <strong className={styles.scoreValue}>{awayScore}</strong>
