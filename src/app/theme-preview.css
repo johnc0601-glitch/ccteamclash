@@ -233,6 +233,19 @@ footer {
   color: var(--cc-text);
 }
 
+footer .brand-mark {
+  width: 48px;
+  height: 48px;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent;
+}
+
+footer .brand-mark img {
+  width: 48px !important;
+  height: 48px !important;
+}
+
 footer p,
 footer small { color: var(--cc-text-muted); }
 
