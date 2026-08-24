@@ -3,8 +3,14 @@ import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import styles from './Players.module.css';
 
-export default async function PlayersPage() {
+type PlayersPageProps = {
+  searchParams: Promise<{search?: string | string[]}>;
+};
+
+export default async function PlayersPage({searchParams}: PlayersPageProps) {
   const playerViews = await (await createServerPublicPlayerService()).getAll();
+  const query = await searchParams;
+  const initialSearch = Array.isArray(query.search) ? query.search[0] : query.search;
 
   return (
     <>
@@ -16,6 +22,7 @@ export default async function PlayersPage() {
         <PublicPlayerDirectory
           players={playerViews}
           initialMode="search"
+          initialSearch={initialSearch ?? ''}
           showRankingsLink
         />
       </main>
