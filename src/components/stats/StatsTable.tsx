@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import {useMemo, useState} from 'react';
 import type {StatsGroup, StatsRow} from '@/app/stats/page';
 import styles from '@/app/stats/Stats.module.css';
@@ -33,6 +34,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
 
   const sortedRows = useMemo(() => [...filteredRows].sort((a, b) => compareRows(a, b, sortKey, direction)), [filteredRows, sortKey, direction]);
   const rows = limit === 'all' ? sortedRows : sortedRows.slice(0, limit);
+  const leaders = useMemo(() => buildLeaders(filteredRows), [filteredRows]);
 
   function toggleSort(next: SortKey) {
     if (sortKey === next) {
@@ -84,6 +86,13 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
         </div>
       </div>
 
+      <div className={styles.recordStrip}>
+        <RecordCard label="Most wins" row={leaders.wins} value={leaders.wins ? String(leaders.wins.wins) : '—'} />
+        <RecordCard label="Best win %" row={leaders.winPercentage} value={leaders.winPercentage ? `${leaders.winPercentage.winPercentage.toFixed(1)}%` : '—'} note="5+ results" />
+        <RecordCard label="Singles points" row={leaders.singles} value={leaders.singles ? formatPoints(recordPoints(leaders.singles.singlesWins, leaders.singles.singlesTies)) : '—'} />
+        <RecordCard label="Doubles points" row={leaders.doubles} value={leaders.doubles ? formatPoints(recordPoints(leaders.doubles.doublesWins, leaders.doubles.doublesTies)) : '—'} />
+      </div>
+
       <div className={styles.tableMeta}>
         <strong>{group.label} · {division}</strong>
         <span>{filteredRows.length} players</span>
@@ -108,13 +117,13 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
           <tbody>
             {rows.map((row, index) => (
               <tr key={`${group.id}-${row.playerId}`}>
-                <td data-label="Player"><span className={styles.rank}>{index + 1}</span><strong>{row.playerName}</strong></td>
+                <td data-label="Player"><span className={styles.rank}>{index + 1}</span><Link className={styles.playerLink} href={`/players/${row.playerId}`}>{row.playerName}</Link></td>
                 <td data-label="Team">{row.teamName}</td>
                 <td data-label="Matches">{row.matchesPlayed}</td>
                 <td data-label="Wins">{row.wins}</td>
                 <td data-label="Losses">{row.losses}</td>
                 <td data-label="Ties">{row.ties}</td>
-                <td data-label="Win %">{row.winPercentage.toFixed(1)}%</td>
+                <td data-label="Win %">{row.winPercentage.toFixed(1)}%{row.matchesPlayed < 5 ? <span className={styles.smallSample} title="Small sample: fewer than 5 recorded results">*</span> : null}</td>
                 <td data-label="Singles">{formatRecord(row.singlesWins, row.singlesLosses, row.singlesTies)}</td>
                 <td data-label="Doubles">{formatRecord(row.doublesWins, row.doublesLosses, row.doublesTies)}</td>
                 <td data-label="Points"><strong>{formatPoints(row.points)}</strong></td>
@@ -124,8 +133,22 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
         </table>
         {!rows.length ? <p className={styles.emptyState}>No players match these filters.</p> : null}
       </div>
+      <p className={styles.qualifierNote}>* Win percentage with fewer than 5 recorded results is shown as a small sample and is excluded from the “Best win %” leader card.</p>
     </section>
   );
+}
+
+function RecordCard({label, row, value, note}: {label: string; row?: StatsRow; value: string; note?: string}) {
+  return <article><span>{label}</span><strong>{value}</strong>{row ? <Link href={`/players/${row.playerId}`}>{row.playerName}</Link> : <small>No data</small>}{note ? <small>{note}</small> : null}</article>;
+}
+
+function buildLeaders(rows: StatsRow[]) {
+  const byWins = [...rows].sort((a, b) => b.wins - a.wins || b.points - a.points || a.playerName.localeCompare(b.playerName))[0];
+  const qualified = rows.filter((row) => row.matchesPlayed >= 5);
+  const byWinPercentage = [...qualified].sort((a, b) => b.winPercentage - a.winPercentage || b.matchesPlayed - a.matchesPlayed || a.playerName.localeCompare(b.playerName))[0];
+  const bySingles = [...rows].sort((a, b) => recordPoints(b.singlesWins, b.singlesTies) - recordPoints(a.singlesWins, a.singlesTies) || a.playerName.localeCompare(b.playerName))[0];
+  const byDoubles = [...rows].sort((a, b) => recordPoints(b.doublesWins, b.doublesTies) - recordPoints(a.doublesWins, a.doublesTies) || a.playerName.localeCompare(b.playerName))[0];
+  return {wins: byWins, winPercentage: byWinPercentage, singles: bySingles, doubles: byDoubles};
 }
 
 function SortableHeader({label, sort, active, direction, onSort}: {
