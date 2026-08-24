@@ -1,10 +1,32 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import {MobileAccountLink} from '@/components/MobileAccountLink';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
 import {BRAND_LOGO, BRAND_NAME, BRAND_TAGLINE, FOOTER_COPY} from '@/shared/constants';
+
+const FACEBOOK_GROUP_URL = 'https://facebook.com/groups/780013754161635/';
+
+function FacebookLink({size = 20}: {size?: number}) {
+  return (
+    <a
+      href={FACEBOOK_GROUP_URL}
+      target="_blank"
+      rel="noreferrer"
+      aria-label="Team Clash Facebook group"
+      title="Facebook group"
+      style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 0}}
+    >
+      <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="12" fill="#1877F2" />
+        <path
+          fill="#fff"
+          d="M13.7 8.3V6.9c0-.7.5-.9.9-.9h2.3V2.2L13.7 2C10.5 2 9.4 3.9 9.4 6.5v1.8H7v4.2h2.4V22h4.3v-9.5h3.1l.5-4.2h-3.6z"
+        />
+      </svg>
+    </a>
+  );
+}
 
 export async function SiteHeader() {
   const headerAccess = await getHeaderAccess();
@@ -13,49 +35,75 @@ export async function SiteHeader() {
 
   return (
     <header className="site-header">
-      <div className="shell nav-wrap">
-        <Link href="/" className="brand">
-          <span className="brand-mark">
-            <Image src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} priority />
-          </span>
-          <span><strong>{BRAND_NAME}</strong><small>{BRAND_TAGLINE}</small></span>
-        </Link>
-        <nav className="desktop-nav">
-          <Link href="/">Home</Link>
-          <Link href="/stories">Stories</Link>
-          <Link href="/schedule">Schedule</Link>
-          <Link href="/standings">Standings</Link>
-          <Link href="/playoffs">Playoffs</Link>
-          <Link href="/rankings">Rankings</Link>
-          <Link href="/history">History</Link>
-          <Link href="/teams">Teams</Link>
-          <Link href="/players">Players</Link>
-          <Link href="/courses">Courses</Link>
-          {canOpenOffice ? <Link className="post-nav" href="/admin">Create post</Link> : null}
-          {canOpenOffice ? <Link href="/office">Office</Link> : null}
-          {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
-          <Link href="/account">Account</Link>
-        </nav>
-        <MobileAccountLink />
-        <div className="mobile-header-actions">
-          <details className="mobile-nav">
-            <summary>Menu</summary>
-            <nav>
-              <Link href="/">Home</Link>
-              <Link href="/rankings">Rankings</Link>
-              <Link href="/teams">Teams</Link>
-              <Link href="/players">Players</Link>
-              <Link href="/courses">Courses</Link>
-              <Link href="/schedule">Schedule</Link>
-              <Link href="/standings">Standings</Link>
-              <Link href="/playoffs">Playoffs</Link>
-              <Link href="/history">History</Link>
-              <Link href="/stories">Stories</Link>
-              {canOpenOffice ? <Link href="/admin">Create post</Link> : null}
-              {canOpenOffice ? <Link href="/office">Office</Link> : null}
-              {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
-            </nav>
-          </details>
+      <div className="primary-header">
+        <div className="shell nav-wrap primary-nav-wrap">
+          <Link href="/" className="brand">
+            <span className="brand-mark">
+              <img src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} />
+            </span>
+            <span><strong>{BRAND_NAME}</strong><small>{BRAND_TAGLINE}</small></span>
+          </Link>
+
+          <nav className="desktop-nav primary-nav" aria-label="Primary navigation">
+            <Link href="/schedule">Schedule</Link>
+            <Link href="/standings">Standings</Link>
+            <Link href="/rankings">Rankings</Link>
+            <span className="primary-nav-separator" aria-hidden="true" />
+            <Link href="/teams">Teams</Link>
+            <Link href="/stories">Stories</Link>
+            <Link className="desktop-account" href="/account">Account</Link>
+          </nav>
+
+          <div className="mobile-header-actions">
+            <MobileAccountLink />
+            <details className="mobile-nav">
+              <summary aria-label="Menu"><span aria-hidden="true">☰</span></summary>
+              <nav>
+                <div className="mobile-nav-group">
+                  <span>Season</span>
+                  <Link href="/schedule">Schedule</Link>
+                  <Link href="/standings">Standings</Link>
+                  <Link href="/rankings">Rankings</Link>
+                </div>
+                <div className="mobile-nav-group">
+                  <span>League</span>
+                  <Link href="/teams">Teams</Link>
+                  <Link href="/stories">Stories</Link>
+                  <Link href="/players">Players</Link>
+                  <Link href="/courses">Courses</Link>
+                  <Link href="/history">History</Link>
+                </div>
+                <div className="mobile-nav-group">
+                  <span>Community</span>
+                  <div style={{padding: '10px 8px'}}><FacebookLink size={22} /></div>
+                </div>
+                {(canOpenOffice || canOpenCaptain) ? (
+                  <div className="mobile-nav-group mobile-nav-tools">
+                    <span>Tools</span>
+                    {canOpenOffice ? <Link href="/admin">Create post</Link> : null}
+                    {canOpenOffice ? <Link href="/office">Office</Link> : null}
+                    {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
+                  </div>
+                ) : null}
+              </nav>
+            </details>
+          </div>
+        </div>
+      </div>
+
+      <div className="secondary-header">
+        <div className="shell secondary-nav-wrap">
+          <nav className="secondary-nav" aria-label="League navigation">
+            <Link href="/players">Players</Link>
+            <Link href="/courses">Courses</Link>
+            <Link href="/history">History</Link>
+          </nav>
+          <nav className="secondary-role-nav" aria-label="Community and role tools">
+            {canOpenOffice ? <Link className="secondary-post" href="/admin">Create post</Link> : null}
+            {canOpenOffice ? <Link href="/office">Office</Link> : null}
+            {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
+            <FacebookLink size={20} />
+          </nav>
         </div>
       </div>
     </header>
@@ -88,7 +136,7 @@ export async function Footer() {
       <div className="shell footer-wrap">
         <div className="brand">
           <span className="brand-mark">
-            <Image src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} />
+            <img src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} />
           </span>
           <span><strong>{BRAND_NAME}</strong><small>{BRAND_TAGLINE}</small></span>
         </div>
@@ -101,6 +149,7 @@ export async function Footer() {
           <Link href="/history">History</Link>
           <Link href="/teams">Teams</Link>
           <Link href="/courses">Courses</Link>
+          <FacebookLink size={20} />
           {canCreatePost ? <Link href="/admin">Post</Link> : null}
         </div>
       </div>

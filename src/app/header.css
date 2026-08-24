@@ -1,0 +1,164 @@
+/* Mobile sports-header refinement. Imported after theme.css. */
+@media (max-width: 800px) {
+  .primary-header .primary-nav-wrap {
+    height: 92px !important;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+  }
+
+  .primary-header .brand {
+    min-width: 0;
+    flex: 1 1 auto;
+    gap: 10px;
+  }
+
+  .primary-header .brand > span:last-child {
+    min-width: 0;
+  }
+
+  .primary-header .brand strong {
+    font-size: 18px;
+    white-space: nowrap;
+  }
+
+  .primary-header .brand small {
+    margin-top: 4px;
+    font-size: 9px;
+    letter-spacing: .095em;
+    white-space: nowrap;
+  }
+
+  .mobile-header-actions {
+    position: relative;
+    display: flex !important;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+
+  .mobile-sign-in {
+    display: inline-flex !important;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 2px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: var(--cc-gold) !important;
+    font: inherit;
+    font-size: 11px !important;
+    font-weight: 950 !important;
+    letter-spacing: .07em;
+    line-height: 1;
+    text-transform: uppercase;
+    box-shadow: none !important;
+  }
+
+  .mobile-nav {
+    position: relative;
+    margin: 0;
+  }
+
+  .mobile-nav > summary {
+    width: 42px;
+    height: 42px;
+    display: grid !important;
+    place-items: center;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    color: #f5f5f2 !important;
+    cursor: pointer;
+    list-style: none;
+    box-shadow: none !important;
+  }
+
+  .mobile-nav > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mobile-nav > summary span {
+    display: block;
+    transform: translateY(-1px);
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  .mobile-nav[open] > summary {
+    background: #1b1f21 !important;
+  }
+
+  .mobile-nav > nav {
+    position: absolute !important;
+    z-index: 60;
+    top: calc(100% + 12px);
+    right: 0;
+    left: auto !important;
+    width: min(270px, calc(100vw - 40px));
+    max-height: calc(100vh - 130px);
+    overflow-y: auto;
+    padding: 7px 12px !important;
+    border: 1px solid #303538;
+    border-top: 3px solid var(--cc-gold);
+    border-radius: 8px;
+    background: #101315 !important;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, .45);
+  }
+
+  .mobile-nav-group {
+    padding: 10px 0 !important;
+  }
+
+  .mobile-nav-group > span {
+    padding: 5px 8px 6px !important;
+  }
+
+  .mobile-nav-group > a {
+    padding: 10px 8px !important;
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .primary-header .primary-nav-wrap {
+    width: min(100% - 28px, 1160px);
+    height: 86px !important;
+  }
+
+  .primary-header .brand-mark,
+  .primary-header .brand-mark img {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .primary-header .brand strong {
+    font-size: 16px;
+  }
+
+  .primary-header .brand small {
+    font-size: 8px;
+    letter-spacing: .07em;
+  }
+
+  .mobile-header-actions {
+    gap: 7px;
+  }
+
+  .mobile-sign-in {
+    font-size: 10px !important;
+  }
+
+  .mobile-nav > summary {
+    width: 38px;
+    height: 38px;
+  }
+
+  .mobile-nav > summary span {
+    font-size: 25px;
+  }
+}
