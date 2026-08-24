@@ -53,6 +53,11 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
     setDirection(next === 'playerName' || next === 'teamName' ? 'asc' : 'desc');
   }
 
+  function selectSort(next: SortKey) {
+    setSortKey(next);
+    setDirection(next === 'playerName' || next === 'teamName' ? 'asc' : 'desc');
+  }
+
   if (!group) return null;
 
   return (
@@ -99,6 +104,27 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
               <option value="all">All</option>
             </select>
           </label>
+        </div>
+
+        <div className={styles.mobileSortControl}>
+          <label>
+            <span>Sort by</span>
+            <select value={sortKey} onChange={(event) => selectSort(event.target.value as SortKey)}>
+              <option value="points">Points</option>
+              <option value="wins">Wins</option>
+              <option value="winPercentage">Win %</option>
+              <option value="matchesPlayed">Matches</option>
+              <option value="singles">Singles</option>
+              <option value="doubles">Doubles</option>
+              <option value="losses">Losses</option>
+              <option value="ties">Ties</option>
+              <option value="playerName">Player</option>
+              <option value="teamName">Team</option>
+            </select>
+          </label>
+          <button type="button" onClick={() => setDirection((value) => value === 'desc' ? 'asc' : 'desc')} aria-label="Reverse sort direction">
+            {direction === 'desc' ? 'High → Low' : 'Low → High'}
+          </button>
         </div>
       </div>
 
@@ -190,7 +216,7 @@ function SortableHeader({label, sort, active, direction, onSort}: {
 }) {
   return (
     <th>
-      <button type="button" onClick={() => onSort(sort)} aria-sort={active === sort ? (direction === 'desc' ? 'descending' : 'ascending') : undefined}>
+      <button type="button" onClick={() => onSort(sort)}>
         {label}
         <span aria-hidden="true">{active === sort ? (direction === 'desc' ? ' ↓' : ' ↑') : ' ↕'}</span>
       </button>
