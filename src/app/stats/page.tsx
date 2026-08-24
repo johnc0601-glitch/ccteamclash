@@ -15,6 +15,7 @@ export type StatsRow = {
   playerId: string;
   playerName: string;
   teamName: string;
+  teamNames: string[];
   gender: 'Open' | 'Women';
   matchesPlayed: number;
   wins: number;
@@ -47,6 +48,7 @@ function toRow(summary: HistoricalPlayerSeasonSummary): StatsRow {
     playerId: summary.playerId,
     playerName: summary.playerName,
     teamName: summary.teamName,
+    teamNames: [summary.teamName],
     gender: isHistoricalFemalePlayer(summary.playerName) ? 'Women' : 'Open',
     matchesPlayed: summary.matchesPlayed,
     wins,
@@ -71,6 +73,7 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
       const existing = players.get(row.playerId) ?? {
         ...row,
         teamName: row.teamName,
+        teamNames: [],
         matchesPlayed: 0,
         wins: 0,
         losses: 0,
@@ -86,7 +89,7 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
         teams: new Set<string>(),
       };
 
-      existing.teams.add(row.teamName);
+      row.teamNames.forEach((teamName) => existing.teams.add(teamName));
       existing.matchesPlayed += row.matchesPlayed;
       existing.wins += row.wins;
       existing.losses += row.losses;
@@ -104,10 +107,14 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
     }
   }
 
-  return Array.from(players.values()).map(({teams, ...row}) => ({
-    ...row,
-    teamName: teams.size > 1 ? 'Multiple teams' : Array.from(teams)[0] ?? row.teamName,
-  }));
+  return Array.from(players.values()).map(({teams, ...row}) => {
+    const teamNames = Array.from(teams).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
+    return {
+      ...row,
+      teamNames,
+      teamName: teamNames.length > 1 ? 'Multiple teams' : teamNames[0] ?? row.teamName,
+    };
+  });
 }
 
 export default async function StatsPage({searchParams}: StatsPageProps) {
