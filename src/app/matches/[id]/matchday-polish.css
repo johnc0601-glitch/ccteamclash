@@ -1,0 +1,208 @@
+/* Matchday intentionally uses a light, editorial card system inside the dark league shell. */
+main[class*="Matchday_page"] {
+  --cc-card-bg: #ffffff;
+  --cc-card-bg-soft: #f6f8f7;
+  --cc-card-border: #d8dfdc;
+  --cc-card-shadow: 0 10px 28px rgba(11, 24, 20, .10);
+  --cc-heading: #101820;
+  --cc-body-text: #3f4a46;
+  --cc-muted: #68736e;
+  --cc-row-bg: #ffffff;
+  --cc-table-head-bg: #f6f8f7;
+  --cc-table-head-text: #44504b;
+  --cc-teal: #08777d;
+  --cc-bronze: #9a673f;
+  --cc-gold: #d6a600;
+  color: var(--cc-body-text);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* One card language: white surface, dark readable type, soft gray support surfaces. */
+main[class*="Matchday_page"] :is(
+  [class*="scoreCard"],
+  [class*="attendanceCard"],
+  [class*="sectionCard"],
+  [class*="captainPanel"],
+  [class*="commissionerPanel"],
+  [class*="exportPanel"],
+  [class*="MatchFeed_feed"]
+) {
+  background: #fff;
+  color: var(--cc-body-text);
+  border-color: var(--cc-card-border);
+  box-shadow: var(--cc-card-shadow);
+}
+
+/* Reserve the condensed/italic display face for true section headlines only. */
+main[class*="Matchday_page"] :is(
+  [class*="attendanceCard"] h2,
+  [class*="sectionHeader"] h2,
+  [class*="MatchFeed_feedHeader"] h2
+) {
+  color: var(--cc-heading);
+  font-family: var(--cc-font-display), Arial, Helvetica, sans-serif;
+  font-style: italic;
+  font-weight: 900;
+}
+
+/* Everything functional uses the UI face. */
+main[class*="Matchday_page"] :is(
+  p, span, strong, b, label, input, textarea, select, button, summary, a,
+  [class*="teamName"], [class*="previewTeamHead"], [class*="previewPlayer"],
+  [class*="captainTeamHeader"], [class*="rosterTeamHeader"], [class*="rosterTitle"]
+) {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Eliminate leftover dark mini-panels inside otherwise light cards. */
+main[class*="Matchday_page"] :is([class*="captainTeamHeader"], [class*="rosterTeamHeader"]) {
+  background: var(--cc-card-bg-soft) !important;
+  color: var(--cc-heading) !important;
+  border-bottom: 1px solid var(--cc-card-border);
+}
+
+main[class*="Matchday_page"] :is([class*="captainTeamHeader"], [class*="rosterTeamHeader"]) h3 {
+  color: var(--cc-heading) !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 18px !important;
+  font-style: normal !important;
+  font-weight: 850 !important;
+  letter-spacing: .01em !important;
+  line-height: 1.2 !important;
+  text-transform: none !important;
+}
+
+main[class*="Matchday_page"] :is([class*="captainTeamHeader"], [class*="rosterTeamHeader"]) p {
+  color: var(--cc-muted) !important;
+}
+
+/* Roster previews were hard-coded white/dark in different states; normalize both. */
+main[class*="Matchday_page"] [class*="previewTeam"] {
+  background: #fff !important;
+  border-color: var(--cc-card-border) !important;
+  color: var(--cc-heading) !important;
+  box-shadow: 0 8px 22px rgba(11, 24, 20, .07) !important;
+}
+
+main[class*="Matchday_page"] [class*="previewTeamHead"] {
+  min-height: 56px;
+  padding: 12px 18px !important;
+  background: var(--cc-card-bg-soft) !important;
+  border-bottom-color: var(--cc-card-border) !important;
+  color: var(--cc-heading) !important;
+  text-transform: none !important;
+}
+
+main[class*="Matchday_page"] [class*="previewTeamHead"] > span:first-child {
+  color: var(--cc-heading) !important;
+  font-size: 15px !important;
+  font-weight: 850 !important;
+  letter-spacing: .01em !important;
+}
+
+main[class*="Matchday_page"] [class*="previewTeamHead"] > span:last-of-type {
+  color: var(--cc-muted) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+}
+
+main[class*="Matchday_page"] [class*="previewPlayer"] {
+  min-height: 46px;
+  padding: 10px 18px !important;
+  color: var(--cc-heading) !important;
+  border-color: var(--cc-card-border) !important;
+}
+
+main[class*="Matchday_page"] [class*="previewPlayer"] strong {
+  color: var(--cc-heading) !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+}
+
+main[class*="Matchday_page"] :is([class*="playerMeta"], [class*="previewMore"]) {
+  color: var(--cc-muted) !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+}
+
+/* Scoreboard: same light card, stronger readable team labels. */
+main[class*="Matchday_page"] [class*="scoreTop"] {
+  background: #fff !important;
+}
+
+main[class*="Matchday_page"] [class*="teamName"] {
+  color: var(--cc-heading) !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+  letter-spacing: .01em !important;
+}
+
+main[class*="Matchday_page"] [class*="scoreMiddle"] {
+  color: var(--cc-muted) !important;
+}
+
+main[class*="Matchday_page"] [class*="scoreDetails"] summary {
+  color: var(--cc-heading) !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+}
+
+/* Match feed: body and form text stay dark on the light surface. */
+main[class*="Matchday_page"] [class*="MatchFeed_feed"] {
+  color: var(--cc-body-text);
+}
+
+main[class*="Matchday_page"] [class*="MatchFeed_feedHeader"] p,
+main[class*="Matchday_page"] [class*="MatchFeed_empty"],
+main[class*="Matchday_page"] [class*="MatchFeed_postBody"],
+main[class*="Matchday_page"] [class*="MatchFeed_comment"] p {
+  color: var(--cc-body-text) !important;
+  opacity: 1 !important;
+}
+
+main[class*="Matchday_page"] :is(
+  [class*="MatchFeed_composer"] textarea,
+  [class*="MatchFeed_commentForm"] input,
+  [class*="MatchFeed_replyForm"] input,
+  [class*="MatchFeed_editForm"] textarea
+) {
+  background: #fff !important;
+  color: var(--cc-heading) !important;
+  border-color: var(--cc-card-border) !important;
+}
+
+main[class*="Matchday_page"] [class*="MatchFeed_comment"] {
+  background: var(--cc-card-bg-soft) !important;
+}
+
+/* Small labels: consistent weight and color, not random black/gray/gold. */
+main[class*="Matchday_page"] :is(
+  [class*="attendanceCard"] > div > span,
+  [class*="sectionHeader"] span,
+  [class*="MatchFeed_feedHeader"] span,
+  [class*="stateBanner"] > span
+) {
+  color: var(--cc-teal) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  letter-spacing: .10em !important;
+  text-transform: uppercase !important;
+}
+
+main[class*="Matchday_page"] :is(
+  [class*="attendanceCard"] p,
+  [class*="sectionHeader"] p,
+  [class*="stateBanner"] p
+) {
+  color: var(--cc-muted) !important;
+}
+
+@media (max-width: 760px) {
+  main[class*="Matchday_page"] [class*="previewTeamHead"],
+  main[class*="Matchday_page"] [class*="previewPlayer"] {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+}
