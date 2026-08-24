@@ -1,0 +1,50 @@
+.carousel {
+  position: relative;
+}
+
+.desktopTrack {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.mobileTrack {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  .carousel {
+    margin-left: -20px;
+    margin-right: -20px;
+    overflow: hidden;
+  }
+
+  .desktopTrack {
+    display: none;
+  }
+
+  .mobileTrack {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    padding: 0 36px 10px;
+    scroll-padding-inline: 36px;
+  }
+
+  .mobileTrack::-webkit-scrollbar {
+    display: none;
+  }
+
+  .slide {
+    flex: 0 0 calc(100% - 72px);
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+  }
+
+  .slide > * {
+    height: 100%;
+  }
+}
