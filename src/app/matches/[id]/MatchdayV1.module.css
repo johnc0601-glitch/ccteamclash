@@ -5,10 +5,10 @@
 
 .scoreCard {
   overflow: hidden;
-  border: 1px solid var(--cc-card-border);
-  border-radius: 10px;
+  border: 1px solid #d5dcda;
+  border-radius: 12px;
   background: var(--cc-card-bg);
-  box-shadow: var(--cc-card-shadow);
+  box-shadow: 0 10px 28px rgba(11, 24, 20, .08);
 }
 
 .scoreTop {
@@ -18,9 +18,11 @@
   align-items: center;
   gap: 16px;
   background:
-    linear-gradient(90deg, rgba(10, 78, 140, .1), transparent 42%),
-    linear-gradient(270deg, rgba(122, 32, 91, .1), transparent 42%),
-    var(--cc-card-bg);
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--match-away-deep, var(--match-away)) 7%, var(--cc-card-bg)) 0%,
+      var(--cc-card-bg) 38%,
+      var(--cc-card-bg) 62%,
+      color-mix(in srgb, var(--match-home-deep, var(--match-home)) 7%, var(--cc-card-bg)) 100%);
 }
 
 .teamScore {
@@ -42,6 +44,14 @@
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.teamScore:first-child .teamName {
+  color: var(--match-away-deep, var(--cc-muted));
+}
+
+.teamScore:last-child .teamName {
+  color: var(--match-home-deep, var(--cc-muted));
 }
 
 .scoreValue {
@@ -90,7 +100,7 @@
 .scoreDetails summary::after,
 .rosterDetails summary::after {
   content: '⌄';
-  color: var(--cc-teal);
+  color: var(--match-home-deep, var(--cc-teal));
   font-size: 16px;
 }
 
@@ -206,7 +216,11 @@
 }
 
 .finalBand {
-  background: linear-gradient(90deg, rgba(10, 78, 140, .12), rgba(122, 32, 91, .12));
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--match-away-deep, var(--match-away)) 10%, var(--cc-card-bg)),
+    var(--cc-card-bg) 44%,
+    var(--cc-card-bg) 56%,
+    color-mix(in srgb, var(--match-home-deep, var(--match-home)) 10%, var(--cc-card-bg)));
   color: var(--cc-heading);
 }
 
@@ -263,9 +277,18 @@
   min-width: 0;
   overflow: hidden;
   align-self: start;
-  border: 1px solid var(--cc-card-border);
-  border-radius: 8px;
+  border: 1px solid #d5dcda;
+  border-radius: 10px;
   background: var(--cc-card-bg);
+  box-shadow: 0 8px 22px rgba(11, 24, 20, .06);
+}
+
+.previewGrid > .previewTeam:first-child {
+  border-left: 4px solid var(--match-away-deep, var(--match-away));
+}
+
+.previewGrid > .previewTeam:last-child {
+  border-left: 4px solid var(--match-home-deep, var(--match-home));
 }
 
 .previewTeam > summary {
@@ -283,11 +306,25 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: var(--cc-table-head-bg);
+  background: color-mix(in srgb, var(--cc-table-head-bg) 82%, var(--cc-card-bg));
   color: var(--cc-table-head-text);
   font-size: 12px;
   font-weight: 950;
   text-transform: uppercase;
+}
+
+.previewGrid > .previewTeam:first-child .previewTeamHead,
+.previewGrid > .previewTeam:first-child .previewTeamHead::after,
+.previewGrid > .previewTeam:first-child .playerMeta,
+.previewGrid > .previewTeam:first-child .previewMore {
+  color: var(--match-away-deep, var(--cc-table-head-text));
+}
+
+.previewGrid > .previewTeam:last-child .previewTeamHead,
+.previewGrid > .previewTeam:last-child .previewTeamHead::after,
+.previewGrid > .previewTeam:last-child .playerMeta,
+.previewGrid > .previewTeam:last-child .previewMore {
+  color: var(--match-home-deep, var(--cc-table-head-text));
 }
 
 .previewTeamHead::after {
@@ -303,6 +340,9 @@
 
 .previewTeamHead > span:last-of-type {
   margin-left: auto;
+  color: var(--cc-muted);
+  font-size: 10px;
+  letter-spacing: .1em;
 }
 
 .previewTeamHeadColor {
@@ -380,7 +420,7 @@
 .playerMeta {
   color: var(--cc-muted);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 850;
 }
 
 .playerMeta {
@@ -412,6 +452,14 @@
 
 .fullRosterGrid {
   padding-top: 16px;
+}
+
+:global([data-theme="dark"] body) .scoreCard,
+:global([data-theme="dark"] body) .previewTeam,
+:global(body[data-theme="dark"]) .scoreCard,
+:global(body[data-theme="dark"]) .previewTeam {
+  border-color: var(--cc-card-border);
+  box-shadow: var(--cc-card-shadow);
 }
 
 @media (max-width: 760px) {
