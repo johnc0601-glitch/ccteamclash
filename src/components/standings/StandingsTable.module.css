@@ -17,7 +17,7 @@
 
 .header {
   padding: 14px 18px;
-  background: var(--cc-surface);
+  background: #0d1011;
   color: var(--cc-text-muted);
   font-size: 10px;
   font-weight: 950;
@@ -34,7 +34,7 @@
   transition: background .16s ease;
 }
 
-.row:hover { background: #faf8ef; }
+.row:hover { background: var(--cc-surface-raised); }
 .row:last-child { border-bottom: 0; }
 .row > span:not(.team) { text-align: center; }
 
@@ -57,7 +57,7 @@
   color: #111;
 }
 
-.team a:hover { color: var(--cc-gold-ink); }
+.team a:hover { color: var(--cc-gold); }
 
 @media (max-width: 780px) {
   .header { display: none; }
