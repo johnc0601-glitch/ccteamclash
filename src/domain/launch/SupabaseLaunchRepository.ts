@@ -28,6 +28,11 @@ type PlayerRatingRow = PlayerRow & {
   clash_index_provisional?: boolean | null;
 };
 
+type TeamBrandingRow = TeamRow & {
+  primary_color?: string | null;
+  secondary_color?: string | null;
+};
+
 export class SupabaseLaunchRepository implements LaunchRepository {
   private readonly supabase: LaunchSupabaseClient;
 
@@ -324,13 +329,14 @@ function fromPlayer(player: LaunchPlayer): PlayerRow {
 }
 
 function toTeam(row: TeamRow): LaunchTeam {
+  const branding = row as TeamBrandingRow;
   return {
     id: row.id,
     name: row.name,
     shortName: row.short_name,
     logo: row.logo,
-    primaryColor: row.primary_color,
-    secondaryColor: row.secondary_color,
+    primaryColor: branding.primary_color ?? undefined,
+    secondaryColor: branding.secondary_color ?? undefined,
     active: row.active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
