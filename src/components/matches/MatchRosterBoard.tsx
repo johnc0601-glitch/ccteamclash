@@ -11,7 +11,7 @@ export type PublicMatchAvailability = ReadonlyMap<string, TeamAttendanceMember[]
 
 const PREVIEW_COUNT = 5;
 const teamNameStyle = {fontSize: '15px', fontWeight: 850, letterSpacing: '.01em', textTransform: 'none' as const};
-const teamLabelStyle = {fontSize: '11px', fontWeight: 800, letterSpacing: '.08em'};
+const teamLabelStyle = {fontSize: '11px', fontWeight: 800, letterSpacing: '.05em'};
 const playerNameStyle = {fontSize: '14px', fontWeight: 800};
 const playerMetaStyle = {fontSize: '12.5px', fontWeight: 750};
 
@@ -148,7 +148,7 @@ function AvailabilityRosterCard({teamName, label, players}: {teamName: string; l
   const remaining = ordered.slice(PREVIEW_COUNT);
 
   return (
-    <details className={v1.previewTeam}>
+    <details className={v1.previewTeam} open>
       <summary className={v1.previewTeamHead}>
         <span style={teamNameStyle}>{teamName}</span>
         <span style={teamLabelStyle}>{label}</span>
