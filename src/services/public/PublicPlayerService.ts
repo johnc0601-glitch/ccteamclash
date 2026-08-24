@@ -1,5 +1,7 @@
 import type {SeasonService} from '@/domain/season/SeasonService';
 import {getHistoricalPlayerSeedSummary} from '@/data/historicalSeed';
+import type {HistoricalPlayerSeedSummary} from '@/data/historicalSeed';
+import {HISTORICAL_2024_25_PLAYOFF_ADJUSTMENTS} from '@/data/historicalPlayoffAdjustments';
 import type {Player} from '@/models/Player';
 import type {PlayerService} from '@/services/PlayerService';
 import type {TeamService} from '@/services/TeamService';
@@ -87,7 +89,7 @@ export class PublicPlayerService {
     return players.map((player) => {
       const playerCareerStatistics = careerStatisticsByPlayer.get(player.id)!;
       const history = latestHistoryByPlayer.get(player.id) ?? [];
-      const historicalStatistics = getHistoricalPlayerSeedSummary(player.id);
+      const historicalStatistics = with2024Playoffs(getHistoricalPlayerSeedSummary(player.id), player.id);
       const activeStatistics = currentStatisticsByPlayer.get(player.id);
       const currentStatistics = activeStatistics?.matchesPlayed ? activeStatistics : undefined;
 
@@ -137,4 +139,41 @@ export class PublicPlayerService {
       seasonName: seasonNames.get(entry.seasonId) ?? entry.seasonId,
     }));
   }
+}
+
+function with2024Playoffs(
+  summary: HistoricalPlayerSeedSummary | undefined,
+  playerId: string,
+): HistoricalPlayerSeedSummary | undefined {
+  if (!summary) return summary;
+  const adjustment = HISTORICAL_2024_25_PLAYOFF_ADJUSTMENTS[playerId];
+  if (!adjustment) return summary;
+
+  const singlesRecord = {
+    wins: summary.singlesRecord.wins + adjustment.singles.wins,
+    losses: summary.singlesRecord.losses + adjustment.singles.losses,
+    ties: summary.singlesRecord.ties + adjustment.singles.ties,
+  };
+  const doublesRecord = {
+    wins: summary.doublesRecord.wins + adjustment.doubles.wins,
+    losses: summary.doublesRecord.losses + adjustment.doubles.losses,
+    ties: summary.doublesRecord.ties + adjustment.doubles.ties,
+  };
+  const overallRecord = {
+    wins: singlesRecord.wins + doublesRecord.wins,
+    losses: singlesRecord.losses + doublesRecord.losses,
+    ties: singlesRecord.ties + doublesRecord.ties,
+  };
+  const matchesPlayed = overallRecord.wins + overallRecord.losses + overallRecord.ties;
+
+  return {
+    ...summary,
+    matchesPlayed,
+    singlesRecord,
+    doublesRecord,
+    overallRecord,
+    winPercentage: matchesPlayed
+      ? ((overallRecord.wins + overallRecord.ties * 0.5) / matchesPlayed) * 100
+      : 0,
+  };
 }
