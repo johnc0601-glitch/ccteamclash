@@ -21,6 +21,29 @@ main[class*="Matchday_page"] {
     linear-gradient(180deg, #0d1216 0%, #10161a 48%, #0b1014 100%) !important;
 }
 
+/* MatchHeroV1 previously forced a light page + white direct child cards with !important. */
+body:has(main[class*="Matchday_page"]) main[class*="Matchday_page"] {
+  background:
+    radial-gradient(ellipse 30rem 58rem at -8% 20%, color-mix(in srgb, var(--match-away-deep, #17385a) 30%, transparent), transparent 72%),
+    radial-gradient(ellipse 30rem 58rem at 108% 24%, color-mix(in srgb, var(--match-home-deep, #522448) 30%, transparent), transparent 72%),
+    linear-gradient(180deg, #0d1216 0%, #10161a 48%, #0b1014 100%) !important;
+  background-attachment: fixed !important;
+}
+
+body:has(main[class*="Matchday_page"]) main[class*="Matchday_page"] > .shell > * {
+  border-color: var(--cc-card-border) !important;
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--match-away-deep, #17385a) 7%, #151b20) 0%,
+      #151b20 34%,
+      #151b20 66%,
+      color-mix(in srgb, var(--match-home-deep, #522448) 7%, #151b20) 100%) !important;
+  box-shadow:
+    inset 4px 0 0 var(--match-away-deep, #17385a),
+    inset -4px 0 0 var(--match-home-deep, #522448),
+    var(--cc-card-shadow) !important;
+}
+
 /* Every major Matchday surface uses the same dark card language. */
 main[class*="Matchday_page"] :is(
   [class*="scoreCard"],
