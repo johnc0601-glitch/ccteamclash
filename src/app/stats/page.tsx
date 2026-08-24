@@ -3,6 +3,10 @@ import {StatsTable} from '@/components/stats/StatsTable';
 import {getHistoricalSeasonArchives, type HistoricalPlayerSeasonSummary} from '@/data/historicalSeed';
 import styles from './Stats.module.css';
 
+type StatsPageProps = {
+  searchParams: Promise<{season?: string | string[]}>;
+};
+
 export type StatsRow = {
   playerId: string;
   playerName: string;
@@ -96,7 +100,7 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
   return Array.from(players.values());
 }
 
-export default function StatsPage() {
+export default async function StatsPage({searchParams}: StatsPageProps) {
   const archives = getHistoricalSeasonArchives();
   const seasonGroups: StatsGroup[] = archives.map((archive) => ({
     id: archive.seasonId,
@@ -107,6 +111,8 @@ export default function StatsPage() {
     {id: 'overall', label: 'Overall', rows: buildOverallRows(seasonGroups)},
     ...seasonGroups,
   ];
+  const query = await searchParams;
+  const requestedSeason = Array.isArray(query.season) ? query.season[0] : query.season;
 
   return (
     <>
@@ -117,7 +123,7 @@ export default function StatsPage() {
           <h1>Stats</h1>
           <p>Player performance by season or across the full recorded Coastal Clash history.</p>
         </header>
-        <StatsTable groups={groups} />
+        <StatsTable groups={groups} initialGroupId={requestedSeason ?? 'overall'} />
       </main>
       <Footer />
     </>
