@@ -10,6 +10,10 @@ import v1 from '@/app/matches/[id]/MatchdayV1.module.css';
 export type PublicMatchAvailability = ReadonlyMap<string, TeamAttendanceMember[]>;
 
 const PREVIEW_COUNT = 5;
+const teamNameStyle = {fontSize: '15px', fontWeight: 850, letterSpacing: '.01em', textTransform: 'none' as const};
+const teamLabelStyle = {fontSize: '11px', fontWeight: 800, letterSpacing: '.08em'};
+const playerNameStyle = {fontSize: '14px', fontWeight: 800};
+const playerMetaStyle = {fontSize: '12.5px', fontWeight: 750};
 
 export async function MatchRosterBoard({
   matchday,
@@ -105,8 +109,8 @@ function ActiveRosterCard({teamName, label, players}: {teamName: string; label: 
   return (
     <details className={v1.previewTeam}>
       <summary className={v1.previewTeamHead}>
-        <span>{teamName}</span>
-        <span>{label}</span>
+        <span style={teamNameStyle}>{teamName}</span>
+        <span style={teamLabelStyle}>{label}</span>
       </summary>
       <div className={v1.previewList}>
         {visible.length ? visible.map((player) => <ActivePlayerRow key={player.id} player={player} />) : (
@@ -128,8 +132,8 @@ function ActiveRosterCard({teamName, label, players}: {teamName: string; label: 
 function ActivePlayerRow({player}: {player: LaunchPlayer}) {
   return (
     <div className={v1.previewPlayer}>
-      <strong>{player.name}</strong>
-      <span className={v1.playerMeta}>CI: {formatClashIndex(player)}</span>
+      <strong style={playerNameStyle}>{player.name}</strong>
+      <span className={v1.playerMeta} style={playerMetaStyle}>CI: {formatClashIndex(player)}</span>
     </div>
   );
 }
@@ -146,8 +150,8 @@ function AvailabilityRosterCard({teamName, label, players}: {teamName: string; l
   return (
     <details className={v1.previewTeam}>
       <summary className={v1.previewTeamHead}>
-        <span>{teamName}</span>
-        <span>{label}</span>
+        <span style={teamNameStyle}>{teamName}</span>
+        <span style={teamLabelStyle}>{label}</span>
       </summary>
       <div className={v1.previewList}>
         {visible.length ? visible.map((player) => <AvailabilityPlayerRow key={player.playerId} player={player} />) : (
@@ -170,8 +174,8 @@ function AvailabilityPlayerRow({player}: {player: TeamAttendanceMember}) {
   const status = player.status === 'Playing' ? 'Playing' : player.status === 'NotPlaying' ? 'Not playing' : 'Unconfirmed';
   return (
     <div className={v1.previewPlayer}>
-      <strong>{player.playerName}</strong>
-      <span className={v1.playerMeta}>{status}</span>
+      <strong style={playerNameStyle}>{player.playerName}</strong>
+      <span className={v1.playerMeta} style={playerMetaStyle}>{status}</span>
     </div>
   );
 }
