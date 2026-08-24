@@ -1,6 +1,6 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {RankingsClient, type ClashRankingEntry, type HistoricalRankingEntry, type SeasonRankingGroup} from '@/components/rankings/RankingsClient';
-import {getHistoricalSeasonArchives, isHistoricalFemalePlayer, type HistoricalPlayerSeasonSummary} from '@/data/historicalSeed';
+import type {HistoricalPlayerSeasonSummary} from '@/data/historicalSeed';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {SeasonService} from '@/domain/season/SeasonService';
@@ -20,14 +20,12 @@ import styles from './Rankings.module.css';
 export const dynamic = 'force-dynamic';
 
 export default async function RankingsPage() {
-  const archives = getHistoricalSeasonArchives();
-  const history = archives.map((archive) => buildSeasonGroup(archive.seasonId, archive.seasonName, archive.playerSummaries, false));
   const [{current, error: seasonError}, {rankings: clashRankings, teamColors}] = await Promise.all([
     getLiveSeasonRankings(),
     getClashData(),
   ]);
 
-  return <><SiteHeader /><main className={`shell page-shell ${styles.rankingsPage}`}><header className={styles.pageHeader}><h1>Player Rankings</h1>{current ? <p>Coastal Clash Match Play · {current.seasonName}</p> : null}</header>{seasonError ? <p className={styles.emptyState}>{seasonError}</p> : null}<RankingsClient current={current} history={history} clash={clashRankings} teamColors={teamColors} /></main><Footer /></>;
+  return <><SiteHeader /><main className={`shell page-shell ${styles.rankingsPage}`}><header className={styles.pageHeader}><h1>Player Rankings</h1>{current ? <p>Coastal Clash Match Play · {current.seasonName}</p> : null}</header>{seasonError ? <p className={styles.emptyState}>{seasonError}</p> : null}<RankingsClient current={current} clash={clashRankings} teamColors={teamColors} /></main><Footer /></>;
 }
 
 async function getLiveSeasonRankings(): Promise<{current?: SeasonRankingGroup; error?: string}> {
@@ -67,7 +65,7 @@ async function getLiveSeasonRankings(): Promise<{current?: SeasonRankingGroup; e
     };
   } catch (error) {
     console.error('Current-season rankings are unavailable.', error);
-    return {error: 'Current-season rankings are temporarily unavailable. Historical rankings and Clash Index are still available.'};
+    return {error: 'Current-season rankings are temporarily unavailable. Clash Index ratings are still available.'};
   }
 }
 
@@ -95,20 +93,6 @@ function toLiveRankingEntry(
     },
   };
 }
-
-function buildSeasonGroup(seasonId: string, seasonName: string, summaries: HistoricalPlayerSeasonSummary[], includeJunior: boolean): SeasonRankingGroup {
-  return {seasonId, seasonName, open: rankSeasonEntries(summaries), women: rankSeasonEntries(summaries.filter((summary) => isHistoricalFemalePlayer(summary.playerName))), junior: includeJunior ? [] : undefined};
-}
-
-function rankSeasonEntries(summaries: HistoricalPlayerSeasonSummary[]): HistoricalRankingEntry[] {
-  const sorted = [...summaries].filter((summary) => summary.matchesPlayed > 0).sort(compareSeasonSummaries);
-  let previous: HistoricalPlayerSeasonSummary | undefined; let previousRank = 0;
-  return sorted.map((summary, index) => {const rank = previous && sameSeasonRank(previous, summary) ? previousRank : index + 1; previous = summary; previousRank = rank; return {rank, summary};});
-}
-
-function compareSeasonSummaries(first: HistoricalPlayerSeasonSummary, second: HistoricalPlayerSeasonSummary): number {return seasonPoints(second) - seasonPoints(first) || second.overallRecord.wins - first.overallRecord.wins || second.overallRecord.ties - first.overallRecord.ties || first.overallRecord.losses - second.overallRecord.losses || first.playerName.localeCompare(second.playerName, undefined, {sensitivity: 'base'});}
-function sameSeasonRank(first: HistoricalPlayerSeasonSummary, second: HistoricalPlayerSeasonSummary): boolean {return seasonPoints(first) === seasonPoints(second) && first.overallRecord.wins === second.overallRecord.wins && first.overallRecord.ties === second.overallRecord.ties && first.overallRecord.losses === second.overallRecord.losses;}
-function seasonPoints(summary: HistoricalPlayerSeasonSummary): number {return summary.overallRecord.wins + summary.overallRecord.ties * .5;}
 
 async function getClashData(): Promise<{rankings: {open: ClashRankingEntry[]; women: ClashRankingEntry[]; junior: ClashRankingEntry[]}; teamColors: Record<string, string>}> {
   const empty = {rankings: {open: [], women: [], junior: []}, teamColors: {}};
