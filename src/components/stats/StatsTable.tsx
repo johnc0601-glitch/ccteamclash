@@ -29,20 +29,25 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
       .sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
   }, [group]);
 
-  const filteredRows = useMemo(() => {
+  const contextRows = useMemo(() => {
     if (!group) return [];
-    const query = search.trim().toLowerCase();
     return group.rows.filter((row) => {
       const divisionMatch = division === 'Women' ? row.gender === 'Women' : true;
       const teamMatch = team === 'all' || row.teamName === team;
-      const searchMatch = !query || row.playerName.toLowerCase().includes(query) || row.teamName.toLowerCase().includes(query);
-      return divisionMatch && teamMatch && searchMatch;
+      return divisionMatch && teamMatch;
     });
-  }, [group, division, team, search]);
+  }, [group, division, team]);
+
+  const filteredRows = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return contextRows;
+    return contextRows.filter((row) =>
+      row.playerName.toLowerCase().includes(query) || row.teamName.toLowerCase().includes(query));
+  }, [contextRows, search]);
 
   const sortedRows = useMemo(() => [...filteredRows].sort((a, b) => compareRows(a, b, sortKey, direction)), [filteredRows, sortKey, direction]);
   const rows = limit === 'all' ? sortedRows : sortedRows.slice(0, limit);
-  const leaders = useMemo(() => buildLeaders(filteredRows), [filteredRows]);
+  const leaders = useMemo(() => buildLeaders(contextRows), [contextRows]);
 
   function toggleSort(next: SortKey) {
     if (sortKey === next) {
@@ -146,7 +151,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
             <p><strong>Points:</strong> 1 per win, 0.5 per tie.</p>
             <p><strong>Win %:</strong> wins plus half of ties divided by recorded results.</p>
             <p><strong>Best Win %:</strong> requires at least 5 recorded results.</p>
-            <p>Table rank always reflects the active sort and filters.</p>
+            <p>Table rank always reflects the active sort and filters. Search narrows the table but does not redefine the record leaders.</p>
           </div>
         </details>
       </div>
