@@ -50,40 +50,6 @@
   gap: 42px;
 }
 
-.statGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.stat {
-  min-height: 116px;
-  padding: 20px;
-  display: grid;
-  align-content: center;
-  gap: 5px;
-  border: 1px solid var(--cc-card-border);
-  border-radius: 8px;
-  background: var(--cc-card-bg);
-  box-shadow: var(--cc-card-shadow);
-}
-
-.stat strong {
-  color: var(--cc-heading);
-  font-family: var(--cc-font-display);
-  font-size: 42px;
-  font-style: italic;
-  line-height: .9;
-}
-
-.stat span {
-  color: var(--cc-muted);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
 .section {
   min-width: 0;
 }
@@ -112,6 +78,7 @@
   max-width: 430px;
   color: var(--cc-muted);
   font-size: 12px;
+  line-height: 1.5;
 }
 
 .timeline {
@@ -146,7 +113,8 @@
 }
 
 .timelineChampion span,
-.championHero small {
+.championHero small,
+.championshipRecap span {
   color: var(--cc-muted);
   font-size: 9px;
   font-weight: 950;
@@ -164,45 +132,17 @@
   text-transform: uppercase;
 }
 
-.podium {
+.championshipRecap {
+  padding-top: 15px;
+  display: grid;
+  gap: 6px;
   border-top: 1px solid var(--cc-card-border);
 }
 
-.podium > div {
-  min-width: 0;
-  padding: 11px 0;
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
-  gap: 9px;
-  align-items: center;
-  border-bottom: 1px solid var(--cc-card-border);
-}
-
-.podium > div > span {
-  width: 24px;
-  height: 24px;
-  display: grid;
-  place-items: center;
-  border-radius: 4px;
-  background: var(--cc-table-head-bg);
-  color: var(--cc-table-head-text);
-  font-size: 10px;
-  font-weight: 950;
-}
-
-.podium a {
-  overflow: hidden;
+.championshipRecap strong {
   color: var(--cc-heading);
   font-size: 12px;
-  font-weight: 900;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.podium small {
-  color: var(--cc-muted);
-  font-size: 10px;
-  font-weight: 800;
+  line-height: 1.4;
 }
 
 .textLink,
@@ -307,16 +247,13 @@
 
 .linkActions {
   display: flex;
+  flex-wrap: wrap;
   gap: 18px;
   flex: 0 0 auto;
 }
 
 .championHero {
-  padding: 28px;
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 28px;
+  padding: 30px 28px;
   border-radius: 9px;
   background:
     radial-gradient(circle at 90% 15%, rgba(0, 111, 113, .32), transparent 18rem),
@@ -345,36 +282,6 @@
   font-size: clamp(42px, 7vw, 74px);
   font-style: italic;
   line-height: .9;
-  text-transform: uppercase;
-}
-
-.heroMeta {
-  display: flex;
-  gap: 10px;
-}
-
-.heroMeta > div {
-  min-width: 110px;
-  padding: 13px 14px;
-  display: grid;
-  gap: 3px;
-  border: 1px solid rgba(255, 255, 255, .14);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, .05);
-}
-
-.heroMeta strong {
-  color: #fff;
-  font-family: var(--cc-font-display);
-  font-size: 26px;
-  font-style: italic;
-}
-
-.heroMeta span {
-  color: rgba(255, 255, 255, .66);
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: .04em;
   text-transform: uppercase;
 }
 
@@ -476,7 +383,7 @@
 }
 
 .seasonSummary > div:first-child {
-  max-width: 720px;
+  max-width: 760px;
 }
 
 .seasonSummary p {
@@ -484,17 +391,8 @@
 }
 
 @media (max-width: 900px) {
-  .statGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .seasonGrid {
     grid-template-columns: 1fr;
-  }
-
-  .championHero {
-    align-items: stretch;
-    flex-direction: column;
   }
 }
 
@@ -514,40 +412,18 @@
     flex-direction: column;
   }
 
-  .heroMeta {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .heroMeta > div {
-    min-width: 0;
-  }
-
   .linkActions {
     width: 100%;
-    justify-content: space-between;
   }
 }
 
 @media (max-width: 480px) {
-  .statGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .stat {
-    min-height: 96px;
-    padding: 15px;
-  }
-
-  .stat strong {
-    font-size: 34px;
-  }
-
   .championHero {
     padding: 22px;
   }
 
-  .heroMeta {
-    grid-template-columns: 1fr;
+  .linkActions {
+    display: grid;
+    gap: 12px;
   }
 }
