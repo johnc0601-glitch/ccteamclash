@@ -1,0 +1,116 @@
+:root {
+  --cc-bg: #090b0c;
+  --cc-surface: #141719;
+  --cc-surface-raised: #1b1f21;
+  --cc-panel-border: #303538;
+  --cc-gold: #ffc400;
+  --cc-gold-soft: #e5b300;
+  --cc-text: #f5f5f2;
+  --cc-text-muted: #aab1b3;
+  --cc-light-bg: #f3f2ed;
+  --cc-light-surface: #ffffff;
+  --cc-light-border: #dedfd9;
+  --cc-light-text: #14191b;
+  --cc-light-muted: #68706f;
+  --cc-radius-sm: 6px;
+  --cc-radius-md: 12px;
+  --cc-radius-lg: 16px;
+  --cc-shadow-card: 0 10px 28px rgba(0, 0, 0, .08);
+}
+
+/* Preview-only consolidation layer. Keep the sports-publication shell as the league identity. */
+body {
+  background: var(--cc-light-bg);
+  color: var(--cc-light-text);
+}
+
+.site-header {
+  background: rgba(9, 11, 12, .96);
+  border-bottom-color: #24282a;
+}
+
+.site-header nav a:hover,
+.footer-links a:hover {
+  color: var(--cc-gold);
+}
+
+.post-nav,
+.gold-button,
+.light-button {
+  border-color: var(--cc-gold);
+  background: var(--cc-gold);
+  color: #111;
+}
+
+.panel-title,
+.gold-link,
+.light,
+.match-details span {
+  color: var(--cc-gold);
+}
+
+.dark-panel {
+  background: linear-gradient(145deg, var(--cc-surface-raised), #0c0e0f);
+  border-color: var(--cc-panel-border);
+}
+
+.home-page,
+.feature-hero,
+.story-home-bottom {
+  background: var(--cc-bg);
+}
+
+.home-matches-section {
+  color: var(--cc-text);
+}
+
+footer {
+  background: var(--cc-bg);
+  border-top-color: #24282a;
+  color: var(--cc-text);
+}
+
+footer p,
+footer small {
+  color: var(--cc-text-muted);
+}
+
+/* Shared information-page treatment: light content surface inside dark league chrome. */
+.page-shell,
+.article {
+  color: var(--cc-light-text);
+}
+
+.page-shell > h1,
+.article h1,
+.team-card h2,
+.admin-preview h2 {
+  color: var(--cc-light-text);
+}
+
+.intro,
+.article-lead,
+.article-copy,
+.team-card p,
+.admin-preview p {
+  color: var(--cc-light-muted);
+}
+
+.list-card,
+.team-card,
+.real-editor,
+.post-preview,
+.editor-card {
+  border-color: var(--cc-light-border);
+  box-shadow: var(--cc-shadow-card);
+}
+
+.button:not(.gold-button):not(.light-button) {
+  border-radius: var(--cc-radius-sm);
+}
+
+@media (max-width: 800px) {
+  .site-header {
+    background: rgba(9, 11, 12, .98);
+  }
+}
