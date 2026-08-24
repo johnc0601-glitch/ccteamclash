@@ -19,18 +19,26 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
   const [direction, setDirection] = useState<Direction>('desc');
   const [limit, setLimit] = useState<Limit>(5);
   const [division, setDivision] = useState<Division>('Open');
+  const [team, setTeam] = useState('all');
   const [search, setSearch] = useState('');
 
   const group = groups.find((entry) => entry.id === groupId) ?? groups[0];
+  const teams = useMemo(() => {
+    if (!group) return [];
+    return Array.from(new Set(group.rows.map((row) => row.teamName).filter((name) => name && name !== 'Multiple teams')))
+      .sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
+  }, [group]);
+
   const filteredRows = useMemo(() => {
     if (!group) return [];
     const query = search.trim().toLowerCase();
     return group.rows.filter((row) => {
       const divisionMatch = division === 'Women' ? row.gender === 'Women' : true;
+      const teamMatch = team === 'all' || row.teamName === team;
       const searchMatch = !query || row.playerName.toLowerCase().includes(query) || row.teamName.toLowerCase().includes(query);
-      return divisionMatch && searchMatch;
+      return divisionMatch && teamMatch && searchMatch;
     });
-  }, [group, division, search]);
+  }, [group, division, team, search]);
 
   const sortedRows = useMemo(() => [...filteredRows].sort((a, b) => compareRows(a, b, sortKey, direction)), [filteredRows, sortKey, direction]);
   const rows = limit === 'all' ? sortedRows : sortedRows.slice(0, limit);
@@ -56,7 +64,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
               key={entry.id}
               type="button"
               className={entry.id === group.id ? styles.activeSeason : undefined}
-              onClick={() => {setGroupId(entry.id); setLimit(5); setSearch('');}}
+              onClick={() => {setGroupId(entry.id); setLimit(5); setTeam('all'); setSearch('');}}
             >
               {entry.label}
             </button>
@@ -68,6 +76,14 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
             <button type="button" className={division === 'Open' ? styles.activeDivision : undefined} onClick={() => {setDivision('Open'); setLimit(5);}}>Open</button>
             <button type="button" className={division === 'Women' ? styles.activeDivision : undefined} onClick={() => {setDivision('Women'); setLimit(5);}}>Women</button>
           </div>
+
+          <label className={styles.teamControl}>
+            <span className="sr-only">Filter by team</span>
+            <select value={team} onChange={(event) => {setTeam(event.target.value); setLimit(5);}}>
+              <option value="all">All teams</option>
+              {teams.map((teamName) => <option key={teamName} value={teamName}>{teamName}</option>)}
+            </select>
+          </label>
 
           <label className={styles.searchControl}>
             <span className="sr-only">Search players or teams</span>
@@ -94,8 +110,19 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
       </div>
 
       <div className={styles.tableMeta}>
-        <strong>{group.label} · {division}</strong>
-        <span>{filteredRows.length} players</span>
+        <div>
+          <strong>{group.label} · {division}{team !== 'all' ? ` · ${team}` : ''}</strong>
+          <span>{filteredRows.length} players · ranked by {sortLabel(sortKey)} {direction === 'desc' ? '↓' : '↑'}</span>
+        </div>
+        <details className={styles.statsHelp}>
+          <summary>How stats work</summary>
+          <div>
+            <p><strong>Points:</strong> 1 per win, 0.5 per tie.</p>
+            <p><strong>Win %:</strong> wins plus half of ties divided by recorded results.</p>
+            <p><strong>Best Win %:</strong> requires at least 5 recorded results.</p>
+            <p>Table rank always reflects the active sort and filters.</p>
+          </div>
+        </details>
       </div>
 
       <div className={styles.tableWrap}>
@@ -115,20 +142,23 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, index) => (
-              <tr key={`${group.id}-${row.playerId}`}>
-                <td data-label="Player"><span className={styles.rank}>{index + 1}</span><Link className={styles.playerLink} href={`/players/${row.playerId}`}>{row.playerName}</Link></td>
-                <td data-label="Team">{row.teamName}</td>
-                <td data-label="Matches">{row.matchesPlayed}</td>
-                <td data-label="Wins">{row.wins}</td>
-                <td data-label="Losses">{row.losses}</td>
-                <td data-label="Ties">{row.ties}</td>
-                <td data-label="Win %">{row.winPercentage.toFixed(1)}%{row.matchesPlayed < 5 ? <span className={styles.smallSample} title="Small sample: fewer than 5 recorded results">*</span> : null}</td>
-                <td data-label="Singles">{formatRecord(row.singlesWins, row.singlesLosses, row.singlesTies)}</td>
-                <td data-label="Doubles">{formatRecord(row.doublesWins, row.doublesLosses, row.doublesTies)}</td>
-                <td data-label="Points"><strong>{formatPoints(row.points)}</strong></td>
-              </tr>
-            ))}
+            {rows.map((row) => {
+              const rank = sortedRows.findIndex((entry) => entry.playerId === row.playerId) + 1;
+              return (
+                <tr key={`${group.id}-${row.playerId}`}>
+                  <td data-label="Player"><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players/${row.playerId}`}>{row.playerName}</Link></td>
+                  <td data-label="Team">{row.teamName}</td>
+                  <td data-label="Matches">{row.matchesPlayed}</td>
+                  <td data-label="Wins">{row.wins}</td>
+                  <td data-label="Losses">{row.losses}</td>
+                  <td data-label="Ties">{row.ties}</td>
+                  <td data-label="Win %">{row.winPercentage.toFixed(1)}%{row.matchesPlayed < 5 ? <span className={styles.smallSample} title="Small sample: fewer than 5 recorded results">*</span> : null}</td>
+                  <td data-label="Singles">{formatRecord(row.singlesWins, row.singlesLosses, row.singlesTies)}</td>
+                  <td data-label="Doubles">{formatRecord(row.doublesWins, row.doublesLosses, row.doublesTies)}</td>
+                  <td data-label="Points"><strong>{formatPoints(row.points)}</strong></td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         {!rows.length ? <p className={styles.emptyState}>No players match these filters.</p> : null}
@@ -160,7 +190,7 @@ function SortableHeader({label, sort, active, direction, onSort}: {
 }) {
   return (
     <th>
-      <button type="button" onClick={() => onSort(sort)}>
+      <button type="button" onClick={() => onSort(sort)} aria-sort={active === sort ? (direction === 'desc' ? 'descending' : 'ascending') : undefined}>
         {label}
         <span aria-hidden="true">{active === sort ? (direction === 'desc' ? ' ↓' : ' ↑') : ' ↕'}</span>
       </button>
@@ -174,6 +204,12 @@ function compareRows(a: StatsRow, b: StatsRow, key: SortKey, direction: Directio
   if (key === 'singles') return (recordPoints(a.singlesWins, a.singlesTies) - recordPoints(b.singlesWins, b.singlesTies)) * factor || a.playerName.localeCompare(b.playerName);
   if (key === 'doubles') return (recordPoints(a.doublesWins, a.doublesTies) - recordPoints(b.doublesWins, b.doublesTies)) * factor || a.playerName.localeCompare(b.playerName);
   return (a[key] - b[key]) * factor || a.playerName.localeCompare(b.playerName);
+}
+
+function sortLabel(key: SortKey): string {
+  if (key === 'singles') return 'singles points';
+  if (key === 'doubles') return 'doubles points';
+  return ({playerName: 'player', teamName: 'team', matchesPlayed: 'matches', wins: 'wins', losses: 'losses', ties: 'ties', winPercentage: 'win %', points: 'points'} as const)[key];
 }
 
 function recordPoints(wins: number, ties: number): number {return wins + ties * .5;}
