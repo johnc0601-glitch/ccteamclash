@@ -132,6 +132,47 @@
   font-weight: 900;
 }
 
+.recordStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.recordStrip article {
+  min-width: 0;
+  padding: 14px 16px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--cc-light-border, #dedfd9);
+  border-radius: 10px;
+  background: var(--cc-light-surface, #fff);
+}
+
+.recordStrip article > span,
+.recordStrip article > small {
+  color: var(--cc-light-muted, #68706f);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.recordStrip article > strong {
+  color: var(--cc-light-text, #14191b);
+  font-family: var(--cc-font-display);
+  font-size: 30px;
+  font-style: italic;
+  line-height: 1;
+}
+
+.recordStrip article > a {
+  overflow: hidden;
+  color: #8c7200;
+  font-size: 11px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .tableMeta {
   display: flex;
   align-items: center;
@@ -211,6 +252,7 @@
   height: 28px;
   display: inline-grid;
   place-items: center;
+  flex: 0 0 auto;
   border-radius: 6px;
   background: #111416;
   color: var(--cc-gold, #ffc400);
@@ -219,11 +261,39 @@
   font-weight: 950;
 }
 
+.playerLink {
+  color: var(--cc-light-text, #14191b);
+  font-weight: 950;
+}
+
+.playerLink:hover {
+  color: #8c7200;
+}
+
+.smallSample {
+  margin-left: 2px;
+  color: #8c7200;
+  font-weight: 950;
+}
+
+.qualifierNote {
+  margin: -4px 0 0;
+  color: var(--cc-light-muted, #68706f);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .emptyState {
   margin: 0;
   padding: 26px 18px;
   color: var(--cc-light-muted, #68706f);
   font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .recordStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
@@ -238,6 +308,23 @@
 
   .limitControl {
     justify-content: space-between;
+  }
+
+  .recordStrip {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 2px;
+  }
+
+  .recordStrip article {
+    min-width: 150px;
+    flex: 0 0 150px;
+  }
+
+  .recordStrip article > strong {
+    font-size: 26px;
   }
 
   .tableMeta {
