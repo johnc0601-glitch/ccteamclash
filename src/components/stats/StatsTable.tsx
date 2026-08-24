@@ -10,8 +10,9 @@ type SortKey = keyof Pick<StatsRow,
 type Direction = 'asc' | 'desc';
 type Limit = 5 | 10 | 25 | 'all';
 
-export function StatsTable({groups}: {groups: StatsGroup[]}) {
-  const [groupId, setGroupId] = useState(groups[0]?.id ?? 'overall');
+export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsGroup[]; initialGroupId?: string}) {
+  const validInitialGroupId = groups.some((group) => group.id === initialGroupId) ? initialGroupId : groups[0]?.id ?? 'overall';
+  const [groupId, setGroupId] = useState(validInitialGroupId);
   const [sortKey, setSortKey] = useState<SortKey>('points');
   const [direction, setDirection] = useState<Direction>('desc');
   const [limit, setLimit] = useState<Limit>(5);
