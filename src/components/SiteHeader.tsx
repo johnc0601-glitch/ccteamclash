@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import {MobileAccountLink} from '@/components/MobileAccountLink';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {hasSupabaseConfig} from '@/lib/supabase';
@@ -19,7 +18,7 @@ export async function SiteHeader() {
         <div className="shell nav-wrap primary-nav-wrap">
           <Link href="/" className="brand">
             <span className="brand-mark">
-              <Image src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} priority />
+              <img src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} />
             </span>
             <span><strong>{BRAND_NAME}</strong><small>{BRAND_TAGLINE}</small></span>
           </Link>
@@ -88,7 +87,7 @@ export async function SiteHeader() {
               rel="noreferrer"
               aria-label="Team Clash Facebook group"
               title="Facebook group"
-              style={{color: 'var(--cc-gold)', fontSize: '16px', textTransform: 'none'}}
+              style={{color: '#1877f2', fontSize: '16px', textTransform: 'none'}}
             >
               <span aria-hidden="true">f</span>
             </a>
@@ -125,7 +124,7 @@ export async function Footer() {
       <div className="shell footer-wrap">
         <div className="brand">
           <span className="brand-mark">
-            <Image src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} />
+            <img src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} />
           </span>
           <span><strong>{BRAND_NAME}</strong><small>{BRAND_TAGLINE}</small></span>
         </div>
@@ -138,7 +137,7 @@ export async function Footer() {
           <Link href="/history">History</Link>
           <Link href="/teams">Teams</Link>
           <Link href="/courses">Courses</Link>
-          <a href={FACEBOOK_GROUP_URL} target="_blank" rel="noreferrer">Facebook</a>
+          <a href={FACEBOOK_GROUP_URL} target="_blank" rel="noreferrer" style={{color: '#1877f2'}}>Facebook</a>
           {canCreatePost ? <Link href="/admin">Post</Link> : null}
         </div>
       </div>
