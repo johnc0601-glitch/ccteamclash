@@ -51,6 +51,15 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
   const rows = limit === 'all' ? sortedRows : sortedRows.slice(0, limit);
   const leaders = useMemo(() => buildLeaders(contextRows), [contextRows]);
 
+  function selectGroup(nextGroupId: string) {
+    setGroupId(nextGroupId);
+    setLimit(5);
+    setTeam('all');
+    setSearch('');
+    const nextUrl = nextGroupId === 'overall' ? '/stats' : `/stats?season=${encodeURIComponent(nextGroupId)}`;
+    window.history.replaceState(window.history.state, '', nextUrl);
+  }
+
   function toggleSort(next: SortKey) {
     if (sortKey === next) {
       setDirection((value) => value === 'desc' ? 'asc' : 'desc');
@@ -76,7 +85,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
               key={entry.id}
               type="button"
               className={entry.id === group.id ? styles.activeSeason : undefined}
-              onClick={() => {setGroupId(entry.id); setLimit(5); setTeam('all'); setSearch('');}}
+              onClick={() => selectGroup(entry.id)}
             >
               {entry.label}
             </button>
