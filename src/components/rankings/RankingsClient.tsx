@@ -55,8 +55,8 @@ function StatsSection({overall, groups, initialSeasonId, onOpen, teamColors}: {o
   const [seasonId, setSeasonId] = useState(validInitial);
   const selected = seasonId === 'overall' ? overall : groups.find((group) => group.seasonId === seasonId) ?? overall;
 
-  return <section className={styles.statsPanel}>
-    <div className={styles.statsSelector} role="tablist" aria-label="Player statistics season">
+  return <section>
+    <div className={styles.divisionTabs} role="tablist" aria-label="Player statistics season">
       <TabButton active={seasonId === 'overall'} onClick={() => setSeasonId('overall')}>Overall</TabButton>
       {groups.map((group) => <TabButton key={group.seasonId} active={seasonId === group.seasonId} onClick={() => setSeasonId(group.seasonId)}>{compactSeasonName(group.seasonName)}</TabButton>)}
     </div>
