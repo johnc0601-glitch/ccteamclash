@@ -1,0 +1,235 @@
+.page {
+  max-width: 1180px;
+}
+
+.pageHeader {
+  max-width: 780px;
+  margin-bottom: 26px;
+}
+
+.pageHeader h1 {
+  margin: 4px 0 10px;
+  color: var(--cc-light-text, #14191b);
+  font-family: var(--cc-font-display);
+  font-size: clamp(42px, 6vw, 68px);
+  font-style: italic;
+  line-height: .95;
+  text-transform: uppercase;
+}
+
+.pageHeader p {
+  margin: 0;
+  color: var(--cc-light-muted, #68706f);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.statsShell {
+  display: grid;
+  gap: 16px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.seasonTabs {
+  display: flex;
+  gap: 6px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 4px;
+  border: 1px solid var(--cc-light-border, #dedfd9);
+  border-radius: 9px;
+  background: var(--cc-light-surface, #fff);
+}
+
+.seasonTabs button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cc-light-muted, #68706f);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.seasonTabs button.activeSeason {
+  background: #111416;
+  color: var(--cc-gold, #ffc400);
+}
+
+.limitControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cc-light-muted, #68706f);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.limitControl select {
+  min-height: 40px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--cc-light-border, #dedfd9);
+  border-radius: 7px;
+  background: var(--cc-light-surface, #fff);
+  color: var(--cc-light-text, #14191b);
+  font-weight: 900;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--cc-light-border, #dedfd9);
+  border-radius: 12px;
+  background: var(--cc-light-surface, #fff);
+  box-shadow: var(--cc-shadow-card, 0 10px 28px rgba(0, 0, 0, .08));
+}
+
+.statsTable {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+}
+
+.statsTable th,
+.statsTable td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--cc-light-border, #dedfd9);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.statsTable tr:last-child td {
+  border-bottom: 0;
+}
+
+.statsTable th {
+  background: #111416;
+  color: #fff;
+}
+
+.statsTable th button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.statsTable th button:hover {
+  color: var(--cc-gold, #ffc400);
+}
+
+.statsTable td {
+  color: var(--cc-light-text, #14191b);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.statsTable td:first-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rank {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 6px;
+  background: #111416;
+  color: var(--cc-gold, #ffc400);
+  font-family: var(--cc-font-display);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+@media (max-width: 760px) {
+  .controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .seasonTabs {
+    width: 100%;
+  }
+
+  .limitControl {
+    justify-content: space-between;
+  }
+
+  .tableWrap {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .statsTable,
+  .statsTable tbody,
+  .statsTable tr,
+  .statsTable td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .statsTable thead {
+    display: none;
+  }
+
+  .statsTable tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .statsTable tr {
+    padding: 13px;
+    border: 1px solid var(--cc-light-border, #dedfd9);
+    border-radius: 12px;
+    background: var(--cc-light-surface, #fff);
+    box-shadow: 0 4px 14px rgba(16, 24, 32, .06);
+  }
+
+  .statsTable td {
+    padding: 6px 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    border: 0;
+    white-space: normal;
+  }
+
+  .statsTable td::before {
+    content: attr(data-label);
+    color: var(--cc-light-muted, #68706f);
+    font-size: 9px;
+    font-weight: 950;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .statsTable td:first-child {
+    justify-content: flex-start;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--cc-light-border, #dedfd9);
+  }
+
+  .statsTable td:first-child::before {
+    display: none;
+  }
+}
