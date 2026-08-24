@@ -10,7 +10,7 @@ export default async function SchedulePage() {
   return (
     <>
       <SiteHeader />
-      <main className="shell page-shell">
+      <main className="shell page-shell schedule-page">
         <span className="eyebrow">Published schedule</span>
         <h1>Schedule</h1>
         <div className="list-card">

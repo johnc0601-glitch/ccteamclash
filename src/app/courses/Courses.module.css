@@ -1,6 +1,4 @@
-.page {
-  max-width: 1180px;
-}
+.page { max-width: 1180px; }
 
 .directory {
   margin-top: 48px;
@@ -14,11 +12,13 @@
   overflow: hidden;
   display: grid;
   grid-template-rows: 210px 1fr;
-  border: 1px solid var(--cc-card-border);
-  border-radius: 8px;
-  background: var(--cc-card-bg);
-  box-shadow: var(--cc-card-shadow);
+  border: 1px solid var(--cc-light-border);
+  border-radius: var(--cc-radius-md);
+  background: var(--cc-light-surface);
+  box-shadow: var(--cc-shadow-card);
+  transition: transform .18s ease, box-shadow .18s ease;
 }
+.course:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(16, 24, 32, .11); }
 
 .photo {
   min-height: 210px;
@@ -31,12 +31,15 @@
 
 .photoFallback {
   background:
-    linear-gradient(135deg, rgba(0, 111, 113, .76), rgba(16, 24, 32, .92)),
-    repeating-linear-gradient(135deg, rgba(255, 255, 255, .08) 0 1px, transparent 1px 18px);
+    radial-gradient(circle at 72% 28%, rgba(255, 196, 0, .22), transparent 28%),
+    linear-gradient(135deg, var(--cc-surface-raised), var(--cc-bg));
 }
 
 .photo span {
-  color: #fff;
+  padding: 6px 8px;
+  border-radius: 3px;
+  background: rgba(9, 11, 12, .72);
+  color: var(--cc-gold);
   font-size: 10px;
   font-weight: 950;
   letter-spacing: .12em;
@@ -53,7 +56,7 @@
 }
 
 .location {
-  color: #006f71;
+  color: var(--cc-gold-ink);
   font-size: 10px;
   font-weight: 950;
   letter-spacing: .08em;
@@ -62,7 +65,7 @@
 
 .course h2 {
   margin: 8px 0 10px;
-  color: var(--cc-heading);
+  color: var(--cc-light-text);
   font-family: var(--cc-font-display);
   font-size: 28px;
   font-style: italic;
@@ -73,72 +76,52 @@
 
 .course p {
   margin: 0;
-  color: var(--cc-body-text);
+  color: var(--cc-light-muted);
   font-size: 14px;
   line-height: 1.55;
 }
 
 .homeTeam {
   margin-bottom: 10px !important;
-  color: #a27752 !important;
+  color: var(--cc-gold-ink) !important;
   font-size: 12px !important;
   font-weight: 950;
   text-transform: uppercase;
 }
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .actions a {
   min-height: 42px;
   padding: 0 15px;
   display: inline-flex;
   align-items: center;
-  border: 1px solid #cbd1c8;
-  border-radius: 4px;
-  color: var(--cc-heading);
+  border: 1px solid var(--cc-light-border);
+  border-radius: var(--cc-radius-sm);
+  color: var(--cc-light-text);
   font-size: 12px;
   font-weight: 950;
   text-decoration: none;
   text-transform: uppercase;
 }
-
+.actions a:hover { border-color: var(--cc-gold-soft); color: var(--cc-gold-ink); }
 .actions .primaryAction {
-  border-color: #cbd1c8;
-  background: transparent;
-  color: var(--cc-heading);
+  border-color: var(--cc-gold);
+  background: var(--cc-gold);
+  color: #111;
 }
-
 .actions .primaryAction:hover {
-  border-color: #006f71;
-  background: transparent;
-  color: #006f71;
+  border-color: var(--cc-gold-soft);
+  background: var(--cc-gold-soft);
+  color: #111;
 }
 
 @media (max-width: 950px) {
-  .directory {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  .directory { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 620px) {
-  .directory {
-    grid-template-columns: 1fr;
-  }
-
-  .course {
-    grid-template-rows: 190px 1fr;
-  }
-
-  .cardBody {
-    min-height: 0;
-  }
-
-  .actions a {
-    flex: 1;
-    justify-content: center;
-  }
+  .directory { grid-template-columns: 1fr; }
+  .course { grid-template-rows: 190px 1fr; }
+  .cardBody { min-height: 0; }
+  .actions a { flex: 1; justify-content: center; }
 }
