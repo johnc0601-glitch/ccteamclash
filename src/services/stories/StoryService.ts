@@ -3,6 +3,7 @@ import {seedStories} from '@/data/stories';
 import {createClient} from '@/lib/supabase/server';
 import {createSlug} from '@/shared/utils';
 
+// Story records live in Supabase; story image files use Supabase Storage via /api/story-images.
 type StoryRow = {
   slug: string;
   title: string;
