@@ -10,21 +10,19 @@ import styles from '@/app/rankings/Rankings.module.css';
 export type HistoricalRankingEntry = {rank: number; summary: HistoricalPlayerSeasonSummary};
 export type ClashRankingEntry = {rank: number; playerId: string; playerName: string; teamName: string; clashIndex: number; gender: 'Male' | 'Female' | 'Unknown'; provisional: boolean};
 export type SeasonRankingGroup = {seasonId: string; seasonName: string; open: HistoricalRankingEntry[]; women: HistoricalRankingEntry[]; junior?: HistoricalRankingEntry[]};
-type RankingsClientProps = {current?: SeasonRankingGroup; history: SeasonRankingGroup[]; clash: {open: ClashRankingEntry[]; women: ClashRankingEntry[]; junior: ClashRankingEntry[]}; teamColors: Record<string, string>};
-type MainTab = 'season' | 'history' | 'clash';
+type RankingsClientProps = {current?: SeasonRankingGroup; clash: {open: ClashRankingEntry[]; women: ClashRankingEntry[]; junior: ClashRankingEntry[]}; teamColors: Record<string, string>};
+type MainTab = 'season' | 'clash';
 type Division = 'open' | 'women' | 'junior';
 
-export function RankingsClient({current, history, clash, teamColors}: RankingsClientProps) {
+export function RankingsClient({current, clash, teamColors}: RankingsClientProps) {
   const [tab, setTab] = useState<MainTab>('season');
   const [selectedEntry, setSelectedEntry] = useState<HistoricalRankingEntry | null>(null);
   return <>
     <nav className={styles.mainTabs} aria-label="Ranking views">
       <TabButton active={tab === 'season'} onClick={() => setTab('season')}>Season</TabButton>
-      <TabButton active={tab === 'history'} onClick={() => setTab('history')}>History</TabButton>
       <TabButton active={tab === 'clash'} onClick={() => setTab('clash')}>Clash Index</TabButton>
     </nav>
     {tab === 'season' ? (current ? <SeasonSection group={current} includeJunior onOpen={setSelectedEntry} teamColors={teamColors} /> : <p className={styles.emptyState}>No current-season rankings are available yet.</p>) : null}
-    {tab === 'history' ? <HistorySection groups={history} onOpen={setSelectedEntry} teamColors={teamColors} /> : null}
     {tab === 'clash' ? <ClashSection rankings={clash} teamColors={teamColors} /> : null}
     {selectedEntry ? <DialogShell title={selectedEntry.summary.playerName} eyebrow={`Rank #${selectedEntry.rank} player card`} size="large" onClose={() => setSelectedEntry(null)}>
       <div className={styles.playerCardDialog}><div className={styles.playerCardLead}><div className={styles.playerCardAvatar} aria-hidden="true">{selectedEntry.summary.playerName.slice(0, 2).toUpperCase()}</div><div><span>{selectedEntry.summary.seasonName}</span><h3>{selectedEntry.summary.teamName}</h3><p>{selectedEntry.summary.matchesPlayed} matches played</p></div></div><PublicPlayerProfileCard profile={createProfileFromHistoricalSummary(selectedEntry.summary)} compact /><div className={styles.dialogActions}><button type="button" onClick={() => setSelectedEntry(null)} data-initial-focus>Close</button></div></div>
@@ -38,16 +36,6 @@ function SeasonSection({group, includeJunior, onOpen, teamColors}: {group: Seaso
   const [division, setDivision] = useState<Division>('open'); const [showAll, setShowAll] = useState(false);
   const entries = division === 'women' ? group.women : division === 'junior' ? group.junior ?? [] : group.open; const visible = showAll ? entries : entries.slice(0, 5);
   return <section className={styles.tabPanel}><header className={styles.sectionHeading}><div><span className="eyebrow">Current season</span><h2>{group.seasonName}</h2></div></header><DivisionTabs division={division} onChange={(next) => {setDivision(next); setShowAll(false);}} includeJunior={includeJunior} /><SeasonTable entries={visible} onOpen={onOpen} teamColors={teamColors} />{entries.length > 5 ? <button type="button" className={styles.viewAll} onClick={() => setShowAll((value) => !value)}>{showAll ? 'Show Top 5' : `View All ${entries.length}`}</button> : null}</section>;
-}
-
-function HistorySection({groups, onOpen, teamColors}: {groups: SeasonRankingGroup[]; onOpen: (entry: HistoricalRankingEntry) => void; teamColors: Record<string, string>}) {
-  if (!groups.length) return <p className={styles.emptyState}>No previous seasons are available yet.</p>;
-  return <section className={styles.tabPanel}><div className={styles.historyList}>{groups.map((group, index) => <HistoricalSeason key={group.seasonId} group={group} defaultOpen={index === 0} onOpen={onOpen} teamColors={teamColors} />)}</div></section>;
-}
-
-function HistoricalSeason({group, defaultOpen, onOpen, teamColors}: {group: SeasonRankingGroup; defaultOpen: boolean; onOpen: (entry: HistoricalRankingEntry) => void; teamColors: Record<string, string>}) {
-  const [division, setDivision] = useState<Division>('open'); const [showAll, setShowAll] = useState(false); const entries = division === 'women' ? group.women : group.open;
-  return <details className={styles.historySeason} open={defaultOpen}><summary><span>{group.seasonName}</span><small>Open season rankings</small></summary><div className={styles.historyBody}><DivisionTabs division={division} onChange={(next) => {setDivision(next); setShowAll(false);}} includeJunior={false} /><SeasonTable entries={showAll ? entries : entries.slice(0, 5)} onOpen={onOpen} teamColors={teamColors} />{entries.length > 5 ? <button type="button" className={styles.viewAll} onClick={() => setShowAll((value) => !value)}>{showAll ? 'Show Top 5' : `View All ${entries.length}`}</button> : null}</div></details>;
 }
 
 function ClashSection({rankings, teamColors}: {rankings: RankingsClientProps['clash']; teamColors: Record<string, string>}) {
