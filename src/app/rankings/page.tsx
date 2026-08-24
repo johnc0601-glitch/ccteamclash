@@ -1,6 +1,5 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {RankingsClient, type ClashRankingEntry, type HistoricalRankingEntry, type SeasonRankingGroup} from '@/components/rankings/RankingsClient';
-import type {HistoricalPlayerSeasonSummary} from '@/data/historicalSeed';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {SeasonService} from '@/domain/season/SeasonService';
