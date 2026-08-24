@@ -13,54 +13,72 @@ export async function SiteHeader() {
 
   return (
     <header className="site-header">
-      <div className="shell nav-wrap">
-        <Link href="/" className="brand">
-          <span className="brand-mark">
-            <Image src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} priority />
-          </span>
-          <span><strong>{BRAND_NAME}</strong><small>{BRAND_TAGLINE}</small></span>
-        </Link>
-        <nav className="desktop-nav">
-          <Link href="/">Home</Link>
-          <Link href="/schedule">Schedule</Link>
-          <Link href="/standings">Standings</Link>
-          <Link href="/rankings">Rankings</Link>
-          <Link href="/teams">Teams</Link>
-          <Link href="/players">Players</Link>
-          <Link href="/stories">Stories</Link>
-          <details className="desktop-more">
-            <summary>More</summary>
-            <div>
-              <Link href="/playoffs">Playoffs</Link>
-              <Link href="/history">History</Link>
-              <Link href="/courses">Courses</Link>
-            </div>
-          </details>
-          {canOpenOffice ? <Link className="post-nav" href="/admin">Create post</Link> : null}
-          {canOpenOffice ? <Link href="/office">Office</Link> : null}
-          {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
-          <Link className="desktop-account" href="/account">Account</Link>
-        </nav>
-        <MobileAccountLink />
-        <div className="mobile-header-actions">
-          <details className="mobile-nav">
-            <summary>Menu</summary>
-            <nav>
-              <Link href="/">Home</Link>
-              <Link href="/schedule">Schedule</Link>
-              <Link href="/standings">Standings</Link>
-              <Link href="/rankings">Rankings</Link>
-              <Link href="/teams">Teams</Link>
-              <Link href="/players">Players</Link>
-              <Link href="/stories">Stories</Link>
-              <Link href="/playoffs">Playoffs</Link>
-              <Link href="/history">History</Link>
-              <Link href="/courses">Courses</Link>
-              {canOpenOffice ? <Link href="/admin">Create post</Link> : null}
+      <div className="primary-header">
+        <div className="shell nav-wrap primary-nav-wrap">
+          <Link href="/" className="brand">
+            <span className="brand-mark">
+              <Image src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} priority />
+            </span>
+            <span><strong>{BRAND_NAME}</strong><small>{BRAND_TAGLINE}</small></span>
+          </Link>
+
+          <nav className="desktop-nav primary-nav" aria-label="Primary navigation">
+            <Link href="/schedule">Schedule</Link>
+            <Link href="/standings">Standings</Link>
+            <Link href="/rankings">Rankings</Link>
+            <span className="primary-nav-separator" aria-hidden="true" />
+            <Link href="/teams">Teams</Link>
+            <Link href="/stories">Stories</Link>
+            <Link className="desktop-account" href="/account">Account</Link>
+          </nav>
+
+          <MobileAccountLink />
+          <div className="mobile-header-actions">
+            <details className="mobile-nav">
+              <summary>Menu</summary>
+              <nav>
+                <div className="mobile-nav-group">
+                  <span>Season</span>
+                  <Link href="/schedule">Schedule</Link>
+                  <Link href="/standings">Standings</Link>
+                  <Link href="/rankings">Rankings</Link>
+                </div>
+                <div className="mobile-nav-group">
+                  <span>League</span>
+                  <Link href="/teams">Teams</Link>
+                  <Link href="/stories">Stories</Link>
+                  <Link href="/players">Players</Link>
+                  <Link href="/courses">Courses</Link>
+                  <Link href="/history">History</Link>
+                </div>
+                {(canOpenOffice || canOpenCaptain) ? (
+                  <div className="mobile-nav-group mobile-nav-tools">
+                    <span>Tools</span>
+                    {canOpenOffice ? <Link href="/admin">Create post</Link> : null}
+                    {canOpenOffice ? <Link href="/office">Office</Link> : null}
+                    {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
+                  </div>
+                ) : null}
+              </nav>
+            </details>
+          </div>
+        </div>
+      </div>
+
+      <div className="secondary-header">
+        <div className="shell secondary-nav-wrap">
+          <nav className="secondary-nav" aria-label="League navigation">
+            <Link href="/players">Players</Link>
+            <Link href="/courses">Courses</Link>
+            <Link href="/history">History</Link>
+          </nav>
+          {(canOpenOffice || canOpenCaptain) ? (
+            <nav className="secondary-role-nav" aria-label="Role tools">
+              {canOpenOffice ? <Link className="secondary-post" href="/admin">Create post</Link> : null}
               {canOpenOffice ? <Link href="/office">Office</Link> : null}
               {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
             </nav>
-          </details>
+          ) : null}
         </div>
       </div>
     </header>
