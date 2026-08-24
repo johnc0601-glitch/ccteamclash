@@ -6,13 +6,23 @@ import {useState} from 'react';
 import type {Team} from '@/models/Team';
 import {createSlug} from '@/shared/utils';
 import type {PublicScheduleEvent} from '@/domain/schedule/ScheduleService';
+import styles from './MatchCard.module.css';
+
+export type MatchFeedPreview = {
+  author: string;
+  excerpt: string;
+  imageUrl: string | null;
+  commentCount: number;
+  reactionCount: number;
+};
 
 type MatchCardProps = {
   match: PublicScheduleEvent;
   teams: Team[];
+  feedPreview?: MatchFeedPreview;
 };
 
-export function MatchCard({match, teams}: MatchCardProps) {
+export function MatchCard({match, teams, feedPreview}: MatchCardProps) {
   const homeTeam = findTeam(teams, match?.home);
   const awayTeam = findTeam(teams, match?.away);
 
@@ -34,6 +44,16 @@ export function MatchCard({match, teams}: MatchCardProps) {
         <p><span>TIME</span>{match.time}</p>
         <p><span>COURSE</span>{match.course}</p>
       </div>
+      {feedPreview ? (
+        <Link href={`${match.href}#match-feed`} className={styles.activity}>
+          <div className={styles.activityText}>
+            <strong>{feedPreview.author} posted{feedPreview.imageUrl ? ' a photo' : ''}</strong>
+            {feedPreview.excerpt ? <p>{feedPreview.excerpt}</p> : null}
+            <span>{feedPreview.commentCount} comments · {feedPreview.reactionCount} reactions</span>
+          </div>
+          {feedPreview.imageUrl ? <img src={feedPreview.imageUrl} alt="Latest match post" className={styles.thumb} /> : null}
+        </Link>
+      ) : null}
       <div className="match-card-footer">
         <Link href={match.href} className="gold-link">View match -&gt;</Link>
       </div>

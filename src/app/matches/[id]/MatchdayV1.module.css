@@ -1,0 +1,460 @@
+.stack {
+  display: grid;
+  gap: 20px;
+}
+
+.scoreCard {
+  overflow: hidden;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 10px;
+  background: var(--cc-card-bg);
+  box-shadow: var(--cc-card-shadow);
+}
+
+.scoreTop {
+  padding: 18px 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  background:
+    linear-gradient(90deg, rgba(10, 78, 140, .1), transparent 42%),
+    linear-gradient(270deg, rgba(122, 32, 91, .1), transparent 42%),
+    var(--cc-card-bg);
+}
+
+.teamScore {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.teamScore:last-child {
+  text-align: right;
+}
+
+.teamName {
+  overflow: hidden;
+  color: var(--cc-muted);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .06em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.scoreValue {
+  color: var(--cc-heading);
+  font-family: var(--cc-font-display);
+  font-size: 48px;
+  font-style: italic;
+  font-weight: 950;
+  letter-spacing: -.04em;
+  line-height: .88;
+}
+
+.scoreMiddle {
+  color: var(--cc-muted);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.scoreDetails,
+.rosterDetails {
+  border-top: 1px solid var(--cc-card-border);
+}
+
+.scoreDetails summary,
+.rosterDetails summary {
+  min-height: 48px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--cc-heading);
+  font-size: 12px;
+  font-weight: 950;
+  cursor: pointer;
+  list-style: none;
+}
+
+.scoreDetails summary::-webkit-details-marker,
+.rosterDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.scoreDetails summary::after,
+.rosterDetails summary::after {
+  content: '⌄';
+  color: var(--cc-teal);
+  font-size: 16px;
+}
+
+.scoreDetails[open] summary::after,
+.rosterDetails[open] summary::after {
+  content: '⌃';
+}
+
+.scoreDetails > div {
+  border-top: 1px solid var(--cc-card-border);
+}
+
+.scorePlaceholder {
+  margin: 0;
+  padding: 16px 18px 18px;
+  color: var(--cc-muted);
+  font-size: 13px;
+}
+
+.contestSections {
+  display: grid;
+}
+
+.contestSection + .contestSection {
+  border-top: 1px solid var(--cc-card-border);
+}
+
+.contestHeading {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--cc-table-head-bg);
+}
+
+.contestHeading strong {
+  color: var(--cc-heading);
+  font-family: var(--cc-font-display);
+  font-size: 22px;
+  font-style: italic;
+  text-transform: uppercase;
+}
+
+.contestHeading span {
+  color: var(--cc-muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.contestList {
+  display: grid;
+}
+
+.contestRow {
+  min-height: 52px;
+  padding: 9px 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  border-top: 1px solid var(--cc-card-border);
+}
+
+.contestRow:first-child {
+  border-top: 0;
+}
+
+.contestSide {
+  min-width: 0;
+  color: var(--cc-heading);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.contestSide:last-child {
+  text-align: right;
+}
+
+.contestResult {
+  min-width: 72px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--cc-table-head-bg);
+  color: var(--cc-heading);
+  font-size: 12px;
+  font-weight: 950;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.contestRow[data-winner="away"] .contestSide:first-child,
+.contestRow[data-winner="home"] .contestSide:last-child {
+  font-weight: 950;
+}
+
+.contestRow[data-winner="tie"] {
+  background: rgba(252, 194, 0, .045);
+}
+
+.sectionTotal,
+.finalBand {
+  padding: 11px 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid var(--cc-card-border);
+  background: var(--cc-table-head-bg);
+  color: var(--cc-heading);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.finalBand {
+  background: linear-gradient(90deg, rgba(10, 78, 140, .12), rgba(122, 32, 91, .12));
+  color: var(--cc-heading);
+}
+
+.finalBand span {
+  color: var(--cc-muted);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.feedPlaceholder {
+  padding: 22px;
+  display: grid;
+  gap: 8px;
+}
+
+.feedPlaceholder span {
+  color: var(--cc-teal);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.feedPlaceholder h2,
+.feedPlaceholder p {
+  margin: 0;
+}
+
+.feedPlaceholder h2 {
+  color: var(--cc-heading);
+  font-family: var(--cc-font-display);
+  font-size: 28px;
+  font-style: italic;
+  text-transform: uppercase;
+}
+
+.feedPlaceholder p {
+  color: var(--cc-muted);
+}
+
+.previewGrid,
+.fullRosterGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.previewGrid {
+  padding: 0 0 16px;
+}
+
+.previewTeam {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 8px;
+}
+
+.previewTeamHead {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--cc-table-head-bg);
+  color: var(--cc-table-head-text);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.previewTeamHeadColor {
+  min-height: 58px;
+  background: linear-gradient(145deg, #12191b, #071012);
+  color: #fff;
+}
+
+.previewTeamHeadColor > span:last-child {
+  color: #fff;
+  font-size: 10px;
+  letter-spacing: .12em;
+  opacity: .85;
+}
+
+.previewTeamIdentity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.previewTeamIdentity > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previewTeamLogo {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 7px;
+  object-fit: contain;
+}
+
+.previewList {
+  display: grid;
+}
+
+.previewPlayer {
+  min-height: 42px;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--cc-card-border);
+  color: var(--cc-heading);
+  font-size: 13px;
+}
+
+.previewPlayer:first-child {
+  border-top: 0;
+}
+
+.previewMore {
+  color: var(--cc-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.rosterToggle {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 0;
+  border-top: 1px solid var(--cc-card-border);
+  background: transparent;
+  color: var(--cc-heading);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.rosterToggle span {
+  color: var(--cc-teal);
+  font-size: 16px;
+}
+
+.fullRosterGrid {
+  padding-top: 16px;
+}
+
+@media (max-width: 760px) {
+  .stack {
+    gap: 12px;
+  }
+
+  .scoreTop {
+    padding: 14px 12px;
+    gap: 8px;
+  }
+
+  .teamName {
+    font-size: 10px;
+    letter-spacing: .02em;
+  }
+
+  .scoreValue {
+    font-size: 36px;
+  }
+
+  .scoreMiddle {
+    font-size: 9px;
+  }
+
+  .scoreDetails summary,
+  .rosterDetails summary,
+  .rosterToggle {
+    min-height: 44px;
+    padding: 10px 13px;
+  }
+
+  .feedPlaceholder {
+    order: 4;
+    padding: 18px;
+  }
+
+  .contestHeading {
+    padding: 10px 12px;
+  }
+
+  .contestHeading strong {
+    font-size: 19px;
+  }
+
+  .contestRow {
+    min-height: 48px;
+    padding: 8px 12px;
+    grid-template-columns: minmax(0, 1fr) 62px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .contestSide {
+    font-size: 12px;
+  }
+
+  .contestResult {
+    min-width: 62px;
+    padding: 4px 7px;
+    font-size: 11px;
+  }
+
+  .sectionTotal,
+  .finalBand {
+    padding: 9px 12px;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .previewGrid,
+  .fullRosterGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .previewTeamHead {
+    padding: 11px 12px;
+  }
+
+  .previewTeamHeadColor {
+    min-height: 54px;
+  }
+
+  .previewTeamLogo {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+
+  .previewPlayer {
+    min-height: 40px;
+    padding: 8px 12px;
+  }
+}
