@@ -57,8 +57,14 @@ const PLAYOFFS_BY_SEASON: Record<string, PlayoffMatch[]> = {
   ],
 };
 
+// Add a public spreadsheet/archive URL here when a season source is ready.
+// The History UI only renders an archive link when a real URL exists.
+const SEASON_ARCHIVE_URLS: Partial<Record<string, string>> = {};
+
 function compactSeasonName(name: string): string {
-  return name.replace(/^Coastal Clash Match Play\s*/i, '').replace(/(\d{4})-(\d{4})/, '$1–$2');
+  const withoutLeagueName = name.replace(/^Coastal Clash Match Play\s*/i, '');
+  return withoutLeagueName.replace(/(\d{4})-(\d{4})/, (_match, firstYear: string, secondYear: string) =>
+    `${firstYear}–${secondYear.slice(2)}`);
 }
 
 function formatRecord(record: {wins: number; losses: number; ties: number}): string {
@@ -278,12 +284,15 @@ function SeasonView({archive}: {archive: HistoricalSeasonArchive}) {
         </div>
       </section>
 
-      <ExploreRecords seasonName={compactSeasonName(archive.seasonName)} />
+      <ExploreRecords
+        seasonName={compactSeasonName(archive.seasonName)}
+        archiveUrl={SEASON_ARCHIVE_URLS[archive.seasonId]}
+      />
     </div>
   );
 }
 
-function ExploreRecords({seasonName}: {seasonName?: string}) {
+function ExploreRecords({seasonName, archiveUrl}: {seasonName?: string; archiveUrl?: string}) {
   return (
     <section className={styles.archiveLinks}>
       <div>
@@ -291,9 +300,12 @@ function ExploreRecords({seasonName}: {seasonName?: string}) {
         <span>History preserves league outcomes. Rankings and player pages hold the detailed individual numbers.</span>
       </div>
       <div className={styles.linkActions}>
-        <Link href="/rankings">Player rankings →</Link>
+        <Link href="/rankings">Stats & rankings →</Link>
         <Link href="/players">Player records →</Link>
         <Link href="/teams">Team history →</Link>
+        {archiveUrl ? (
+          <a href={archiveUrl} target="_blank" rel="noreferrer">Full match archive →</a>
+        ) : null}
       </div>
     </section>
   );
