@@ -1,7 +1,7 @@
 .commissioner-office {
   min-height: 100svh;
-  background: #f4f5f1;
-  color: var(--ink);
+  background: var(--cc-bg);
+  color: var(--cc-text);
 }
 
 .office-topbar {
@@ -14,9 +14,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  background: #090b0c;
-  border-bottom: 1px solid #2b2f31;
-  color: #fff;
+  background: var(--cc-bg);
+  border-bottom: 1px solid var(--cc-panel-border);
+  color: var(--cc-text);
 }
 
 .office-brand {
@@ -32,9 +32,9 @@
   flex: 0 0 48px;
   display: grid;
   place-items: center;
-  border: 2px solid #fff;
+  border: 2px solid var(--cc-text);
   border-radius: 8px;
-  color: var(--gold);
+  color: var(--cc-gold);
   font-weight: 950;
   overflow: hidden;
 }
@@ -57,7 +57,7 @@
 
 .office-brand small {
   margin-top: 3px;
-  color: var(--gold);
+  color: var(--cc-gold);
   font-size: 10px;
   font-weight: 900;
   text-transform: uppercase;
@@ -65,7 +65,7 @@
 
 .office-public-link {
   padding: 10px 13px;
-  border: 1px solid var(--gold);
+  border: 1px solid var(--cc-gold);
   border-radius: 3px;
   font-size: 11px;
   font-weight: 900;
@@ -75,8 +75,8 @@
 
 .office-public-link:hover,
 .office-public-link:focus-visible {
-  background: var(--gold);
-  color: #111;
+  background: var(--cc-gold);
+  color: var(--cc-on-accent);
 }
 
 .office-frame {
@@ -90,16 +90,16 @@
   top: 76px;
   height: calc(100svh - 76px);
   padding: 30px 18px;
-  background: #111516;
-  border-right: 1px solid #2b3032;
-  color: #fff;
+  background: var(--cc-surface);
+  border-right: 1px solid var(--cc-panel-border);
+  color: var(--cc-text);
   overflow-y: auto;
 }
 
 .office-nav-label {
   display: block;
   margin: 0 12px 14px;
-  color: #858d90;
+  color: var(--cc-text-muted);
   font-size: 10px;
   font-weight: 900;
   text-transform: uppercase;
@@ -117,21 +117,21 @@
   align-items: center;
   border-left: 3px solid transparent;
   border-radius: 3px;
-  color: #c8cdcf;
+  color: var(--cc-body-text);
   font-size: 13px;
   font-weight: 800;
 }
 
 .office-nav-link:hover,
 .office-nav-link:focus-visible {
-  background: #1d2224;
-  color: #fff;
+  background: var(--cc-surface-raised);
+  color: var(--cc-text);
 }
 
 .office-nav-link.active {
-  background: #22282a;
-  border-left-color: var(--gold);
-  color: var(--gold);
+  background: var(--cc-surface-raised);
+  border-left-color: var(--cc-gold);
+  color: var(--cc-gold);
 }
 
 .office-content {
@@ -151,7 +151,7 @@
 
 .office-page-header > span,
 .office-module-frame > span {
-  color: #56701c;
+  color: var(--cc-gold);
   font-size: 11px;
   font-weight: 950;
   text-transform: uppercase;
@@ -168,7 +168,7 @@
 .office-page-header p {
   max-width: 680px;
   margin: 0;
-  color: var(--muted);
+  color: var(--cc-text-muted);
   font-size: 17px;
   line-height: 1.6;
 }
@@ -181,9 +181,9 @@
 
 .office-section-card,
 .office-module-frame {
-  border: 1px solid #dfe2db;
+  border: 1px solid var(--cc-card-border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--cc-card-bg);
 }
 
 .office-section-card {
@@ -196,8 +196,8 @@
 
 .office-section-card:hover,
 .office-section-card:focus-visible {
-  border-color: #a9b28e;
-  box-shadow: 0 12px 28px rgba(18, 24, 20, .08);
+  border-color: var(--cc-gold-soft);
+  box-shadow: var(--cc-card-shadow);
   transform: translateY(-2px);
 }
 
@@ -209,14 +209,14 @@
 
 .office-section-card p {
   margin: 12px 0 24px;
-  color: var(--muted);
+  color: var(--cc-text-muted);
   font-size: 14px;
   line-height: 1.5;
 }
 
 .office-section-card strong {
   margin-top: auto;
-  color: #56701c;
+  color: var(--cc-gold);
   font-size: 11px;
   text-transform: uppercase;
 }
@@ -224,7 +224,7 @@
 .office-module-frame {
   min-height: 300px;
   padding: 34px;
-  border-top: 4px solid var(--gold);
+  border-top: 4px solid var(--cc-gold);
 }
 
 .office-module-frame h2 {
@@ -236,7 +236,7 @@
 .office-module-frame p {
   max-width: 580px;
   margin: 0;
-  color: var(--muted);
+  color: var(--cc-text-muted);
   line-height: 1.6;
 }
 
@@ -284,7 +284,7 @@
     height: auto;
     padding: 10px 14px;
     border-right: 0;
-    border-bottom: 1px solid #2b3032;
+    border-bottom: 1px solid var(--cc-panel-border);
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
@@ -322,7 +322,7 @@
 
   .office-nav-link.active {
     border-left-color: transparent;
-    border-bottom-color: var(--gold);
+    border-bottom-color: var(--cc-gold);
   }
 
   .office-content {
