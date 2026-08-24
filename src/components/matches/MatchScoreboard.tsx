@@ -2,6 +2,12 @@ import type {MatchResult, ResultContest} from '@/domain/results/MatchResult';
 import type {PublicMatchday} from '@/services/matches/MatchdayService';
 import styles from '@/app/matches/[id]/MatchdayV1.module.css';
 
+const teamNameStyle = {
+  fontSize: '14px',
+  letterSpacing: '.02em',
+  lineHeight: 1.2,
+} as const;
+
 export function MatchScoreboard({
   matchday,
   result,
@@ -20,18 +26,18 @@ export function MatchScoreboard({
     <section className={styles.scoreCard} aria-label="Match scoring">
       <div className={styles.scoreTop}>
         <div className={styles.teamScore}>
-          <span className={styles.teamName}>{matchday.awayTeam.name}</span>
+          <span className={styles.teamName} style={teamNameStyle}>{matchday.awayTeam.name}</span>
           <strong className={styles.scoreValue}>{awayScore}</strong>
         </div>
-        <span className={styles.scoreMiddle}>VS</span>
+        <span className={styles.scoreMiddle} style={{fontSize: '11px', letterSpacing: '.08em'}}>VS</span>
         <div className={styles.teamScore}>
-          <span className={styles.teamName}>{matchday.homeTeam.name}</span>
+          <span className={styles.teamName} style={teamNameStyle}>{matchday.homeTeam.name}</span>
           <strong className={styles.scoreValue}>{homeScore}</strong>
         </div>
       </div>
 
       <details className={styles.scoreDetails}>
-        <summary>{result ? 'View full scoring' : 'Scoring'}</summary>
+        <summary style={{fontSize: '14px', letterSpacing: '.01em'}}>{result ? 'View full scoring' : 'Scoring'}</summary>
         {result ? (
           <div className={styles.scoreSheet}>
             <ContestSection title="Singles" contests={singles} />
