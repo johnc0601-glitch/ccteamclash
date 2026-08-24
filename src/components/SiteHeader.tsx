@@ -22,19 +22,24 @@ export async function SiteHeader() {
         </Link>
         <nav className="desktop-nav">
           <Link href="/">Home</Link>
-          <Link href="/stories">Stories</Link>
           <Link href="/schedule">Schedule</Link>
           <Link href="/standings">Standings</Link>
-          <Link href="/playoffs">Playoffs</Link>
           <Link href="/rankings">Rankings</Link>
-          <Link href="/history">History</Link>
           <Link href="/teams">Teams</Link>
           <Link href="/players">Players</Link>
-          <Link href="/courses">Courses</Link>
+          <Link href="/stories">Stories</Link>
+          <details className="desktop-more">
+            <summary>More</summary>
+            <div>
+              <Link href="/playoffs">Playoffs</Link>
+              <Link href="/history">History</Link>
+              <Link href="/courses">Courses</Link>
+            </div>
+          </details>
           {canOpenOffice ? <Link className="post-nav" href="/admin">Create post</Link> : null}
           {canOpenOffice ? <Link href="/office">Office</Link> : null}
           {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
-          <Link href="/account">Account</Link>
+          <Link className="desktop-account" href="/account">Account</Link>
         </nav>
         <MobileAccountLink />
         <div className="mobile-header-actions">
@@ -42,15 +47,15 @@ export async function SiteHeader() {
             <summary>Menu</summary>
             <nav>
               <Link href="/">Home</Link>
+              <Link href="/schedule">Schedule</Link>
+              <Link href="/standings">Standings</Link>
               <Link href="/rankings">Rankings</Link>
               <Link href="/teams">Teams</Link>
               <Link href="/players">Players</Link>
-              <Link href="/courses">Courses</Link>
-              <Link href="/schedule">Schedule</Link>
-              <Link href="/standings">Standings</Link>
+              <Link href="/stories">Stories</Link>
               <Link href="/playoffs">Playoffs</Link>
               <Link href="/history">History</Link>
-              <Link href="/stories">Stories</Link>
+              <Link href="/courses">Courses</Link>
               {canOpenOffice ? <Link href="/admin">Create post</Link> : null}
               {canOpenOffice ? <Link href="/office">Office</Link> : null}
               {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
