@@ -20,8 +20,7 @@ export function HomeCommentFeed({items}: HomeCommentFeedProps) {
       <div className={styles.panel}>
         <header className={styles.header}>
           <div>
-            <span className={styles.eyebrow}>League conversation</span>
-            <h2>What people are saying</h2>
+            <span className={styles.eyebrow}>Buzz</span>
           </div>
           <p>Latest comments and replies from match pages across Coastal Clash.</p>
         </header>
