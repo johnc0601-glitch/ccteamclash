@@ -157,7 +157,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
         <RecordCard label="Most wins" row={leaders.wins} value={leaders.wins ? String(leaders.wins.wins) : '—'} />
         <RecordCard label="Best win %" row={leaders.winPercentage} value={leaders.winPercentage ? `${leaders.winPercentage.winPercentage.toFixed(1)}%` : '—'} note="5+ results" />
         <RecordCard label="Singles points" row={leaders.singles} value={leaders.singles ? formatPoints(recordPoints(leaders.singles.singlesWins, leaders.singles.singlesTies)) : '—'} />
-        <RecordCard label="Doubles points" row={leaders.doubles} value={leaders.doubles ? formatPoints(recordPoints(leaders.doubles.singlesWins, leaders.doubles.singlesTies)) : '—'} />
+        <RecordCard label="Doubles points" row={leaders.doubles} value={leaders.doubles ? formatPoints(recordPoints(leaders.doubles.doublesWins, leaders.doubles.doublesTies)) : '—'} />
       </div>
 
       <div className={styles.tableMeta}>
