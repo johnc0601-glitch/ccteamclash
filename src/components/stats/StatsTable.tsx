@@ -51,6 +51,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
   const rows = limit === 'all' ? sortedRows : sortedRows.slice(0, limit);
   const leaders = useMemo(() => buildLeaders(contextRows), [contextRows]);
   const hasCustomView = division !== 'Open' || team !== 'all' || search.trim() !== '' || limit !== 5 || sortKey !== 'points' || direction !== 'desc';
+  const textSort = sortKey === 'playerName' || sortKey === 'teamName';
 
   function selectGroup(nextGroupId: string) {
     setGroupId(nextGroupId);
@@ -147,7 +148,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
             </select>
           </label>
           <button type="button" onClick={() => setDirection((value) => value === 'desc' ? 'asc' : 'desc')} aria-label="Reverse sort direction">
-            {direction === 'desc' ? 'High → Low' : 'Low → High'}
+            {textSort ? (direction === 'asc' ? 'A → Z' : 'Z → A') : (direction === 'desc' ? 'High → Low' : 'Low → High')}
           </button>
         </div>
       </div>
@@ -156,7 +157,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
         <RecordCard label="Most wins" row={leaders.wins} value={leaders.wins ? String(leaders.wins.wins) : '—'} />
         <RecordCard label="Best win %" row={leaders.winPercentage} value={leaders.winPercentage ? `${leaders.winPercentage.winPercentage.toFixed(1)}%` : '—'} note="5+ results" />
         <RecordCard label="Singles points" row={leaders.singles} value={leaders.singles ? formatPoints(recordPoints(leaders.singles.singlesWins, leaders.singles.singlesTies)) : '—'} />
-        <RecordCard label="Doubles points" row={leaders.doubles} value={leaders.doubles ? formatPoints(recordPoints(leaders.doubles.doublesWins, leaders.doubles.doublesTies)) : '—'} />
+        <RecordCard label="Doubles points" row={leaders.doubles} value={leaders.doubles ? formatPoints(recordPoints(leaders.doubles.singlesWins, leaders.doubles.singlesTies)) : '—'} />
       </div>
 
       <div className={styles.tableMeta}>
@@ -246,9 +247,10 @@ function SortableHeader({label, sort, active, direction, onSort}: {
   direction: Direction;
   onSort: (sort: SortKey) => void;
 }) {
+  const ariaSort = active === sort ? (direction === 'desc' ? 'descending' : 'ascending') : 'none';
   return (
-    <th>
-      <button type="button" onClick={() => onSort(sort)}>
+    <th aria-sort={ariaSort}>
+      <button type="button" onClick={() => onSort(sort)} aria-label={`Sort by ${label}`}>
         {label}
         <span aria-hidden="true">{active === sort ? (direction === 'desc' ? ' ↓' : ' ↑') : ' ↕'}</span>
       </button>
