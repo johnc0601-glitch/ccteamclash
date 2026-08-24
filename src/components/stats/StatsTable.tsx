@@ -25,7 +25,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
   const group = groups.find((entry) => entry.id === groupId) ?? groups[0];
   const teams = useMemo(() => {
     if (!group) return [];
-    return Array.from(new Set(group.rows.map((row) => row.teamName).filter((name) => name && name !== 'Multiple teams')))
+    return Array.from(new Set(group.rows.flatMap((row) => row.teamNames).filter(Boolean)))
       .sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
   }, [group]);
 
@@ -33,7 +33,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
     if (!group) return [];
     return group.rows.filter((row) => {
       const divisionMatch = division === 'Women' ? row.gender === 'Women' : true;
-      const teamMatch = team === 'all' || row.teamName === team;
+      const teamMatch = team === 'all' || row.teamNames.includes(team);
       return divisionMatch && teamMatch;
     });
   }, [group, division, team]);
@@ -42,7 +42,9 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
     const query = search.trim().toLowerCase();
     if (!query) return contextRows;
     return contextRows.filter((row) =>
-      row.playerName.toLowerCase().includes(query) || row.teamName.toLowerCase().includes(query));
+      row.playerName.toLowerCase().includes(query)
+      || row.teamName.toLowerCase().includes(query)
+      || row.teamNames.some((teamName) => teamName.toLowerCase().includes(query)));
   }, [contextRows, search]);
 
   const sortedRows = useMemo(() => [...filteredRows].sort((a, b) => compareRows(a, b, sortKey, direction)), [filteredRows, sortKey, direction]);
@@ -178,7 +180,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
               return (
                 <tr key={`${group.id}-${row.playerId}`}>
                   <td data-label="Player"><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players/${row.playerId}`}>{row.playerName}</Link></td>
-                  <td data-label="Team">{row.teamName}</td>
+                  <td data-label="Team"><span title={row.teamNames.join(', ')}>{row.teamName}</span></td>
                   <td data-label="Matches">{row.matchesPlayed}</td>
                   <td data-label="Wins">{row.wins}</td>
                   <td data-label="Losses">{row.losses}</td>
