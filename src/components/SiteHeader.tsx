@@ -32,10 +32,10 @@ export async function SiteHeader() {
             <Link className="desktop-account" href="/account">Account</Link>
           </nav>
 
-          <MobileAccountLink />
           <div className="mobile-header-actions">
+            <MobileAccountLink />
             <details className="mobile-nav">
-              <summary>Menu</summary>
+              <summary aria-label="Menu"><span aria-hidden="true">☰</span></summary>
               <nav>
                 <div className="mobile-nav-group">
                   <span>Season</span>
