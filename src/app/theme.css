@@ -264,6 +264,14 @@ footer small { color: var(--cc-text-muted); }
 
 .button:not(.gold-button):not(.light-button) { border-radius: var(--cc-radius-sm); }
 
+/* Matchday uses CSS modules, so scope the canonical dark section surface to the inline team-color page signature. */
+main[style*="--match-away"] > .shell > section {
+  background: var(--cc-surface) !important;
+  border-color: var(--cc-panel-border) !important;
+  color: var(--cc-text) !important;
+  box-shadow: var(--cc-card-shadow);
+}
+
 /* Schedule */
 .schedule-page { max-width: 980px; }
 
