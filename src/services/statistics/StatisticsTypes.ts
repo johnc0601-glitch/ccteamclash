@@ -80,6 +80,8 @@ export type PlayerMatchHistoryEntry = {
   partnerPlayerNames: string[];
   playerScore?: number;
   opponentScore?: number;
+  /** Earned Clash Index movement from this match only. Season reseeds are excluded. */
+  ciDelta?: number;
 };
 
 export type SeasonStatistics = {
