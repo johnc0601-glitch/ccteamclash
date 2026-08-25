@@ -91,13 +91,6 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
           </select>
 
           <input aria-label="Search players" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search player" />
-
-          <select aria-label="Rows shown" value={limit} onChange={(event) => setLimit(event.target.value === 'all' ? 'all' : Number(event.target.value) as 5 | 10 | 25)}>
-            <option value={5}>Top 5</option>
-            <option value={10}>Top 10</option>
-            <option value={25}>Top 25</option>
-            <option value="all">All</option>
-          </select>
         </div>
 
         <div className={styles.mobileSortControl}>
@@ -121,7 +114,18 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
           <strong>{group.label} · {division}{team !== 'all' ? ` · ${team}` : ''}</strong>
           <span>{filteredRows.length} players · ranked by {sortLabel(sortKey)} {direction === 'desc' ? '↓' : '↑'}</span>
         </div>
-        {hasCustomView ? <button type="button" className={styles.resetButton} onClick={resetControls}>Reset view</button> : null}
+        <div className={styles.tableActions}>
+          <label className={styles.showControl}>
+            <span>Show</span>
+            <select value={limit} onChange={(event) => setLimit(event.target.value === 'all' ? 'all' : Number(event.target.value) as 5 | 10 | 25)}>
+              <option value={5}>Top 5</option>
+              <option value={10}>Top 10</option>
+              <option value={25}>Top 25</option>
+              <option value="all">All</option>
+            </select>
+          </label>
+          {hasCustomView ? <button type="button" className={styles.resetButton} onClick={resetControls}>Reset view</button> : null}
+        </div>
       </div>
 
       <div className={styles.tableWrap}>
