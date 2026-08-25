@@ -1,4 +1,3 @@
-import type {ResultContest, ResultContestOutcome, ResultContestSide} from '@/domain/results/MatchResult';
 import {
   CLASH_MODEL_VERSION,
   doublesPairCi,
