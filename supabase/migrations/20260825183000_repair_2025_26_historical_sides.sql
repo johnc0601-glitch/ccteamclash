@@ -3,16 +3,15 @@
 --
 -- Source authority: Coastal Clash Match Play '25_'26.xlsx, December sheet.
 -- The workbook uses a stable layout where the left player/team block is Away
--- and the right player/team block is Home. The source also shows these rows are
--- KB (Away) vs Ninjas (Home); Ariel's consolidated rows were incorrectly tagged
--- Hayneous OG's, which is why the archived team match could not be resolved.
+-- and the right player/team block is Home.
+--
+-- Preserve each player's recorded historical team assignment. A player may have
+-- appeared for a different team in a particular round; CI needs the round,
+-- opponent and side context, not a rewritten roster history. The archived round
+-- id is attached only to keep all participant rows on the same frozen Matchday.
 
 update public.historical_player_matchups
-set player_team_id = 'kb',
-    player_team_name = 'KB',
-    opponent_team_id = 'ninjas',
-    opponent_team_name = 'Ninjas',
-    historical_team_match_id = 29,
+set historical_team_match_id = 29,
     player_side = 'Away',
     home_away_validated = true
 where deduplication_key in (
@@ -23,11 +22,7 @@ where deduplication_key in (
   and event_label = 'December';
 
 update public.historical_player_matchups
-set player_team_id = 'ninjas',
-    player_team_name = 'Ninjas',
-    opponent_team_id = 'kb',
-    opponent_team_name = 'KB',
-    historical_team_match_id = 29,
+set historical_team_match_id = 29,
     player_side = 'Home',
     home_away_validated = true
 where deduplication_key = 'historical-match:5f82d6a791b4bc9be32ed44e'
