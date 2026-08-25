@@ -47,6 +47,14 @@ alter table public.clash_contest_rating_facts
 comment on column public.clash_contest_rating_facts.venue is
   'Venue context frozen with the Matchday CI snapshot. Singles home bonus applies only when venue = Home.';
 
+-- Contest CI movement is public league-statistics data. Publication remains
+-- server-only; this policy grants read access only.
+drop policy if exists "public reads clash contest rating facts" on public.clash_contest_rating_facts;
+create policy "public reads clash contest rating facts"
+  on public.clash_contest_rating_facts for select
+  to anon, authenticated
+  using (true);
+
 -- Historical team matches need an explicit venue because current course/team
 -- profiles are not trustworthy evidence for old events.
 alter table public.historical_team_matches
@@ -113,6 +121,13 @@ create index if not exists historical_clash_facts_contest_idx
   on public.historical_clash_contest_rating_facts(contest_id);
 
 alter table public.historical_clash_contest_rating_facts enable row level security;
+
+drop policy if exists "public reads historical clash contest rating facts"
+  on public.historical_clash_contest_rating_facts;
+create policy "public reads historical clash contest rating facts"
+  on public.historical_clash_contest_rating_facts for select
+  to anon, authenticated
+  using (true);
 
 comment on table public.historical_clash_contest_rating_facts is
   'Immutable historical per-player/per-contest CI facts rebuilt with the current finalized Clash model. Offseason reseeds are never represented as ci_delta.';
