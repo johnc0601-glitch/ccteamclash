@@ -5,7 +5,7 @@ import {useMemo, useState} from 'react';
 import type {StatsGroup, StatsRow} from '@/app/stats/page';
 import styles from '@/app/stats/Stats.module.css';
 
-type SortKey = 'matchesPlayed' | 'wins' | 'winPercentage' | 'points' | 'singles' | 'doubles';
+type SortKey = 'matchesPlayed' | 'wins' | 'winPercentage' | 'points' | 'singles' | 'doubles' | 'ciGain';
 type Direction = 'asc' | 'desc';
 type Limit = 25 | 'all';
 type Division = 'Open' | 'Women';
@@ -96,6 +96,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
         <div className={styles.mobileSortControl}>
           <select aria-label="Sort stats" value={sortKey} onChange={(event) => {setSortKey(event.target.value as SortKey); setDirection('desc');}}>
             <option value="points">Points</option>
+            <option value="ciGain">CI +/-</option>
             <option value="wins">Wins</option>
             <option value="winPercentage">Win %</option>
             <option value="matchesPlayed">Matches</option>
@@ -136,6 +137,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
               <SortableHeader label="Singles" sort="singles" active={sortKey} direction={direction} onSort={toggleSort} />
               <SortableHeader label="Doubles" sort="doubles" active={sortKey} direction={direction} onSort={toggleSort} />
               <SortableHeader label="Pts" sort="points" active={sortKey} direction={direction} onSort={toggleSort} />
+              <SortableHeader label="CI +/-" sort="ciGain" active={sortKey} direction={direction} onSort={toggleSort} />
             </tr>
           </thead>
           <tbody>
@@ -150,6 +152,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
                   <td>{formatRecord(row.singlesWins, row.singlesLosses, row.singlesTies)}</td>
                   <td>{formatRecord(row.doublesWins, row.doublesLosses, row.doublesTies)}</td>
                   <td><strong>{formatPoints(row.points)}</strong></td>
+                  <td><strong>{formatCiGain(row.ciGain)}</strong></td>
                 </tr>
               );
             })}
@@ -157,7 +160,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
         </table>
         {!rows.length ? <p className={styles.emptyState}>No players match these filters.</p> : null}
       </div>
-      <p className={styles.qualifierNote}>* Fewer than 5 recorded results.</p>
+      <p className={styles.qualifierNote}>* Fewer than 5 recorded results. CI +/- counts earned match movement only; season reseeds are excluded.</p>
     </section>
   );
 }
@@ -174,11 +177,17 @@ function compareRows(a: StatsRow, b: StatsRow, key: SortKey, direction: Directio
   const factor = direction === 'asc' ? 1 : -1;
   if (key === 'singles') return (recordPoints(a.singlesWins, a.singlesTies) - recordPoints(b.singlesWins, b.singlesTies)) * factor || a.playerName.localeCompare(b.playerName);
   if (key === 'doubles') return (recordPoints(a.doublesWins, a.doublesTies) - recordPoints(b.doublesWins, b.doublesTies)) * factor || a.playerName.localeCompare(b.playerName);
+  if (key === 'ciGain') {
+    if (a.ciGain === undefined && b.ciGain === undefined) return a.playerName.localeCompare(b.playerName);
+    if (a.ciGain === undefined) return 1;
+    if (b.ciGain === undefined) return -1;
+    return (a.ciGain - b.ciGain) * factor || a.playerName.localeCompare(b.playerName);
+  }
   return (a[key] - b[key]) * factor || a.playerName.localeCompare(b.playerName);
 }
 
 function sortLabel(key: SortKey): string {
-  return ({matchesPlayed: 'matches', wins: 'wins', winPercentage: 'win %', points: 'points', singles: 'singles', doubles: 'doubles'} as const)[key];
+  return ({matchesPlayed: 'matches', wins: 'wins', winPercentage: 'win %', points: 'points', singles: 'singles', doubles: 'doubles', ciGain: 'CI +/-'} as const)[key];
 }
 
 function recordPoints(wins: number, ties: number): number {
@@ -191,4 +200,11 @@ function formatRecord(wins: number, losses: number, ties: number): string {
 
 function formatPoints(points: number): string {
   return Number.isInteger(points) ? String(points) : points.toFixed(1);
+}
+
+function formatCiGain(value: number | undefined): string {
+  if (value === undefined) return '—';
+  if (value > 0) return `+${value}`;
+  if (value < 0) return `−${Math.abs(value)}`;
+  return '0';
 }
