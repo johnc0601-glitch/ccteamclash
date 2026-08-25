@@ -69,11 +69,17 @@ where season_name = '2024-2025'
 -- Historical facts intentionally do not reference launch_result_contests or
 -- live Matchday snapshots. Historical source rows have their own immutable
 -- provenance and must never be faked into the live publication tables.
+--
+-- historical_team_match_id is nullable because some playoff imports predate the
+-- team-match archive. historical_match_key remains mandatory and groups those
+-- rows deterministically by season/event/team pair. side may be null only for
+-- Neutral facts: playoffs have no true home/away side and CI does not invent one.
 create table if not exists public.historical_clash_contest_rating_facts (
   matchup_deduplication_key text primary key
     references public.historical_player_matchups(deduplication_key) on delete restrict,
   contest_id text not null,
-  historical_team_match_id bigint not null
+  historical_match_key text not null,
+  historical_team_match_id bigint null
     references public.historical_team_matches(id) on delete restrict,
   season_id text not null,
   player_id text not null,
@@ -82,7 +88,7 @@ create table if not exists public.historical_clash_contest_rating_facts (
   team_name text not null,
   opponent_team_id text not null,
   opponent_team_name text not null,
-  side text not null check (side in ('Home', 'Away')),
+  side text null check (side in ('Home', 'Away')),
   venue text not null check (venue in ('Home', 'Neutral')),
   format text not null check (format in ('Singles', 'Doubles')),
   outcome text not null check (outcome in ('W', 'L', 'T')),
@@ -94,11 +100,13 @@ create table if not exists public.historical_clash_contest_rating_facts (
   performance_vs_expected numeric not null,
   ci_delta integer not null,
   algorithm_version text not null,
-  calculated_at timestamptz not null default now()
+  calculated_at timestamptz not null default now(),
+  constraint historical_clash_fact_side_context_check
+    check ((venue = 'Home' and side is not null) or venue = 'Neutral')
 );
 
 create index if not exists historical_clash_facts_player_idx
-  on public.historical_clash_contest_rating_facts(player_id, season_id, historical_team_match_id);
+  on public.historical_clash_contest_rating_facts(player_id, season_id, historical_match_key);
 create index if not exists historical_clash_facts_season_idx
   on public.historical_clash_contest_rating_facts(season_id, player_id);
 create index if not exists historical_clash_facts_contest_idx
