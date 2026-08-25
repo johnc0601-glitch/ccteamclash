@@ -35,6 +35,18 @@ export class SupabaseHistoricalPlayerMatchupRepository implements HistoricalPlay
     return data.map((row) => toDomain(row as Row));
   }
 
+  async getBySeasonId(seasonId: string): Promise<HistoricalPlayerMatchup[]> {
+    const {data, error} = await this.supabase
+      .from('historical_player_matchups')
+      .select('*')
+      .eq('season_id', seasonId)
+      .order('event_order', {ascending: true})
+      .order('source_row', {ascending: true})
+      .order('deduplication_key', {ascending: true});
+    if (error) throw error;
+    return data.map((row) => toDomain(row as Row));
+  }
+
   async getCiDeltasByPlayerId(playerId: string): Promise<Map<string, number>> {
     // Generated Database types intentionally lag this feature migration until
     // the migration is applied. Keep this narrow cast local to the new ledger.
