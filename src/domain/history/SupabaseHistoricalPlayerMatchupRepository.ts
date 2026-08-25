@@ -15,6 +15,10 @@ type Insert = Table['Insert'] & {
   player_side?: string | null;
   home_away_validated?: boolean | null;
 };
+type HistoricalCiFact = {
+  matchup_deduplication_key: string;
+  ci_delta: number;
+};
 
 export class SupabaseHistoricalPlayerMatchupRepository implements HistoricalPlayerMatchupRepository {
   constructor(private readonly supabase: Client) {}
@@ -29,6 +33,19 @@ export class SupabaseHistoricalPlayerMatchupRepository implements HistoricalPlay
       .order('source_row', {ascending: false});
     if (error) throw error;
     return data.map((row) => toDomain(row as Row));
+  }
+
+  async getCiDeltasByPlayerId(playerId: string): Promise<Map<string, number>> {
+    // Generated Database types intentionally lag this feature migration until
+    // the migration is applied. Keep this narrow cast local to the new ledger.
+    const ratingClient = this.supabase as unknown as SupabaseClient;
+    const {data, error} = await ratingClient
+      .from('historical_clash_contest_rating_facts')
+      .select('matchup_deduplication_key,ci_delta')
+      .eq('player_id', playerId);
+    if (error) throw error;
+    const facts = (data ?? []) as HistoricalCiFact[];
+    return new Map(facts.map((fact) => [fact.matchup_deduplication_key, fact.ci_delta]));
   }
 
   async upsert(rows: HistoricalPlayerMatchup[]): Promise<number> {
