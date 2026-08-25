@@ -5,8 +5,16 @@ import type {Database} from '@/lib/supabase/database';
 
 type Client = SupabaseClient<Database>;
 type Table = Database['public']['Tables']['historical_player_matchups'];
-type Row = Table['Row'];
-type Insert = Table['Insert'];
+type Row = Table['Row'] & {
+  historical_team_match_id?: number | null;
+  player_side?: string | null;
+  home_away_validated?: boolean | null;
+};
+type Insert = Table['Insert'] & {
+  historical_team_match_id?: number | null;
+  player_side?: string | null;
+  home_away_validated?: boolean | null;
+};
 
 export class SupabaseHistoricalPlayerMatchupRepository implements HistoricalPlayerMatchupRepository {
   constructor(private readonly supabase: Client) {}
@@ -20,7 +28,7 @@ export class SupabaseHistoricalPlayerMatchupRepository implements HistoricalPlay
       .order('event_order', {ascending: false})
       .order('source_row', {ascending: false});
     if (error) throw error;
-    return data.map(toDomain);
+    return data.map((row) => toDomain(row as Row));
   }
 
   async upsert(rows: HistoricalPlayerMatchup[]): Promise<number> {
@@ -61,6 +69,9 @@ function toDomain(row: Row): HistoricalPlayerMatchup {
     sourceWorkbook: row.source_workbook,
     sourceSheet: row.source_sheet,
     sourceRow: row.source_row,
+    historicalTeamMatchId: row.historical_team_match_id ?? null,
+    playerSide: row.player_side === 'Home' || row.player_side === 'Away' ? row.player_side : null,
+    homeAwayValidated: row.home_away_validated ?? false,
   };
 }
 
@@ -91,5 +102,8 @@ function fromDomain(row: HistoricalPlayerMatchup): Insert {
     source_workbook: row.sourceWorkbook,
     source_sheet: row.sourceSheet,
     source_row: row.sourceRow,
+    historical_team_match_id: row.historicalTeamMatchId ?? null,
+    player_side: row.playerSide ?? null,
+    home_away_validated: row.homeAwayValidated ?? false,
   };
 }
