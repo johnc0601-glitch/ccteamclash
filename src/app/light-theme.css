@@ -57,6 +57,20 @@ body {
   color: #f5f5f2;
 }
 
+/* Header stays dark in the light site theme, so never let light-theme body tokens leak into its lettering. */
+.site-header .brand strong,
+.primary-header .brand strong,
+.mobile-nav > nav a {
+  color: #f5f5f2 !important;
+}
+
+.site-header .brand small,
+.primary-header .brand small,
+.mobile-nav-group > span,
+.mobile-sign-in {
+  color: var(--cc-gold) !important;
+}
+
 .site-header .desktop-account {
   border-color: #464b4e;
   color: #f5f5f2;
