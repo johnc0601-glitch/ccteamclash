@@ -9,7 +9,7 @@
 
 .pageHeader h1 {
   margin: 4px 0 8px;
-  color: var(--cc-light-text, #14191b);
+  color: #17191a;
   font-family: var(--cc-font-display);
   font-size: clamp(38px, 5vw, 58px);
   font-style: italic;
@@ -19,7 +19,7 @@
 
 .pageHeader p {
   margin: 0;
-  color: var(--cc-light-muted, #68706f);
+  color: #6c7476;
   font-size: 13px;
 }
 
@@ -36,11 +36,12 @@
   overflow-x: auto;
 }
 
-.seasonTabs {
+.seasonTabs,
+.divisionTabs {
   padding: 3px;
-  border: 1px solid #30383c;
-  border-radius: 7px;
-  background: #111619;
+  border: 1px solid #d1cec5;
+  border-radius: 10px;
+  background: #ebe8df;
 }
 
 .seasonTabs button,
@@ -49,9 +50,9 @@
   min-height: 32px;
   padding: 0 10px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 7px;
   background: transparent;
-  color: #aeb5b7;
+  color: #5f6668;
   font-size: 10px;
   font-weight: 900;
   text-transform: uppercase;
@@ -59,20 +60,14 @@
 }
 
 .seasonTabs button.activeSeason {
-  background: #1a2023;
-  color: var(--cc-gold, #ffc400);
-}
-
-.divisionTabs {
-  padding: 2px;
-  border: 1px solid #30383c;
-  border-radius: 6px;
-  background: #111619;
+  background: #f8f6ef;
+  color: var(--cc-gold, #b88900);
+  box-shadow: inset 0 0 0 1px #d6d2c8;
 }
 
 .divisionTabs button.activeDivision {
-  background: #f0c94d;
-  color: #111416;
+  background: #e7c24b;
+  color: #1a1b1b;
 }
 
 .secondaryControls {
@@ -89,17 +84,17 @@
   width: 100%;
   min-height: 34px;
   padding: 0 10px;
-  border: 1px solid #30383c;
-  border-radius: 6px;
-  background: #111619;
-  color: #f4f5f2;
-  color-scheme: dark;
+  border: 1px solid #cfcac0;
+  border-radius: 8px;
+  background: #f7f4ec;
+  color: #202426;
+  color-scheme: light;
   font-size: 11px;
   font-weight: 800;
 }
 
 .secondaryControls input::placeholder {
-  color: #858e91;
+  color: #858d8f;
 }
 
 .mobileSortControl {
@@ -111,7 +106,7 @@
   align-items: end;
   justify-content: space-between;
   gap: 12px;
-  color: #9ba3a5;
+  color: #7b8385;
   font-size: 10px;
 }
 
@@ -121,7 +116,7 @@
 }
 
 .tableMeta strong {
-  color: #f4f5f2;
+  color: #282c2e;
   font-size: 11px;
   text-transform: uppercase;
 }
@@ -136,7 +131,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #9ba3a5;
+  color: #7b8385;
   font-size: 9px;
   font-weight: 900;
   text-transform: uppercase;
@@ -151,7 +146,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--cc-gold, #ffc400);
+  color: var(--cc-gold, #b88900);
   font-size: 10px;
   font-weight: 900;
   text-transform: uppercase;
@@ -161,9 +156,10 @@
 .tableWrap {
   max-width: 100%;
   overflow-x: auto;
-  border: 1px solid #30383c;
-  border-radius: 7px;
-  background: #111619;
+  border: 1px solid #d1cdc3;
+  border-radius: 12px;
+  background: #f2efe7;
+  box-shadow: 0 8px 22px rgba(36, 39, 40, .07);
 }
 
 .statsTable {
@@ -171,14 +167,14 @@
   min-width: 700px;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
-  background: #111619;
+  background: #f2efe7;
 }
 
 .statsTable th,
 .statsTable td {
   height: 36px;
   padding: 5px 10px;
-  border-bottom: 1px solid #30383c;
+  border-bottom: 1px solid #d6d1c7;
   text-align: right;
   white-space: nowrap;
 }
@@ -187,8 +183,8 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  background: #111416;
-  color: #fff;
+  background: #e4e0d7;
+  color: #34393b;
   font-size: 9px;
   font-weight: 900;
   text-transform: uppercase;
@@ -209,14 +205,20 @@
 }
 
 .statsTable th button:hover {
-  color: var(--cc-gold, #ffc400);
+  color: var(--cc-gold, #b88900);
 }
 
 .statsTable td,
-.statsTable tbody tr:nth-child(even) td,
 .statsTable tbody tr:nth-child(odd) td {
-  background: #111619 !important;
-  color: #f4f5f2;
+  background: #f7f4ec !important;
+  color: #202426;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.statsTable tbody tr:nth-child(even) td {
+  background: #eeeae1 !important;
+  color: #202426;
   font-size: 11px;
   font-weight: 750;
 }
@@ -235,44 +237,47 @@
 
 .statsTable th:first-child {
   z-index: 3;
-  background: #111416;
+  background: #e4e0d7;
 }
 
 .statsTable td:first-child,
-.statsTable tbody tr:nth-child(even) td:first-child,
 .statsTable tbody tr:nth-child(odd) td:first-child {
-  background: #111619 !important;
+  background: #f7f4ec !important;
+}
+
+.statsTable tbody tr:nth-child(even) td:first-child {
+  background: #eeeae1 !important;
 }
 
 .rank {
   display: inline-block;
   width: 22px;
   margin-right: 6px;
-  color: var(--cc-gold, #ffc400);
+  color: var(--cc-gold, #b88900);
   font-size: 10px;
   font-weight: 950;
   text-align: center;
 }
 
 .playerLink {
-  color: #f4f5f2;
+  color: #202426;
   font-weight: 900;
   text-decoration: none;
 }
 
 .playerLink:hover {
-  color: var(--cc-gold, #ffc400);
+  color: var(--cc-gold, #b88900);
 }
 
 .smallSample {
   margin-left: 2px;
-  color: var(--cc-gold, #ffc400);
+  color: var(--cc-gold, #b88900);
   font-weight: 950;
 }
 
 .qualifierNote,
 .emptyState {
-  color: #9ba3a5;
+  color: #7b8385;
   font-size: 9px;
 }
 
@@ -307,10 +312,10 @@
   .mobileSortControl button {
     min-height: 34px;
     padding: 0 10px;
-    border: 1px solid #30383c;
-    border-radius: 6px;
-    background: #111416;
-    color: var(--cc-gold, #ffc400);
+    border: 1px solid #cfcac0;
+    border-radius: 8px;
+    background: #f7f4ec;
+    color: var(--cc-gold, #b88900);
     font-size: 9px;
     font-weight: 900;
     text-transform: uppercase;
