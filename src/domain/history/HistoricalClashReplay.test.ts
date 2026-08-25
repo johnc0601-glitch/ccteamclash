@@ -37,8 +37,8 @@ function row(overrides: Partial<HistoricalPlayerMatchup>): HistoricalPlayerMatch
   };
 }
 
-test('replay creates equal and opposite singles facts from the frozen match snapshot', () => {
-  const rows = [
+function mirroredSingles(): HistoricalPlayerMatchup[] {
+  return [
     row({deduplicationKey: 'home', playerId: 'home', opponentOnePlayerId: 'away', outcome: 'W', playerSide: 'Home'}),
     row({
       deduplicationKey: 'away',
@@ -55,14 +55,31 @@ test('replay creates equal and opposite singles facts from the frozen match snap
       sourceRow: 2,
     }),
   ];
+}
 
-  const result = replayHistoricalClashSeason(rows, new Map([['home', 900], ['away', 900]]));
+test('replay creates equal and opposite singles facts from the frozen match snapshot', () => {
+  const result = replayHistoricalClashSeason(mirroredSingles(), new Map([['home', 900], ['away', 900]]));
   assert.equal(result.facts.length, 2);
   assert.equal(result.facts[0].clashIndexBefore, 900);
   assert.equal(result.facts[1].clashIndexBefore, 900);
   assert.equal(result.facts[0].ciDelta, -result.facts[1].ciDelta);
   assert.equal(result.endingRatings.get('home'), 900 + result.facts[0].ciDelta);
   assert.equal(result.endingRatings.get('away'), 900 + result.facts[1].ciDelta);
+});
+
+test('neutral historical match removes singles home advantage', () => {
+  const rows = mirroredSingles();
+  const regular = replayHistoricalClashSeason(rows, new Map([['home', 900], ['away', 900]]));
+  const neutral = replayHistoricalClashSeason(
+    rows,
+    new Map([['home', 900], ['away', 900]]),
+    new Map([[10, 'Neutral']]),
+  );
+
+  assert.equal(regular.facts[0].venue, 'Home');
+  assert.equal(neutral.facts[0].venue, 'Neutral');
+  assert.equal(neutral.facts[0].winProbability, 0.5);
+  assert.notEqual(regular.facts[0].winProbability, neutral.facts[0].winProbability);
 });
 
 test('all contests in one team match use the same frozen starting CI', () => {
