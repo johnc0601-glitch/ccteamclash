@@ -5,7 +5,7 @@ import {useMemo, useState} from 'react';
 import type {StatsGroup, StatsRow} from '@/app/stats/page';
 import styles from '@/app/stats/Stats.module.css';
 
-type SortKey = 'playerName' | 'matchesPlayed' | 'wins' | 'winPercentage' | 'points' | 'singles' | 'doubles';
+type SortKey = 'matchesPlayed' | 'wins' | 'winPercentage' | 'points' | 'singles' | 'doubles';
 type Direction = 'asc' | 'desc';
 type Limit = 5 | 10 | 25 | 'all';
 type Division = 'Open' | 'Women';
@@ -63,7 +63,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
       return;
     }
     setSortKey(next);
-    setDirection(next === 'playerName' ? 'asc' : 'desc');
+    setDirection('desc');
   }
 
   if (!group) return null;
@@ -94,17 +94,16 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
         </div>
 
         <div className={styles.mobileSortControl}>
-          <select aria-label="Sort stats" value={sortKey} onChange={(event) => {const next = event.target.value as SortKey; setSortKey(next); setDirection(next === 'playerName' ? 'asc' : 'desc');}}>
+          <select aria-label="Sort stats" value={sortKey} onChange={(event) => {setSortKey(event.target.value as SortKey); setDirection('desc');}}>
             <option value="points">Points</option>
             <option value="wins">Wins</option>
             <option value="winPercentage">Win %</option>
             <option value="matchesPlayed">Matches</option>
             <option value="singles">Singles</option>
             <option value="doubles">Doubles</option>
-            <option value="playerName">Name</option>
           </select>
           <button type="button" onClick={() => setDirection((value) => value === 'desc' ? 'asc' : 'desc')}>
-            {sortKey === 'playerName' ? (direction === 'asc' ? 'A → Z' : 'Z → A') : (direction === 'desc' ? 'High → Low' : 'Low → High')}
+            {direction === 'desc' ? 'High → Low' : 'Low → High'}
           </button>
         </div>
       </div>
@@ -132,7 +131,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
         <table className={styles.statsTable}>
           <thead>
             <tr>
-              <SortableHeader label="Name" sort="playerName" active={sortKey} direction={direction} onSort={toggleSort} />
+              <th aria-label="Player" />
               <SortableHeader label="M" sort="matchesPlayed" active={sortKey} direction={direction} onSort={toggleSort} />
               <SortableHeader label="W" sort="wins" active={sortKey} direction={direction} onSort={toggleSort} />
               <SortableHeader label="Win %" sort="winPercentage" active={sortKey} direction={direction} onSort={toggleSort} />
@@ -175,14 +174,13 @@ function SortableHeader({label, sort, active, direction, onSort}: {label: string
 
 function compareRows(a: StatsRow, b: StatsRow, key: SortKey, direction: Direction): number {
   const factor = direction === 'asc' ? 1 : -1;
-  if (key === 'playerName') return a.playerName.localeCompare(b.playerName, undefined, {sensitivity: 'base'}) * factor;
   if (key === 'singles') return (recordPoints(a.singlesWins, a.singlesTies) - recordPoints(b.singlesWins, b.singlesTies)) * factor || a.playerName.localeCompare(b.playerName);
   if (key === 'doubles') return (recordPoints(a.doublesWins, a.doublesTies) - recordPoints(b.doublesWins, b.doublesTies)) * factor || a.playerName.localeCompare(b.playerName);
   return (a[key] - b[key]) * factor || a.playerName.localeCompare(b.playerName);
 }
 
 function sortLabel(key: SortKey): string {
-  return ({playerName: 'name', matchesPlayed: 'matches', wins: 'wins', winPercentage: 'win %', points: 'points', singles: 'singles', doubles: 'doubles'} as const)[key];
+  return ({matchesPlayed: 'matches', wins: 'wins', winPercentage: 'win %', points: 'points', singles: 'singles', doubles: 'doubles'} as const)[key];
 }
 
 function recordPoints(wins: number, ties: number): number {
