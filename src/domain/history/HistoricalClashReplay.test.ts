@@ -1,0 +1,88 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import type {HistoricalPlayerMatchup} from './HistoricalPlayerMatchup';
+import {replayHistoricalClashSeason} from './HistoricalClashReplay';
+
+function row(overrides: Partial<HistoricalPlayerMatchup>): HistoricalPlayerMatchup {
+  return {
+    deduplicationKey: 'row',
+    seasonId: 'season-1',
+    seasonName: 'Season 1',
+    eventLabel: 'Round 1',
+    eventMonth: 'October',
+    eventOrder: 1,
+    format: 'Singles',
+    playerId: 'home',
+    playerName: 'Home Player',
+    playerTeamId: 'team-home',
+    playerTeamName: 'Home Team',
+    partnerPlayerId: null,
+    partnerPlayerName: null,
+    opponentOnePlayerId: 'away',
+    opponentOnePlayerName: 'Away Player',
+    opponentTwoPlayerId: null,
+    opponentTwoPlayerName: null,
+    opponentTeamId: 'team-away',
+    opponentTeamName: 'Away Team',
+    outcome: 'W',
+    rawResult: null,
+    rawScore: null,
+    sourceWorkbook: 'test.xlsx',
+    sourceSheet: 'Round 1',
+    sourceRow: 1,
+    historicalTeamMatchId: 10,
+    playerSide: 'Home',
+    homeAwayValidated: true,
+    ...overrides,
+  };
+}
+
+test('replay creates equal and opposite singles facts from the frozen match snapshot', () => {
+  const rows = [
+    row({deduplicationKey: 'home', playerId: 'home', opponentOnePlayerId: 'away', outcome: 'W', playerSide: 'Home'}),
+    row({
+      deduplicationKey: 'away',
+      playerId: 'away',
+      playerName: 'Away Player',
+      playerTeamId: 'team-away',
+      playerTeamName: 'Away Team',
+      opponentOnePlayerId: 'home',
+      opponentOnePlayerName: 'Home Player',
+      opponentTeamId: 'team-home',
+      opponentTeamName: 'Home Team',
+      outcome: 'L',
+      playerSide: 'Away',
+      sourceRow: 2,
+    }),
+  ];
+
+  const result = replayHistoricalClashSeason(rows, new Map([['home', 900], ['away', 900]]));
+  assert.equal(result.facts.length, 2);
+  assert.equal(result.facts[0].clashIndexBefore, 900);
+  assert.equal(result.facts[1].clashIndexBefore, 900);
+  assert.equal(result.facts[0].ciDelta, -result.facts[1].ciDelta);
+  assert.equal(result.endingRatings.get('home'), 900 + result.facts[0].ciDelta);
+  assert.equal(result.endingRatings.get('away'), 900 + result.facts[1].ciDelta);
+});
+
+test('all contests in one team match use the same frozen starting CI', () => {
+  const rows = [
+    row({deduplicationKey: 'first', playerId: 'home', opponentOnePlayerId: 'away', outcome: 'W', sourceRow: 1}),
+    row({deduplicationKey: 'second', playerId: 'home', opponentOnePlayerId: 'away2', outcome: 'L', sourceRow: 2}),
+    row({
+      deduplicationKey: 'away', playerId: 'away', playerTeamId: 'team-away', playerTeamName: 'Away Team',
+      opponentOnePlayerId: 'home', opponentTeamId: 'team-home', opponentTeamName: 'Home Team', outcome: 'L', playerSide: 'Away', sourceRow: 3,
+    }),
+    row({
+      deduplicationKey: 'away2', playerId: 'away2', playerName: 'Away 2', playerTeamId: 'team-away', playerTeamName: 'Away Team',
+      opponentOnePlayerId: 'home', opponentTeamId: 'team-home', opponentTeamName: 'Home Team', outcome: 'W', playerSide: 'Away', sourceRow: 4,
+    }),
+  ];
+
+  const result = replayHistoricalClashSeason(rows, new Map([['home', 900], ['away', 900], ['away2', 900]]));
+  const homeFacts = result.facts.filter((fact) => fact.playerId === 'home');
+  assert.equal(homeFacts.length, 2);
+  assert.equal(homeFacts[0].clashIndexBefore, 900);
+  assert.equal(homeFacts[1].clashIndexBefore, 900);
+  assert.equal(result.endingRatings.get('home'), 900 + homeFacts[0].ciDelta + homeFacts[1].ciDelta);
+});
