@@ -38,6 +38,8 @@ export type StatsGroup = {
   rows: StatsRow[];
 };
 
+const MIN_STATS_MATCHES = 3;
+
 function compactSeasonName(name: string): string {
   const withoutLeagueName = name.replace(/^Coastal Clash Match Play\s*/i, '');
   return withoutLeagueName.replace(/(\d{4})-(\d{4})/, (_match, firstYear: string, secondYear: string) => `${firstYear}–${secondYear.slice(2)}`);
@@ -120,13 +122,17 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
 
 export default async function StatsPage({searchParams}: StatsPageProps) {
   const archives = getHistoricalSeasonArchives();
-  const seasonGroups: StatsGroup[] = archives.map((archive) => ({
+  const sourceGroups: StatsGroup[] = archives.map((archive) => ({
     id: archive.seasonId,
     label: compactSeasonName(archive.seasonName),
     rows: archive.playerSummaries.filter((summary) => summary.matchesPlayed > 0).map(toRow),
   }));
+  const seasonGroups = sourceGroups.map((group) => ({
+    ...group,
+    rows: group.rows.filter((row) => row.matchesPlayed >= MIN_STATS_MATCHES),
+  }));
   const groups: StatsGroup[] = [
-    {id: 'overall', label: 'Overall', rows: buildOverallRows(seasonGroups)},
+    {id: 'overall', label: 'Overall', rows: buildOverallRows(sourceGroups).filter((row) => row.matchesPlayed >= MIN_STATS_MATCHES)},
     ...seasonGroups,
   ];
   const query = await searchParams;
