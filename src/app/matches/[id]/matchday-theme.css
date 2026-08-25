@@ -1,203 +1,108 @@
-/* Matchday consumes the shared public dark theme. Team colors are accents only. */
-main[class*="Matchday_page"] {
+/* Matchday uses one shared dark visual system. Team colors remain accents only. */
+[data-matchday-root] {
+  color-scheme: dark;
   --match-surface: var(--cc-card-bg);
   --match-surface-soft: var(--cc-card-bg-soft);
   --match-border: var(--cc-card-border);
   --match-text: var(--cc-heading);
   --match-body: var(--cc-body-text);
   --match-muted: var(--cc-muted);
+}
+
+/* Beat the legacy MatchHeroV1 global white rules with a stable route hook. */
+html body [data-matchday-root] main {
   background:
     radial-gradient(circle at 8% 7%, color-mix(in srgb, var(--match-away) 18%, transparent), transparent 24rem),
     radial-gradient(circle at 92% 9%, color-mix(in srgb, var(--match-home) 18%, transparent), transparent 24rem),
     var(--cc-bg) !important;
+  background-attachment: fixed !important;
+  color: var(--match-body) !important;
+}
+
+html body [data-matchday-root] main > .shell > * {
+  border-color: var(--match-border) !important;
+  background: var(--match-surface) !important;
+  color: var(--match-body) !important;
+  box-shadow:
+    inset 4px 0 0 color-mix(in srgb, var(--match-away) 46%, var(--match-surface)),
+    inset -4px 0 0 color-mix(in srgb, var(--match-home) 46%, var(--match-surface)),
+    var(--cc-card-shadow) !important;
+}
+
+/* Hero stays team-colored; metadata strip joins the dark site theme. */
+html body [data-matchday-root] .matchday-hero-meta {
+  border-color: var(--match-border) !important;
+  background: var(--match-surface) !important;
+  color: var(--match-body) !important;
+  box-shadow: var(--cc-card-shadow) !important;
+}
+
+html body [data-matchday-root] .matchday-hero-meta a {
+  color: var(--match-text) !important;
+  border-bottom-color: var(--cc-gold) !important;
+}
+
+/* Any substantial nested Matchday surface uses the same dark palette. */
+html body [data-matchday-root] main > .shell :is(section, article, aside, details, form) {
+  border-color: var(--match-border);
   color: var(--match-body);
 }
 
-/* Every Matchday surface below the hero follows the same shared card system. */
-main[class*="Matchday_page"] :is(
-  [class*="scoreCard"],
-  [class*="scoreboard"],
-  [class*="attendanceCard"],
-  [class*="stateBanner"],
-  [class*="sectionCard"],
-  [class*="captainPanel"],
-  [class*="commissionerPanel"],
-  [class*="exportPanel"],
-  [class*="MatchFeed_feed"],
-  [class*="MatchFeed_composer"],
-  [class*="MatchFeed_post"],
-  [class*="previewTeam"],
-  [class*="rosterTeam"],
-  [class*="captainTeamRoster"]
-) {
-  background: var(--match-surface) !important;
-  border-color: var(--match-border) !important;
-  color: var(--match-body) !important;
-  box-shadow: var(--cc-card-shadow) !important;
-}
-
-/* The matchup hero remains team-colored; its metadata bar joins the dark system. */
-main[class*="Matchday_page"] [class*="heroMeta"] {
-  background: var(--match-surface) !important;
-  border-color: var(--match-border) !important;
-  color: var(--match-body) !important;
-  box-shadow: var(--cc-card-shadow) !important;
-}
-
-main[class*="Matchday_page"] [class*="heroMeta"] a {
-  color: var(--match-text) !important;
-  text-decoration-color: var(--cc-gold) !important;
-}
-
-main[class*="Matchday_page"] [class*="weatherSlot"] { color: var(--cc-gold) !important; }
-
-/* Scoreboard: remove the remaining white lower strip. */
-main[class*="Matchday_page"] :is(
-  [class*="scoreTop"],
-  [class*="scoreMiddle"],
-  [class*="scoreDetails"],
-  [class*="scoreDetails"] summary
-) {
-  background: var(--match-surface) !important;
-  color: var(--match-text) !important;
-  border-color: var(--match-border) !important;
-}
-
-main[class*="Matchday_page"] [class*="scoreDetails"] summary {
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-  padding-inline: 18px !important;
-}
-
-/* Major editorial headings keep the Clash display face. Everything else uses the UI face. */
-main[class*="Matchday_page"] :is(
-  [class*="attendanceCard"] h2,
-  [class*="sectionHeader"] h2,
-  [class*="MatchFeed_feedHeader"] h2
-) {
-  color: var(--match-text) !important;
-  font-family: var(--cc-font-display), Arial, Helvetica, sans-serif;
-  font-style: italic;
-  font-weight: 900;
-}
-
-main[class*="Matchday_page"] :is(
-  p, span, strong, b, label, input, textarea, select, button, summary, a,
-  [class*="teamName"], [class*="previewTeamHead"], [class*="previewPlayer"],
-  [class*="captainTeamHeader"], [class*="rosterTeamHeader"], [class*="rosterTitle"]
-) {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-main[class*="Matchday_page"] :is(
-  [class*="teamName"],
-  [class*="previewTeamHead"] > span:first-child,
-  [class*="rosterTeamHeader"] h3,
-  [class*="captainTeamHeader"] h3,
-  [class*="MatchFeed_author"] strong,
-  [class*="MatchFeed_commentTop"] strong
-) {
-  color: var(--match-text) !important;
-}
-
-main[class*="Matchday_page"] :is(
-  [class*="sectionHeader"] p,
-  [class*="attendanceCard"] p,
-  [class*="stateBanner"] p,
-  [class*="MatchFeed_feedHeader"] p,
-  [class*="MatchFeed_author"] span,
-  [class*="MatchFeed_commentTop"] span,
-  [class*="MatchFeed_stats"],
-  [class*="playerMeta"],
-  [class*="previewMore"]
-) {
-  color: var(--match-muted) !important;
-  opacity: 1 !important;
-}
-
-/* Section labels use one accent rather than random light/dark colors. */
-main[class*="Matchday_page"] :is(
-  [class*="attendanceCard"] > div > span,
-  [class*="sectionHeader"] span,
-  [class*="MatchFeed_feedHeader"] span,
-  [class*="stateBanner"] > span
-) {
-  color: var(--cc-gold) !important;
-}
-
-/* Feed header is a compact stacked block, not edge-to-edge text. */
-main[class*="Matchday_page"] [class*="MatchFeed_feed"] {
-  padding: 24px !important;
-  display: grid;
-  gap: 16px;
-}
-
-main[class*="Matchday_page"] [class*="MatchFeed_feedHeader"] {
-  display: grid !important;
-  justify-content: initial !important;
-  align-items: initial !important;
-  gap: 5px !important;
-}
-
-main[class*="Matchday_page"] [class*="MatchFeed_feedHeader"] p {
-  max-width: 640px !important;
-  margin: 0 !important;
-  text-align: left !important;
-}
-
-/* Forms and controls inherit the same dark fields used elsewhere on the public site. */
-main[class*="Matchday_page"] :is(
-  textarea, input, select,
-  [class*="snapshotAddForm"],
-  [class*="confirmRosterForm"],
-  [class*="rosterTitle"],
-  [class*="previewTeamHead"],
-  [class*="captainTeamHeader"],
-  [class*="rosterTeamHeader"],
-  [class*="MatchFeed_comment"],
-  [class*="MatchFeed_loadMore"]
-) {
+html body [data-matchday-root] main > .shell :is(details, summary, textarea, input, select) {
   background: var(--match-surface-soft) !important;
   border-color: var(--match-border) !important;
   color: var(--match-text) !important;
 }
 
-main[class*="Matchday_page"] textarea::placeholder,
-main[class*="Matchday_page"] input::placeholder { color: var(--match-muted) !important; }
+html body [data-matchday-root] main > .shell textarea::placeholder,
+html body [data-matchday-root] main > .shell input::placeholder {
+  color: var(--match-muted) !important;
+}
 
-/* Roster rows and comments use subtle separation rather than alternating white blocks. */
-main[class*="Matchday_page"] :is(
-  [class*="previewPlayer"],
-  [class*="playerRow"],
-  [class*="captainPlayerRow"],
-  [class*="MatchFeed_reactionBar"],
-  [class*="MatchFeed_commentArea"]
+/* Remove light strips and white utility blocks left by older component CSS. */
+html body [data-matchday-root] main > .shell :is(
+  details,
+  summary,
+  [role="group"]
 ) {
-  background: transparent !important;
-  border-color: var(--match-border) !important;
-  color: var(--match-body) !important;
+  box-shadow: none;
 }
 
-main[class*="Matchday_page"] [class*="MatchFeed_postBody"],
-main[class*="Matchday_page"] [class*="MatchFeed_comment"] p,
-main[class*="Matchday_page"] [class*="MatchFeed_empty"] {
-  color: var(--match-body) !important;
+html body [data-matchday-root] main > .shell p {
+  color: var(--match-body);
 }
 
-/* Keep team identity on edges and names, not on whole card backgrounds. */
-main[class*="Matchday_page"] [class*="previewTeam"],
-main[class*="Matchday_page"] [class*="rosterTeam"],
-main[class*="Matchday_page"] [class*="scoreCard"],
-main[class*="Matchday_page"] [class*="scoreboard"] {
-  border-top-color: var(--match-border) !important;
-  border-bottom-color: var(--match-border) !important;
+html body [data-matchday-root] main > .shell small {
+  color: var(--match-muted);
+}
+
+/* Major sports headings keep the display face; interface copy stays readable. */
+html body [data-matchday-root] main > .shell :is(h1, h2) {
+  color: var(--match-text);
+}
+
+html body [data-matchday-root] main > .shell :is(
+  p, span, strong, b, label, input, textarea, select, button, summary, a, small
+) {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Match feed gets real card padding instead of edge-to-edge content. */
+html body [data-matchday-root] main > .shell > *:has(textarea) {
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
 @media (max-width: 700px) {
-  main[class*="Matchday_page"] [class*="MatchFeed_feed"] { padding: 18px !important; }
-  main[class*="Matchday_page"] :is([class*="previewTeamHead"], [class*="previewPlayer"], [class*="scoreDetails"] summary) {
-    padding-left: 14px !important;
-    padding-right: 14px !important;
+  html body [data-matchday-root] main {
+    background:
+      radial-gradient(ellipse 18rem 46rem at -14% 28%, color-mix(in srgb, var(--match-away) 16%, transparent), transparent 72%),
+      radial-gradient(ellipse 18rem 46rem at 114% 32%, color-mix(in srgb, var(--match-home) 16%, transparent), transparent 72%),
+      var(--cc-bg) !important;
+  }
+
+  html body [data-matchday-root] main > .shell > *:has(textarea) {
+    padding-left: 18px;
+    padding-right: 18px;
   }
 }
