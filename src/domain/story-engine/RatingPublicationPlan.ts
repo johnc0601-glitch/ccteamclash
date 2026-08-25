@@ -36,6 +36,13 @@ export function buildRatingPublicationPlan(input: {
     throw new Error('CI publication contains rows from another match');
   }
 
+  const snapshotVenues = new Set(snapshots.map((row) => row.venue));
+  if (snapshotVenues.size !== 1) throw new Error('CI snapshot contains mixed venue classifications');
+  const venue = snapshots[0].venue;
+  if (facts.some((row) => row.venue !== venue)) {
+    throw new Error('Rating facts do not match the frozen Matchday venue');
+  }
+
   const snapshotByPlayer = new Map(snapshots.map((row) => [row.playerId, row]));
   const deltas = new Map<string, number>();
   for (const fact of facts) {
