@@ -43,7 +43,10 @@ export class SupabaseHistoricalPlayerMatchupRepository implements HistoricalPlay
       .from('historical_clash_contest_rating_facts')
       .select('matchup_deduplication_key,ci_delta')
       .eq('player_id', playerId);
-    if (error) throw error;
+    if (error) {
+      if (isMissingHistoricalLedger(error)) return new Map();
+      throw error;
+    }
     const facts = (data ?? []) as HistoricalCiFact[];
     return new Map(facts.map((fact) => [fact.matchup_deduplication_key, fact.ci_delta]));
   }
@@ -123,4 +126,10 @@ function fromDomain(row: HistoricalPlayerMatchup): Insert {
     player_side: row.playerSide ?? null,
     home_away_validated: row.homeAwayValidated ?? false,
   };
+}
+
+function isMissingHistoricalLedger(error: {code?: string; message?: string}): boolean {
+  return error.code === '42P01'
+    || error.code === 'PGRST205'
+    || Boolean(error.message?.includes('historical_clash_contest_rating_facts'));
 }
