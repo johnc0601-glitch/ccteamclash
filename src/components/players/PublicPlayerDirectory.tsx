@@ -12,6 +12,7 @@ type PublicPlayerDirectoryProps = {
   players: PublicPlayerView[];
   showFilters?: boolean;
   initialMode?: 'list' | 'search';
+  initialSearch?: string;
   showRankingsLink?: boolean;
 };
 
@@ -43,20 +44,19 @@ export function PublicPlayerDirectory({
   players,
   showFilters = true,
   initialMode = 'list',
+  initialSearch = '',
   showRankingsLink = false,
 }: PublicPlayerDirectoryProps) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearch);
   const normalizedSearch = normalizeSearchText(search);
+  const normalizedInitialSearch = normalizeSearchText(initialSearch);
   const searchablePlayers = uniquePlayers(players);
   const searchRequired = showFilters && initialMode === 'search';
   const hasSearch = normalizedSearch.length > 0;
   const visiblePlayers = searchRequired && !hasSearch
     ? []
     : searchablePlayers.filter(({player}) =>
-      !normalizedSearch || [
-        player.name,
-        player.pdgaNumber,
-      ].some((value) => normalizeSearchText(value).includes(normalizedSearch)));
+      !normalizedSearch || [player.name, player.pdgaNumber].some((value) => normalizeSearchText(value).includes(normalizedSearch)));
 
   return (
     <>
@@ -76,9 +76,10 @@ export function PublicPlayerDirectory({
       <div className={styles.directory}>
         {visiblePlayers.map((playerView) => {
           const {player, teamName, currentSeasonName, currentStatistics, careerStatistics} = playerView;
+          const openFromLink = normalizedInitialSearch.length > 0 && normalizeSearchText(player.name) === normalizedInitialSearch;
 
           return (
-            <details className={styles.player} key={player.id}>
+            <details className={styles.player} key={player.id} open={openFromLink || undefined}>
               <summary>
                 <span>
                   <strong>{player.name}</strong>

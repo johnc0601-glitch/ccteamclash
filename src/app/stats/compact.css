@@ -1,0 +1,128 @@
+/* Compact spreadsheet treatment for the stats page. Loaded only by /stats. */
+
+main.page-shell table {
+  font-variant-numeric: tabular-nums;
+}
+
+main.page-shell table th,
+main.page-shell table td {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+main.page-shell table td:first-child span:first-child {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  /* Keep the player list as a real spreadsheet instead of one card per player. */
+  main.page-shell table,
+  main.page-shell table tbody,
+  main.page-shell table thead,
+  main.page-shell table tr {
+    display: table;
+    width: auto;
+  }
+
+  main.page-shell table {
+    width: 100%;
+    min-width: 760px;
+    border-collapse: collapse;
+  }
+
+  main.page-shell table thead {
+    display: table-header-group;
+  }
+
+  main.page-shell table tbody {
+    display: table-row-group;
+  }
+
+  main.page-shell table tr {
+    display: table-row;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  main.page-shell table th,
+  main.page-shell table td,
+  main.page-shell table td:first-child {
+    display: table-cell;
+    width: auto;
+    padding: 8px 9px;
+    border-bottom: 1px solid var(--cc-light-border, #dedfd9);
+    white-space: nowrap;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  main.page-shell table td::before,
+  main.page-shell table td:first-child::before {
+    display: none;
+    content: none;
+  }
+
+  main.page-shell table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 170px;
+    background: var(--cc-light-surface, #fff);
+  }
+
+  main.page-shell table th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    min-width: 170px;
+    background: #111416;
+  }
+
+  main.page-shell table td:nth-child(2) {
+    min-width: 130px;
+  }
+
+  main.page-shell table td:first-child span:first-child {
+    display: inline-grid;
+    margin-right: 7px;
+    place-items: center;
+  }
+
+  main.page-shell section > div:has(> article) {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(125px, 1fr));
+    gap: 0;
+    overflow-x: auto;
+    border: 1px solid var(--cc-light-border, #dedfd9);
+    border-radius: 8px;
+    background: var(--cc-light-surface, #fff);
+  }
+
+  main.page-shell section > div:has(> article) > article {
+    min-width: 125px;
+    padding: 9px 10px;
+    gap: 2px;
+    border: 0;
+    border-right: 1px solid var(--cc-light-border, #dedfd9);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  main.page-shell section > div:has(> article) > article:last-child {
+    border-right: 0;
+  }
+
+  main.page-shell section > div:has(> article) > article > strong {
+    font-size: 21px;
+  }
+
+  main.page-shell section > div:has(> article) > article > a {
+    font-size: 10px;
+  }
+}
