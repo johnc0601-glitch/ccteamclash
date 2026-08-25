@@ -5,8 +5,9 @@
   --cc-surface-raised: #1b1f21;
   --cc-surface-deep: #101315;
   --cc-panel-border: #303538;
-  --cc-gold: #ffc400;
-  --cc-gold-soft: #e5b300;
+  --cc-gold: #c99a00;
+  --cc-gold-soft: #b88c00;
+  --cc-steel: #7f8d91;
   --cc-gold-ink: var(--cc-gold);
   --cc-text: #f5f5f2;
   --cc-text-muted: #aab1b3;
@@ -29,8 +30,8 @@
   --cc-row-bg: var(--cc-surface-deep);
   --cc-table-head-bg: #0d1011;
   --cc-table-head-text: var(--cc-text-muted);
-  --cc-bronze: var(--cc-gold);
-  --cc-teal: var(--cc-gold);
+  --cc-bronze: var(--cc-gold-soft);
+  --cc-teal: var(--cc-steel);
 
   --cc-font-body: "Segoe UI", Arial, sans-serif;
   --cc-font-display: "Segoe UI Black", "Arial Black", Arial, sans-serif;
@@ -295,7 +296,7 @@ main[style*="--match-away"] > .shell > section {
   color: var(--cc-text);
   font-weight: 800;
   text-decoration: underline;
-  text-decoration-color: rgba(255, 196, 0, .45);
+  text-decoration-color: rgba(201, 154, 0, .45);
   text-underline-offset: 3px;
 }
 .schedule-page .match-row > strong { color: var(--cc-text); font-size: 18px; }
