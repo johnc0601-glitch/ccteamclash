@@ -47,7 +47,9 @@ export async function SiteHeader() {
           <nav className="desktop-nav primary-nav" aria-label="Primary navigation">
             <Link href="/schedule">Schedule</Link>
             <Link href="/standings">Standings</Link>
+            <Link href="/playoffs">Playoffs</Link>
             <Link href="/rankings">Rankings</Link>
+            <Link href="/stats">Stats</Link>
             <span className="primary-nav-separator" aria-hidden="true" />
             <Link href="/teams">Teams</Link>
             <Link href="/stories">Stories</Link>
@@ -63,7 +65,9 @@ export async function SiteHeader() {
                   <span>Season</span>
                   <Link href="/schedule">Schedule</Link>
                   <Link href="/standings">Standings</Link>
+                  <Link href="/playoffs">Playoffs</Link>
                   <Link href="/rankings">Rankings</Link>
+                  <Link href="/stats">Stats</Link>
                 </div>
                 <div className="mobile-nav-group">
                   <span>League</span>
@@ -146,6 +150,7 @@ export async function Footer() {
           <Link href="/standings">Standings</Link>
           <Link href="/playoffs">Playoffs</Link>
           <Link href="/rankings">Rankings</Link>
+          <Link href="/stats">Stats</Link>
           <Link href="/history">History</Link>
           <Link href="/teams">Teams</Link>
           <Link href="/courses">Courses</Link>

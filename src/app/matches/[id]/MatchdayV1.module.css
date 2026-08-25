@@ -5,10 +5,10 @@
 
 .scoreCard {
   overflow: hidden;
-  border: 1px solid #d5dcda;
+  border: 1px solid var(--cc-card-border);
   border-radius: 12px;
   background: var(--cc-card-bg);
-  box-shadow: 0 10px 28px rgba(11, 24, 20, .08);
+  box-shadow: var(--cc-card-shadow);
 }
 
 .scoreTop {
@@ -198,7 +198,7 @@
 }
 
 .contestRow[data-winner="tie"] {
-  background: rgba(252, 194, 0, .045);
+  background: rgba(255, 196, 0, .045);
 }
 
 .sectionTotal,
@@ -277,20 +277,20 @@
   min-width: 0;
   overflow: hidden;
   align-self: start;
-  border: 1px solid #d5dcda;
+  border: 1px solid var(--cc-card-border);
   border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 8px 22px rgba(11, 24, 20, .06);
+  background: var(--cc-card-bg);
+  box-shadow: var(--cc-card-shadow);
 }
 
 .previewGrid > .previewTeam:first-child {
   border-left: 5px solid var(--match-away-deep, var(--match-away));
-  box-shadow: -5px 0 18px color-mix(in srgb, var(--match-away-deep, var(--match-away)) 11%, transparent), 0 8px 22px rgba(11, 24, 20, .06);
+  box-shadow: -5px 0 18px color-mix(in srgb, var(--match-away-deep, var(--match-away)) 11%, transparent), var(--cc-card-shadow);
 }
 
 .previewGrid > .previewTeam:last-child {
   border-left: 5px solid var(--match-home-deep, var(--match-home));
-  box-shadow: 5px 0 18px color-mix(in srgb, var(--match-home-deep, var(--match-home)) 11%, transparent), 0 8px 22px rgba(11, 24, 20, .06);
+  box-shadow: 5px 0 18px color-mix(in srgb, var(--match-home-deep, var(--match-home)) 11%, transparent), var(--cc-card-shadow);
 }
 
 .previewTeam > summary {
@@ -309,20 +309,20 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border-bottom: 1px solid #e2e7e4;
-  background: #f8f9f7;
-  color: #17201d;
+  border-bottom: 1px solid var(--cc-card-border);
+  background: color-mix(in srgb, var(--cc-table-head-bg) 84%, var(--cc-card-bg));
+  color: var(--cc-table-head-text);
   font-size: 12px;
   font-weight: 950;
   text-transform: uppercase;
 }
 
 .previewGrid > .previewTeam:first-child .previewTeamHead {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--match-away-deep, var(--match-away)) 10%, #fff), #f8f9f7 36%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--match-away-deep, var(--match-away)) 10%, var(--cc-card-bg)), color-mix(in srgb, var(--cc-table-head-bg) 84%, var(--cc-card-bg)) 36%);
 }
 
 .previewGrid > .previewTeam:last-child .previewTeamHead {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--match-home-deep, var(--match-home)) 10%, #fff), #f8f9f7 36%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--match-home-deep, var(--match-home)) 10%, var(--cc-card-bg)), color-mix(in srgb, var(--cc-table-head-bg) 84%, var(--cc-card-bg)) 36%);
 }
 
 .previewGrid > .previewTeam:first-child .previewTeamHead > span:first-child,
@@ -352,19 +352,19 @@
 
 .previewTeamHead > span:last-of-type {
   margin-left: auto;
-  color: #6f7b77;
+  color: var(--cc-text-muted);
   font-size: 10px;
   letter-spacing: .1em;
 }
 
 .previewTeamHeadColor {
   min-height: 58px;
-  background: linear-gradient(145deg, #12191b, #071012);
-  color: #fff;
+  background: linear-gradient(145deg, var(--cc-surface-raised), var(--cc-bg));
+  color: var(--cc-text);
 }
 
 .previewTeamHeadColor > span:last-child {
-  color: #fff;
+  color: var(--cc-text);
   font-size: 10px;
   letter-spacing: .12em;
   opacity: .85;
@@ -464,21 +464,6 @@
 
 .fullRosterGrid {
   padding-top: 16px;
-}
-
-:global([data-theme="dark"] body) .scoreCard,
-:global([data-theme="dark"] body) .previewTeam,
-:global(body[data-theme="dark"]) .scoreCard,
-:global(body[data-theme="dark"]) .previewTeam {
-  border-color: var(--cc-card-border);
-  box-shadow: var(--cc-card-shadow);
-}
-
-:global([data-theme="dark"] body) .previewTeamHead,
-:global(body[data-theme="dark"]) .previewTeamHead {
-  border-bottom-color: var(--cc-card-border);
-  background: color-mix(in srgb, var(--cc-table-head-bg) 84%, var(--cc-card-bg));
-  color: var(--cc-table-head-text);
 }
 
 @media (max-width: 760px) {

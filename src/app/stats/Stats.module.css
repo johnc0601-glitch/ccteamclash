@@ -1,0 +1,343 @@
+.page {
+  max-width: 1180px;
+}
+
+.pageHeader {
+  max-width: 760px;
+  margin-bottom: 20px;
+}
+
+.pageHeader h1 {
+  margin: 4px 0 8px;
+  color: var(--cc-light-text, #14191b);
+  font-family: var(--cc-font-display);
+  font-size: clamp(38px, 5vw, 58px);
+  font-style: italic;
+  line-height: .95;
+  text-transform: uppercase;
+}
+
+.pageHeader p {
+  margin: 0;
+  color: var(--cc-light-muted, #68706f);
+  font-size: 13px;
+}
+
+.statsShell,
+.controls {
+  display: grid;
+  gap: 10px;
+}
+
+.seasonTabs,
+.divisionTabs {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+}
+
+.seasonTabs {
+  padding: 3px;
+  border: 1px solid #30383c;
+  border-radius: 7px;
+  background: #111619;
+}
+
+.seasonTabs button,
+.divisionTabs button {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #aeb5b7;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.seasonTabs button.activeSeason {
+  background: #1a2023;
+  color: var(--cc-gold, #ffc400);
+}
+
+.divisionTabs {
+  padding: 2px;
+  border: 1px solid #30383c;
+  border-radius: 6px;
+  background: #111619;
+}
+
+.divisionTabs button.activeDivision {
+  background: #f0c94d;
+  color: #111416;
+}
+
+.secondaryControls {
+  display: grid;
+  grid-template-columns: auto minmax(130px, 180px) minmax(180px, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.secondaryControls select,
+.secondaryControls input,
+.mobileSortControl select,
+.showControl select {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid #30383c;
+  border-radius: 6px;
+  background: #111619;
+  color: #f4f5f2;
+  color-scheme: dark;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.secondaryControls input::placeholder {
+  color: #858e91;
+}
+
+.mobileSortControl {
+  display: none;
+}
+
+.tableMeta {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  color: #9ba3a5;
+  font-size: 10px;
+}
+
+.tableMeta > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.tableMeta strong {
+  color: #f4f5f2;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.tableActions {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+
+.showControl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #9ba3a5;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.showControl select {
+  width: auto;
+  min-width: 92px;
+}
+
+.resetButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cc-gold, #ffc400);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #30383c;
+  border-radius: 7px;
+  background: #111619;
+}
+
+.statsTable {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  background: #111619;
+}
+
+.statsTable th,
+.statsTable td {
+  height: 36px;
+  padding: 5px 10px;
+  border-bottom: 1px solid #30383c;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.statsTable th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #111416;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.statsTable th:first-child,
+.statsTable td:first-child {
+  text-align: left;
+}
+
+.statsTable th button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.statsTable th button:hover {
+  color: var(--cc-gold, #ffc400);
+}
+
+.statsTable td,
+.statsTable tbody tr:nth-child(even) td,
+.statsTable tbody tr:nth-child(odd) td {
+  background: #111619 !important;
+  color: #f4f5f2;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.statsTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.statsTable th:first-child,
+.statsTable td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 190px;
+}
+
+.statsTable th:first-child {
+  z-index: 3;
+  background: #111416;
+}
+
+.statsTable td:first-child,
+.statsTable tbody tr:nth-child(even) td:first-child,
+.statsTable tbody tr:nth-child(odd) td:first-child {
+  background: #111619 !important;
+}
+
+.rank {
+  display: inline-block;
+  width: 22px;
+  margin-right: 6px;
+  color: var(--cc-gold, #ffc400);
+  font-size: 10px;
+  font-weight: 950;
+  text-align: center;
+}
+
+.playerLink {
+  color: #f4f5f2;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.playerLink:hover {
+  color: var(--cc-gold, #ffc400);
+}
+
+.smallSample {
+  margin-left: 2px;
+  color: var(--cc-gold, #ffc400);
+  font-weight: 950;
+}
+
+.qualifierNote,
+.emptyState {
+  color: #9ba3a5;
+  font-size: 9px;
+}
+
+.qualifierNote {
+  margin: 0;
+}
+
+.emptyState {
+  margin: 0;
+  padding: 14px;
+}
+
+@media (max-width: 760px) {
+  .pageHeader {
+    margin-bottom: 14px;
+  }
+
+  .secondaryControls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .divisionTabs {
+    grid-column: 1 / -1;
+  }
+
+  .mobileSortControl {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+
+  .mobileSortControl button {
+    min-height: 34px;
+    padding: 0 10px;
+    border: 1px solid #30383c;
+    border-radius: 6px;
+    background: #111416;
+    color: var(--cc-gold, #ffc400);
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .tableMeta {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .tableActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .statsTable {
+    min-width: 660px;
+  }
+
+  .statsTable th,
+  .statsTable td {
+    height: 34px;
+    padding: 4px 8px;
+  }
+
+  .statsTable th:first-child,
+  .statsTable td:first-child {
+    min-width: 165px;
+  }
+}
