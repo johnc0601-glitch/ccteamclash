@@ -42,7 +42,7 @@
 .seasonSelector a:hover,
 .seasonSelector .activeSelector {
   background: var(--cc-heading);
-  color: #fff;
+  color: #111;
 }
 
 .viewStack {
@@ -60,12 +60,14 @@
   align-items: end;
   justify-content: space-between;
   gap: 20px;
+  background: transparent !important;
+  color: var(--cc-text);
 }
 
 .sectionHeading h2,
 .seasonSummary h2 {
   margin: 4px 0 0;
-  color: var(--cc-heading);
+  color: var(--cc-heading) !important;
   font-family: var(--cc-font-display);
   font-size: clamp(30px, 4vw, 44px);
   font-style: italic;
@@ -158,19 +160,22 @@
   overflow: hidden;
   border: 1px solid var(--cc-card-border);
   border-radius: 8px;
-  background: var(--cc-card-bg);
+  background: var(--cc-card-bg) !important;
+  color: var(--cc-text);
   box-shadow: var(--cc-card-shadow);
 }
 
 .tableWrap {
   max-width: 100%;
   overflow-x: auto;
+  background: var(--cc-card-bg) !important;
 }
 
 .tablePanel table {
   width: 100%;
   min-width: 520px;
   border-collapse: collapse;
+  background: var(--cc-card-bg) !important;
 }
 
 .tablePanel th,
@@ -181,13 +186,25 @@
   white-space: nowrap;
 }
 
+.tablePanel tbody tr,
+.tablePanel tbody tr:nth-child(odd),
+.tablePanel tbody tr:nth-child(even),
+.tablePanel td {
+  background: var(--cc-card-bg) !important;
+}
+
+.tablePanel tbody tr:hover,
+.tablePanel tbody tr:hover td {
+  background: var(--cc-card-bg-soft) !important;
+}
+
 .tablePanel tr:last-child td {
   border-bottom: 0;
 }
 
 .tablePanel th {
-  background: var(--cc-table-head-bg);
-  color: var(--cc-table-head-text);
+  background: var(--cc-table-head-bg) !important;
+  color: var(--cc-table-head-text) !important;
   font-size: 9px;
   font-weight: 950;
   letter-spacing: .05em;
@@ -195,13 +212,13 @@
 }
 
 .tablePanel td {
-  color: var(--cc-heading);
+  color: var(--cc-heading) !important;
   font-size: 12px;
   font-weight: 800;
 }
 
 .tablePanel td a {
-  color: var(--cc-heading);
+  color: var(--cc-heading) !important;
   font-weight: 950;
 }
 
@@ -211,8 +228,8 @@
   display: inline-grid;
   place-items: center;
   border-radius: 4px;
-  background: var(--cc-bronze);
-  color: #fff;
+  background: var(--cc-gold) !important;
+  color: var(--cc-on-accent) !important;
   font-size: 10px;
 }
 
@@ -415,6 +432,45 @@
   .linkActions {
     width: 100%;
   }
+
+  .tablePanel table {
+    min-width: 0;
+    table-layout: fixed;
+  }
+
+  .tablePanel th,
+  .tablePanel td {
+    padding: 13px 9px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tablePanel th:first-child,
+  .tablePanel td:first-child {
+    width: 48px;
+    padding-left: 12px;
+  }
+
+  .tablePanel th:nth-child(2),
+  .tablePanel td:nth-child(2) {
+    width: 44%;
+  }
+
+  .tablePanel th:nth-child(3),
+  .tablePanel td:nth-child(3) {
+    width: 27%;
+  }
+
+  .tablePanel th:nth-child(4),
+  .tablePanel td:nth-child(4) {
+    width: 20%;
+    padding-right: 12px;
+    text-align: right;
+  }
+
+  .tablePanel td {
+    font-size: 11px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -425,5 +481,15 @@
   .linkActions {
     display: grid;
     gap: 12px;
+  }
+
+  .tablePanel th,
+  .tablePanel td {
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+
+  .tablePanel td a {
+    font-size: 10.5px;
   }
 }
