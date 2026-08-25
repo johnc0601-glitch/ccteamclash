@@ -16,8 +16,10 @@ export type PublicPlayerHistory = PlayerMatchHistoryEntry & {
 export type PublicPlayerView = {
   player: Player;
   teamName: string;
+  currentSeasonId?: string;
   currentSeasonName: string;
   currentStatistics?: PlayerStatistics;
+  currentCiGain?: number;
   careerStatistics: PlayerStatistics;
   history: PublicPlayerHistory[];
 };
@@ -30,6 +32,7 @@ type StatisticsProvider = Pick<
   | 'getPlayerStatisticsForPlayers'
   | 'getPlayerCareerStatistics'
   | 'getPlayerCareerStatisticsForPlayers'
+  | 'getPlayerCiMovementsForPlayers'
   | 'getPlayerMatchHistory'
   | 'getPlayerMatchHistoriesForPlayers'
 >;
@@ -65,25 +68,24 @@ export class PublicPlayerService {
       this.seasons.getAll(),
       this.seasons.getActive(),
     ]);
+    const playerIds = players.map((player) => player.id);
     const teamNames = new Map(teams.map((team) => [team.id, team.name]));
     const seasonNames = new Map(seasons.map((season) => [season.id, season.name]));
-    const currentStatistics = activeSeason
-      ? await this.statistics.getPlayerStatisticsForPlayers(
-        players.map((player) => player.id),
-        activeSeason.id,
-      )
-      : [];
+    const [currentStatistics, currentCiMovements] = activeSeason
+      ? await Promise.all([
+        this.statistics.getPlayerStatisticsForPlayers(playerIds, activeSeason.id),
+        this.statistics.getPlayerCiMovementsForPlayers(playerIds, activeSeason.id),
+      ])
+      : [[], new Map()];
     const currentStatisticsByPlayer = new Map(
       currentStatistics.map((entry) => [entry.playerId, entry]),
     );
     const latestHistoryByPlayer = await this.statistics.getPlayerMatchHistoriesForPlayers(
-      players.map((player) => player.id),
+      playerIds,
       3,
       activeSeason?.id,
     );
-    const careerStatistics = await this.statistics.getPlayerCareerStatisticsForPlayers(
-      players.map((player) => player.id),
-    );
+    const careerStatistics = await this.statistics.getPlayerCareerStatisticsForPlayers(playerIds);
     const careerStatisticsByPlayer = new Map(careerStatistics.map((entry) => [entry.playerId, entry]));
 
     return players.map((player) => {
@@ -96,8 +98,10 @@ export class PublicPlayerService {
       return {
         player,
         teamName: player.teamId ? teamNames.get(player.teamId) ?? player.teamId : 'Unassigned',
+        currentSeasonId: activeSeason?.id,
         currentSeasonName: activeSeason?.name ?? 'Current season',
         currentStatistics,
+        currentCiGain: currentCiMovements.get(player.id)?.ciGain,
         careerStatistics: historicalStatistics
           ? {
             playerId: player.id,
