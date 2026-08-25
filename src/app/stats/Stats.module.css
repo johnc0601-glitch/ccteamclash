@@ -77,14 +77,15 @@
 
 .secondaryControls {
   display: grid;
-  grid-template-columns: auto minmax(130px, 180px) minmax(180px, 1fr) auto;
+  grid-template-columns: auto minmax(130px, 180px) minmax(180px, 1fr);
   gap: 8px;
   align-items: center;
 }
 
 .secondaryControls select,
 .secondaryControls input,
-.mobileSortControl select {
+.mobileSortControl select,
+.showControl select {
   width: 100%;
   min-height: 34px;
   padding: 0 10px;
@@ -109,7 +110,7 @@
   font-size: 10px;
 }
 
-.tableMeta > div {
+.tableMeta > div:first-child {
   display: grid;
   gap: 2px;
 }
@@ -118,6 +119,27 @@
   color: var(--cc-light-text, #14191b);
   font-size: 11px;
   text-transform: uppercase;
+}
+
+.tableActions {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+
+.showControl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cc-light-muted, #68706f);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.showControl select {
+  width: auto;
+  min-width: 92px;
 }
 
 .resetButton {
@@ -134,9 +156,9 @@
 .tableWrap {
   max-width: 100%;
   overflow-x: auto;
-  border: 1px solid var(--cc-light-border, #dedfd9);
+  border: 1px solid #30383c;
   border-radius: 7px;
-  background: #fff;
+  background: #111619;
 }
 
 .statsTable {
@@ -144,13 +166,14 @@
   min-width: 700px;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
+  background: #111619;
 }
 
 .statsTable th,
 .statsTable td {
   height: 36px;
   padding: 5px 10px;
-  border-bottom: 1px solid var(--cc-light-border, #e5e6e1);
+  border-bottom: 1px solid #30383c;
   text-align: right;
   white-space: nowrap;
 }
@@ -184,14 +207,13 @@
   color: var(--cc-gold, #ffc400);
 }
 
-.statsTable td {
-  color: var(--cc-light-text, #14191b);
+.statsTable td,
+.statsTable tbody tr:nth-child(even) td,
+.statsTable tbody tr:nth-child(odd) td {
+  background: #111619 !important;
+  color: #f4f5f2;
   font-size: 11px;
   font-weight: 750;
-}
-
-.statsTable tbody tr:nth-child(even) td {
-  background: #fafaf7;
 }
 
 .statsTable tbody tr:last-child td {
@@ -211,37 +233,35 @@
   background: #111416;
 }
 
-.statsTable td:first-child {
-  background: #fff;
-}
-
-.statsTable tbody tr:nth-child(even) td:first-child {
-  background: #fafaf7;
+.statsTable td:first-child,
+.statsTable tbody tr:nth-child(even) td:first-child,
+.statsTable tbody tr:nth-child(odd) td:first-child {
+  background: #111619 !important;
 }
 
 .rank {
   display: inline-block;
   width: 22px;
   margin-right: 6px;
-  color: #8c7200;
+  color: var(--cc-gold, #ffc400);
   font-size: 10px;
   font-weight: 950;
   text-align: center;
 }
 
 .playerLink {
-  color: var(--cc-light-text, #14191b);
+  color: #f4f5f2;
   font-weight: 900;
   text-decoration: none;
 }
 
 .playerLink:hover {
-  color: #8c7200;
+  color: var(--cc-gold, #ffc400);
 }
 
 .smallSample {
   margin-left: 2px;
-  color: #8c7200;
+  color: var(--cc-gold, #ffc400);
   font-weight: 950;
 }
 
@@ -293,6 +313,12 @@
 
   .tableMeta {
     align-items: start;
+    flex-direction: column;
+  }
+
+  .tableActions {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .statsTable {
