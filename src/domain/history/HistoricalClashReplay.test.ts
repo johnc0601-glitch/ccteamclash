@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type {HistoricalPlayerMatchup} from './HistoricalPlayerMatchup';
-import {replayHistoricalClashSeason} from './HistoricalClashReplay';
+import {historicalMatchKey, replayHistoricalClashSeason} from './HistoricalClashReplay';
 
 function row(overrides: Partial<HistoricalPlayerMatchup>): HistoricalPlayerMatchup {
   return {
@@ -60,6 +60,7 @@ function mirroredSingles(): HistoricalPlayerMatchup[] {
 test('replay creates equal and opposite singles facts from the frozen match snapshot', () => {
   const result = replayHistoricalClashSeason(mirroredSingles(), new Map([['home', 900], ['away', 900]]));
   assert.equal(result.facts.length, 2);
+  assert.equal(result.unresolvedRows.length, 0);
   assert.equal(result.facts[0].clashIndexBefore, 900);
   assert.equal(result.facts[1].clashIndexBefore, 900);
   assert.equal(result.facts[0].ciDelta, -result.facts[1].ciDelta);
@@ -78,8 +79,47 @@ test('neutral historical match removes singles home advantage', () => {
 
   assert.equal(regular.facts[0].venue, 'Home');
   assert.equal(neutral.facts[0].venue, 'Neutral');
+  assert.equal(neutral.facts[0].side, null);
   assert.equal(neutral.facts[0].winProbability, 0.5);
   assert.notEqual(regular.facts[0].winProbability, neutral.facts[0].winProbability);
+});
+
+test('playoff rows without archived team-match id replay as neutral synthetic match', () => {
+  const rows = mirroredSingles().map((entry, index) => row({
+    ...entry,
+    deduplicationKey: `playoff-${index}`,
+    eventLabel: 'March Semifinals',
+    eventOrder: 6,
+    historicalTeamMatchId: null,
+    playerSide: null,
+    homeAwayValidated: false,
+  }));
+  const result = replayHistoricalClashSeason(rows, new Map([['home', 900], ['away', 900]]));
+
+  assert.equal(result.unresolvedRows.length, 0);
+  assert.equal(result.facts.length, 2);
+  assert.equal(result.facts[0].venue, 'Neutral');
+  assert.equal(result.facts[0].side, null);
+  assert.match(result.facts[0].historicalMatchKey, /^synthetic:/);
+  assert.equal(historicalMatchKey(rows[0]), historicalMatchKey(rows[1]));
+});
+
+test('regular-season rows without a validated side are quarantined instead of guessed', () => {
+  const rows = mirroredSingles().map((entry, index) => row({
+    ...entry,
+    deduplicationKey: `bad-regular-${index}`,
+    eventLabel: 'December',
+    eventOrder: 3,
+    historicalTeamMatchId: null,
+    playerSide: null,
+    homeAwayValidated: false,
+  }));
+  const result = replayHistoricalClashSeason(rows, new Map([['home', 900], ['away', 900]]));
+
+  assert.equal(result.facts.length, 0);
+  assert.equal(result.unresolvedRows.length, 2);
+  assert.equal(result.endingRatings.get('home'), 900);
+  assert.equal(result.endingRatings.get('away'), 900);
 });
 
 test('all contests in one team match use the same frozen starting CI', () => {
