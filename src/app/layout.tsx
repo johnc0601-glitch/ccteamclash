@@ -4,6 +4,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from "@/shared/constants";
 import "./globals.css";
 import "./theme.css";
 import "./header.css";
+import "./light-theme.css";
 
 export const metadata: Metadata = {
   title: SITE_TITLE,
