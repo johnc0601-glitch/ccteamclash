@@ -79,7 +79,7 @@ export function PublicPlayerDirectory({
           const openFromLink = normalizedInitialSearch.length > 0 && normalizeSearchText(player.name) === normalizedInitialSearch;
 
           return (
-            <details className={styles.player} key={player.id} defaultOpen={openFromLink}>
+            <details className={styles.player} key={player.id} open={openFromLink || undefined}>
               <summary>
                 <span>
                   <strong>{player.name}</strong>
