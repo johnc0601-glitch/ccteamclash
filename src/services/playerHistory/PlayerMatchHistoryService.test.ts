@@ -48,6 +48,15 @@ test('historical records preserve team snapshots and W/L/T without numeric score
   assert.equal(row.playerScore, undefined);
 });
 
+test('historical CI fact attaches earned movement to the matching profile row', async () => {
+  const repository = new InMemoryHistoricalPlayerMatchupRepository();
+  await repository.upsert([historical('ci-match', 'coastal-clash-2024-2025', 4, 'Singles')]);
+  repository.setCiDelta('ci-match', 6);
+  const rows = await new PlayerMatchHistoryService(new CanonicalProvider(), repository).getCompleteHistory('player-1');
+  const historicalRow = rows.find((row) => row.id === 'ci-match');
+  assert.equal(historicalRow?.ciDelta, 6);
+});
+
 test('idempotent imports and complete history contain no duplicate rows', async () => {
   const repository = new InMemoryHistoricalPlayerMatchupRepository();
   const row = historical('stable-key', 'coastal-clash-2025-2026', 3, 'Singles');
