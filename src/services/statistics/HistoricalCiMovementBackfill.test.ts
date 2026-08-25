@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type {HistoricalPlayerMatchup} from '@/domain/history/HistoricalPlayerMatchup';
-import {dryRunHistoricalCiMovementBackfill} from './HistoricalCiMovementBackfill';
+import {
+  dryRunHistoricalCiMovementBackfill,
+  prepareHistoricalCiLedgerInserts,
+} from './HistoricalCiMovementBackfill';
 
 function row(overrides: Partial<HistoricalPlayerMatchup>): HistoricalPlayerMatchup {
   return {
@@ -75,11 +78,11 @@ test('dry run reconciles every replayed row without persistence', () => {
   });
 });
 
-test('unresolved regular-season rows are quarantined and fully reconciled', () => {
+test('truly unresolved regular-season rows remain blocked instead of guessed', () => {
   const unresolved = mirroredRegularRows().map((entry, index) => row({
     ...entry,
-    deduplicationKey: `december-${index}`,
-    eventLabel: 'December',
+    deduplicationKey: `unknown-side-${index}`,
+    eventLabel: 'Round 3',
     eventMonth: 'December',
     eventOrder: 3,
     historicalTeamMatchId: null,
@@ -98,8 +101,7 @@ test('unresolved regular-season rows are quarantined and fully reconciled', () =
   assert.equal(result.quarantine[0].reason, 'regular-season-side-unresolved');
   assert.equal(result.reconciliation.allRowsAccountedFor, true);
   assert.equal(result.reconciliation.accountedRows, 2);
-  assert.equal(result.endingRatings.get('home'), 900);
-  assert.equal(result.endingRatings.get('away'), 900);
+  assert.throws(() => prepareHistoricalCiLedgerInserts(result), /unresolved rows/);
 });
 
 test('playoff rows without historical side replay as neutral instead of quarantine', () => {
@@ -125,6 +127,24 @@ test('playoff rows without historical side replay as neutral instead of quaranti
   assert.ok(result.facts.every((fact) => fact.venue === 'Neutral'));
   assert.ok(result.facts.every((fact) => fact.side === null));
   assert.equal(result.reconciliation.allRowsAccountedFor, true);
+});
+
+test('validated dry run maps exactly to immutable historical ledger rows', () => {
+  const dryRun = dryRunHistoricalCiMovementBackfill(
+    mirroredRegularRows(),
+    new Map([['home', 900], ['away', 900]]),
+  );
+  const inserts = prepareHistoricalCiLedgerInserts(dryRun);
+
+  assert.equal(inserts.length, 2);
+  assert.equal(inserts[0].matchup_deduplication_key, dryRun.facts[0].matchupDeduplicationKey);
+  assert.equal(inserts[0].expected_points, dryRun.facts[0].winProbability);
+  assert.equal(
+    inserts[0].performance_vs_expected,
+    dryRun.facts[0].actualPoints - dryRun.facts[0].winProbability,
+  );
+  assert.equal(inserts[0].ci_delta, dryRun.facts[0].ciDelta);
+  assert.equal(inserts[0].algorithm_version, dryRun.facts[0].algorithmVersion);
 });
 
 test('same input produces the same backfill facts', () => {
