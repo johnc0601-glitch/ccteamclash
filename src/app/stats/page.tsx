@@ -1,5 +1,6 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {StatsTable} from '@/components/stats/StatsTable';
+import {loadServerHistoricalCiGains, playerSeasonCiKey} from '@/core/loadServerHistoricalCiGains';
 import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {
   getHistoricalSeasonArchives,
@@ -32,7 +33,7 @@ export type StatsRow = {
   doublesLosses: number;
   doublesTies: number;
   points: number;
-  /** Earned Clash Index movement only. Undefined until the season ledger is backfilled. */
+  /** Earned Clash Index movement only. Undefined until the season ledger is complete. */
   ciGain?: number;
 };
 
@@ -47,7 +48,7 @@ function compactSeasonName(name: string): string {
   return withoutLeagueName.replace(/(\d{4})-(\d{4})/, (_match, firstYear: string, secondYear: string) => `${firstYear}–${secondYear.slice(2)}`);
 }
 
-function toRow(summary: HistoricalPlayerSeasonSummary): StatsRow {
+function toRow(summary: HistoricalPlayerSeasonSummary, ciGain?: number): StatsRow {
   const {wins, losses, ties} = summary.overallRecord;
   return {
     playerId: summary.playerId,
@@ -67,6 +68,7 @@ function toRow(summary: HistoricalPlayerSeasonSummary): StatsRow {
     doublesLosses: summary.doublesRecord.losses,
     doublesTies: summary.doublesRecord.ties,
     points: wins + ties * .5,
+    ...(ciGain === undefined ? {} : {ciGain}),
   };
 }
 
@@ -151,13 +153,21 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
 
 export default async function StatsPage({searchParams}: StatsPageProps) {
   const archives = getHistoricalSeasonArchives();
+  const [playerViews, historicalCiGains] = await Promise.all([
+    (await createServerPublicPlayerService()).getAll(),
+    loadServerHistoricalCiGains(),
+  ]);
   const historicalGroups: StatsGroup[] = archives.map((archive) => ({
     id: archive.seasonId,
     label: compactSeasonName(archive.seasonName),
-    rows: archive.playerSummaries.filter((summary) => summary.matchesPlayed > 0).map(toRow),
+    rows: archive.playerSummaries
+      .filter((summary) => summary.matchesPlayed > 0)
+      .map((summary) => toRow(
+        summary,
+        historicalCiGains.get(playerSeasonCiKey(archive.seasonId, summary.playerId)),
+      )),
   }));
 
-  const playerViews = await (await createServerPublicPlayerService()).getAll();
   const activeSeasonId = playerViews.find((view) => view.currentSeasonId)?.currentSeasonId;
   const activeSeasonName = playerViews.find((view) => view.currentSeasonId)?.currentSeasonName;
   const historicalSeasonIds = new Set(historicalGroups.map((group) => group.id));
