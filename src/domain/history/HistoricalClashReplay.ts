@@ -4,6 +4,7 @@ import {
   doublesPairCi,
   eloProbability,
   SINGLES_HOME_BONUS,
+  type ClashVenue,
 } from '@/domain/story-engine/ClashPrediction';
 import {
   clashCiDelta,
@@ -23,6 +24,7 @@ export type HistoricalReplayFact = {
   opponentTeamName: string;
   format: 'Singles' | 'Doubles';
   side: 'Home' | 'Away';
+  venue: ClashVenue;
   outcome: 'W' | 'L' | 'T';
   clashIndexBefore: number;
   opponentEffectiveCi: number;
@@ -40,13 +42,15 @@ export type HistoricalReplayResult = {
 
 /**
  * Replays historical contests with the same event-freeze rule used by the live
- * Matchday CI pipeline: every player uses their CI at the start of the team
- * match, all contest contributions are calculated from that snapshot, then the
- * player's contributions are summed and applied once after the match.
+ * Matchday CI pipeline. Historical regular-season rows use their recorded
+ * Home/Away context. Known neutral matches (for example playoffs) are supplied
+ * explicitly by team-match id; current team course profiles are never used to
+ * reinterpret old matches.
  */
 export function replayHistoricalClashSeason(
   rows: HistoricalPlayerMatchup[],
   startingRatings: ReadonlyMap<string, number>,
+  venueByTeamMatchId: ReadonlyMap<number, ClashVenue> = new Map(),
 ): HistoricalReplayResult {
   const ratings = new Map(startingRatings);
   const seasonGain = new Map<string, number>();
@@ -54,11 +58,13 @@ export function replayHistoricalClashSeason(
 
   const matchGroups = groupByTeamMatch(rows);
   for (const matchRows of matchGroups) {
+    const teamMatchId = matchRows[0].historicalTeamMatchId!;
+    const venue = venueByTeamMatchId.get(teamMatchId) ?? 'Home';
     const frozenRatings = new Map(ratings);
     const matchDeltas = new Map<string, number>();
 
     for (const row of matchRows) {
-      const fact = buildHistoricalFact(row, frozenRatings);
+      const fact = buildHistoricalFact(row, frozenRatings, venue);
       facts.push(fact);
       matchDeltas.set(row.playerId, (matchDeltas.get(row.playerId) ?? 0) + fact.ciDelta);
     }
@@ -76,6 +82,7 @@ export function replayHistoricalClashSeason(
 function buildHistoricalFact(
   row: HistoricalPlayerMatchup,
   frozenRatings: ReadonlyMap<string, number>,
+  venue: ClashVenue,
 ): HistoricalReplayFact {
   if (row.historicalTeamMatchId == null) {
     throw new Error(`Historical row ${row.deduplicationKey} is missing historicalTeamMatchId`);
@@ -92,8 +99,9 @@ function buildHistoricalFact(
 
   if (row.format === 'Singles') {
     const opponentCi = requireRating(frozenRatings, row.opponentOnePlayerId);
-    const playerEffective = playerCi + (row.playerSide === 'Home' ? SINGLES_HOME_BONUS : 0);
-    opponentEffectiveCi = opponentCi + (row.playerSide === 'Away' ? SINGLES_HOME_BONUS : 0);
+    const homeBonusApplies = venue === 'Home';
+    const playerEffective = playerCi + (homeBonusApplies && row.playerSide === 'Home' ? SINGLES_HOME_BONUS : 0);
+    opponentEffectiveCi = opponentCi + (homeBonusApplies && row.playerSide === 'Away' ? SINGLES_HOME_BONUS : 0);
     probability = eloProbability(playerEffective, opponentEffectiveCi);
     ciDelta = clashCiDelta(actual, probability);
   } else {
@@ -121,6 +129,7 @@ function buildHistoricalFact(
     opponentTeamName: row.opponentTeamName,
     format: row.format,
     side: row.playerSide,
+    venue,
     outcome: row.outcome,
     clashIndexBefore: playerCi,
     opponentEffectiveCi,
