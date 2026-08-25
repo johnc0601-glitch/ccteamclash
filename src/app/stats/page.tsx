@@ -38,7 +38,7 @@ export type StatsGroup = {
   rows: StatsRow[];
 };
 
-// Public stats currently require three recorded matches in the selected view.
+// Public stats currently require at least three recorded matches in the selected view.
 const MIN_STATS_MATCHES = 3;
 
 function compactSeasonName(name: string): string {
