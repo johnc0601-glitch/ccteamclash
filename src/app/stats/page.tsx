@@ -30,6 +30,8 @@ export type StatsRow = {
   doublesLosses: number;
   doublesTies: number;
   points: number;
+  /** Earned Clash Index movement only. Undefined until the season ledger is backfilled. */
+  ciGain?: number;
 };
 
 export type StatsGroup = {
@@ -87,6 +89,7 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
         doublesLosses: 0,
         doublesTies: 0,
         points: 0,
+        ciGain: undefined,
         teams: new Set<string>(),
       };
 
@@ -102,6 +105,7 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
       existing.doublesLosses += row.doublesLosses;
       existing.doublesTies += row.doublesTies;
       existing.points += row.points;
+      if (row.ciGain !== undefined) existing.ciGain = (existing.ciGain ?? 0) + row.ciGain;
       const decisions = existing.wins + existing.losses + existing.ties;
       existing.winPercentage = decisions ? ((existing.wins + existing.ties * .5) / decisions) * 100 : 0;
       players.set(row.playerId, existing);
