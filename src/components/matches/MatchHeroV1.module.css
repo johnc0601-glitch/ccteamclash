@@ -1,34 +1,8 @@
 :global(body):has(.matchHero) {
   --match-away: #0b3f78;
   --match-home: #741f63;
-  --match-away-deep: color-mix(in srgb, var(--match-away) 58%, #121816);
-  --match-home-deep: color-mix(in srgb, var(--match-home) 58%, #121816);
-}
-
-:global(body):has(.matchHero) main {
-  background:
-    radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--match-away-deep) 44%, transparent), transparent 34rem),
-    radial-gradient(circle at 92% 16%, color-mix(in srgb, var(--match-home-deep) 44%, transparent), transparent 34rem),
-    linear-gradient(90deg,
-      color-mix(in srgb, var(--match-away-deep) 24%, var(--cc-bg)) 0%,
-      var(--cc-bg) 43%,
-      var(--cc-bg) 57%,
-      color-mix(in srgb, var(--match-home-deep) 24%, var(--cc-bg)) 100%) !important;
-  background-attachment: fixed !important;
-}
-
-:global(body):has(.matchHero) main > :global(.shell) > * {
-  border-color: color-mix(in srgb, var(--match-away-deep) 24%, var(--cc-card-border)) !important;
-  background:
-    linear-gradient(90deg,
-      color-mix(in srgb, var(--match-away-deep) 8%, var(--cc-card-bg)) 0%,
-      var(--cc-card-bg) 34%,
-      var(--cc-card-bg) 66%,
-      color-mix(in srgb, var(--match-home-deep) 8%, var(--cc-card-bg)) 100%) !important;
-  box-shadow:
-    inset 4px 0 0 var(--match-away-deep),
-    inset -4px 0 0 var(--match-home-deep),
-    var(--cc-card-shadow) !important;
+  --match-away-deep: color-mix(in srgb, var(--match-away) 58%, var(--cc-header-deep));
+  --match-home-deep: color-mix(in srgb, var(--match-home) 58%, var(--cc-header-deep));
 }
 
 .matchHero {
@@ -37,6 +11,7 @@
   max-width: 1180px;
 }
 
+/* The matchup banner is intentionally team-colored. It is identity, not page chrome. */
 .heroTeams {
   min-height: 210px;
   position: relative;
@@ -44,15 +19,15 @@
   grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr);
   align-items: stretch;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, .16);
+  border: 1px solid var(--cc-header-border);
   border-radius: 14px;
   background: linear-gradient(90deg,
-    color-mix(in srgb, var(--match-away) 58%, #121816) 0%,
-    color-mix(in srgb, var(--match-away) 52%, #111916) 44%,
-    #14201b 49.5%,
-    #14201b 50.5%,
-    color-mix(in srgb, var(--match-home) 52%, #0f1b16) 56%,
-    color-mix(in srgb, var(--match-home) 58%, #0d1813) 100%);
+    color-mix(in srgb, var(--match-away) 58%, var(--cc-header-deep)) 0%,
+    color-mix(in srgb, var(--match-away) 52%, var(--cc-header-deep)) 44%,
+    var(--cc-header-surface) 49.5%,
+    var(--cc-header-surface) 50.5%,
+    color-mix(in srgb, var(--match-home) 52%, var(--cc-header-deep)) 56%,
+    color-mix(in srgb, var(--match-home) 58%, var(--cc-header-deep)) 100%);
   box-shadow: 0 18px 42px rgba(10, 22, 18, .24);
 }
 
@@ -135,6 +110,7 @@
   text-shadow: 0 2px 10px #000;
 }
 
+/* Metadata returns to the shared card system below the team-colored banner. */
 .heroMeta {
   margin: 0 12px;
   padding: 12px 14px;
@@ -143,15 +119,11 @@
   align-items: center;
   justify-content: center;
   gap: 8px 18px;
-  border: 1px solid rgba(255, 255, 255, .08);
+  border: 1px solid var(--cc-panel-border);
   border-top: 0;
   border-radius: 0 0 10px 10px;
-  background: linear-gradient(90deg,
-    color-mix(in srgb, var(--match-away-deep) 32%, var(--cc-surface-deep)),
-    var(--cc-surface-deep) 43%,
-    var(--cc-surface-deep) 57%,
-    color-mix(in srgb, var(--match-home-deep) 32%, var(--cc-surface-deep)));
-  box-shadow: none;
+  background: var(--cc-surface);
+  box-shadow: var(--cc-card-shadow);
   color: var(--cc-body-text);
   font-size: 12px;
   font-weight: 850;
@@ -164,19 +136,11 @@
 }
 
 .weatherSlot {
-  color: var(--cc-gold);
+  color: var(--cc-gold-ink);
   font-weight: 900;
 }
 
 @media (max-width: 700px) {
-  :global(body):has(.matchHero) main {
-    background:
-      radial-gradient(ellipse 18rem 46rem at -14% 28%, color-mix(in srgb, var(--match-away-deep) 24%, transparent), transparent 72%),
-      radial-gradient(ellipse 18rem 46rem at 114% 32%, color-mix(in srgb, var(--match-home-deep) 24%, transparent), transparent 72%),
-      linear-gradient(180deg, var(--cc-bg) 0%, var(--cc-surface-deep) 43%, var(--cc-bg) 100%) !important;
-    background-attachment: fixed !important;
-  }
-
   .matchHero {
     padding: 10px 10px 0;
   }

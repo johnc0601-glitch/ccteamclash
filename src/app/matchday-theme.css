@@ -1,0 +1,94 @@
+/* Matchday theme normalization.
+   Site chrome/surfaces follow the shared theme; matchup identity stays in
+   --match-away and --match-home, which are supplied by the Matchday page. */
+
+main[style*="--match-away"][style*="--match-home"] {
+  position: relative;
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--match-away) 10%, transparent) 0 7px,
+      transparent 7px calc(100% - 7px),
+      color-mix(in srgb, var(--match-home) 10%, transparent) calc(100% - 7px) 100%),
+    var(--cc-bg) !important;
+  color: var(--cc-text);
+}
+
+/* Keep team identity visible without turning the whole page into a second theme. */
+main[style*="--match-away"][style*="--match-home"]::before,
+main[style*="--match-away"][style*="--match-home"]::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  width: 5px;
+  pointer-events: none;
+}
+
+main[style*="--match-away"][style*="--match-home"]::before {
+  left: 0;
+  background: var(--match-away);
+}
+
+main[style*="--match-away"][style*="--match-home"]::after {
+  right: 0;
+  background: var(--match-home);
+}
+
+main[style*="--match-away"] > .shell {
+  position: relative;
+  z-index: 1;
+}
+
+/* Direct Matchday panels use the same light card system as Match Conversation. */
+main[style*="--match-away"] > .shell > section {
+  background: var(--cc-surface) !important;
+  border-color: var(--cc-panel-border) !important;
+  color: var(--cc-text) !important;
+  box-shadow: var(--cc-card-shadow) !important;
+}
+
+main[style*="--match-away"] > .shell > section h1,
+main[style*="--match-away"] > .shell > section h2,
+main[style*="--match-away"] > .shell > section h3,
+main[style*="--match-away"] > .shell > section strong {
+  color: var(--cc-heading);
+}
+
+main[style*="--match-away"] > .shell > section p,
+main[style*="--match-away"] > .shell > section small {
+  color: var(--cc-muted);
+}
+
+main[style*="--match-away"] input,
+main[style*="--match-away"] textarea,
+main[style*="--match-away"] select {
+  background: var(--cc-surface) !important;
+  border-color: var(--cc-panel-border) !important;
+  color: var(--cc-text) !important;
+}
+
+/* Use the matchup colors for structural cues only. */
+main[style*="--match-away"] > .shell > section:nth-of-type(odd) {
+  border-left-color: color-mix(in srgb, var(--match-away) 58%, var(--cc-panel-border)) !important;
+}
+
+main[style*="--match-away"] > .shell > section:nth-of-type(even) {
+  border-right-color: color-mix(in srgb, var(--match-home) 58%, var(--cc-panel-border)) !important;
+}
+
+@media (max-width: 760px) {
+  main[style*="--match-away"][style*="--match-home"] {
+    background:
+      linear-gradient(90deg,
+        color-mix(in srgb, var(--match-away) 13%, transparent) 0 4px,
+        transparent 4px calc(100% - 4px),
+        color-mix(in srgb, var(--match-home) 13%, transparent) calc(100% - 4px) 100%),
+      var(--cc-bg) !important;
+  }
+
+  main[style*="--match-away"][style*="--match-home"]::before,
+  main[style*="--match-away"][style*="--match-home"]::after {
+    width: 3px;
+  }
+}

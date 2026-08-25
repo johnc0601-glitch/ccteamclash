@@ -7,6 +7,15 @@ import type {
 const OVERALL_LIMIT = 25;
 const WOMENS_LIMIT = 10;
 
+function rankingPoints(entry: Omit<RankingEntry, 'rank'>): number {
+  return entry.statistics.overallRecord.wins + entry.statistics.overallRecord.ties * .5;
+}
+
+function hasSameRankingScore(left: Omit<RankingEntry, 'rank'>, right: Omit<RankingEntry, 'rank'>): boolean {
+  return rankingPoints(left) === rankingPoints(right)
+    && left.statistics.winPercentage === right.statistics.winPercentage;
+}
+
 export class RankingsService {
   private readonly players: RankingPlayerProvider;
   private readonly statistics: RankingStatisticsProvider;
@@ -45,7 +54,7 @@ export class RankingsService {
     const rankedEntries = entries
       .filter((entry) => entry.statistics.matchesPlayed > 0)
       .sort((left, right) =>
-        right.statistics.overallRecord.wins - left.statistics.overallRecord.wins
+        rankingPoints(right) - rankingPoints(left)
         || right.statistics.winPercentage - left.statistics.winPercentage
         || left.player.name.localeCompare(right.player.name, undefined, {sensitivity: 'base'}),
       );
@@ -53,7 +62,13 @@ export class RankingsService {
       ? rankedEntries.slice(0, Math.max(0, limit))
       : rankedEntries;
 
-    return limitedEntries
-      .map((entry, index) => ({...entry, rank: index + 1}));
+    let previous: Omit<RankingEntry, 'rank'> | undefined;
+    let previousRank = 0;
+    return limitedEntries.map((entry, index) => {
+      const rank = previous && hasSameRankingScore(previous, entry) ? previousRank : index + 1;
+      previous = entry;
+      previousRank = rank;
+      return {...entry, rank};
+    });
   }
 }

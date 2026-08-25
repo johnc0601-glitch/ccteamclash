@@ -55,6 +55,8 @@ body {
 
 .primary-header { background: rgba(9, 11, 12, .98); }
 .primary-nav-wrap { height: 72px !important; }
+.primary-header .brand strong { color: var(--cc-text) !important; }
+.primary-header .brand small { color: var(--cc-gold) !important; }
 
 /* Let the badge itself be the mark: no decorative frame, 15% larger than the original 42px slot. */
 .primary-header .brand-mark {
@@ -323,7 +325,11 @@ main[style*="--match-away"] > .shell > section {
   .primary-nav-wrap { height: 76px !important; }
   .secondary-header { display: none; }
 
-  .mobile-nav nav { gap: 0 !important; }
+  .mobile-nav nav {
+    gap: 0 !important;
+    background: var(--cc-surface-deep) !important;
+    color: var(--cc-text) !important;
+  }
 
   .mobile-nav-group {
     padding: 12px 0;
@@ -343,7 +349,16 @@ main[style*="--match-away"] > .shell > section {
     text-transform: uppercase;
   }
 
-  .mobile-nav-group > a { padding: 9px 12px !important; }
+  .mobile-nav-group > a {
+    padding: 9px 12px !important;
+    color: var(--cc-text) !important;
+  }
+
+  .mobile-nav-group > a:hover {
+    background: var(--cc-surface-raised);
+    color: var(--cc-gold) !important;
+  }
+
   .schedule-page .match-row { padding: 18px; }
   .season-archive-current { padding: 18px; }
 }
