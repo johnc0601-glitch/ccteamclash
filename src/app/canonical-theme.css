@@ -1,0 +1,133 @@
+/* Canonical public theme: warm light body, dark league chrome. */
+:root {
+  --cc-bg: #f3f1ea;
+  --cc-surface: #ffffff;
+  --cc-surface-raised: #f8f7f2;
+  --cc-surface-deep: #ece9e1;
+  --cc-panel-border: #d5d1c7;
+  --cc-gold: #b88900;
+  --cc-gold-soft: #9c7600;
+  --cc-steel: #647277;
+  --cc-gold-ink: #9c7600;
+  --cc-text: #15191b;
+  --cc-text-muted: #667074;
+  --cc-body-text: #333a3d;
+  --cc-on-accent: #111;
+  --cc-inverse: #fff;
+  --cc-header-bg: #090b0c;
+  --cc-header-surface: #141719;
+  --cc-header-deep: #101315;
+  --cc-header-border: #303538;
+  --cc-header-text: #f5f5f2;
+  --cc-header-muted: #aab1b3;
+
+  --cc-light-bg: var(--cc-bg);
+  --cc-light-surface: var(--cc-surface);
+  --cc-light-border: var(--cc-panel-border);
+  --cc-light-text: var(--cc-text);
+  --cc-light-muted: var(--cc-text-muted);
+  --cc-card-bg: var(--cc-surface);
+  --cc-card-bg-soft: var(--cc-surface-raised);
+  --cc-card-border: var(--cc-panel-border);
+  --cc-card-shadow: 0 10px 28px rgba(26, 31, 34, .09);
+  --cc-heading: var(--cc-text);
+  --cc-muted: var(--cc-text-muted);
+  --cc-row-bg: #faf9f5;
+  --cc-table-head-bg: #ece9e1;
+  --cc-table-head-text: #525d61;
+  --cc-bronze: var(--cc-gold-soft);
+  --cc-teal: var(--cc-steel);
+  --cc-shadow-card: var(--cc-card-shadow);
+}
+
+html,
+body {
+  background: var(--cc-bg);
+  color: var(--cc-text);
+  color-scheme: light;
+}
+
+.site-header,
+.primary-header {
+  background: var(--cc-header-bg) !important;
+  color: var(--cc-header-text);
+}
+
+.secondary-header {
+  background: var(--cc-header-surface) !important;
+  border-color: var(--cc-header-border) !important;
+}
+
+.site-header a,
+.primary-header a,
+.secondary-header a,
+.site-header .brand strong,
+.primary-header .brand strong,
+.mobile-nav > nav a {
+  color: var(--cc-header-text) !important;
+}
+
+.site-header .brand small,
+.primary-header .brand small,
+.mobile-nav-group > span,
+.mobile-sign-in {
+  color: var(--cc-gold) !important;
+}
+
+.site-header .desktop-account {
+  border-color: #464b4e;
+  color: var(--cc-header-text);
+}
+
+.mobile-nav,
+.mobile-nav nav {
+  background: var(--cc-header-deep) !important;
+  color: var(--cc-header-text) !important;
+}
+
+.home-page,
+.story-home-bottom,
+.home-matches-section,
+.page-shell,
+.article {
+  background: var(--cc-bg) !important;
+  color: var(--cc-text) !important;
+}
+
+.latest-panel,
+.compact-story,
+.story-card,
+.simple-publishing,
+.standings-card,
+.list-card,
+.team-card,
+.real-editor,
+.post-preview,
+.editor-card,
+.season-archive-current,
+.dark-panel {
+  background: var(--cc-surface) !important;
+  border-color: var(--cc-panel-border) !important;
+  color: var(--cc-text) !important;
+  box-shadow: var(--cc-card-shadow) !important;
+}
+
+.field,
+.upload,
+.story-field,
+.real-editor input,
+.real-editor textarea,
+.real-editor select {
+  background: var(--cc-surface-raised) !important;
+  border-color: var(--cc-panel-border) !important;
+  color: var(--cc-text) !important;
+}
+
+footer {
+  background: var(--cc-header-bg) !important;
+  color: var(--cc-header-text) !important;
+  border-top-color: var(--cc-header-border) !important;
+}
+
+footer p,
+footer small { color: var(--cc-header-muted) !important; }
