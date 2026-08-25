@@ -55,14 +55,14 @@ export async function loadServerHistoricalCiArchiveReplay(): Promise<HistoricalC
     const rows = await repository.getBySeasonId(seasonId);
     const participantsById = new Map<string, HistoricalCiParticipant>();
     for (const row of rows) {
-      if (!genderByPlayerId.has(row.playerId)) {
-        throw new Error(`Historical CI player ${row.playerId} is missing from launch_players`);
+      addParticipant(participantsById, genderByPlayerId, row.playerId, row.playerName);
+      addParticipant(participantsById, genderByPlayerId, row.opponentOnePlayerId, row.opponentOnePlayerName);
+      if (row.partnerPlayerId && row.partnerPlayerName) {
+        addParticipant(participantsById, genderByPlayerId, row.partnerPlayerId, row.partnerPlayerName);
       }
-      participantsById.set(row.playerId, {
-        playerId: row.playerId,
-        playerName: row.playerName,
-        gender: genderByPlayerId.get(row.playerId),
-      });
+      if (row.opponentTwoPlayerId && row.opponentTwoPlayerName) {
+        addParticipant(participantsById, genderByPlayerId, row.opponentTwoPlayerId, row.opponentTwoPlayerName);
+      }
     }
     archive.push({
       seasonId,
@@ -74,6 +74,26 @@ export async function loadServerHistoricalCiArchiveReplay(): Promise<HistoricalC
   }
 
   return replayHistoricalCiArchive(archive);
+}
+
+function addParticipant(
+  participants: Map<string, HistoricalCiParticipant>,
+  genderByPlayerId: ReadonlyMap<string, string | null>,
+  playerId: string,
+  playerName: string,
+): void {
+  if (!genderByPlayerId.has(playerId)) {
+    throw new Error(`Historical CI player ${playerId} (${playerName}) is missing from launch_players`);
+  }
+  const existing = participants.get(playerId);
+  if (existing && existing.playerName !== playerName) {
+    throw new Error(`Historical CI player ${playerId} has conflicting names: ${existing.playerName} / ${playerName}`);
+  }
+  participants.set(playerId, {
+    playerId,
+    playerName,
+    gender: genderByPlayerId.get(playerId),
+  });
 }
 
 async function loadHistoricalCiVenues(
