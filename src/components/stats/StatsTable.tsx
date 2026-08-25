@@ -7,7 +7,7 @@ import styles from '@/app/stats/Stats.module.css';
 
 type SortKey = 'matchesPlayed' | 'wins' | 'winPercentage' | 'points' | 'singles' | 'doubles';
 type Direction = 'asc' | 'desc';
-type Limit = 5 | 10 | 25 | 'all';
+type Limit = 25 | 'all';
 type Division = 'Open' | 'Women';
 
 export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsGroup[]; initialGroupId?: string}) {
@@ -15,7 +15,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
   const [groupId, setGroupId] = useState(validInitialGroupId);
   const [sortKey, setSortKey] = useState<SortKey>('points');
   const [direction, setDirection] = useState<Direction>('desc');
-  const [limit, setLimit] = useState<Limit>(5);
+  const [limit, setLimit] = useState<Limit>(25);
   const [division, setDivision] = useState<Division>('Open');
   const [team, setTeam] = useState('all');
   const [search, setSearch] = useState('');
@@ -40,7 +40,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
 
   const sortedRows = useMemo(() => [...filteredRows].sort((a, b) => compareRows(a, b, sortKey, direction)), [filteredRows, sortKey, direction]);
   const rows = limit === 'all' ? sortedRows : sortedRows.slice(0, limit);
-  const hasCustomView = division !== 'Open' || team !== 'all' || search.trim() !== '' || limit !== 5 || sortKey !== 'points' || direction !== 'desc';
+  const hasCustomView = division !== 'Open' || team !== 'all' || search.trim() !== '' || limit !== 25 || sortKey !== 'points' || direction !== 'desc';
 
   function selectGroup(nextGroupId: string) {
     setGroupId(nextGroupId);
@@ -52,7 +52,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
     setDivision('Open');
     setTeam('all');
     setSearch('');
-    setLimit(5);
+    setLimit(25);
     setSortKey('points');
     setDirection('desc');
   }
@@ -81,11 +81,11 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
 
         <div className={styles.secondaryControls}>
           <div className={styles.divisionTabs} aria-label="Stats division">
-            <button type="button" className={division === 'Open' ? styles.activeDivision : undefined} onClick={() => {setDivision('Open'); setLimit(5);}}>Open</button>
-            <button type="button" className={division === 'Women' ? styles.activeDivision : undefined} onClick={() => {setDivision('Women'); setLimit(5);}}>Women</button>
+            <button type="button" className={division === 'Open' ? styles.activeDivision : undefined} onClick={() => {setDivision('Open'); setLimit(25);}}>Open</button>
+            <button type="button" className={division === 'Women' ? styles.activeDivision : undefined} onClick={() => {setDivision('Women'); setLimit(25);}}>Women</button>
           </div>
 
-          <select aria-label="Filter by team" value={team} onChange={(event) => {setTeam(event.target.value); setLimit(5);}}>
+          <select aria-label="Filter by team" value={team} onChange={(event) => {setTeam(event.target.value); setLimit(25);}}>
             <option value="all">All teams</option>
             {teams.map((teamName) => <option key={teamName} value={teamName}>{teamName}</option>)}
           </select>
@@ -116,9 +116,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
         <div className={styles.tableActions}>
           <label className={styles.showControl}>
             <span>Show</span>
-            <select value={limit} onChange={(event) => setLimit(event.target.value === 'all' ? 'all' : Number(event.target.value) as 5 | 10 | 25)}>
-              <option value={5}>Top 5</option>
-              <option value={10}>Top 10</option>
+            <select value={limit} onChange={(event) => setLimit(event.target.value === 'all' ? 'all' : 25)}>
               <option value={25}>Top 25</option>
               <option value="all">All</option>
             </select>
