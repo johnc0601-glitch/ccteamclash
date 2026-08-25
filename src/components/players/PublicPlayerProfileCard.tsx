@@ -107,7 +107,7 @@ function HistoryRow({entry}: {entry: PlayerProfileMatchHistoryItem}) {
   const opponentTeam = entry.opponentTeamName ?? 'Opponent';
   return <li>
     <div className={styles.historyResult}>
-      <span>{entry.opponentPlayerNames.join(' / ') || opponentTeam}</span>
+      <span>{entry.result} · vs {opponentTeam}{entry.ciDelta == null ? '' : ` · ${formatCiDelta(entry.ciDelta)} CI`}</span>
       <strong>{entry.format === 'Singles'
         ? formatSinglesHistoryScore(entry)
         : entry.result}</strong>
@@ -117,6 +117,12 @@ function HistoryRow({entry}: {entry: PlayerProfileMatchHistoryItem}) {
       : null}
     <small>{formatHistoryVenue(entry)}</small>
   </li>;
+}
+
+function formatCiDelta(delta: number): string {
+  if (delta > 0) return `+${delta}`;
+  if (delta < 0) return `−${Math.abs(delta)}`;
+  return '0';
 }
 
 function formatRecordSummary(record: {wins: number; losses: number; ties: number}): string {
