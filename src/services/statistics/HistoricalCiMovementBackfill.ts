@@ -92,7 +92,8 @@ export function dryRunHistoricalCiMovementBackfill(
 
 /**
  * Converts a reconciled dry run into the exact immutable ledger payload.
- * Persistence must never proceed while any row is quarantined or unaccounted.
+ * Persistence must never proceed while any row is quarantined, unaccounted, or
+ * part of an incomplete/non-zero-sum contest.
  */
 export function prepareHistoricalCiLedgerInserts(
   dryRun: HistoricalCiBackfillDryRun,
@@ -134,6 +135,34 @@ export function assertHistoricalCiBackfillReady(dryRun: HistoricalCiBackfillDryR
   }
   if (dryRun.reconciliation.replayedRows !== dryRun.reconciliation.inputRows) {
     throw new Error('Historical CI backfill replay count does not match input count');
+  }
+  assertCompleteHistoricalContests(dryRun.facts);
+}
+
+export function assertCompleteHistoricalContests(facts: HistoricalReplayFact[]): void {
+  const factsByContest = new Map<string, HistoricalReplayFact[]>();
+  for (const fact of facts) {
+    const group = factsByContest.get(fact.contestId) ?? [];
+    group.push(fact);
+    factsByContest.set(fact.contestId, group);
+  }
+
+  for (const [contestId, contestFacts] of factsByContest) {
+    const format = contestFacts[0]?.format;
+    const expectedRows = format === 'Singles' ? 2 : 4;
+    if (contestFacts.length !== expectedRows) {
+      throw new Error(`Historical CI contest ${contestId} has ${contestFacts.length}/${expectedRows} player facts`);
+    }
+    if (contestFacts.some((fact) => fact.format !== format)) {
+      throw new Error(`Historical CI contest ${contestId} mixes formats`);
+    }
+    if (new Set(contestFacts.map((fact) => fact.playerId)).size !== expectedRows) {
+      throw new Error(`Historical CI contest ${contestId} contains duplicate player facts`);
+    }
+    const netMovement = contestFacts.reduce((sum, fact) => sum + fact.ciDelta, 0);
+    if (netMovement !== 0) {
+      throw new Error(`Historical CI contest ${contestId} is not zero-sum (${netMovement})`);
+    }
   }
 }
 
