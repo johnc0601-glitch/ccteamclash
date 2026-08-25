@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type {HistoricalPlayerMatchup} from '@/domain/history/HistoricalPlayerMatchup';
 import {
+  assertCompleteHistoricalContests,
   dryRunHistoricalCiMovementBackfill,
   prepareHistoricalCiLedgerInserts,
 } from './HistoricalCiMovementBackfill';
@@ -145,6 +146,23 @@ test('validated dry run maps exactly to immutable historical ledger rows', () =>
   );
   assert.equal(inserts[0].ci_delta, dryRun.facts[0].ciDelta);
   assert.equal(inserts[0].algorithm_version, dryRun.facts[0].algorithmVersion);
+});
+
+test('incomplete contest blocks immutable ledger preparation', () => {
+  const dryRun = dryRunHistoricalCiMovementBackfill(
+    [mirroredRegularRows()[0]],
+    new Map([['home', 900], ['away', 900]]),
+  );
+  assert.throws(() => prepareHistoricalCiLedgerInserts(dryRun), /1\/2 player facts/);
+});
+
+test('contest validation rejects non-zero-sum facts', () => {
+  const dryRun = dryRunHistoricalCiMovementBackfill(
+    mirroredRegularRows(),
+    new Map([['home', 900], ['away', 900]]),
+  );
+  const altered = dryRun.facts.map((fact, index) => index === 0 ? {...fact, ciDelta: fact.ciDelta + 1} : fact);
+  assert.throws(() => assertCompleteHistoricalContests(altered), /not zero-sum/);
 });
 
 test('same input produces the same backfill facts', () => {
