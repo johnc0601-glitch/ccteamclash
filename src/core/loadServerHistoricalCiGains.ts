@@ -18,6 +18,10 @@ type HistoricalCiFactRow = {
  * Returns season/player CI gain only when every imported historical matchup for
  * that player/season has an immutable CI fact. Partial backfills intentionally
  * remain absent so Stats renders an em dash instead of a misleading subtotal.
+ *
+ * During staged rollout the historical ledger migration may not exist yet. In
+ * that specific case return no gains instead of taking the public Stats page
+ * down; all other database errors remain visible.
  */
 export async function loadServerHistoricalCiGains(): Promise<Map<string, number>> {
   const supabase = await createClient();
@@ -31,7 +35,10 @@ export async function loadServerHistoricalCiGains(): Promise<Map<string, number>
       .select('season_id,player_id,matchup_deduplication_key,ci_delta'),
   ]);
   if (matchupResult.error) throw matchupResult.error;
-  if (factResult.error) throw factResult.error;
+  if (factResult.error) {
+    if (isMissingHistoricalLedger(factResult.error)) return new Map();
+    throw factResult.error;
+  }
 
   const matchups = (matchupResult.data ?? []) as HistoricalMatchupKeyRow[];
   const facts = (factResult.data ?? []) as HistoricalCiFactRow[];
@@ -69,4 +76,10 @@ export function playerSeasonCiKey(seasonId: string, playerId: string): string {
 
 function playerSeasonKey(seasonId: string, playerId: string): string {
   return `${seasonId}:${playerId}`;
+}
+
+function isMissingHistoricalLedger(error: {code?: string; message?: string}): boolean {
+  return error.code === '42P01'
+    || error.code === 'PGRST205'
+    || Boolean(error.message?.includes('historical_clash_contest_rating_facts'));
 }
