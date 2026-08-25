@@ -25,3 +25,17 @@ set player_side = 'Home',
 where deduplication_key = 'historical-match:5f82d6a791b4bc9be32ed44e'
   and season_name = '2025-2026'
   and event_label = 'December';
+
+-- Fail closed if any regular-season historical row still lacks a side. Known
+-- postseason rows are intentionally excluded because CI classifies them Neutral.
+do $$
+begin
+  if exists (
+    select 1
+    from public.historical_player_matchups
+    where player_side is null
+      and event_label !~* '(playoff|semi[- ]?final|championship|finals?)'
+  ) then
+    raise exception 'Historical CI side repair incomplete: unresolved regular-season rows remain';
+  end if;
+end $$;
