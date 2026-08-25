@@ -6,6 +6,7 @@ import {
   type HistoricalPlayerSeasonSummary,
 } from '@/data/historicalSeed';
 import styles from './Stats.module.css';
+import './compact.css';
 
 type StatsPageProps = {
   searchParams: Promise<{season?: string | string[]}>;
