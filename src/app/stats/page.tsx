@@ -98,7 +98,7 @@ function toLiveRow(view: PublicPlayerView): StatsRow | undefined {
 }
 
 function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
-  const players = new Map<string, StatsRow & {teams: Set<string>}>();
+  const players = new Map<string, StatsRow & {teams: Set<string>; ciComplete: boolean}>();
 
   for (const group of groups) {
     for (const row of group.rows) {
@@ -118,8 +118,9 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
         doublesLosses: 0,
         doublesTies: 0,
         points: 0,
-        ciGain: undefined,
+        ciGain: 0,
         teams: new Set<string>(),
+        ciComplete: true,
       };
 
       row.teamNames.forEach((teamName) => existing.teams.add(teamName));
@@ -134,20 +135,24 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
       existing.doublesLosses += row.doublesLosses;
       existing.doublesTies += row.doublesTies;
       existing.points += row.points;
-      if (row.ciGain !== undefined) existing.ciGain = (existing.ciGain ?? 0) + row.ciGain;
+      if (row.ciGain === undefined) existing.ciComplete = false;
+      else existing.ciGain = (existing.ciGain ?? 0) + row.ciGain;
       const decisions = existing.wins + existing.losses + existing.ties;
       existing.winPercentage = decisions ? ((existing.wins + existing.ties * .5) / decisions) * 100 : 0;
       players.set(row.playerId, existing);
     }
   }
 
-  return Array.from(players.values()).map(({teams, ...row}) => {
+  return Array.from(players.values()).map(({teams, ciComplete, ...row}) => {
     const teamNames = Array.from(teams).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
-    return {
+    const completeRow: StatsRow = {
       ...row,
       teamNames,
       teamName: teamNames.length > 1 ? 'Multiple teams' : teamNames[0] ?? row.teamName,
     };
+    if (ciComplete) return completeRow;
+    const {ciGain: _partialCiGain, ...withoutPartialCi} = completeRow;
+    return withoutPartialCi;
   });
 }
 
