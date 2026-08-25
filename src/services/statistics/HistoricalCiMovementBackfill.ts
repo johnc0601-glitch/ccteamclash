@@ -32,6 +32,32 @@ export type HistoricalCiBackfillDryRun = {
   reconciliation: HistoricalCiBackfillReconciliation;
 };
 
+export type HistoricalCiLedgerInsert = {
+  matchup_deduplication_key: string;
+  contest_id: string;
+  historical_match_key: string;
+  historical_team_match_id: number | null;
+  season_id: string;
+  player_id: string;
+  player_name: string;
+  team_id: string;
+  team_name: string;
+  opponent_team_id: string;
+  opponent_team_name: string;
+  side: 'Home' | 'Away' | null;
+  venue: ClashVenue;
+  format: 'Singles' | 'Doubles';
+  outcome: 'W' | 'L' | 'T';
+  clash_index_before: number;
+  opponent_effective_ci: number;
+  win_probability: number;
+  actual_points: number;
+  expected_points: number;
+  performance_vs_expected: number;
+  ci_delta: number;
+  algorithm_version: string;
+};
+
 /**
  * Produces the deterministic payload that a historical CI backfill would write,
  * without performing any persistence. Rows that cannot be replayed safely stay
@@ -62,6 +88,53 @@ export function dryRunHistoricalCiMovementBackfill(
       replayedPlayers: new Set(replay.facts.map((fact) => fact.playerId)).size,
     },
   };
+}
+
+/**
+ * Converts a reconciled dry run into the exact immutable ledger payload.
+ * Persistence must never proceed while any row is quarantined or unaccounted.
+ */
+export function prepareHistoricalCiLedgerInserts(
+  dryRun: HistoricalCiBackfillDryRun,
+): HistoricalCiLedgerInsert[] {
+  assertHistoricalCiBackfillReady(dryRun);
+  return dryRun.facts.map((fact) => ({
+    matchup_deduplication_key: fact.matchupDeduplicationKey,
+    contest_id: fact.contestId,
+    historical_match_key: fact.historicalMatchKey,
+    historical_team_match_id: fact.historicalTeamMatchId,
+    season_id: fact.seasonId,
+    player_id: fact.playerId,
+    player_name: fact.playerName,
+    team_id: fact.teamId,
+    team_name: fact.teamName,
+    opponent_team_id: fact.opponentTeamId,
+    opponent_team_name: fact.opponentTeamName,
+    side: fact.side,
+    venue: fact.venue,
+    format: fact.format,
+    outcome: fact.outcome,
+    clash_index_before: fact.clashIndexBefore,
+    opponent_effective_ci: fact.opponentEffectiveCi,
+    win_probability: fact.winProbability,
+    actual_points: fact.actualPoints,
+    expected_points: fact.winProbability,
+    performance_vs_expected: fact.actualPoints - fact.winProbability,
+    ci_delta: fact.ciDelta,
+    algorithm_version: fact.algorithmVersion,
+  }));
+}
+
+export function assertHistoricalCiBackfillReady(dryRun: HistoricalCiBackfillDryRun): void {
+  if (!dryRun.reconciliation.allRowsAccountedFor) {
+    throw new Error('Historical CI backfill is not fully reconciled');
+  }
+  if (dryRun.quarantine.length > 0) {
+    throw new Error(`Historical CI backfill has ${dryRun.quarantine.length} unresolved rows`);
+  }
+  if (dryRun.reconciliation.replayedRows !== dryRun.reconciliation.inputRows) {
+    throw new Error('Historical CI backfill replay count does not match input count');
+  }
 }
 
 function toQuarantine(row: HistoricalPlayerMatchup): HistoricalCiQuarantine {
