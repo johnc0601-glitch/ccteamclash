@@ -14,6 +14,8 @@ export type PlayerResult = {
   pointsEarned: number;
   contestId?: string;
   score?: number;
+  /** Earned Clash Index movement from this rated contest. */
+  ciDelta?: number;
 };
 
 export type ChallengeResult = {
@@ -80,7 +82,7 @@ export type PlayerMatchHistoryEntry = {
   partnerPlayerNames: string[];
   playerScore?: number;
   opponentScore?: number;
-  /** Earned Clash Index movement from this match only. Season reseeds are excluded. */
+  /** Earned Clash Index movement from this contest only. Season reseeds are excluded. */
   ciDelta?: number;
 };
 
