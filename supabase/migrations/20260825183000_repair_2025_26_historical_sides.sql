@@ -3,14 +3,17 @@
 --
 -- Source authority: Coastal Clash Match Play '25_'26.xlsx, December sheet.
 -- The workbook uses a stable layout where the left player/team block is Away
--- and the right player/team block is Home. These rows are therefore not
--- inferred from current team profiles or the archived schedule.
---
--- Ariel Cosimo appears in the left/Away block against Nadya Gutierrez.
--- Nadya Gutierrez appears in the right/Home block against Ariel Cosimo.
+-- and the right player/team block is Home. The source also shows these rows are
+-- KB (Away) vs Ninjas (Home); Ariel's consolidated rows were incorrectly tagged
+-- Hayneous OG's, which is why the archived team match could not be resolved.
 
 update public.historical_player_matchups
-set player_side = 'Away',
+set player_team_id = 'kb',
+    player_team_name = 'KB',
+    opponent_team_id = 'ninjas',
+    opponent_team_name = 'Ninjas',
+    historical_team_match_id = 29,
+    player_side = 'Away',
     home_away_validated = true
 where deduplication_key in (
   'historical-match:14c25c8c584b6ee5ef549a7b',
@@ -20,7 +23,12 @@ where deduplication_key in (
   and event_label = 'December';
 
 update public.historical_player_matchups
-set player_side = 'Home',
+set player_team_id = 'ninjas',
+    player_team_name = 'Ninjas',
+    opponent_team_id = 'kb',
+    opponent_team_name = 'KB',
+    historical_team_match_id = 29,
+    player_side = 'Home',
     home_away_validated = true
 where deduplication_key = 'historical-match:5f82d6a791b4bc9be32ed44e'
   and season_name = '2025-2026'
