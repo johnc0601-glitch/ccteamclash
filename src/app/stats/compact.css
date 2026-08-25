@@ -62,6 +62,11 @@ main.page-shell table td:first-child span:first-child {
     vertical-align: middle;
   }
 
+  main.page-shell table thead th {
+    background: var(--cc-surface-deep) !important;
+    color: var(--cc-table-head-text) !important;
+  }
+
   main.page-shell table td::before,
   main.page-shell table td:first-child::before {
     display: none;
@@ -81,7 +86,8 @@ main.page-shell table td:first-child span:first-child {
     left: 0;
     z-index: 3;
     min-width: 170px;
-    background: var(--cc-table-head-bg);
+    background: var(--cc-surface-deep) !important;
+    color: var(--cc-table-head-text) !important;
   }
 
   main.page-shell table td:nth-child(2) {
