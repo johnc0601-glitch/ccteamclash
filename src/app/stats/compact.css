@@ -56,7 +56,7 @@ main.page-shell table td:first-child span:first-child {
     display: table-cell;
     width: auto;
     padding: 8px 9px;
-    border-bottom: 1px solid var(--cc-light-border, #dedfd9);
+    border-bottom: 1px solid var(--cc-panel-border);
     white-space: nowrap;
     text-align: left;
     vertical-align: middle;
@@ -73,7 +73,7 @@ main.page-shell table td:first-child span:first-child {
     left: 0;
     z-index: 1;
     min-width: 170px;
-    background: var(--cc-light-surface, #fff);
+    background: var(--cc-surface);
   }
 
   main.page-shell table th:first-child {
@@ -81,7 +81,7 @@ main.page-shell table td:first-child span:first-child {
     left: 0;
     z-index: 3;
     min-width: 170px;
-    background: #111416;
+    background: var(--cc-table-head-bg);
   }
 
   main.page-shell table td:nth-child(2) {
@@ -99,9 +99,9 @@ main.page-shell table td:first-child span:first-child {
     grid-template-columns: repeat(4, minmax(125px, 1fr));
     gap: 0;
     overflow-x: auto;
-    border: 1px solid var(--cc-light-border, #dedfd9);
+    border: 1px solid var(--cc-panel-border);
     border-radius: 8px;
-    background: var(--cc-light-surface, #fff);
+    background: var(--cc-surface);
   }
 
   main.page-shell section > div:has(> article) > article {
@@ -109,7 +109,7 @@ main.page-shell table td:first-child span:first-child {
     padding: 9px 10px;
     gap: 2px;
     border: 0;
-    border-right: 1px solid var(--cc-light-border, #dedfd9);
+    border-right: 1px solid var(--cc-panel-border);
     border-radius: 0;
     box-shadow: none;
   }
