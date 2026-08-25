@@ -14,7 +14,9 @@ import {
 
 export type HistoricalReplayFact = {
   seasonId: string;
-  historicalTeamMatchId: number;
+  historicalMatchKey: string;
+  historicalTeamMatchId: number | null;
+  matchupDeduplicationKey: string;
   contestId: string;
   playerId: string;
   playerName: string;
@@ -23,7 +25,7 @@ export type HistoricalReplayFact = {
   opponentTeamId: string;
   opponentTeamName: string;
   format: 'Singles' | 'Doubles';
-  side: 'Home' | 'Away';
+  side: 'Home' | 'Away' | null;
   venue: ClashVenue;
   outcome: 'W' | 'L' | 'T';
   clashIndexBefore: number;
@@ -38,14 +40,18 @@ export type HistoricalReplayResult = {
   facts: HistoricalReplayFact[];
   endingRatings: Map<string, number>;
   seasonGain: Map<string, number>;
+  unresolvedRows: HistoricalPlayerMatchup[];
 };
 
 /**
  * Replays historical contests with the same event-freeze rule used by the live
- * Matchday CI pipeline. Historical regular-season rows use their recorded
- * Home/Away context. Known neutral matches (for example playoffs) are supplied
- * explicitly by team-match id; current team course profiles are never used to
- * reinterpret old matches.
+ * Matchday CI pipeline.
+ *
+ * Regular-season rows require recorded Home/Away context. Playoff/Championship
+ * rows are neutral by definition and therefore never invent a side merely to
+ * apply CI. Historical rows missing a team-match archive entry are grouped by a
+ * deterministic season/event/team-pair key. A non-playoff row with no validated
+ * side is returned as unresolved rather than guessed.
  */
 export function replayHistoricalClashSeason(
   rows: HistoricalPlayerMatchup[],
@@ -55,11 +61,17 @@ export function replayHistoricalClashSeason(
   const ratings = new Map(startingRatings);
   const seasonGain = new Map<string, number>();
   const facts: HistoricalReplayFact[] = [];
+  const unresolvedRows: HistoricalPlayerMatchup[] = [];
 
-  const matchGroups = groupByTeamMatch(rows);
+  const matchGroups = groupByHistoricalMatch(rows);
   for (const matchRows of matchGroups) {
-    const teamMatchId = matchRows[0].historicalTeamMatchId!;
-    const venue = venueByTeamMatchId.get(teamMatchId) ?? 'Home';
+    const first = matchRows[0];
+    const venue = historicalVenue(first, venueByTeamMatchId);
+    if (venue === 'Home' && matchRows.some((row) => row.playerSide !== 'Home' && row.playerSide !== 'Away')) {
+      unresolvedRows.push(...matchRows);
+      continue;
+    }
+
     const frozenRatings = new Map(ratings);
     const matchDeltas = new Map<string, number>();
 
@@ -76,7 +88,7 @@ export function replayHistoricalClashSeason(
     }
   }
 
-  return {facts, endingRatings: ratings, seasonGain};
+  return {facts, endingRatings: ratings, seasonGain, unresolvedRows};
 }
 
 function buildHistoricalFact(
@@ -84,11 +96,8 @@ function buildHistoricalFact(
   frozenRatings: ReadonlyMap<string, number>,
   venue: ClashVenue,
 ): HistoricalReplayFact {
-  if (row.historicalTeamMatchId == null) {
-    throw new Error(`Historical row ${row.deduplicationKey} is missing historicalTeamMatchId`);
-  }
-  if (row.playerSide !== 'Home' && row.playerSide !== 'Away') {
-    throw new Error(`Historical row ${row.deduplicationKey} is missing playerSide`);
+  if (venue === 'Home' && row.playerSide !== 'Home' && row.playerSide !== 'Away') {
+    throw new Error(`Historical row ${row.deduplicationKey} is missing playerSide for a home-site match`);
   }
 
   const playerCi = requireRating(frozenRatings, row.playerId);
@@ -99,9 +108,8 @@ function buildHistoricalFact(
 
   if (row.format === 'Singles') {
     const opponentCi = requireRating(frozenRatings, row.opponentOnePlayerId);
-    const homeBonusApplies = venue === 'Home';
-    const playerEffective = playerCi + (homeBonusApplies && row.playerSide === 'Home' ? SINGLES_HOME_BONUS : 0);
-    opponentEffectiveCi = opponentCi + (homeBonusApplies && row.playerSide === 'Away' ? SINGLES_HOME_BONUS : 0);
+    const playerEffective = playerCi + (venue === 'Home' && row.playerSide === 'Home' ? SINGLES_HOME_BONUS : 0);
+    opponentEffectiveCi = opponentCi + (venue === 'Home' && row.playerSide === 'Away' ? SINGLES_HOME_BONUS : 0);
     probability = eloProbability(playerEffective, opponentEffectiveCi);
     ciDelta = clashCiDelta(actual, probability);
   } else {
@@ -119,7 +127,9 @@ function buildHistoricalFact(
 
   return {
     seasonId: row.seasonId,
+    historicalMatchKey: historicalMatchKey(row),
     historicalTeamMatchId: row.historicalTeamMatchId,
+    matchupDeduplicationKey: row.deduplicationKey,
     contestId: historicalContestId(row),
     playerId: row.playerId,
     playerName: row.playerName,
@@ -128,7 +138,7 @@ function buildHistoricalFact(
     opponentTeamId: row.opponentTeamId,
     opponentTeamName: row.opponentTeamName,
     format: row.format,
-    side: row.playerSide,
+    side: venue === 'Neutral' ? null : row.playerSide,
     venue,
     outcome: row.outcome,
     clashIndexBefore: playerCi,
@@ -140,22 +150,41 @@ function buildHistoricalFact(
   };
 }
 
-function groupByTeamMatch(rows: HistoricalPlayerMatchup[]): HistoricalPlayerMatchup[][] {
-  const groups = new Map<number, HistoricalPlayerMatchup[]>();
+function groupByHistoricalMatch(rows: HistoricalPlayerMatchup[]): HistoricalPlayerMatchup[][] {
+  const groups = new Map<string, HistoricalPlayerMatchup[]>();
   for (const row of [...rows].sort(compareHistoricalRows)) {
-    if (row.historicalTeamMatchId == null) {
-      throw new Error(`Historical row ${row.deduplicationKey} is missing historicalTeamMatchId`);
-    }
-    const group = groups.get(row.historicalTeamMatchId) ?? [];
+    const key = historicalMatchKey(row);
+    const group = groups.get(key) ?? [];
     group.push(row);
-    groups.set(row.historicalTeamMatchId, group);
+    groups.set(key, group);
   }
   return [...groups.values()];
 }
 
+export function historicalMatchKey(row: HistoricalPlayerMatchup): string {
+  if (row.historicalTeamMatchId != null) return `team-match:${row.historicalTeamMatchId}`;
+  const teams = [row.playerTeamId || row.playerTeamName, row.opponentTeamId || row.opponentTeamName]
+    .map((value) => normalizeKeyPart(value))
+    .sort();
+  return `synthetic:${row.seasonId}:${row.eventOrder}:${normalizeKeyPart(row.eventLabel)}:${teams.join(':')}`;
+}
+
+function historicalVenue(
+  row: HistoricalPlayerMatchup,
+  venueByTeamMatchId: ReadonlyMap<number, ClashVenue>,
+): ClashVenue {
+  if (isPlayoffLabel(row.eventLabel)) return 'Neutral';
+  if (row.historicalTeamMatchId != null) return venueByTeamMatchId.get(row.historicalTeamMatchId) ?? 'Home';
+  return 'Home';
+}
+
+function isPlayoffLabel(label: string): boolean {
+  return /playoff|semi[- ]?final|championship|finals?/i.test(label);
+}
+
 function compareHistoricalRows(a: HistoricalPlayerMatchup, b: HistoricalPlayerMatchup): number {
   return a.eventOrder - b.eventOrder
-    || (a.historicalTeamMatchId ?? 0) - (b.historicalTeamMatchId ?? 0)
+    || historicalMatchKey(a).localeCompare(historicalMatchKey(b))
     || a.sourceRow - b.sourceRow
     || a.playerId.localeCompare(b.playerId);
 }
@@ -167,7 +196,11 @@ function historicalContestId(row: HistoricalPlayerMatchup): string {
     row.opponentOnePlayerId,
     row.opponentTwoPlayerId,
   ].filter((id): id is string => Boolean(id)).sort();
-  return `historical:${row.seasonId}:${row.historicalTeamMatchId}:${row.format.toLowerCase()}:${playerIds.join(':')}`;
+  return `historical:${historicalMatchKey(row)}:${row.format.toLowerCase()}:${playerIds.join(':')}`;
+}
+
+function normalizeKeyPart(value: string): string {
+  return value.trim().toLocaleLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
 function requireRating(ratings: ReadonlyMap<string, number>, playerId: string): number {
