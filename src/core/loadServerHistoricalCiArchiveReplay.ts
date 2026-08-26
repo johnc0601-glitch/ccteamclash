@@ -1,5 +1,5 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
-import {createClient} from '@/lib/supabase/server';
+import {createAdminClient} from '@/lib/supabase/admin';
 import {SupabaseHistoricalPlayerMatchupRepository} from '@/domain/history/SupabaseHistoricalPlayerMatchupRepository';
 import type {ClashVenue} from '@/domain/story-engine/ClashPrediction';
 import {
@@ -22,10 +22,14 @@ const PAGE_SIZE = 1000;
 /**
  * Builds the complete historical CI replay from production archive sources.
  * This function is read-only: it never persists rating facts.
+ *
+ * Historical CI is an administrative calculation, so all replay source reads
+ * use the service-role client. RLS must never be able to hide historical PDGA
+ * seeds or archive rows and silently change the deterministic replay result.
  */
 export async function loadServerHistoricalCiArchiveReplay(): Promise<HistoricalCiArchiveReplayResult> {
-  const supabase = await createClient();
-  const untyped = supabase as unknown as SupabaseClient;
+  const admin = createAdminClient();
+  const untyped = admin as unknown as SupabaseClient;
   const seasonRows = await loadAllSeasonRows(untyped);
 
   const seasonIds = [...new Set(seasonRows.map((row) => row.season_id))].sort();
@@ -37,16 +41,22 @@ export async function loadServerHistoricalCiArchiveReplay(): Promise<HistoricalC
   if (playerResult.error) throw playerResult.error;
   if (seedResult.error) throw seedResult.error;
 
+  const seedRows = (seedResult.data ?? []) as SeedRow[];
+  const pdgaSeedCount = seedRows.filter((row) => row.source.trim().toLocaleUpperCase() === 'PDGA').length;
+  if (pdgaSeedCount === 0) {
+    throw new Error('Historical CI replay cannot run without visible PDGA seed rows');
+  }
+
   const genderByPlayerId = new Map(
     ((playerResult.data ?? []) as PlayerRow[]).map((row) => [row.id, row.gender]),
   );
-  const legacySeeds = ((seedResult.data ?? []) as SeedRow[]).map((row): HistoricalLegacySeed => ({
+  const legacySeeds = seedRows.map((row): HistoricalLegacySeed => ({
     seasonId: row.season_id,
     playerName: row.player_name,
     rating: row.rating,
     source: row.source,
   }));
-  const repository = new SupabaseHistoricalPlayerMatchupRepository(supabase);
+  const repository = new SupabaseHistoricalPlayerMatchupRepository(admin);
   const archive: HistoricalCiArchiveSeason[] = [];
 
   for (const seasonId of seasonIds) {
