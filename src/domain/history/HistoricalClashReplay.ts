@@ -179,7 +179,7 @@ function historicalVenue(
 }
 
 function isPlayoffLabel(label: string): boolean {
-  return /playoff|semi[- ]?final|championship|finals?/i.test(label);
+  return /playoff|semi[- ]?final|championship|finals?|3rd\s+place|third\s+place/i.test(label);
 }
 
 function compareHistoricalRows(a: HistoricalPlayerMatchup, b: HistoricalPlayerMatchup): number {
