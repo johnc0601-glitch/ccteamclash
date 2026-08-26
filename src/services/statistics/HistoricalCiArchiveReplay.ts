@@ -32,9 +32,11 @@ export type HistoricalCiArchiveReplayResult = {
  * Replays historical seasons in the supplied chronological order using one CI
  * model and one canonical player-ID rating chain.
  *
- * Each season resolves only explicit historical PDGA seeds. Legacy ghost values
- * are ignored in favor of the finalized 825/700 provisional baselines. Ending
- * CI from one season becomes prior CI for the next season's 80/20 reset. Reset
+ * Each season prefers its explicit historical PDGA seed. If that exact season
+ * is missing a seed, a verified PDGA seed from the nearest other archived season
+ * for the same historical player name may fill the gap. Legacy ghost values are
+ * ignored in favor of the finalized 825/700 provisional baselines. Ending CI
+ * from one season becomes prior CI for the next season's 80/20 reset. Reset
  * movement never enters the immutable contest ledger or CI +/- totals.
  */
 export function replayHistoricalCiArchive(
