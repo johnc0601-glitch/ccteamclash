@@ -138,7 +138,7 @@ function buildHistoricalFact(
     opponentTeamId: row.opponentTeamId,
     opponentTeamName: row.opponentTeamName,
     format: row.format,
-    side: venue === 'Neutral' ? null : row.playerSide,
+    side: venue === 'Neutral' ? null : (row.playerSide ?? null),
     venue,
     outcome: row.outcome,
     clashIndexBefore: playerCi,
