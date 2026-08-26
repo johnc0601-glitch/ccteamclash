@@ -20,14 +20,22 @@ export type HistoricalResolvedSeed = {
   source: 'HistoricalPDGA' | 'Provisional';
 };
 
+const CONFIRMED_HISTORICAL_NAME_ALIASES = new Map<string, string>([
+  ['william deering', 'will deering'],
+  ['ilya batazhan', 'eli batazhan'],
+  ['travis bochum', 'travis baucom'],
+]);
+
 /**
  * Converts the legacy name-based seed table into canonical player-ID seed
  * metadata for the current CI replay.
  *
  * Only explicit historical PDGA rows are treated as an external rating anchor.
  * Legacy GHOST values are intentionally ignored because the finalized model now
- * owns provisional baselines (Open 825 / Women 700). When duplicate legacy rows
- * exist, PDGA wins over GHOST instead of allowing insert order to decide.
+ * owns provisional baselines (Open 825 / Women 700). Confirmed historical name
+ * aliases are canonicalized before lookup so known identity repairs do not lose
+ * a valid historical PDGA seed. When duplicate legacy rows exist, PDGA wins over
+ * GHOST instead of allowing insert order to decide.
  */
 export function resolveHistoricalCiSeeds(
   seasonId: string,
@@ -58,7 +66,8 @@ export function resolveHistoricalCiSeeds(
 }
 
 export function normalizeHistoricalPlayerName(value: string): string {
-  return value.trim().toLocaleLowerCase().replace(/\s+/g, ' ');
+  const normalized = value.trim().toLocaleLowerCase().replace(/\s+/g, ' ');
+  return CONFIRMED_HISTORICAL_NAME_ALIASES.get(normalized) ?? normalized;
 }
 
 function isPdgaSource(source: string): boolean {
