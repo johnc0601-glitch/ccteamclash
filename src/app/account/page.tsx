@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import {PlayerRecordSelect} from '@/components/launch/PlayerRecordSelect';
 import {ThemeToggle} from '@/components/ThemeToggle';
+import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {ensureLaunchSignupProfile} from '@/domain/launch/LaunchAccountSetup';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import type {LaunchPlayer, LaunchProfile} from '@/domain/launch/LaunchData';
@@ -21,7 +22,7 @@ type AccountPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-type RegistrationSeason = {id: string; name: string};
+type RegistrationSeason = {id: string; name: string; start_date: string};
 type RegistrationTeam = {id: string; name: string};
 type RegistrationApplication = {
   status: string;
@@ -33,6 +34,17 @@ type EstablishedRegistration = {
   playerType: 'Adult' | 'Junior';
   gender: 'Male' | 'Female';
 } | null;
+type RecordSummary = {wins: number; losses: number; ties: number};
+type AccountPlayerStats = {
+  teamName: string;
+  seasonsPlayed: number;
+  careerMatchesPlayed: number;
+  careerRecord: RecordSummary;
+  singlesRecord: RecordSummary;
+  doublesRecord: RecordSummary;
+  currentMatchesPlayed: number;
+  currentRecord: RecordSummary;
+};
 
 export default async function AccountPage({searchParams}: AccountPageProps) {
   const params = searchParams ? await searchParams : {};
@@ -101,8 +113,8 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
       }
     }
   }
-  const players = await repository.getPlayers();
 
+  const players = await repository.getPlayers();
   let playedBefore: boolean | null = null;
   let registrationSeason: RegistrationSeason | null = null;
   let registrationTeams: RegistrationTeam[] = [];
@@ -121,14 +133,14 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
     if (profile.playerId && playedBefore !== null) {
       const {data: openSeason} = await supabase
         .from('launch_seasons')
-        .select('id, name')
+        .select('id, name, start_date')
         .eq('registration_open', true)
         .eq('active', true)
         .eq('published', true)
         .order('year', {ascending: false})
         .limit(1)
         .maybeSingle();
-      registrationSeason = openSeason;
+      registrationSeason = openSeason as RegistrationSeason | null;
 
       if (registrationSeason) {
         const [{data: existingApplication}, {data: seasonTeams}, {data: priorApplication}] = await Promise.all([
@@ -154,7 +166,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
         ]);
         application = existingApplication as RegistrationApplication | null;
 
-        const linkedPlayer = players.find((player) => player.id === profile.playerId);
+        const linkedPlayer = players.find((player) => player.id === profile?.playerId);
         const establishedPlayerType = priorApplication?.player_type === 'Adult' || priorApplication?.player_type === 'Junior'
           ? priorApplication.player_type
           : null;
@@ -185,6 +197,34 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
   }
 
   const linkedPlayer = profile ? players.find((player) => player.id === profile.playerId) : null;
+  let playerStats: AccountPlayerStats | null = null;
+  if (linkedPlayer) {
+    try {
+      const publicPlayerService = await createServerPublicPlayerService();
+      const [playerViews, completeHistory] = await Promise.all([
+        publicPlayerService.getAll(),
+        publicPlayerService.getHistory(linkedPlayer.id),
+      ]);
+      const playerView = playerViews.find((entry) => entry.player.id === linkedPlayer.id);
+      if (playerView) {
+        const current = playerView.currentStatistics;
+        const career = playerView.careerStatistics;
+        playerStats = {
+          teamName: playerView.teamName,
+          seasonsPlayed: new Set(completeHistory.map((entry) => entry.seasonName)).size,
+          careerMatchesPlayed: career.matchesPlayed,
+          careerRecord: career.overallRecord,
+          singlesRecord: career.singlesRecord,
+          doublesRecord: career.doublesRecord,
+          currentMatchesPlayed: current?.matchesPlayed ?? 0,
+          currentRecord: current?.overallRecord ?? {wins: 0, losses: 0, ties: 0},
+        };
+      }
+    } catch {
+      playerStats = null;
+    }
+  }
+
   const playerSetupComplete = Boolean(linkedPlayer && playedBefore !== null);
   const registrationIncomplete = Boolean(profile && (!playerSetupComplete || (registrationSeason && !application)));
 
@@ -216,6 +256,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
           registrationTeams={registrationTeams}
           application={application}
           establishedRegistration={establishedRegistration}
+          playerStats={playerStats}
         />
       ) : (
         <article className={styles.panel}>
@@ -236,6 +277,7 @@ function MemberProfile({
   registrationTeams,
   application,
   establishedRegistration,
+  playerStats,
 }: {
   players: LaunchPlayer[];
   profile: LaunchProfile;
@@ -244,6 +286,7 @@ function MemberProfile({
   registrationTeams: RegistrationTeam[];
   application: RegistrationApplication | null;
   establishedRegistration: EstablishedRegistration;
+  playerStats: AccountPlayerStats | null;
 }) {
   const linkedPlayer = players.find((player) => player.id === profile.playerId);
   const playerSetupComplete = Boolean(linkedPlayer && playedBefore !== null);
@@ -256,7 +299,6 @@ function MemberProfile({
           <span className={styles.eyebrow}>Step 1 of 2 · Player record</span>
           <h2>Find your Coastal Clash player record</h2>
           <p className={styles.linkingNote}>Most players already have a record. Search for your name first so your history, rankings, and team records stay connected.</p>
-
           <form className={styles.form} action={completePlayerSetup}>
             <input name="playedBefore" type="hidden" value="true" />
             <label htmlFor="setupRequestedPlayerId">Your player record</label>
@@ -271,7 +313,6 @@ function MemberProfile({
             />
             <button className={styles.primaryButton} type="submit">Connect and continue</button>
           </form>
-
           <details style={{marginTop: '1rem'}}>
             <summary><strong>I have never played Coastal Clash before</strong></summary>
             <p className={styles.linkingNote}>Only use this if you do not have an existing Coastal Clash player record. This creates a new player with no previous league history.</p>
@@ -316,12 +357,7 @@ function MemberProfile({
             ) : (
               <>
                 <label style={{display: 'flex', alignItems: 'center', gap: '10px', textTransform: 'none'}}>
-                  <input
-                    name="playerType"
-                    type="checkbox"
-                    value="Junior"
-                    style={{width: 'auto', minHeight: 'auto'}}
-                  />
+                  <input name="playerType" type="checkbox" value="Junior" style={{width: 'auto', minHeight: 'auto'}} />
                   <input name="playerType" type="hidden" value="Adult" />
                   <span>Junior</span>
                 </label>
@@ -340,75 +376,105 @@ function MemberProfile({
     );
   }
 
+  const teamName = playerStats?.teamName || requestedTeam?.name || 'Unassigned';
+  const playerType = application?.player_type || establishedRegistration?.playerType || 'Adult';
+  const gender = application?.gender || linkedPlayer?.gender || establishedRegistration?.gender || '—';
+
   return (
     <section className={styles.grid}>
+      <article className={`${styles.panel} ${styles.profilePanel}`}>
+        <div className={styles.profileHeading}>
+          <div>
+            <span className={styles.eyebrow}>Player profile</span>
+            <h2>{linkedPlayer?.name ?? profile.displayName}</h2>
+            <p className={styles.profileSubhead}>{teamName} · {profile.role}</p>
+          </div>
+          {profile.role === 'Captain' ? <Link className={styles.compactAction} href="/captain">Captain Home</Link> : null}
+          {profile.role === 'Commissioner' ? <Link className={styles.compactAction} href="/office">Commissioner Office</Link> : null}
+        </div>
+
+        <div className={styles.playerHeroStats}>
+          <div><span>Clash Index</span><strong>{linkedPlayer?.clashIndex ?? '—'}</strong></div>
+          <div><span>PDGA rating</span><strong>{linkedPlayer?.pdgaRating ?? '—'}</strong></div>
+        </div>
+
+        <dl className={styles.profileDetails}>
+          <div><dt>PDGA #</dt><dd>{linkedPlayer?.pdgaNumber || '—'}</dd></div>
+          <div><dt>Division</dt><dd>{gender}</dd></div>
+          <div><dt>Player type</dt><dd>{playerType}</dd></div>
+          <div><dt>Status</dt><dd>{profile.status}</dd></div>
+        </dl>
+
+        <form className={styles.form} action={updateProfileName}>
+          <label htmlFor="profileDisplayName">Display name</label>
+          <input id="profileDisplayName" name="displayName" defaultValue={profile.displayName} autoComplete="name" required />
+          <button className={styles.secondaryButton} type="submit">Save profile</button>
+        </form>
+      </article>
+
       {registrationSeason && application ? (
-        <article className={styles.panel}>
+        <article className={`${styles.panel} ${styles.registrationPanel}`}>
           <span className={styles.eyebrow}>Season registration</span>
           <h2>{registrationSeason.name}</h2>
-          <div className={styles.connected}>
-            <strong>{application.status === 'Approved' ? 'Registered' : application.status}</strong>
-            {requestedTeam?.name ?? application.requested_team_id} · {application.player_type} · {application.gender}
+          <div className={styles.registrationStatus}>
+            <span>{application.status === 'Approved' ? 'Registered' : application.status}</span>
+            <strong>{requestedTeam?.name ?? application.requested_team_id}</strong>
           </div>
+          <dl className={styles.profileDetails}>
+            <div><dt>Team</dt><dd>{requestedTeam?.name ?? application.requested_team_id}</dd></div>
+            <div><dt>Player type</dt><dd>{application.player_type}</dd></div>
+            <div><dt>Division</dt><dd>{application.gender}</dd></div>
+            <div><dt>Season starts</dt><dd>{formatDate(registrationSeason.start_date)}</dd></div>
+          </dl>
         </article>
       ) : null}
 
-      <article className={styles.panel}>
-        <span className={styles.eyebrow}>Profile status</span>
-        <h2>{profile.displayName}</h2>
-        <dl className={styles.statusList}>
-          <div>
-            <dt>Status</dt>
-            <dd>{profile.status}</dd>
-          </div>
-          <div>
-            <dt>Role</dt>
-            <dd>{profile.role}</dd>
-          </div>
-          <div>
-            <dt>Player</dt>
-            <dd>{linkedPlayer?.name ?? 'Player Setup required'}</dd>
-          </div>
-        </dl>
-
-        <form className={styles.form} action={updateProfileName} style={{marginTop: '1rem'}}>
-          <label htmlFor="profileDisplayName">Display name</label>
-          <input
-            id="profileDisplayName"
-            name="displayName"
-            defaultValue={profile.displayName}
-            autoComplete="name"
-            required
-          />
-          <button className={styles.secondaryButton} type="submit">Save profile</button>
-        </form>
-        {profile.role === 'Captain' ? (
-          <Link className={styles.actionLink} href="/captain">Open Captain Home</Link>
-        ) : null}
-        {profile.role === 'Commissioner' ? (
-          <Link className={styles.actionLink} href="/office">Open Commissioner Office</Link>
-        ) : null}
-      </article>
-
-      <article className={styles.panel}>
+      <article className={`${styles.panel} ${styles.historyPanel}`}>
         <span className={styles.eyebrow}>League history</span>
-        <h2>{playedBefore ? 'History connected' : 'Player record ready'}</h2>
-        <div className={styles.connected}>
-          <strong>{linkedPlayer?.name}</strong>
-          {playedBefore
-            ? 'Your past results, rankings, and team history are connected to this account.'
-            : 'This is your Coastal Clash player record. Future seasons will stay connected to this account.'}
-        </div>
+        <h2>{playedBefore ? 'Career record' : 'Player record ready'}</h2>
+        {playerStats ? (
+          <>
+            <div className={styles.historyStats}>
+              <Stat label="Seasons" value={String(playerStats.seasonsPlayed)} />
+              <Stat label="Matches" value={String(playerStats.careerMatchesPlayed)} />
+              <Stat label="Singles" value={formatRecord(playerStats.singlesRecord)} />
+              <Stat label="Doubles" value={formatRecord(playerStats.doublesRecord)} />
+            </div>
+            <div className={styles.currentSeasonStrip}>
+              <span>Current season</span>
+              <strong>{playerStats.currentMatchesPlayed ? `${formatRecord(playerStats.currentRecord)} · ${playerStats.currentMatchesPlayed} played` : 'No results yet'}</strong>
+            </div>
+            {linkedPlayer ? <Link className={styles.historyLink} href={`/players?search=${encodeURIComponent(linkedPlayer.name)}`}>View full player history</Link> : null}
+          </>
+        ) : (
+          <div className={styles.connected}>
+            <strong>{linkedPlayer?.name}</strong>
+            {playedBefore
+              ? 'Your past results, rankings, and team history are connected to this account.'
+              : 'This is your Coastal Clash player record. Future seasons will stay connected to this account.'}
+          </div>
+        )}
       </article>
 
-      <article className={styles.panel}>
+      <article className={`${styles.panel} ${styles.themePanel}`}>
         <span className={styles.eyebrow}>Display</span>
         <h2>Theme</h2>
         <p>Choose how Team Clash looks on this device.</p>
-        <div className={styles.themeAction}>
-          <ThemeToggle />
-        </div>
+        <div className={styles.themeAction}><ThemeToggle /></div>
       </article>
     </section>
   );
+}
+
+function Stat({label, value}: {label: string; value: string}) {
+  return <div><span>{label}</span><strong>{value}</strong></div>;
+}
+
+function formatRecord(record: RecordSummary): string {
+  return record.ties ? `${record.wins}-${record.losses}-${record.ties}` : `${record.wins}-${record.losses}`;
+}
+
+function formatDate(value: string): string {
+  const date = new Date(`${value.slice(0, 10)}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
 }
