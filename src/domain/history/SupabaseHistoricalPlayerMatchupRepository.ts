@@ -65,12 +65,16 @@ export class SupabaseHistoricalPlayerMatchupRepository implements HistoricalPlay
 
   async upsert(rows: HistoricalPlayerMatchup[]): Promise<number> {
     if (!rows.length) return 0;
-    const {data, error} = await this.supabase
+    // These three context columns are introduced by the staged CI migrations,
+    // while the generated Database type still reflects the pre-migration schema.
+    // Keep the escape hatch local until types are regenerated after rollout.
+    const historicalClient = this.supabase as unknown as SupabaseClient;
+    const {data, error} = await historicalClient
       .from('historical_player_matchups')
       .upsert(rows.map(fromDomain), {onConflict: 'deduplication_key'})
       .select('deduplication_key');
     if (error) throw error;
-    return data.length;
+    return data?.length ?? 0;
   }
 }
 
