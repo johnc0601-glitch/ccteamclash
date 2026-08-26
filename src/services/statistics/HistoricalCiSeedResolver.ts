@@ -110,6 +110,7 @@ const CONFIRMED_HISTORICAL_SEED_OVERRIDES = new Map<string, number>([
   ['coastal-clash-2025-2026:mark-bostic', 937],
   ['coastal-clash-2024-2025:tommy-phillips', 936],
   ['coastal-clash-2025-2026:tommy-phillips', 936],
+  ['coastal-clash-2024-2025:nicki-irrea', 915],
 ]);
 
 /**
