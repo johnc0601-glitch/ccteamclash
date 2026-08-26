@@ -6,8 +6,6 @@ import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCi
 
 export const EXPECTED_COMPLETE_HISTORICAL_CI_FACTS = 2568;
 
-type CountRow = {count: number | null};
-
 export type HistoricalCiPersistenceResult = {
   insertedFacts: number;
   expectedFacts: number;
