@@ -20,6 +20,8 @@ export type PublicPlayerView = {
   currentSeasonName: string;
   currentStatistics?: PlayerStatistics;
   currentCiGain?: number;
+  currentSinglesCiGain?: number;
+  currentDoublesCiGain?: number;
   careerStatistics: PlayerStatistics;
   history: PublicPlayerHistory[];
 };
@@ -94,6 +96,7 @@ export class PublicPlayerService {
       const historicalStatistics = with2024Playoffs(getHistoricalPlayerSeedSummary(player.id), player.id);
       const activeStatistics = currentStatisticsByPlayer.get(player.id);
       const currentStatistics = activeStatistics?.matchesPlayed ? activeStatistics : undefined;
+      const currentCiMovement = currentCiMovements.get(player.id);
 
       return {
         player,
@@ -101,7 +104,9 @@ export class PublicPlayerService {
         currentSeasonId: activeSeason?.id,
         currentSeasonName: activeSeason?.name ?? 'Current season',
         currentStatistics,
-        currentCiGain: currentCiMovements.get(player.id)?.ciGain,
+        currentCiGain: currentCiMovement?.ciGain,
+        currentSinglesCiGain: currentCiMovement?.singlesCiGain,
+        currentDoublesCiGain: currentCiMovement?.doublesCiGain,
         careerStatistics: historicalStatistics
           ? {
             playerId: player.id,
