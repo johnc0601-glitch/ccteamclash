@@ -11,19 +11,27 @@ type HistoricalCiFactRow = {
   season_id: string;
   player_id: string;
   matchup_deduplication_key: string;
+  format: 'Singles' | 'Doubles';
   ci_delta: number;
+};
+
+export type HistoricalCiGainBreakdown = {
+  ciGain: number;
+  singlesCiGain: number;
+  doublesCiGain: number;
 };
 
 /**
  * Returns season/player CI gain only when every imported historical matchup for
- * that player/season has an immutable CI fact. Partial backfills intentionally
- * remain absent so Stats renders an em dash instead of a misleading subtotal.
+ * that player/season has an immutable CI fact. Total, Singles and Doubles stay
+ * unavailable together if the season is incomplete so Stats never exposes a
+ * partial historical subtotal as if it were final.
  *
  * During staged rollout the historical ledger migration may not exist yet. In
  * that specific case return no gains instead of taking the public Stats page
  * down; all other database errors remain visible.
  */
-export async function loadServerHistoricalCiGains(): Promise<Map<string, number>> {
+export async function loadServerHistoricalCiGains(): Promise<Map<string, HistoricalCiGainBreakdown>> {
   const supabase = await createClient();
   const untyped = supabase as unknown as SupabaseClient;
   const [matchupResult, factResult] = await Promise.all([
@@ -32,7 +40,7 @@ export async function loadServerHistoricalCiGains(): Promise<Map<string, number>
       .select('season_id,player_id,deduplication_key'),
     untyped
       .from('historical_clash_contest_rating_facts')
-      .select('season_id,player_id,matchup_deduplication_key,ci_delta'),
+      .select('season_id,player_id,matchup_deduplication_key,format,ci_delta'),
   ]);
   if (matchupResult.error) throw matchupResult.error;
   if (factResult.error) {
@@ -58,14 +66,24 @@ export async function loadServerHistoricalCiGains(): Promise<Map<string, number>
     factsByPlayerSeason.set(key, rows);
   }
 
-  const gains = new Map<string, number>();
+  const gains = new Map<string, HistoricalCiGainBreakdown>();
   for (const [key, sourceKeys] of sourceKeysByPlayerSeason) {
     const playerFacts = factsByPlayerSeason.get(key) ?? [];
     const factKeys = new Set(playerFacts.map((fact) => fact.matchup_deduplication_key));
     if (factKeys.size !== sourceKeys.size || [...sourceKeys].some((sourceKey) => !factKeys.has(sourceKey))) {
       continue;
     }
-    gains.set(key, playerFacts.reduce((total, fact) => total + fact.ci_delta, 0));
+    let singlesCiGain = 0;
+    let doublesCiGain = 0;
+    for (const fact of playerFacts) {
+      if (fact.format === 'Singles') singlesCiGain += fact.ci_delta;
+      else doublesCiGain += fact.ci_delta;
+    }
+    gains.set(key, {
+      ciGain: singlesCiGain + doublesCiGain,
+      singlesCiGain,
+      doublesCiGain,
+    });
   }
   return gains;
 }
