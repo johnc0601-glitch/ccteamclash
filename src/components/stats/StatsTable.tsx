@@ -13,7 +13,7 @@ type Division = 'Open' | 'Women';
 export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsGroup[]; initialGroupId?: string}) {
   const validInitialGroupId = groups.some((group) => group.id === initialGroupId) ? initialGroupId : groups[0]?.id ?? 'overall';
   const [groupId, setGroupId] = useState(validInitialGroupId);
-  const [sortKey, setSortKey] = useState<SortKey>('points');
+  const [sortKey, setSortKey] = useState<SortKey>('ciGain');
   const [direction, setDirection] = useState<Direction>('desc');
   const [limit, setLimit] = useState<Limit>(25);
   const [division, setDivision] = useState<Division>('Open');
@@ -40,7 +40,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
 
   const sortedRows = useMemo(() => [...filteredRows].sort((a, b) => compareRows(a, b, sortKey, direction)), [filteredRows, sortKey, direction]);
   const rows = limit === 'all' ? sortedRows : sortedRows.slice(0, limit);
-  const hasCustomView = division !== 'Open' || team !== 'all' || search.trim() !== '' || limit !== 25 || sortKey !== 'points' || direction !== 'desc';
+  const hasCustomView = division !== 'Open' || team !== 'all' || search.trim() !== '' || limit !== 25 || sortKey !== 'ciGain' || direction !== 'desc';
 
   function selectGroup(nextGroupId: string) {
     setGroupId(nextGroupId);
@@ -53,7 +53,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
     setTeam('all');
     setSearch('');
     setLimit(25);
-    setSortKey('points');
+    setSortKey('ciGain');
     setDirection('desc');
   }
 
