@@ -66,13 +66,19 @@ alter table public.historical_team_matches
   add constraint historical_team_matches_ci_venue_check
   check (ci_venue in ('Home', 'Neutral'));
 
--- Imported April 2025 playoffs were neutral-site events even though the source
--- workbook uses home/away columns to lay out the matchup.
+-- Imported playoffs were neutral-site events even though source workbooks use
+-- home/away columns to lay out the matchup.
 update public.historical_team_matches
 set ci_venue = 'Neutral'
 where season_name = '2024-2025'
   and event_month = 'April'
   and event_label in ('April Semifinal 1', 'April Semifinal 2', 'April Championship');
+
+update public.historical_team_matches
+set ci_venue = 'Neutral'
+where season_name = '2025-2026'
+  and event_order >= 6
+  and event_label in ('March Semifinal 1', 'March Semifinal 2', 'March Championship', 'March 3rd Place');
 
 -- Historical facts intentionally do not reference launch_result_contests or
 -- live Matchday snapshots. Historical source rows have their own immutable
