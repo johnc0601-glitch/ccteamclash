@@ -43,6 +43,9 @@ export type StatsGroup = {
   rows: StatsRow[];
 };
 
+// Public stats currently require three recorded matches in the selected view.
+const MIN_STATS_MATCHES = 3;
+
 function compactSeasonName(name: string): string {
   const withoutLeagueName = name.replace(/^Coastal Clash(?: Match Play)?\s*/i, '');
   return withoutLeagueName.replace(/(\d{4})-(\d{4})/, (_match, firstYear: string, secondYear: string) => `${firstYear}–${secondYear.slice(2)}`);
@@ -183,9 +186,17 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
   const liveGroup = activeSeasonId && activeSeasonName && !historicalSeasonIds.has(activeSeasonId)
     ? [{id: activeSeasonId, label: compactSeasonName(activeSeasonName), rows: liveRows}]
     : [];
-  const seasonGroups = [...liveGroup, ...historicalGroups];
+  const sourceSeasonGroups = [...liveGroup, ...historicalGroups];
+  const seasonGroups = sourceSeasonGroups.map((group) => ({
+    ...group,
+    rows: group.rows.filter((row) => row.matchesPlayed >= MIN_STATS_MATCHES),
+  }));
   const groups: StatsGroup[] = [
-    {id: 'overall', label: 'Overall', rows: buildOverallRows(seasonGroups)},
+    {
+      id: 'overall',
+      label: 'Overall',
+      rows: buildOverallRows(sourceSeasonGroups).filter((row) => row.matchesPlayed >= MIN_STATS_MATCHES),
+    },
     ...seasonGroups,
   ];
   const query = await searchParams;
