@@ -50,6 +50,66 @@ test('explicit reviewed historical seed override is used', () => {
   });
 });
 
+test('reviewed Zach Settle floor prevents an 825 provisional start', () => {
+  const seeds = resolveHistoricalCiSeeds(
+    'coastal-clash-2025-2026',
+    [{playerId: 'zach-settle', playerName: 'Zach Settle', gender: 'Male'}],
+    [],
+  );
+
+  assert.equal(seeds[0].pdgaRating, 900);
+  assert.equal(seeds[0].source, 'HistoricalOverride');
+});
+
+test('nearest verified PDGA season fills a missing exact-season seed', () => {
+  const seeds = resolveHistoricalCiSeeds(
+    'coastal-clash-2024-2025',
+    [{playerId: 'jeff-collins', playerName: 'Jeff Collins', gender: 'Male'}],
+    [{
+      seasonId: 'coastal-clash-2025-2026',
+      playerName: 'Jeff Collins',
+      rating: 913,
+      source: 'PDGA',
+    }],
+  );
+
+  assert.deepEqual(seeds[0], {
+    playerId: 'jeff-collins',
+    pdgaRating: 913,
+    division: 'Open',
+    source: 'HistoricalPDGA',
+  });
+});
+
+test('exact-season PDGA seed still wins over another season', () => {
+  const seeds = resolveHistoricalCiSeeds(
+    'coastal-clash-2025-2026',
+    [{playerId: 'player', playerName: 'Player One', gender: 'Male'}],
+    [
+      {seasonId: 'coastal-clash-2024-2025', playerName: 'Player One', rating: 900, source: 'PDGA'},
+      {seasonId: 'coastal-clash-2025-2026', playerName: 'Player One', rating: 925, source: 'PDGA'},
+    ],
+  );
+
+  assert.equal(seeds[0].pdgaRating, 925);
+});
+
+test('Kurt Ferguson seed is not borrowed by Kurtis Brandenburg', () => {
+  const seeds = resolveHistoricalCiSeeds(
+    'coastal-clash-2025-2026',
+    [{playerId: 'kurtis-brandenburg', playerName: 'Kurtis Brandenburg', gender: 'Male'}],
+    [{
+      seasonId: 'coastal-clash-2025-2026',
+      playerName: 'Kurt Ferguson',
+      rating: 884,
+      source: 'PDGA',
+    }],
+  );
+
+  assert.equal(seeds[0].pdgaRating, null);
+  assert.equal(seeds[0].source, 'Provisional');
+});
+
 test('legacy ghost rating is ignored so finalized provisional baseline owns the start', () => {
   const seeds = resolveHistoricalCiSeeds(
     's1',
@@ -62,7 +122,7 @@ test('legacy ghost rating is ignored so finalized provisional baseline owns the 
   assert.equal(seeds[0].source, 'Provisional');
 });
 
-test('missing historical seed does not borrow a current PDGA rating', () => {
+test('missing historical seed remains provisional when no verified PDGA seed exists', () => {
   const seeds = resolveHistoricalCiSeeds(
     's1',
     [{playerId: 'new', playerName: 'New Player', gender: 'Male'}],
