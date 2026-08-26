@@ -25,6 +25,8 @@ type HistoricalCiFact = {
   ci_delta: number;
 };
 
+const PAGE_SIZE = 1000;
+
 export class SupabaseHistoricalPlayerMatchupRepository implements HistoricalPlayerMatchupRepository {
   constructor(private readonly supabase: Client) {}
 
@@ -47,16 +49,24 @@ export class SupabaseHistoricalPlayerMatchupRepository implements HistoricalPlay
   }
 
   async getBySeasonId(seasonId: string): Promise<HistoricalPlayerMatchup[]> {
-    const {data, error} = await this.supabase
-      .from('historical_player_matchups')
-      .select('*')
-      .eq('season_id', seasonId)
-      .order('event_order', {ascending: true})
-      .order('source_row', {ascending: true})
-      .order('deduplication_key', {ascending: true});
-    if (error) throw error;
+    const allRows: Row[] = [];
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const {data, error} = await this.supabase
+        .from('historical_player_matchups')
+        .select('*')
+        .eq('season_id', seasonId)
+        .order('event_order', {ascending: true})
+        .order('source_row', {ascending: true})
+        .order('deduplication_key', {ascending: true})
+        .range(from, from + PAGE_SIZE - 1);
+      if (error) throw error;
+      const page = data.map((row) => row as Row);
+      allRows.push(...page);
+      if (page.length < PAGE_SIZE) break;
+    }
+
     return normalizeAndCompleteHistoricalPlayerMatchups(
-      data.map((row) => toDomain(row as Row)),
+      allRows.map((row) => toDomain(row)),
       seasonId,
     ).sort((first, second) => first.eventOrder - second.eventOrder
       || first.sourceRow - second.sourceRow
@@ -64,8 +74,6 @@ export class SupabaseHistoricalPlayerMatchupRepository implements HistoricalPlay
   }
 
   async getCiDeltasByPlayerId(playerId: string): Promise<Map<string, number>> {
-    // Generated Database types intentionally lag this feature migration until
-    // the migration is applied. Keep this narrow cast local to the new ledger.
     const ratingClient = this.supabase as unknown as SupabaseClient;
     const {data, error} = await ratingClient
       .from('historical_clash_contest_rating_facts')
@@ -81,9 +89,6 @@ export class SupabaseHistoricalPlayerMatchupRepository implements HistoricalPlay
 
   async upsert(rows: HistoricalPlayerMatchup[]): Promise<number> {
     if (!rows.length) return 0;
-    // These three context columns are introduced by the staged CI migrations,
-    // while the generated Database type still reflects the pre-migration schema.
-    // Keep the escape hatch local until types are regenerated after rollout.
     const historicalClient = this.supabase as unknown as SupabaseClient;
     const {data, error} = await historicalClient
       .from('historical_player_matchups')
