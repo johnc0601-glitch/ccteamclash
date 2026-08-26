@@ -66,6 +66,7 @@ export class PlayerStatistics {
           partnerPlayerNames: partners.map((candidate) => candidate.playerName),
           playerScore: entry.score,
           opponentScore,
+          ciDelta: entry.ciDelta,
         }];
       });
     });

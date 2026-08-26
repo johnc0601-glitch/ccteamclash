@@ -6,6 +6,7 @@ import {
   SINGLES_HOME_BONUS,
   type ClashFormat,
   type ClashSide,
+  type ClashVenue,
 } from './ClashPrediction';
 
 export type ContestOutcome = 'W' | 'L' | 'T';
@@ -22,6 +23,7 @@ export type RatedContestPlayer = {
 export type ContestRatingFact = RatedContestPlayer & {
   contestId: string;
   matchId: string;
+  venue: ClashVenue;
   format: ClashFormat;
   outcome: ContestOutcome;
   opponentEffectiveCi: number;
@@ -48,15 +50,15 @@ export function buildSinglesRatingFact(input: {
   opponent: RatedContestPlayer;
   outcome: ContestOutcome;
   ciDelta: number;
+  venue?: ClashVenue;
   calculatedAt?: string;
 }): ContestRatingFact {
-  const playerEffectiveCi = input.player.clashIndexBefore
-    + (input.player.side === 'Home' ? SINGLES_HOME_BONUS : 0);
-  const opponentEffectiveCi = input.opponent.clashIndexBefore
-    + (input.opponent.side === 'Home' ? SINGLES_HOME_BONUS : 0);
+  const venue = input.venue ?? 'Home';
+  const playerEffectiveCi = effectiveSinglesCi(input.player, venue);
+  const opponentEffectiveCi = effectiveSinglesCi(input.opponent, venue);
   const probability = eloProbability(playerEffectiveCi, opponentEffectiveCi);
 
-  return buildFact({...input, format: 'Singles', opponentEffectiveCi, probability});
+  return buildFact({...input, venue, format: 'Singles', opponentEffectiveCi, probability});
 }
 
 export function buildDoublesRatingFacts(input: {
@@ -66,10 +68,12 @@ export function buildDoublesRatingFacts(input: {
   opponents: readonly [RatedContestPlayer, RatedContestPlayer];
   outcome: ContestOutcome;
   ciDeltas: readonly [number, number];
+  venue?: ClashVenue;
   calculatedAt?: string;
 }): readonly [ContestRatingFact, ContestRatingFact] {
-  const playerPairCi = doublesPairCi(input.players[0].clashIndexBefore, input.players[1].clashIndexBefore);
+  const venue = input.venue ?? 'Home';
   const opponentPairCi = doublesPairCi(input.opponents[0].clashIndexBefore, input.opponents[1].clashIndexBefore);
+  const playerPairCi = doublesPairCi(input.players[0].clashIndexBefore, input.players[1].clashIndexBefore);
   const probability = eloProbability(playerPairCi, opponentPairCi);
 
   return input.players.map((player, index) => buildFact({
@@ -78,11 +82,16 @@ export function buildDoublesRatingFacts(input: {
     player,
     outcome: input.outcome,
     ciDelta: input.ciDeltas[index],
+    venue,
     calculatedAt: input.calculatedAt,
     format: 'Doubles',
     opponentEffectiveCi: opponentPairCi,
     probability,
   })) as unknown as readonly [ContestRatingFact, ContestRatingFact];
+}
+
+function effectiveSinglesCi(player: RatedContestPlayer, venue: ClashVenue): number {
+  return player.clashIndexBefore + (venue === 'Home' && player.side === 'Home' ? SINGLES_HOME_BONUS : 0);
 }
 
 function buildFact(input: {
@@ -91,6 +100,7 @@ function buildFact(input: {
   player: RatedContestPlayer;
   outcome: ContestOutcome;
   ciDelta: number;
+  venue: ClashVenue;
   calculatedAt?: string;
   format: ClashFormat;
   opponentEffectiveCi: number;
@@ -101,6 +111,7 @@ function buildFact(input: {
     ...input.player,
     contestId: input.contestId,
     matchId: input.matchId,
+    venue: input.venue,
     format: input.format,
     outcome: input.outcome,
     opponentEffectiveCi: input.opponentEffectiveCi,

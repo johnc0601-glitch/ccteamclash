@@ -1,10 +1,17 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {StatsTable} from '@/components/stats/StatsTable';
 import {
+  loadServerHistoricalCiGains,
+  playerSeasonCiKey,
+  type HistoricalCiGainBreakdown,
+} from '@/core/loadServerHistoricalCiGains';
+import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
+import {
   getHistoricalSeasonArchives,
   isHistoricalFemalePlayer,
   type HistoricalPlayerSeasonSummary,
 } from '@/data/historicalSeed';
+import type {PublicPlayerView} from '@/services/public/PublicPlayerService';
 import styles from './Stats.module.css';
 import './compact.css';
 
@@ -30,6 +37,10 @@ export type StatsRow = {
   doublesLosses: number;
   doublesTies: number;
   points: number;
+  /** Earned Clash Index movement only. Undefined until the season ledger is complete. */
+  ciGain?: number;
+  singlesCiGain?: number;
+  doublesCiGain?: number;
 };
 
 export type StatsGroup = {
@@ -42,11 +53,11 @@ export type StatsGroup = {
 const MIN_STATS_MATCHES = 3;
 
 function compactSeasonName(name: string): string {
-  const withoutLeagueName = name.replace(/^Coastal Clash Match Play\s*/i, '');
+  const withoutLeagueName = name.replace(/^Coastal Clash(?: Match Play)?\s*/i, '');
   return withoutLeagueName.replace(/(\d{4})-(\d{4})/, (_match, firstYear: string, secondYear: string) => `${firstYear}–${secondYear.slice(2)}`);
 }
 
-function toRow(summary: HistoricalPlayerSeasonSummary): StatsRow {
+function toRow(summary: HistoricalPlayerSeasonSummary, ci?: HistoricalCiGainBreakdown): StatsRow {
   const {wins, losses, ties} = summary.overallRecord;
   return {
     playerId: summary.playerId,
@@ -66,11 +77,43 @@ function toRow(summary: HistoricalPlayerSeasonSummary): StatsRow {
     doublesLosses: summary.doublesRecord.losses,
     doublesTies: summary.doublesRecord.ties,
     points: wins + ties * .5,
+    ...(ci ? {
+      ciGain: ci.ciGain,
+      singlesCiGain: ci.singlesCiGain,
+      doublesCiGain: ci.doublesCiGain,
+    } : {}),
+  };
+}
+
+function toLiveRow(view: PublicPlayerView): StatsRow | undefined {
+  const statistics = view.currentStatistics;
+  if (!statistics?.matchesPlayed) return undefined;
+  return {
+    playerId: view.player.id,
+    playerName: view.player.name,
+    teamName: view.teamName,
+    teamNames: [view.teamName],
+    gender: view.player.gender === 'Female' ? 'Women' : 'Open',
+    matchesPlayed: statistics.matchesPlayed,
+    wins: statistics.overallRecord.wins,
+    losses: statistics.overallRecord.losses,
+    ties: statistics.overallRecord.ties,
+    winPercentage: statistics.winPercentage,
+    singlesWins: statistics.singlesRecord.wins,
+    singlesLosses: statistics.singlesRecord.losses,
+    singlesTies: statistics.singlesRecord.ties,
+    doublesWins: statistics.doublesRecord.wins,
+    doublesLosses: statistics.doublesRecord.losses,
+    doublesTies: statistics.doublesRecord.ties,
+    points: statistics.pointsEarned,
+    ciGain: view.currentCiGain,
+    singlesCiGain: view.currentSinglesCiGain,
+    doublesCiGain: view.currentDoublesCiGain,
   };
 }
 
 function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
-  const players = new Map<string, StatsRow & {teams: Set<string>}>();
+  const players = new Map<string, StatsRow & {teams: Set<string>; ciComplete: boolean}>();
 
   for (const group of groups) {
     for (const row of group.rows) {
@@ -90,7 +133,11 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
         doublesLosses: 0,
         doublesTies: 0,
         points: 0,
+        ciGain: 0,
+        singlesCiGain: 0,
+        doublesCiGain: 0,
         teams: new Set<string>(),
+        ciComplete: true,
       };
 
       row.teamNames.forEach((teamName) => existing.teams.add(teamName));
@@ -105,35 +152,75 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
       existing.doublesLosses += row.doublesLosses;
       existing.doublesTies += row.doublesTies;
       existing.points += row.points;
+      if (row.ciGain === undefined || row.singlesCiGain === undefined || row.doublesCiGain === undefined) {
+        existing.ciComplete = false;
+      } else {
+        existing.ciGain = (existing.ciGain ?? 0) + row.ciGain;
+        existing.singlesCiGain = (existing.singlesCiGain ?? 0) + row.singlesCiGain;
+        existing.doublesCiGain = (existing.doublesCiGain ?? 0) + row.doublesCiGain;
+      }
       const decisions = existing.wins + existing.losses + existing.ties;
       existing.winPercentage = decisions ? ((existing.wins + existing.ties * .5) / decisions) * 100 : 0;
       players.set(row.playerId, existing);
     }
   }
 
-  return Array.from(players.values()).map(({teams, ...row}) => {
+  return Array.from(players.values()).map(({teams, ciComplete, ...row}) => {
     const teamNames = Array.from(teams).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
-    return {
+    const completeRow: StatsRow = {
       ...row,
       teamNames,
       teamName: teamNames.length > 1 ? 'Multiple teams' : teamNames[0] ?? row.teamName,
     };
+    if (ciComplete) return completeRow;
+    const {
+      ciGain: _partialCiGain,
+      singlesCiGain: _partialSinglesCiGain,
+      doublesCiGain: _partialDoublesCiGain,
+      ...withoutPartialCi
+    } = completeRow;
+    return withoutPartialCi;
   });
 }
 
 export default async function StatsPage({searchParams}: StatsPageProps) {
   const archives = getHistoricalSeasonArchives();
-  const sourceGroups: StatsGroup[] = archives.map((archive) => ({
+  const [playerViews, historicalCiGains] = await Promise.all([
+    (await createServerPublicPlayerService()).getAll(),
+    loadServerHistoricalCiGains(),
+  ]);
+  const historicalGroups: StatsGroup[] = archives.map((archive) => ({
     id: archive.seasonId,
     label: compactSeasonName(archive.seasonName),
-    rows: archive.playerSummaries.filter((summary) => summary.matchesPlayed > 0).map(toRow),
+    rows: archive.playerSummaries
+      .filter((summary) => summary.matchesPlayed > 0)
+      .map((summary) => toRow(
+        summary,
+        historicalCiGains.get(playerSeasonCiKey(archive.seasonId, summary.playerId)),
+      )),
   }));
-  const seasonGroups = sourceGroups.map((group) => ({
+
+  const activeSeasonId = playerViews.find((view) => view.currentSeasonId)?.currentSeasonId;
+  const activeSeasonName = playerViews.find((view) => view.currentSeasonId)?.currentSeasonName;
+  const historicalSeasonIds = new Set(historicalGroups.map((group) => group.id));
+  const liveRows = playerViews.flatMap((view) => {
+    const row = toLiveRow(view);
+    return row ? [row] : [];
+  });
+  const liveGroup = activeSeasonId && activeSeasonName && !historicalSeasonIds.has(activeSeasonId)
+    ? [{id: activeSeasonId, label: compactSeasonName(activeSeasonName), rows: liveRows}]
+    : [];
+  const sourceSeasonGroups = [...liveGroup, ...historicalGroups];
+  const seasonGroups = sourceSeasonGroups.map((group) => ({
     ...group,
     rows: group.rows.filter((row) => row.matchesPlayed >= MIN_STATS_MATCHES),
   }));
   const groups: StatsGroup[] = [
-    {id: 'overall', label: 'Overall', rows: buildOverallRows(sourceGroups).filter((row) => row.matchesPlayed >= MIN_STATS_MATCHES)},
+    {
+      id: 'overall',
+      label: 'Overall',
+      rows: buildOverallRows(sourceSeasonGroups).filter((row) => row.matchesPlayed >= MIN_STATS_MATCHES),
+    },
     ...seasonGroups,
   ];
   const query = await searchParams;

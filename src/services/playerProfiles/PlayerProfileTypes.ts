@@ -18,6 +18,8 @@ export type PlayerProfileMatchHistoryItem = {
   partnerPlayerNames: string[];
   playerScore?: number;
   opponentScore?: number;
+  /** Earned movement from the rated match. Undefined until a CI fact exists. */
+  ciDelta?: number;
 };
 
 export type PlayerProfile = {
