@@ -105,9 +105,10 @@ function HistoryList({history}: {history: PlayerProfileMatchHistoryItem[]}) {
 
 function HistoryRow({entry}: {entry: PlayerProfileMatchHistoryItem}) {
   const opponent = formatOpponentPlayers(entry);
+  const venueWord = entry.isHome ? 'vs' : 'at';
   return <li>
     <div className={styles.historyResult}>
-      <span>{entry.result} · vs {opponent}{entry.ciDelta == null ? '' : ` · ${formatCiDelta(entry.ciDelta)} CI`}</span>
+      <span>{entry.result} · {venueWord} {opponent}{entry.ciDelta == null ? '' : ` · ${formatCiDelta(entry.ciDelta)} CI`}</span>
       <strong>{entry.format === 'Singles'
         ? formatSinglesHistoryScore(entry)
         : entry.result}</strong>
