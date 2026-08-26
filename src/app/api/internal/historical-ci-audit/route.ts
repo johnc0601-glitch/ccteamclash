@@ -15,8 +15,8 @@ type PublishedFact = {
 };
 
 export async function GET() {
-  // This is a temporary, read-only feature-branch diagnostic. Never expose it
-  // on the production deployment even if the file is accidentally merged.
+  // Temporary, read-only feature-branch diagnostic. Never expose it on a
+  // production deployment even if this file is accidentally merged.
   if (process.env.VERCEL_ENV === 'production') {
     return new Response('Not found', {status: 404});
   }
@@ -59,8 +59,6 @@ export async function GET() {
       return rightAbs - leftAbs || left.playerName.localeCompare(right.playerName);
     });
 
-  const brooks = starts.find((row) => row.playerId === 'brooks-mcgill') ?? null;
-
   return Response.json({
     readOnly: true,
     seasonId: AUDIT_SEASON_ID,
@@ -70,7 +68,7 @@ export async function GET() {
     changedStarts: starts.filter((row) => row.difference !== 0).length,
     provisional825PublishedStarts: starts.filter((row) => row.publishedStart === 825).length,
     corrected825Starts: starts.filter((row) => row.correctedStart === 825).length,
-    brooks,
+    brooks: starts.find((row) => row.playerId === 'brooks-mcgill') ?? null,
     largestStartCorrections: starts.slice(0, 30),
   });
 }
