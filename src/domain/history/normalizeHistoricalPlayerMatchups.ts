@@ -9,6 +9,11 @@ const IDENTITY_ALIASES: Record<string, CanonicalIdentity> = {
   'kurtis-brandenburg': {id: 'kurty-mcgurty', name: 'Kurty McGurty'},
 };
 
+const CANONICAL_IDENTITIES = new Map<string, CanonicalIdentity>();
+for (const identity of Object.values(IDENTITY_ALIASES)) {
+  CANONICAL_IDENTITIES.set(identity.id, identity);
+}
+
 const SIDE_REPAIRS = new Map<string, {historicalTeamMatchId: number; playerSide: 'Home' | 'Away'}>([
   ['historical-match:14c25c8c584b6ee5ef549a7b', {historicalTeamMatchId: 29, playerSide: 'Away'}],
   ['historical-match:cb8b3bfe47b2773e511b0944', {historicalTeamMatchId: 29, playerSide: 'Away'}],
@@ -117,7 +122,8 @@ function canonicalizeSlot<
 >(row: HistoricalPlayerMatchup, idKey: IdKey, nameKey: NameKey): HistoricalPlayerMatchup {
   const id = row[idKey] as string | null;
   if (!id) return row;
-  const identity = IDENTITY_ALIASES[id];
+  const identity = IDENTITY_ALIASES[id] ?? CANONICAL_IDENTITIES.get(id);
   if (!identity) return row;
+  if (id === identity.id && row[nameKey] === identity.name) return row;
   return {...row, [idKey]: identity.id, [nameKey]: identity.name};
 }
