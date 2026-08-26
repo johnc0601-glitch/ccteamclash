@@ -17,7 +17,7 @@ export type HistoricalResolvedSeed = {
   playerId: string;
   pdgaRating: number | null;
   division: ClashDivision;
-  source: 'HistoricalPDGA' | 'Provisional';
+  source: 'HistoricalPDGA' | 'HistoricalOverride' | 'Provisional';
 };
 
 const CONFIRMED_HISTORICAL_NAME_ALIASES = new Map<string, string>([
@@ -26,16 +26,23 @@ const CONFIRMED_HISTORICAL_NAME_ALIASES = new Map<string, string>([
   ['travis bochum', 'travis baucom'],
 ]);
 
+const CONFIRMED_HISTORICAL_SEED_OVERRIDES = new Map<string, number>([
+  ['coastal-clash-2024-2025:john-loyd', 900],
+  ['coastal-clash-2025-2026:john-loyd', 900],
+  ['coastal-clash-2024-2025:thomas-vaughn', 900],
+  ['coastal-clash-2025-2026:thomas-vaughn', 900],
+]);
+
 /**
  * Converts the legacy name-based seed table into canonical player-ID seed
  * metadata for the current CI replay.
  *
- * Only explicit historical PDGA rows are treated as an external rating anchor.
- * Legacy GHOST values are intentionally ignored because the finalized model now
- * owns provisional baselines (Open 825 / Women 700). Confirmed historical name
- * aliases are canonicalized before lookup so known identity repairs do not lose
- * a valid historical PDGA seed. When duplicate legacy rows exist, PDGA wins over
- * GHOST instead of allowing insert order to decide.
+ * Explicit reviewed season/player overrides take precedence when no trustworthy
+ * historical PDGA anchor exists. Otherwise only explicit historical PDGA rows
+ * are treated as an external rating anchor. Legacy GHOST values are ignored
+ * because the finalized model owns provisional baselines (Open 825 / Women 700).
+ * Confirmed historical name aliases are canonicalized before lookup so known
+ * identity repairs do not lose a valid historical PDGA seed.
  */
 export function resolveHistoricalCiSeeds(
   seasonId: string,
@@ -55,12 +62,19 @@ export function resolveHistoricalCiSeeds(
   }
 
   return participants.map((participant) => {
-    const pdgaRating = pdgaByName.get(normalizeHistoricalPlayerName(participant.playerName)) ?? null;
+    const explicitOverride = CONFIRMED_HISTORICAL_SEED_OVERRIDES.get(`${seasonId}:${participant.playerId}`);
+    const pdgaRating = explicitOverride
+      ?? pdgaByName.get(normalizeHistoricalPlayerName(participant.playerName))
+      ?? null;
     return {
       playerId: participant.playerId,
       pdgaRating,
       division: historicalDivision(participant.gender),
-      source: pdgaRating == null ? 'Provisional' : 'HistoricalPDGA',
+      source: explicitOverride != null
+        ? 'HistoricalOverride'
+        : pdgaRating == null
+          ? 'Provisional'
+          : 'HistoricalPDGA',
     };
   });
 }
