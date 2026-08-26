@@ -37,7 +37,7 @@ begin
     select 1
     from public.historical_player_matchups
     where player_side is null
-      and event_label !~* '(playoff|semi[- ]?final|championship|finals?)'
+      and event_label !~* '(playoff|semi[- ]?final|championship|finals?|3rd[[:space:]]+place|third[[:space:]]+place)'
   ) then
     raise exception 'Historical CI side repair incomplete: unresolved regular-season rows remain';
   end if;
