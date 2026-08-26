@@ -1,6 +1,11 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
 import type {HistoricalPlayerMatchup} from '@/domain/history/HistoricalPlayerMatchup';
 import type {HistoricalPlayerMatchupRepository} from '@/domain/history/HistoricalPlayerMatchupRepository';
+import {
+  canonicalHistoricalPlayerId,
+  historicalPlayerLookupIds,
+  normalizeAndCompleteHistoricalPlayerMatchups,
+} from '@/domain/history/normalizeHistoricalPlayerMatchups';
 import type {Database} from '@/lib/supabase/database';
 
 type Client = SupabaseClient<Database>;
@@ -24,15 +29,21 @@ export class SupabaseHistoricalPlayerMatchupRepository implements HistoricalPlay
   constructor(private readonly supabase: Client) {}
 
   async getByPlayerId(playerId: string): Promise<HistoricalPlayerMatchup[]> {
+    const canonicalPlayerId = canonicalHistoricalPlayerId(playerId);
     const {data, error} = await this.supabase
       .from('historical_player_matchups')
       .select('*')
-      .eq('player_id', playerId)
+      .in('player_id', historicalPlayerLookupIds(canonicalPlayerId))
       .order('season_id', {ascending: false})
       .order('event_order', {ascending: false})
       .order('source_row', {ascending: false});
     if (error) throw error;
-    return data.map((row) => toDomain(row as Row));
+    return normalizeAndCompleteHistoricalPlayerMatchups(data.map((row) => toDomain(row as Row)))
+      .filter((row) => row.playerId === canonicalPlayerId)
+      .sort((first, second) => second.seasonId.localeCompare(first.seasonId)
+        || second.eventOrder - first.eventOrder
+        || second.sourceRow - first.sourceRow
+        || first.deduplicationKey.localeCompare(second.deduplicationKey));
   }
 
   async getBySeasonId(seasonId: string): Promise<HistoricalPlayerMatchup[]> {
@@ -44,7 +55,12 @@ export class SupabaseHistoricalPlayerMatchupRepository implements HistoricalPlay
       .order('source_row', {ascending: true})
       .order('deduplication_key', {ascending: true});
     if (error) throw error;
-    return data.map((row) => toDomain(row as Row));
+    return normalizeAndCompleteHistoricalPlayerMatchups(
+      data.map((row) => toDomain(row as Row)),
+      seasonId,
+    ).sort((first, second) => first.eventOrder - second.eventOrder
+      || first.sourceRow - second.sourceRow
+      || first.deduplicationKey.localeCompare(second.deduplicationKey));
   }
 
   async getCiDeltasByPlayerId(playerId: string): Promise<Map<string, number>> {
@@ -54,7 +70,7 @@ export class SupabaseHistoricalPlayerMatchupRepository implements HistoricalPlay
     const {data, error} = await ratingClient
       .from('historical_clash_contest_rating_facts')
       .select('matchup_deduplication_key,ci_delta')
-      .eq('player_id', playerId);
+      .in('player_id', historicalPlayerLookupIds(playerId));
     if (error) {
       if (isMissingHistoricalLedger(error)) return new Map();
       throw error;
