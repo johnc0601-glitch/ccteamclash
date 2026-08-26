@@ -5,7 +5,7 @@ import {useMemo, useState} from 'react';
 import type {StatsGroup, StatsRow} from '@/app/stats/page';
 import styles from '@/app/stats/Stats.module.css';
 
-type SortKey = 'matchesPlayed' | 'wins' | 'winPercentage' | 'points' | 'singles' | 'doubles' | 'ciGain' | 'singlesCiGain' | 'doublesCiGain';
+type SortKey = 'clashIndex' | 'matchesPlayed' | 'wins' | 'winPercentage' | 'points' | 'singles' | 'doubles' | 'ciGain' | 'singlesCiGain' | 'doublesCiGain';
 type Direction = 'asc' | 'desc';
 type Limit = 25 | 'all';
 type Division = 'Open' | 'Women';
@@ -13,7 +13,7 @@ type Division = 'Open' | 'Women';
 export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsGroup[]; initialGroupId?: string}) {
   const validInitialGroupId = groups.some((group) => group.id === initialGroupId) ? initialGroupId : groups[0]?.id ?? 'overall';
   const [groupId, setGroupId] = useState(validInitialGroupId);
-  const [sortKey, setSortKey] = useState<SortKey>('ciGain');
+  const [sortKey, setSortKey] = useState<SortKey>('clashIndex');
   const [direction, setDirection] = useState<Direction>('desc');
   const [limit, setLimit] = useState<Limit>(25);
   const [division, setDivision] = useState<Division>('Open');
@@ -40,7 +40,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
 
   const sortedRows = useMemo(() => [...filteredRows].sort((a, b) => compareRows(a, b, sortKey, direction)), [filteredRows, sortKey, direction]);
   const rows = limit === 'all' ? sortedRows : sortedRows.slice(0, limit);
-  const hasCustomView = division !== 'Open' || team !== 'all' || search.trim() !== '' || limit !== 25 || sortKey !== 'ciGain' || direction !== 'desc';
+  const hasCustomView = division !== 'Open' || team !== 'all' || search.trim() !== '' || limit !== 25 || sortKey !== 'clashIndex' || direction !== 'desc';
 
   function selectGroup(nextGroupId: string) {
     setGroupId(nextGroupId);
@@ -53,7 +53,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
     setTeam('all');
     setSearch('');
     setLimit(25);
-    setSortKey('ciGain');
+    setSortKey('clashIndex');
     setDirection('desc');
   }
 
@@ -95,6 +95,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
 
         <div className={styles.mobileSortControl}>
           <select aria-label="Sort stats" value={sortKey} onChange={(event) => {setSortKey(event.target.value as SortKey); setDirection('desc');}}>
+            <option value="clashIndex">CI</option>
             <option value="points">Points</option>
             <option value="ciGain">CI +/-</option>
             <option value="singlesCiGain">Singles CI +/-</option>
@@ -133,6 +134,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
           <thead>
             <tr>
               <th aria-label="Player" />
+              <SortableHeader label="CI" sort="clashIndex" active={sortKey} direction={direction} onSort={toggleSort} />
               <SortableHeader label="M" sort="matchesPlayed" active={sortKey} direction={direction} onSort={toggleSort} />
               <SortableHeader label="W" sort="wins" active={sortKey} direction={direction} onSort={toggleSort} />
               <SortableHeader label="Win %" sort="winPercentage" active={sortKey} direction={direction} onSort={toggleSort} />
@@ -150,6 +152,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
               return (
                 <tr key={`${group.id}-${row.playerId}`}>
                   <td><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players?search=${encodeURIComponent(row.playerName)}`}>{row.playerName}</Link></td>
+                  <td><strong>{formatCi(row.clashIndex)}</strong></td>
                   <td>{row.matchesPlayed}</td>
                   <td>{row.wins}</td>
                   <td>{row.winPercentage.toFixed(1)}%{row.matchesPlayed < 5 ? <span className={styles.smallSample}>*</span> : null}</td>
@@ -166,7 +169,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
         </table>
         {!rows.length ? <p className={styles.emptyState}>No players match these filters.</p> : null}
       </div>
-      <p className={styles.qualifierNote}>* Fewer than 5 recorded results. CI +/-, S +/- and D +/- count earned match movement only; season reseeds are excluded.</p>
+      <p className={styles.qualifierNote}>* Fewer than 5 recorded results. CI is current for Overall/live views and season-ending for historical views. CI +/-, S +/- and D +/- count earned match movement only; season reseeds are excluded.</p>
     </section>
   );
 }
@@ -183,7 +186,7 @@ function compareRows(a: StatsRow, b: StatsRow, key: SortKey, direction: Directio
   const factor = direction === 'asc' ? 1 : -1;
   if (key === 'singles') return (recordPoints(a.singlesWins, a.singlesTies) - recordPoints(b.singlesWins, b.singlesTies)) * factor || a.playerName.localeCompare(b.playerName);
   if (key === 'doubles') return (recordPoints(a.doublesWins, a.doublesTies) - recordPoints(b.doublesWins, b.doublesTies)) * factor || a.playerName.localeCompare(b.playerName);
-  if (key === 'ciGain' || key === 'singlesCiGain' || key === 'doublesCiGain') {
+  if (key === 'clashIndex' || key === 'ciGain' || key === 'singlesCiGain' || key === 'doublesCiGain') {
     const aValue = a[key];
     const bValue = b[key];
     if (aValue === undefined && bValue === undefined) return a.playerName.localeCompare(b.playerName);
@@ -196,7 +199,7 @@ function compareRows(a: StatsRow, b: StatsRow, key: SortKey, direction: Directio
 
 function sortLabel(key: SortKey): string {
   return ({
-    matchesPlayed: 'matches', wins: 'wins', winPercentage: 'win %', points: 'points',
+    clashIndex: 'CI', matchesPlayed: 'matches', wins: 'wins', winPercentage: 'win %', points: 'points',
     singles: 'singles', doubles: 'doubles', ciGain: 'CI +/-',
     singlesCiGain: 'Singles CI +/-', doublesCiGain: 'Doubles CI +/-',
   } as const)[key];
@@ -212,6 +215,10 @@ function formatRecord(wins: number, losses: number, ties: number): string {
 
 function formatPoints(points: number): string {
   return Number.isInteger(points) ? String(points) : points.toFixed(1);
+}
+
+function formatCi(value: number | undefined): string {
+  return value === undefined ? '—' : String(Math.round(value));
 }
 
 function formatCiGain(value: number | undefined): string {
