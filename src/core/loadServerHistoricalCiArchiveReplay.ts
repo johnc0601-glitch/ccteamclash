@@ -1,5 +1,4 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
-import {createClient} from '@/lib/supabase/server';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {SupabaseHistoricalPlayerMatchupRepository} from '@/domain/history/SupabaseHistoricalPlayerMatchupRepository';
 import type {ClashVenue} from '@/domain/story-engine/ClashPrediction';
@@ -24,22 +23,20 @@ const PAGE_SIZE = 1000;
  * Builds the complete historical CI replay from production archive sources.
  * This function is read-only: it never persists rating facts.
  *
- * Historical PDGA seeds are intentionally read with the service-role client.
- * That table is RLS-protected and an ordinary server client can receive an
- * empty result without an error, which would silently force legitimate PDGA
- * players onto provisional 825/700 starts.
+ * The historical replay is an administrative calculation, so every source read
+ * uses the service-role client. This keeps user-session/RLS behavior from
+ * silently hiding archive rows or PDGA seeds and changing the deterministic
+ * replay result.
  */
 export async function loadServerHistoricalCiArchiveReplay(): Promise<HistoricalCiArchiveReplayResult> {
-  const supabase = await createClient();
-  const untyped = supabase as unknown as SupabaseClient;
   const admin = createAdminClient() as unknown as SupabaseClient;
-  const seasonRows = await loadAllSeasonRows(untyped);
+  const seasonRows = await loadAllSeasonRows(admin);
 
   const seasonIds = [...new Set(seasonRows.map((row) => row.season_id))].sort();
   const [playerResult, seedResult, venueByTeamMatchId] = await Promise.all([
-    untyped.from('launch_players').select('id,gender'),
+    admin.from('launch_players').select('id,gender'),
     admin.from('clash_rating_historical_seeds').select('season_id,player_name,rating,source'),
-    loadHistoricalCiVenues(untyped),
+    loadHistoricalCiVenues(admin),
   ]);
   if (playerResult.error) throw playerResult.error;
   if (seedResult.error) throw seedResult.error;
@@ -59,7 +56,7 @@ export async function loadServerHistoricalCiArchiveReplay(): Promise<HistoricalC
     rating: row.rating,
     source: row.source,
   }));
-  const repository = new SupabaseHistoricalPlayerMatchupRepository(supabase);
+  const repository = new SupabaseHistoricalPlayerMatchupRepository(admin as never);
   const archive: HistoricalCiArchiveSeason[] = [];
 
   for (const seasonId of seasonIds) {
