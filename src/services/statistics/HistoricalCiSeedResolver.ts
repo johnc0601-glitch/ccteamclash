@@ -112,41 +112,52 @@ const CONFIRMED_HISTORICAL_SEED_OVERRIDES = new Map<string, number>([
   ['coastal-clash-2025-2026:tommy-phillips', 936],
   ['coastal-clash-2024-2025:nicki-irrea', 915],
   ['coastal-clash-2025-2026:whit-stephenson', 999],
+  ['coastal-clash-2025-2026:zach-settle', 900],
 ]);
 
 /**
  * Converts the legacy name-based seed table into canonical player-ID seed
  * metadata for the current CI replay.
  *
- * Explicit reviewed season/player overrides take precedence when no trustworthy
- * historical PDGA anchor exists. Otherwise only explicit historical PDGA rows
- * are treated as an external rating anchor. Legacy GHOST values are ignored
- * because the finalized model owns provisional baselines (Open 825 / Women 700).
- * Confirmed historical name aliases are canonicalized before lookup so known
- * identity repairs do not lose a valid historical PDGA seed.
+ * Explicit reviewed season/player overrides take precedence. Otherwise an exact
+ * season PDGA seed is preferred; if that season is missing, the nearest verified
+ * PDGA seed for the same historical player name may fill the gap. Legacy GHOST
+ * values are ignored because the finalized model owns provisional baselines
+ * (Open 825 / Women 700).
  */
 export function resolveHistoricalCiSeeds(
   seasonId: string,
   participants: HistoricalCiParticipant[],
   legacySeeds: HistoricalLegacySeed[],
 ): HistoricalResolvedSeed[] {
-  const pdgaByName = new Map<string, number>();
+  const exactPdgaByName = new Map<string, number>();
+  const pdgaCandidatesByName = new Map<string, HistoricalLegacySeed[]>();
 
   for (const seed of legacySeeds) {
-    if (seed.seasonId !== seasonId || !isPdgaSource(seed.source)) continue;
+    if (!isPdgaSource(seed.source)) continue;
+
     const key = normalizeHistoricalPlayerName(seed.playerName);
-    const existing = pdgaByName.get(key);
+    const candidates = pdgaCandidatesByName.get(key) ?? [];
+    candidates.push(seed);
+    pdgaCandidatesByName.set(key, candidates);
+
+    if (seed.seasonId !== seasonId) continue;
+    const existing = exactPdgaByName.get(key);
     if (existing != null && existing !== seed.rating) {
       throw new Error(`Conflicting historical PDGA seeds for ${seed.playerName}`);
     }
-    pdgaByName.set(key, seed.rating);
+    exactPdgaByName.set(key, seed.rating);
   }
 
   return participants.map((participant) => {
     const explicitOverride = CONFIRMED_HISTORICAL_SEED_OVERRIDES.get(`${seasonId}:${participant.playerId}`);
-    const pdgaRating = explicitOverride
-      ?? pdgaByName.get(normalizeHistoricalPlayerName(participant.playerName))
-      ?? null;
+    const nameKey = normalizeHistoricalPlayerName(participant.playerName);
+    const exactPdga = exactPdgaByName.get(nameKey) ?? null;
+    const fallbackPdga = exactPdga == null
+      ? selectNearestHistoricalPdgaSeed(seasonId, pdgaCandidatesByName.get(nameKey) ?? [])
+      : null;
+    const pdgaRating = explicitOverride ?? exactPdga ?? fallbackPdga?.rating ?? null;
+
     return {
       playerId: participant.playerId,
       pdgaRating,
@@ -163,6 +174,42 @@ export function resolveHistoricalCiSeeds(
 export function normalizeHistoricalPlayerName(value: string): string {
   const normalized = value.trim().toLocaleLowerCase().replace(/\s+/g, ' ');
   return CONFIRMED_HISTORICAL_NAME_ALIASES.get(normalized) ?? normalized;
+}
+
+function selectNearestHistoricalPdgaSeed(
+  targetSeasonId: string,
+  candidates: HistoricalLegacySeed[],
+): HistoricalLegacySeed | null {
+  const alternatives = candidates.filter((seed) => seed.seasonId !== targetSeasonId);
+  if (alternatives.length === 0) return null;
+  if (alternatives.length === 1) return alternatives[0];
+
+  const targetYear = historicalSeasonStartYear(targetSeasonId);
+  if (targetYear == null) {
+    const uniqueRatings = new Set(alternatives.map((seed) => seed.rating));
+    return uniqueRatings.size === 1 ? alternatives[0] : null;
+  }
+
+  const ranked = alternatives
+    .map((seed) => ({seed, year: historicalSeasonStartYear(seed.seasonId)}))
+    .filter((entry): entry is {seed: HistoricalLegacySeed; year: number} => entry.year != null)
+    .sort((left, right) => {
+      const leftDistance = Math.abs(left.year - targetYear);
+      const rightDistance = Math.abs(right.year - targetYear);
+      if (leftDistance !== rightDistance) return leftDistance - rightDistance;
+
+      const leftIsPast = left.year <= targetYear;
+      const rightIsPast = right.year <= targetYear;
+      if (leftIsPast !== rightIsPast) return leftIsPast ? -1 : 1;
+      return right.year - left.year;
+    });
+
+  return ranked[0]?.seed ?? null;
+}
+
+function historicalSeasonStartYear(seasonId: string): number | null {
+  const match = seasonId.match(/(20\d{2})-(?:20)?\d{2,4}/);
+  return match ? Number(match[1]) : null;
 }
 
 function isPdgaSource(source: string): boolean {
