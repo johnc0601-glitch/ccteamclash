@@ -128,7 +128,7 @@ function buildHistoricalFact(
   return {
     seasonId: row.seasonId,
     historicalMatchKey: historicalMatchKey(row),
-    historicalTeamMatchId: row.historicalTeamMatchId,
+    historicalTeamMatchId: row.historicalTeamMatchId ?? null,
     matchupDeduplicationKey: row.deduplicationKey,
     contestId: historicalContestId(row),
     playerId: row.playerId,
