@@ -1,13 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import {useRouter} from 'next/navigation';
 import {useEffect, useState} from 'react';
 import {createClient} from '@/lib/supabase/client';
 import {hasSupabaseConfig} from '@/lib/supabase/config';
 
 export function MobileAccountLink() {
-  const router = useRouter();
   const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
@@ -30,20 +28,9 @@ export function MobileAccountLink() {
     };
   }, []);
 
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    setIsSignedIn(false);
-    router.refresh();
-  }
-
-  if (isSignedIn) {
-    return (
-      <button className="mobile-sign-in" type="button" onClick={handleSignOut}>
-        Sign out
-      </button>
-    );
-  }
-
-  return <Link className="mobile-sign-in" href="/account">Sign in</Link>;
+  return (
+    <Link className="mobile-sign-in" href="/account">
+      {isSignedIn ? 'My Profile' : 'Sign in'}
+    </Link>
+  );
 }
