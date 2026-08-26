@@ -18,7 +18,7 @@ export function groupHistoryBySeason(
 }
 
 export function formatHistoryVenue(entry: PlayerProfileMatchHistoryItem): string {
-  return `${entry.isHome ? 'vs' : '@'} ${entry.opponentTeamName ?? 'Opponent'} • ${entry.seasonName}`;
+  return `${entry.isHome ? 'vs' : 'at'} ${entry.opponentTeamName ?? 'Opponent'} • ${entry.seasonName}`;
 }
 
 export function formatSinglesHistoryScore(entry: PlayerProfileMatchHistoryItem): string {
