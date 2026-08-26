@@ -24,6 +24,8 @@ const CONFIRMED_HISTORICAL_NAME_ALIASES = new Map<string, string>([
   ['william deering', 'will deering'],
   ['ilya batazhan', 'eli batazhan'],
   ['travis bochum', 'travis baucom'],
+  ['stephen ajov', 'steven absher'],
+  ['christopher king jr', 'christopher king'],
 ]);
 
 const CONFIRMED_HISTORICAL_SEED_OVERRIDES = new Map<string, number>([
@@ -63,6 +65,9 @@ const CONFIRMED_HISTORICAL_SEED_OVERRIDES = new Map<string, number>([
   ['coastal-clash-2024-2025:austin-gratton', 900],
   ['coastal-clash-2024-2025:brandon-cosimo', 860],
   ['coastal-clash-2024-2025:brian-parker', 960],
+  ['coastal-clash-2024-2025:seth-brown', 858],
+  ['coastal-clash-2025-2026:jackie-brown-alcott', 750],
+  ['coastal-clash-2025-2026:jeff-king', 900],
 ]);
 
 /**
