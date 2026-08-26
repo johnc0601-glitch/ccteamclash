@@ -6,6 +6,7 @@
 .narrowShell .header h1 { font-size: 54px; }
 .header p, .panel p, .muted { color: var(--cc-light-muted); line-height: 1.6; }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "registration profile" "history theme"; gap: 18px; align-items: start; }
+.grid:not(:has(.registrationPanel)) { grid-template-areas: "profile profile" "history theme"; }
 .panel, .accountBar, .notice, .error { border: 1px solid var(--cc-light-border); border-radius: var(--cc-radius-md); background: var(--cc-light-surface); box-shadow: var(--cc-shadow-card); }
 .panel { padding: 26px; }
 .panel h2 { margin: 10px 0 12px; color: var(--cc-light-text); font-family: var(--cc-font-display); font-size: 31px; font-style: italic; letter-spacing: 0; text-transform: uppercase; }
@@ -75,7 +76,7 @@
 
 @media (max-width: 760px) {
   .shell { padding: 48px 0 68px; }
-  .grid { grid-template-columns: 1fr; grid-template-areas: "profile" "registration" "history" "theme"; }
+  .grid, .grid:not(:has(.registrationPanel)) { grid-template-columns: 1fr; grid-template-areas: "profile" "registration" "history" "theme"; }
   .header h1, .narrowShell .header h1 { font-size: 44px; }
   .accountBar { align-items: flex-start; flex-direction: column; }
   .secondaryButton { width: 100%; }
