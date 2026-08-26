@@ -5,7 +5,7 @@
 .narrowShell { max-width: 620px; }
 .narrowShell .header h1 { font-size: 54px; }
 .header p, .panel p, .muted { color: var(--cc-light-muted); line-height: 1.6; }
-.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "registration profile" "history theme"; gap: 18px; align-items: start; }
 .panel, .accountBar, .notice, .error { border: 1px solid var(--cc-light-border); border-radius: var(--cc-radius-md); background: var(--cc-light-surface); box-shadow: var(--cc-shadow-card); }
 .panel { padding: 26px; }
 .panel h2 { margin: 10px 0 12px; color: var(--cc-light-text); font-family: var(--cc-font-display); font-size: 31px; font-style: italic; letter-spacing: 0; text-transform: uppercase; }
@@ -44,4 +44,50 @@
 .connected strong { display: block; margin-bottom: 5px; color: var(--cc-light-text); }
 .themeAction { margin-top: 18px; }
 .themeAction :global(.theme-toggle) { min-width: 120px; }
-@media (max-width: 760px) { .shell { padding: 48px 0 68px; } .grid { grid-template-columns: 1fr; } .header h1, .narrowShell .header h1 { font-size: 44px; } .accountBar { align-items: flex-start; flex-direction: column; } .secondaryButton { width: 100%; } }
+
+.profilePanel { grid-area: profile; }
+.registrationPanel { grid-area: registration; }
+.historyPanel { grid-area: history; }
+.themePanel { grid-area: theme; }
+.profileHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.profileHeading h2 { margin-bottom: 6px; }
+.profileSubhead { margin: 0; font-weight: 850; }
+.compactAction { flex: 0 0 auto; min-height: 38px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--cc-gold); border-radius: var(--cc-radius-sm); background: var(--cc-gold); color: #111; font-size: 10px; font-weight: 950; letter-spacing: .05em; text-transform: uppercase; }
+.playerHeroStats { margin-top: 20px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.playerHeroStats > div { min-height: 92px; padding: 14px 16px; border: 1px solid var(--cc-light-border); border-radius: var(--cc-radius-sm); background: #fbfaf6; }
+.playerHeroStats span, .historyStats span, .currentSeasonStrip span { display: block; color: var(--cc-light-muted); font-size: 10px; font-weight: 950; letter-spacing: .1em; text-transform: uppercase; }
+.playerHeroStats strong { display: block; margin-top: 8px; color: var(--cc-light-text); font-family: var(--cc-font-display); font-size: 34px; font-style: italic; line-height: 1; }
+.profileDetails { margin: 18px 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--cc-light-border); }
+.profileDetails div { min-height: 58px; padding: 12px 0; border-bottom: 1px solid var(--cc-light-border); }
+.profileDetails div:nth-child(odd) { padding-right: 14px; }
+.profileDetails div:nth-child(even) { padding-left: 14px; border-left: 1px solid var(--cc-light-border); }
+.profileDetails dt { color: var(--cc-light-muted); font-size: 10px; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
+.profileDetails dd { margin: 5px 0 0; color: var(--cc-light-text); font-weight: 900; }
+.registrationStatus { margin: 18px 0 4px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--cc-gold-soft); border-radius: var(--cc-radius-sm); background: #fbfaf6; }
+.registrationStatus span { color: var(--cc-gold-ink); font-size: 11px; font-weight: 950; text-transform: uppercase; }
+.registrationStatus strong { color: var(--cc-light-text); text-align: right; }
+.historyStats { margin-top: 18px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.historyStats > div { padding: 12px 10px; border: 1px solid var(--cc-light-border); border-radius: var(--cc-radius-sm); background: #fbfaf6; }
+.historyStats strong { display: block; margin-top: 6px; color: var(--cc-light-text); font-family: var(--cc-font-display); font-size: 24px; font-style: italic; }
+.currentSeasonStrip { margin-top: 12px; padding: 13px 14px; display: flex; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid var(--cc-light-border); border-bottom: 1px solid var(--cc-light-border); }
+.currentSeasonStrip strong { color: var(--cc-light-text); font-size: 13px; text-align: right; }
+.historyLink { margin-top: 16px; display: inline-flex; color: var(--cc-gold-ink); font-size: 11px; font-weight: 950; text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; }
+
+@media (max-width: 760px) {
+  .shell { padding: 48px 0 68px; }
+  .grid { grid-template-columns: 1fr; grid-template-areas: "profile" "registration" "history" "theme"; }
+  .header h1, .narrowShell .header h1 { font-size: 44px; }
+  .accountBar { align-items: flex-start; flex-direction: column; }
+  .secondaryButton { width: 100%; }
+  .profileHeading { flex-direction: column; }
+  .compactAction { width: 100%; }
+  .historyStats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 460px) {
+  .panel { padding: 20px; }
+  .playerHeroStats, .profileDetails { grid-template-columns: 1fr; }
+  .profileDetails div:nth-child(odd), .profileDetails div:nth-child(even) { padding-left: 0; padding-right: 0; border-left: 0; }
+  .currentSeasonStrip, .registrationStatus { align-items: flex-start; flex-direction: column; }
+  .currentSeasonStrip strong, .registrationStatus strong { text-align: left; }
+}
