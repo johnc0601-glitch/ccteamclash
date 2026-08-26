@@ -104,6 +104,23 @@ test('playoff rows without archived team-match id replay as neutral synthetic ma
   assert.equal(historicalMatchKey(rows[0]), historicalMatchKey(rows[1]));
 });
 
+test('third-place playoff rows replay as neutral', () => {
+  const rows = mirroredSingles().map((entry, index) => row({
+    ...entry,
+    deduplicationKey: `third-place-${index}`,
+    eventLabel: 'March 3rd Place',
+    eventOrder: 7,
+    playerSide: index === 0 ? 'Home' : 'Away',
+  }));
+  const result = replayHistoricalClashSeason(rows, new Map([['home', 900], ['away', 900]]));
+
+  assert.equal(result.unresolvedRows.length, 0);
+  assert.equal(result.facts.length, 2);
+  assert.equal(result.facts[0].venue, 'Neutral');
+  assert.equal(result.facts[0].side, null);
+  assert.equal(result.facts[0].winProbability, 0.5);
+});
+
 test('regular-season rows without a validated side are quarantined instead of guessed', () => {
   const rows = mirroredSingles().map((entry, index) => row({
     ...entry,
