@@ -2,21 +2,32 @@
 -- Enforce that invariant after alias/team/source repairs: singles must have two
 -- perspectives and doubles must have four. If a future historical import breaks
 -- that shape, the CI migration fails rather than creating non-zero-sum ratings.
+--
+-- Match identity must mirror HistoricalClashReplay: when an archived team-match
+-- id exists, it is authoritative. This intentionally avoids splitting a contest
+-- when a player's recorded historical team differs from the scheduled matchup
+-- label (for example Ariel Cosimo in the repaired December archive).
 
 do $$
 begin
   if exists (
     with keyed as (
       select
-        season_id,
-        event_order,
         match_format,
         concat_ws(
           '|',
-          season_id,
-          event_order,
-          least(player_team_id, opponent_team_id),
-          greatest(player_team_id, opponent_team_id),
+          case
+            when historical_team_match_id is not null
+              then 'team-match:' || historical_team_match_id::text
+            else concat_ws(
+              ':',
+              'synthetic',
+              season_id,
+              event_order::text,
+              least(player_team_id, opponent_team_id),
+              greatest(player_team_id, opponent_team_id)
+            )
+          end,
           match_format,
           (
             select string_agg(participant_id, ',' order by participant_id)
