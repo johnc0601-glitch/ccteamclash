@@ -35,6 +35,21 @@ test('confirmed historical alias resolves the correct PDGA seed', () => {
   });
 });
 
+test('explicit reviewed historical seed override is used', () => {
+  const seeds = resolveHistoricalCiSeeds(
+    'coastal-clash-2025-2026',
+    [{playerId: 'john-loyd', playerName: 'John Loyd', gender: 'Male'}],
+    [],
+  );
+
+  assert.deepEqual(seeds[0], {
+    playerId: 'john-loyd',
+    pdgaRating: 900,
+    division: 'Open',
+    source: 'HistoricalOverride',
+  });
+});
+
 test('legacy ghost rating is ignored so finalized provisional baseline owns the start', () => {
   const seeds = resolveHistoricalCiSeeds(
     's1',
