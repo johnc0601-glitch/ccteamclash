@@ -18,12 +18,11 @@ export type HistoricalCiReplayInspection = {
   finalRatingsHigh: HistoricalCiLeader[];
   finalRatingsLow: HistoricalCiLeader[];
   overallGainHigh: HistoricalCiGainLeader[];
-  overallGainLow: HistoricalCiGainLeader[];
 };
 
 /**
  * Read-only review report for the complete historical replay. Use this before
- * the immutable backfill so obviously wrong ending ratings or CI +/- leaders
+ * the immutable backfill so obviously wrong ending ratings or CI Gain leaders
  * can be caught without touching the ledger.
  */
 export async function inspectHistoricalCiArchiveReplay(limit = 15): Promise<HistoricalCiReplayInspection> {
@@ -47,6 +46,5 @@ export async function inspectHistoricalCiArchiveReplay(limit = 15): Promise<Hist
     finalRatingsHigh: [...finalRatings].sort((a, b) => b.ci - a.ci || a.playerId.localeCompare(b.playerId)).slice(0, limit),
     finalRatingsLow: [...finalRatings].sort((a, b) => a.ci - b.ci || a.playerId.localeCompare(b.playerId)).slice(0, limit),
     overallGainHigh: [...gains].sort((a, b) => b.ciGain - a.ciGain || a.playerId.localeCompare(b.playerId)).slice(0, limit),
-    overallGainLow: [...gains].sort((a, b) => a.ciGain - b.ciGain || a.playerId.localeCompare(b.playerId)).slice(0, limit),
   };
 }
