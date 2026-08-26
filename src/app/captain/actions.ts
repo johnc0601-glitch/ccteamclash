@@ -26,12 +26,66 @@ type CaptainReturnClient = {
   ) => Promise<{error: {message: string} | null}>;
 };
 
+type CaptainRegistrationEditClient = {
+  rpc: (
+    fn: 'captain_update_rostered_player_registration',
+    args: {
+      target_player_id: string;
+      target_name: string;
+      target_pdga_number: string;
+      target_gender: 'Male' | 'Female';
+      target_is_junior: boolean;
+    },
+  ) => Promise<{error: {message: string} | null}>;
+};
+
 export async function confirmTeamApplication(formData: FormData) {
   await reviewTeamApplication(formData, 'Approved');
 }
 
 export async function rejectTeamApplication(formData: FormData) {
   await reviewTeamApplication(formData, 'Rejected');
+}
+
+export async function saveRosterPlayerRegistration(formData: FormData) {
+  const playerId = readFormValue(formData, 'playerId');
+  const name = readFormValue(formData, 'name');
+  const pdgaNumber = readFormValue(formData, 'pdgaNumber');
+  const gender = readFormValue(formData, 'gender');
+  const isJunior = readFormValue(formData, 'isJunior') === 'true';
+
+  if (!playerId) redirect('/captain?error=Player is required.');
+  if (!name) redirect('/captain?error=Player name is required.');
+  if (gender !== 'Male' && gender !== 'Female') {
+    redirect('/captain?error=Choose Male or Female.');
+  }
+  if (pdgaNumber && !/^\d+$/.test(pdgaNumber)) {
+    redirect('/captain?error=PDGA number must contain digits only.');
+  }
+
+  const supabase = await createClient();
+  const {data, error} = await supabase.auth.getUser();
+  if (error || !data.user) redirect('/account?error=Sign in first.');
+
+  const {error: updateError} = await (supabase as unknown as CaptainRegistrationEditClient).rpc(
+    'captain_update_rostered_player_registration',
+    {
+      target_player_id: playerId,
+      target_name: name,
+      target_pdga_number: pdgaNumber,
+      target_gender: gender,
+      target_is_junior: isJunior,
+    },
+  );
+  if (updateError) redirect(`/captain?error=${encodeURIComponent(updateError.message)}`);
+
+  revalidatePath('/captain');
+  revalidatePath('/office/players');
+  revalidatePath('/players');
+  revalidatePath('/account');
+  revalidatePath('/teams');
+  revalidatePath('/rankings');
+  redirect(`/captain?notice=${encodeURIComponent('Player registration updated.')}`);
 }
 
 export async function returnRosteredPlayerToCommissioner(formData: FormData) {

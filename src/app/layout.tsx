@@ -4,7 +4,8 @@ import { SITE_DESCRIPTION, SITE_TITLE } from "@/shared/constants";
 import "./globals.css";
 import "./theme.css";
 import "./header.css";
-import "./light-theme.css";
+import "./canonical-theme.css";
+import "./matchday-theme.css";
 
 export const metadata: Metadata = {
   title: SITE_TITLE,
@@ -13,14 +14,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('cc-team-clash:theme')||'light';document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t}catch(e){}`,
-          }}
-        />
-      </head>
+    <html lang="en">
       <body>
         {children}
         <Analytics />

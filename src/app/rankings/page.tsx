@@ -49,9 +49,8 @@ async function getLiveSeasonRankings(): Promise<{current?: SeasonRankingGroup; e
     ]);
     const teamNames = new Map(activeTeams.map((team) => [team.id, team.name]));
     const open = rankedPlayers.map((entry) => toLiveRankingEntry(entry, activeSeason.name, teamNames));
-    const women = rankedPlayers
-      .filter((entry) => entry.player.gender === 'Female')
-      .map((entry, index) => toLiveRankingEntry(entry, activeSeason.name, teamNames, index + 1));
+    const women = rerankDivision(rankedPlayers.filter((entry) => entry.player.gender === 'Female'))
+      .map((entry) => toLiveRankingEntry(entry, activeSeason.name, teamNames));
 
     return {
       current: {
@@ -66,6 +65,24 @@ async function getLiveSeasonRankings(): Promise<{current?: SeasonRankingGroup; e
     console.error('Current-season rankings are unavailable.', error);
     return {error: 'Current-season rankings are temporarily unavailable. Clash Index ratings are still available.'};
   }
+}
+
+function rankingPoints(entry: RankingEntry): number {
+  return entry.statistics.overallRecord.wins + entry.statistics.overallRecord.ties * .5;
+}
+
+function rerankDivision(entries: RankingEntry[]): RankingEntry[] {
+  let previous: RankingEntry | undefined;
+  let previousRank = 0;
+  return entries.map((entry, index) => {
+    const tied = previous
+      && rankingPoints(previous) === rankingPoints(entry)
+      && previous.statistics.winPercentage === entry.statistics.winPercentage;
+    const rank = tied ? previousRank : index + 1;
+    previous = entry;
+    previousRank = rank;
+    return {...entry, rank};
+  });
 }
 
 function toLiveRankingEntry(
