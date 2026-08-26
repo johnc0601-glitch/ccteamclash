@@ -17,6 +17,8 @@ type PlayerRow = {id: string; gender: string | null};
 type SeedRow = {season_id: string; player_name: string; rating: number; source: string};
 type VenueRow = {id: number; ci_venue: string | null};
 
+const PAGE_SIZE = 1000;
+
 /**
  * Builds the complete historical CI replay from production archive sources.
  * This function is read-only: it never persists rating facts.
@@ -24,13 +26,9 @@ type VenueRow = {id: number; ci_venue: string | null};
 export async function loadServerHistoricalCiArchiveReplay(): Promise<HistoricalCiArchiveReplayResult> {
   const supabase = await createClient();
   const untyped = supabase as unknown as SupabaseClient;
-  const seasonResult = await untyped
-    .from('historical_player_matchups')
-    .select('season_id')
-    .order('season_id', {ascending: true});
-  if (seasonResult.error) throw seasonResult.error;
+  const seasonRows = await loadAllSeasonRows(untyped);
 
-  const seasonIds = [...new Set(((seasonResult.data ?? []) as SeasonRow[]).map((row) => row.season_id))].sort();
+  const seasonIds = [...new Set(seasonRows.map((row) => row.season_id))].sort();
   const [playerResult, seedResult, venueByTeamMatchId] = await Promise.all([
     untyped.from('launch_players').select('id,gender'),
     untyped.from('clash_rating_historical_seeds').select('season_id,player_name,rating,source'),
@@ -76,6 +74,22 @@ export async function loadServerHistoricalCiArchiveReplay(): Promise<HistoricalC
   return replayHistoricalCiArchive(archive);
 }
 
+async function loadAllSeasonRows(supabase: SupabaseClient): Promise<SeasonRow[]> {
+  const rows: SeasonRow[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const {data, error} = await supabase
+      .from('historical_player_matchups')
+      .select('season_id')
+      .order('season_id', {ascending: true})
+      .order('deduplication_key', {ascending: true})
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = (data ?? []) as SeasonRow[];
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) return rows;
+  }
+}
+
 function addParticipant(
   participants: Map<string, HistoricalCiParticipant>,
   genderByPlayerId: ReadonlyMap<string, string | null>,
@@ -103,9 +117,6 @@ async function loadHistoricalCiVenues(
     .from('historical_team_matches')
     .select('id,ci_venue');
   if (error) {
-    // During staged rollout this column does not exist until the venue migration
-    // is applied. Historical regular season defaults Home and postseason labels
-    // are independently classified Neutral by the replay engine.
     if (isMissingVenueColumn(error)) return new Map();
     throw error;
   }
