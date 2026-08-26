@@ -1,6 +1,10 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {StatsTable} from '@/components/stats/StatsTable';
-import {loadServerHistoricalCiGains, playerSeasonCiKey} from '@/core/loadServerHistoricalCiGains';
+import {
+  loadServerHistoricalCiGains,
+  playerSeasonCiKey,
+  type HistoricalCiGainBreakdown,
+} from '@/core/loadServerHistoricalCiGains';
 import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {
   getHistoricalSeasonArchives,
@@ -35,6 +39,8 @@ export type StatsRow = {
   points: number;
   /** Earned Clash Index movement only. Undefined until the season ledger is complete. */
   ciGain?: number;
+  singlesCiGain?: number;
+  doublesCiGain?: number;
 };
 
 export type StatsGroup = {
@@ -51,7 +57,7 @@ function compactSeasonName(name: string): string {
   return withoutLeagueName.replace(/(\d{4})-(\d{4})/, (_match, firstYear: string, secondYear: string) => `${firstYear}–${secondYear.slice(2)}`);
 }
 
-function toRow(summary: HistoricalPlayerSeasonSummary, ciGain?: number): StatsRow {
+function toRow(summary: HistoricalPlayerSeasonSummary, ci?: HistoricalCiGainBreakdown): StatsRow {
   const {wins, losses, ties} = summary.overallRecord;
   return {
     playerId: summary.playerId,
@@ -71,7 +77,11 @@ function toRow(summary: HistoricalPlayerSeasonSummary, ciGain?: number): StatsRo
     doublesLosses: summary.doublesRecord.losses,
     doublesTies: summary.doublesRecord.ties,
     points: wins + ties * .5,
-    ...(ciGain === undefined ? {} : {ciGain}),
+    ...(ci ? {
+      ciGain: ci.ciGain,
+      singlesCiGain: ci.singlesCiGain,
+      doublesCiGain: ci.doublesCiGain,
+    } : {}),
   };
 }
 
@@ -97,6 +107,8 @@ function toLiveRow(view: PublicPlayerView): StatsRow | undefined {
     doublesTies: statistics.doublesRecord.ties,
     points: statistics.pointsEarned,
     ciGain: view.currentCiGain,
+    singlesCiGain: view.currentSinglesCiGain,
+    doublesCiGain: view.currentDoublesCiGain,
   };
 }
 
@@ -122,6 +134,8 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
         doublesTies: 0,
         points: 0,
         ciGain: 0,
+        singlesCiGain: 0,
+        doublesCiGain: 0,
         teams: new Set<string>(),
         ciComplete: true,
       };
@@ -138,8 +152,13 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
       existing.doublesLosses += row.doublesLosses;
       existing.doublesTies += row.doublesTies;
       existing.points += row.points;
-      if (row.ciGain === undefined) existing.ciComplete = false;
-      else existing.ciGain = (existing.ciGain ?? 0) + row.ciGain;
+      if (row.ciGain === undefined || row.singlesCiGain === undefined || row.doublesCiGain === undefined) {
+        existing.ciComplete = false;
+      } else {
+        existing.ciGain = (existing.ciGain ?? 0) + row.ciGain;
+        existing.singlesCiGain = (existing.singlesCiGain ?? 0) + row.singlesCiGain;
+        existing.doublesCiGain = (existing.doublesCiGain ?? 0) + row.doublesCiGain;
+      }
       const decisions = existing.wins + existing.losses + existing.ties;
       existing.winPercentage = decisions ? ((existing.wins + existing.ties * .5) / decisions) * 100 : 0;
       players.set(row.playerId, existing);
@@ -154,7 +173,12 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
       teamName: teamNames.length > 1 ? 'Multiple teams' : teamNames[0] ?? row.teamName,
     };
     if (ciComplete) return completeRow;
-    const {ciGain: _partialCiGain, ...withoutPartialCi} = completeRow;
+    const {
+      ciGain: _partialCiGain,
+      singlesCiGain: _partialSinglesCiGain,
+      doublesCiGain: _partialDoublesCiGain,
+      ...withoutPartialCi
+    } = completeRow;
     return withoutPartialCi;
   });
 }
