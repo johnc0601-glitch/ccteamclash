@@ -37,7 +37,9 @@ export type StatsRow = {
   doublesLosses: number;
   doublesTies: number;
   points: number;
-  /** Earned Clash Index movement only. Undefined until the season ledger is complete. */
+  /** Current CI for live views; season-ending CI for historical views. */
+  clashIndex?: number;
+  /** Earned Clash Index movement only. */
   ciGain?: number;
   singlesCiGain?: number;
   doublesCiGain?: number;
@@ -78,6 +80,7 @@ function toRow(summary: HistoricalPlayerSeasonSummary, ci?: HistoricalCiGainBrea
     doublesTies: summary.doublesRecord.ties,
     points: wins + ties * .5,
     ...(ci ? {
+      clashIndex: ci.endingCi,
       ciGain: ci.ciGain,
       singlesCiGain: ci.singlesCiGain,
       doublesCiGain: ci.doublesCiGain,
@@ -106,13 +109,14 @@ function toLiveRow(view: PublicPlayerView): StatsRow | undefined {
     doublesLosses: statistics.doublesRecord.losses,
     doublesTies: statistics.doublesRecord.ties,
     points: statistics.pointsEarned,
+    clashIndex: view.player.clashIndex ?? undefined,
     ciGain: view.currentCiGain,
     singlesCiGain: view.currentSinglesCiGain,
     doublesCiGain: view.currentDoublesCiGain,
   };
 }
 
-function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
+function buildOverallRows(groups: StatsGroup[], clashIndexByPlayer: ReadonlyMap<string, number>): StatsRow[] {
   const players = new Map<string, StatsRow & {teams: Set<string>; ciComplete: boolean}>();
 
   for (const group of groups) {
@@ -167,8 +171,10 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
 
   return Array.from(players.values()).map(({teams, ciComplete, ...row}) => {
     const teamNames = Array.from(teams).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
+    const currentCi = clashIndexByPlayer.get(row.playerId);
     const completeRow: StatsRow = {
       ...row,
+      ...(currentCi === undefined ? {} : {clashIndex: currentCi}),
       teamNames,
       teamName: teamNames.length > 1 ? 'Multiple teams' : teamNames[0] ?? row.teamName,
     };
@@ -200,6 +206,17 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
       )),
   }));
 
+  const overallClashIndexByPlayer = new Map<string, number>();
+  for (const archive of archives) {
+    for (const summary of archive.playerSummaries) {
+      const ci = historicalCiGains.get(playerSeasonCiKey(archive.seasonId, summary.playerId));
+      if (ci) overallClashIndexByPlayer.set(summary.playerId, ci.endingCi);
+    }
+  }
+  for (const view of playerViews) {
+    if (view.player.clashIndex != null) overallClashIndexByPlayer.set(view.player.id, view.player.clashIndex);
+  }
+
   const activeSeasonId = playerViews.find((view) => view.currentSeasonId)?.currentSeasonId;
   const activeSeasonName = playerViews.find((view) => view.currentSeasonId)?.currentSeasonName;
   const historicalSeasonIds = new Set(historicalGroups.map((group) => group.id));
@@ -219,7 +236,8 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
     {
       id: 'overall',
       label: 'Overall',
-      rows: buildOverallRows(sourceSeasonGroups).filter((row) => row.matchesPlayed >= MIN_STATS_MATCHES),
+      rows: buildOverallRows(sourceSeasonGroups, overallClashIndexByPlayer)
+        .filter((row) => row.matchesPlayed >= MIN_STATS_MATCHES),
     },
     ...seasonGroups,
   ];
