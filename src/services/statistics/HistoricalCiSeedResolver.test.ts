@@ -20,6 +20,21 @@ test('historical PDGA seed wins over legacy ghost seed', () => {
   });
 });
 
+test('confirmed historical alias resolves the correct PDGA seed', () => {
+  const seeds = resolveHistoricalCiSeeds(
+    's1',
+    [{playerId: 'will-deering', playerName: 'Will Deering', gender: 'Male'}],
+    [{seasonId: 's1', playerName: 'William Deering', rating: 994, source: 'PDGA'}],
+  );
+
+  assert.deepEqual(seeds[0], {
+    playerId: 'will-deering',
+    pdgaRating: 994,
+    division: 'Open',
+    source: 'HistoricalPDGA',
+  });
+});
+
 test('legacy ghost rating is ignored so finalized provisional baseline owns the start', () => {
   const seeds = resolveHistoricalCiSeeds(
     's1',
