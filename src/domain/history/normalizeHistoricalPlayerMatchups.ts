@@ -13,6 +13,7 @@ const CANONICAL_IDENTITIES = new Map<string, CanonicalIdentity>();
 for (const identity of Object.values(IDENTITY_ALIASES)) {
   CANONICAL_IDENTITIES.set(identity.id, identity);
 }
+CANONICAL_IDENTITIES.set('isaac-cotson', {id: 'isaac-cotson', name: 'Isaac Kotson'});
 
 const SIDE_REPAIRS = new Map<string, {historicalTeamMatchId: number; playerSide: 'Home' | 'Away'}>([
   ['historical-match:14c25c8c584b6ee5ef549a7b', {historicalTeamMatchId: 29, playerSide: 'Away'}],
