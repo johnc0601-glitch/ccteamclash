@@ -1,5 +1,6 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {createClient} from '@/lib/supabase/server';
+import {createAdminClient} from '@/lib/supabase/admin';
 import {SupabaseHistoricalPlayerMatchupRepository} from '@/domain/history/SupabaseHistoricalPlayerMatchupRepository';
 import type {ClashVenue} from '@/domain/story-engine/ClashPrediction';
 import {
@@ -22,25 +23,37 @@ const PAGE_SIZE = 1000;
 /**
  * Builds the complete historical CI replay from production archive sources.
  * This function is read-only: it never persists rating facts.
+ *
+ * Historical PDGA seeds are intentionally read with the service-role client.
+ * That table is RLS-protected and an ordinary server client can receive an
+ * empty result without an error, which would silently force legitimate PDGA
+ * players onto provisional 825/700 starts.
  */
 export async function loadServerHistoricalCiArchiveReplay(): Promise<HistoricalCiArchiveReplayResult> {
   const supabase = await createClient();
   const untyped = supabase as unknown as SupabaseClient;
+  const admin = createAdminClient() as unknown as SupabaseClient;
   const seasonRows = await loadAllSeasonRows(untyped);
 
   const seasonIds = [...new Set(seasonRows.map((row) => row.season_id))].sort();
   const [playerResult, seedResult, venueByTeamMatchId] = await Promise.all([
     untyped.from('launch_players').select('id,gender'),
-    untyped.from('clash_rating_historical_seeds').select('season_id,player_name,rating,source'),
+    admin.from('clash_rating_historical_seeds').select('season_id,player_name,rating,source'),
     loadHistoricalCiVenues(untyped),
   ]);
   if (playerResult.error) throw playerResult.error;
   if (seedResult.error) throw seedResult.error;
 
+  const seedRows = (seedResult.data ?? []) as SeedRow[];
+  const pdgaSeedCount = seedRows.filter((row) => row.source.trim().toLocaleUpperCase() === 'PDGA').length;
+  if (pdgaSeedCount === 0) {
+    throw new Error('Historical CI replay cannot run without visible PDGA seed rows');
+  }
+
   const genderByPlayerId = new Map(
     ((playerResult.data ?? []) as PlayerRow[]).map((row) => [row.id, row.gender]),
   );
-  const legacySeeds = ((seedResult.data ?? []) as SeedRow[]).map((row): HistoricalLegacySeed => ({
+  const legacySeeds = seedRows.map((row): HistoricalLegacySeed => ({
     seasonId: row.season_id,
     playerName: row.player_name,
     rating: row.rating,
