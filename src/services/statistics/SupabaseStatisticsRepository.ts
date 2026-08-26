@@ -8,6 +8,12 @@ import type {
 } from '@/services/statistics/StatisticsTypes';
 
 type Client = SupabaseClient<Database>;
+type ClashRatingFact = {
+  contest_id: string;
+  match_id: string;
+  player_id: string;
+  ci_delta: number;
+};
 
 export class SupabaseStatisticsRepository implements StatisticsRepository {
   constructor(private readonly supabase: Client) {}
@@ -21,12 +27,27 @@ export class SupabaseStatisticsRepository implements StatisticsRepository {
     if (!results.length) return [];
 
     const matchIds = results.map((result) => result.match_id);
-    const [{data: matches, error: matchError}, {data: contests, error: contestError}] = await Promise.all([
+    const ratingClient = this.supabase as unknown as SupabaseClient;
+    const [
+      {data: matches, error: matchError},
+      {data: contests, error: contestError},
+      {data: ratingFactsData, error: ratingFactsError},
+    ] = await Promise.all([
       this.supabase.from('launch_schedule_matches').select('*').in('id', matchIds),
       this.supabase.from('launch_result_contests').select('*').in('match_id', matchIds),
+      ratingClient
+        .from('clash_contest_rating_facts')
+        .select('contest_id,match_id,player_id,ci_delta')
+        .in('match_id', matchIds),
     ]);
     if (matchError) throw matchError;
     if (contestError) throw contestError;
+    if (ratingFactsError) throw ratingFactsError;
+    const ratingFacts = (ratingFactsData ?? []) as ClashRatingFact[];
+    const ciDeltaByContestPlayer = new Map(
+      ratingFacts.map((fact) => [`${fact.contest_id}:${fact.player_id}`, fact.ci_delta]),
+    );
+
     const contestIds = contests.map((contest) => contest.id);
     const {data: players, error: playerError} = contestIds.length
       ? await this.supabase
@@ -58,6 +79,7 @@ export class SupabaseStatisticsRepository implements StatisticsRepository {
           .map((player): PlayerResult => {
             const home = player.side === 'Home';
             const outcome = toOutcome(home ? contest.home_outcome : contest.away_outcome);
+            const ciDelta = ciDeltaByContestPlayer.get(`${contest.id}:${player.player_id}`);
             return {
               id: `${contest.id}:${player.side}:${player.slot}`,
               contestId: contest.id,
@@ -67,6 +89,7 @@ export class SupabaseStatisticsRepository implements StatisticsRepository {
               format: contest.format as PlayerResult['format'],
               outcome,
               pointsEarned: pointsEarned(contest.format, outcome),
+              ...(ciDelta === undefined ? {} : {ciDelta}),
               ...(contest.format === 'Singles'
                 ? {score: home ? contest.home_score ?? undefined : contest.away_score ?? undefined}
                 : {}),

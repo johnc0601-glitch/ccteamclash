@@ -26,6 +26,9 @@ export type HistoricalPlayerMatchup = {
   sourceWorkbook: string;
   sourceSheet: string;
   sourceRow: number;
+  historicalTeamMatchId?: number | null;
+  playerSide?: 'Home' | 'Away' | null;
+  homeAwayValidated?: boolean;
 };
 
 export type HistoricalPlayerHistoryEntry = PlayerMatchHistoryEntry & {
@@ -46,7 +49,7 @@ export function toHistoricalHistoryEntry(row: HistoricalPlayerMatchup): Historic
     opponentTeamName: row.opponentTeamName,
     format: row.format,
     outcome: row.outcome === 'W' ? 'Win' : row.outcome === 'L' ? 'Loss' : 'Tie',
-    isHome: false,
+    isHome: row.playerSide === 'Home',
     opponentPlayerNames: [row.opponentOnePlayerName, row.opponentTwoPlayerName].filter(
       (name): name is string => Boolean(name),
     ),

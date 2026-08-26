@@ -5,7 +5,7 @@ import type {Database} from '@/lib/supabase/database';
 import {StatisticsEngine} from '@/services/statistics/StatisticsEngine';
 import {SupabaseStatisticsRepository} from '@/services/statistics/SupabaseStatisticsRepository';
 
-test('persistent singles and doubles contests map into canonical player history', async () => {
+test('persistent singles and doubles contests map into canonical player history with earned CI movement', async () => {
   const repository = new SupabaseStatisticsRepository(fakeClient({
     launch_match_results: [{
       match_id: 'match-1', home_score: 5, away_score: 3, status: 'Published',
@@ -29,14 +29,23 @@ test('persistent singles and doubles contests map into canonical player history'
       player('doubles-1', 'away-1', 'Away', 1, 'Away One', 'away'),
       player('doubles-1', 'away-2', 'Away', 2, 'Away Two', 'away'),
     ],
+    clash_contest_rating_facts: [
+      {contest_id: 'singles-1', match_id: 'match-1', player_id: 'home-1', ci_delta: 6},
+      {contest_id: 'singles-1', match_id: 'match-1', player_id: 'away-1', ci_delta: -6},
+      {contest_id: 'doubles-1', match_id: 'match-1', player_id: 'home-1', ci_delta: 2},
+      {contest_id: 'doubles-1', match_id: 'match-1', player_id: 'home-2', ci_delta: 2},
+      {contest_id: 'doubles-1', match_id: 'match-1', player_id: 'away-1', ci_delta: -2},
+      {contest_id: 'doubles-1', match_id: 'match-1', player_id: 'away-2', ci_delta: -2},
+    ],
   }));
   const history = await new StatisticsEngine(repository).getPlayerMatchHistory('home-1');
   assert.equal(history.length, 2);
   assert.deepEqual(history.find((row) => row.format === 'Singles'), {
     id: 'singles-1:Home:1', challengeId: 'match-1', seasonId: 'season-1', date: '2026-07-20',
     teamId: 'home', opponentTeamId: 'away', format: 'Singles', outcome: 'Win', isHome: true,
-    opponentPlayerNames: ['Away One'], partnerPlayerNames: [], playerScore: 7, opponentScore: 4,
+    opponentPlayerNames: ['Away One'], partnerPlayerNames: [], playerScore: 7, opponentScore: 4, ciDelta: 6,
   });
+  assert.equal(history.find((row) => row.format === 'Doubles')?.ciDelta, 2);
   assert.deepEqual(history.find((row) => row.format === 'Doubles')?.partnerPlayerNames, ['Home Two']);
   assert.deepEqual(history.find((row) => row.format === 'Doubles')?.opponentPlayerNames, ['Away One', 'Away Two']);
 });

@@ -40,6 +40,7 @@ export function createHistoryItems(history: PublicPlayerHistory[]): PlayerProfil
       partnerPlayerNames: entry.partnerPlayerNames,
       playerScore: entry.playerScore,
       opponentScore: entry.opponentScore,
+      ciDelta: entry.ciDelta,
   }));
 }
 

@@ -3,9 +3,9 @@
   "framework": "nextjs",
   "git": {
     "deploymentEnabled": {
+      "*": false,
       "main": true,
-      "preview/integration": true,
-      "*": false
+      "preview/integration": true
     }
   }
 }

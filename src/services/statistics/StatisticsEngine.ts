@@ -1,3 +1,4 @@
+import {ClashIndexMovement, type PlayerCiMovement} from '@/services/statistics/ClashIndexMovement';
 import {HeadToHeadStatistics} from '@/services/statistics/HeadToHeadStatistics';
 import {PlayerStatistics} from '@/services/statistics/PlayerStatistics';
 import type {StatisticsRepository} from '@/services/statistics/StatisticsRepository';
@@ -14,6 +15,7 @@ import type {
 export class StatisticsEngine {
   private readonly teamStatistics = new TeamStatistics();
   private readonly playerStatistics = new PlayerStatistics();
+  private readonly ciMovement = new ClashIndexMovement();
   private readonly seasonStatistics = new SeasonStatistics();
   private readonly headToHeadStatistics = new HeadToHeadStatistics();
   private readonly repository: StatisticsRepository;
@@ -49,6 +51,28 @@ export class StatisticsEngine {
   async getPlayerCareerStatisticsForPlayers(playerIds: string[]): Promise<PlayerStatisticsResult[]> {
     const results = await this.repository.getPublishedChallengeResults();
     return playerIds.map((playerId) => this.playerStatistics.calculateCareer(playerId, results));
+  }
+
+  async getPlayerCiMovement(playerId: string, seasonId: string): Promise<PlayerCiMovement | undefined> {
+    const results = await this.repository.getPublishedChallengeResults();
+    return this.ciMovement.calculateForSeason(playerId, seasonId, results);
+  }
+
+  async getPlayerCareerCiMovement(playerId: string): Promise<PlayerCiMovement | undefined> {
+    const results = await this.repository.getPublishedChallengeResults();
+    return this.ciMovement.calculateCareer(playerId, results);
+  }
+
+  async getPlayerCiMovementsForPlayers(
+    playerIds: string[],
+    seasonId: string,
+  ): Promise<Map<string, PlayerCiMovement>> {
+    const results = await this.repository.getPublishedChallengeResults();
+    const movements = playerIds.flatMap((playerId) => {
+      const movement = this.ciMovement.calculateForSeason(playerId, seasonId, results);
+      return movement ? [[playerId, movement] as const] : [];
+    });
+    return new Map(movements);
   }
 
   async getPlayerMatchHistory(playerId: string, limit?: number): Promise<PlayerMatchHistoryEntry[]> {

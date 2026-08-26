@@ -2,13 +2,15 @@ import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import type {PublicMatchday} from '@/services/matches/MatchdayService';
 import type {ClashIndexSource} from './ClashIndexSource';
 import {buildMatchRatingSnapshots, type MatchRatingSnapshot, type MatchSnapshotPlayer} from './MatchRatingSnapshot';
+import {classifyClashVenue} from './ClashVenue';
 
 /**
  * Matchday already owns the official roster. This adapter is the only place
- * that translates its player CI fields into immutable rating snapshot input.
+ * that translates its player CI fields and actual venue into immutable rating
+ * snapshot input.
  */
 export function buildMatchdayRatingSnapshots(
-  matchday: Pick<PublicMatchday, 'id' | 'homeTeam' | 'awayTeam'>,
+  matchday: Pick<PublicMatchday, 'id' | 'homeTeam' | 'awayTeam' | 'courseDetails'>,
   capturedAt = new Date().toISOString(),
 ): MatchRatingSnapshot[] {
   const players: MatchSnapshotPlayer[] = [
@@ -16,7 +18,7 @@ export function buildMatchdayRatingSnapshots(
     ...matchday.awayTeam.roster.map((player) => toSnapshotPlayer(player, matchday.awayTeam.id, matchday.awayTeam.name, 'Away')),
   ];
 
-  return buildMatchRatingSnapshots(matchday.id, players, capturedAt);
+  return buildMatchRatingSnapshots(matchday.id, players, classifyClashVenue(matchday), capturedAt);
 }
 
 function toSnapshotPlayer(

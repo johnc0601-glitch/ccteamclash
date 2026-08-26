@@ -6,8 +6,7 @@ import type {TeamScheduleEvent} from '@/domain/schedule/ScheduleService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
-import {confirmTeamApplication, rejectTeamApplication, returnRosteredPlayerToCommissioner, saveTeamAppearance} from './actions';
-import {CaptainPlayerEditForm} from './CaptainPlayerEditForm';
+import {confirmTeamApplication, rejectTeamApplication, returnRosteredPlayerToCommissioner, saveRosterPlayerRegistration, saveTeamAppearance} from './actions';
 import styles from './Captain.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -137,13 +136,17 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
                 <span className={styles.rosterMeta}>CI: {formatClashIndex(player)} · {player.gender} · {player.rosterCategory === 'Junior' ? 'Junior' : 'Adult'}{player.pdgaNumber ? ` · PDGA #${player.pdgaNumber}` : ' · No PDGA #'}</span>
               </div>
               {season?.canEditRegistrations ? (
-                <CaptainPlayerEditForm
-                  playerId={player.id}
-                  name={player.name}
-                  pdgaNumber={player.pdgaNumber}
-                  gender={player.gender}
-                  isJunior={player.rosterCategory === 'Junior'}
-                />
+                <details>
+                  <summary>Edit registration</summary>
+                  <form action={saveRosterPlayerRegistration} style={{display: 'grid', gap: '10px', marginTop: '10px'}}>
+                    <input name="playerId" type="hidden" value={player.id} />
+                    <label style={{display: 'grid', gap: '4px'}}><span className={styles.muted}>Player name</span><input name="name" type="text" required maxLength={100} defaultValue={player.name} /></label>
+                    <label style={{display: 'grid', gap: '4px'}}><span className={styles.muted}>PDGA #</span><input name="pdgaNumber" type="text" inputMode="numeric" pattern="[0-9]*" maxLength={10} defaultValue={player.pdgaNumber} /></label>
+                    <label style={{display: 'grid', gap: '4px'}}><span className={styles.muted}>Male / Female</span><select name="gender" required defaultValue={player.gender === 'Male' || player.gender === 'Female' ? player.gender : ''}><option value="" disabled>Choose</option><option value="Male">Male</option><option value="Female">Female</option></select></label>
+                    <label style={{display: 'flex', alignItems: 'center', gap: '8px'}}><input name="isJunior" type="checkbox" value="true" defaultChecked={player.rosterCategory === 'Junior'} style={{width: 'auto', minHeight: 'auto'}} /><input name="isJunior" type="hidden" value="false" /><span className={styles.muted}>Junior</span></label>
+                    <button className={styles.primaryButton} type="submit">Save player</button>
+                  </form>
+                </details>
               ) : null}
               <form action={returnRosteredPlayerToCommissioner}>
                 <input name="playerId" type="hidden" value={player.id} />

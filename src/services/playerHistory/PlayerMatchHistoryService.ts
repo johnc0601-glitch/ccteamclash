@@ -28,13 +28,18 @@ export class PlayerMatchHistoryService {
   }
 
   async getCompleteHistory(playerId: string): Promise<Array<PlayerMatchHistoryEntry | HistoricalPlayerHistoryEntry>> {
-    const [canonical, historicalRows] = await Promise.all([
+    const [canonical, historicalRows, historicalCi] = await Promise.all([
       this.canonical.getPlayerMatchHistory(playerId),
       this.historical.getByPlayerId(playerId),
+      this.historical.getCiDeltasByPlayerId(playerId),
     ]);
     const combined = [
       ...canonical.sort((first, second) => second.date.localeCompare(first.date)),
-      ...historicalRows.map(toHistoricalHistoryEntry),
+      ...historicalRows.map((row) => {
+        const entry = toHistoricalHistoryEntry(row);
+        const ciDelta = historicalCi.get(row.deduplicationKey);
+        return ciDelta === undefined ? entry : {...entry, ciDelta};
+      }),
     ];
     const seen = new Set<string>();
     return combined.filter((entry) => {
