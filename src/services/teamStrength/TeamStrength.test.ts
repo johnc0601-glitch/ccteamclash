@@ -14,6 +14,7 @@ import {
   regularSeasonChanceOfVictoryFromExpectedMargin,
   regularSeasonChanceOfVictoryFromExpectedPoints,
   SINGLES_HOME_CI_BONUS,
+  STANDARD_MATCH_POINTS,
   TEAM_HOME_CI_BONUS,
   TEAM_STRENGTH_LABELS,
 } from './TeamStrength';
@@ -25,6 +26,10 @@ test('uses canonical labels for each roster-information stage', () => {
     'Confirmed Available Roster Strength',
   );
   assert.equal(TEAM_STRENGTH_LABELS.matchLineup, 'Match Lineup Strength');
+});
+
+test('locks the normal Clash scoring base at 36 points', () => {
+  assert.equal(STANDARD_MATCH_POINTS, 36);
 });
 
 test('weights top six, next six, and depth at 35/35/30 and keeps the result venue-neutral', () => {
@@ -87,7 +92,7 @@ test('estimates unknown doubles pairings deterministically from the player pools
   assert.ok(homeShare > 0.5);
 });
 
-test('builds expected match points without inventing a specific doubles pairing', () => {
+test('builds rated-contest expected points without inventing a specific doubles pairing', () => {
   const result = calculateExpectedMatchPoints({
     singlesMatchups: [{teamCi: 900, opponentCi: 900}],
     teamDoublesPool: [1000, 800],
@@ -97,12 +102,110 @@ test('builds expected match points without inventing a specific doubles pairing'
   });
 
   assert.ok(result);
+  assert.equal(result.standardMatchPoints, 36);
   assert.equal(result.singlesExpectedPoints, 0.5);
   assert.equal(result.doublesExpectedPoints, 1);
+  assert.equal(result.ratedContestExpectedPoints, 1.5);
+  assert.equal(result.opponentRatedContestExpectedPoints, 1.5);
+  assert.deepEqual(result.teamStructuralPoints, {
+    automaticPoints: 0,
+    womenBonusExpectedPoints: 0,
+    otherKnownPoints: 0,
+    total: 0,
+  });
   assert.equal(result.totalExpectedPoints, 1.5);
-  assert.equal(result.maximumPoints, 3);
-  assert.equal(result.expectedPointShare, 0.5);
+  assert.equal(result.opponentExpectedPoints, 1.5);
+  assert.equal(result.expectedPointMargin, 0);
+  assert.equal(result.modeledContestMaximumPoints, 3);
+  assert.equal(result.ratedContestExpectedPointShare, 0.5);
   assert.equal(result.regularSeasonChanceOfVictory, 0.5);
+});
+
+test('adds automatic short-handed points after the ordinary rated-contest expectation', () => {
+  const result = calculateExpectedMatchPoints({
+    singlesMatchups: [{teamCi: 900, opponentCi: 900}],
+    teamDoublesPool: [1000, 800],
+    opponentDoublesPool: [1000, 800],
+    doublesContestCount: 1,
+    venue: 'Neutral',
+    teamStructuralPoints: {automaticPoints: 2},
+  });
+
+  assert.ok(result);
+  assert.equal(result.ratedContestExpectedPoints, 1.5);
+  assert.equal(result.opponentRatedContestExpectedPoints, 1.5);
+  assert.equal(result.teamStructuralPoints.automaticPoints, 2);
+  assert.equal(result.teamStructuralPoints.total, 2);
+  assert.equal(result.totalExpectedPoints, 3.5);
+  assert.equal(result.opponentExpectedPoints, 1.5);
+  assert.equal(result.expectedPointMargin, 2);
+  assert.equal(result.modeledContestMaximumPoints, 3);
+  assert.equal(result.ratedContestExpectedPointShare, 0.5);
+  assert.ok(result.regularSeasonChanceOfVictory > 0.70);
+  assert.ok(result.regularSeasonChanceOfVictory < 0.71);
+});
+
+test('keeps likely women bonus points explicit and separate from team strength', () => {
+  const result = calculateExpectedMatchPoints({
+    singlesMatchups: [{teamCi: 900, opponentCi: 900}],
+    teamDoublesPool: [1000, 800],
+    opponentDoublesPool: [1000, 800],
+    doublesContestCount: 1,
+    venue: 'Neutral',
+    teamStructuralPoints: {womenBonusExpectedPoints: 1.25},
+    opponentStructuralPoints: {womenBonusExpectedPoints: 0.25},
+  });
+
+  assert.ok(result);
+  assert.equal(result.ratedContestExpectedPointShare, 0.5);
+  assert.equal(result.teamStructuralPoints.womenBonusExpectedPoints, 1.25);
+  assert.equal(result.opponentStructuralPoints.womenBonusExpectedPoints, 0.25);
+  assert.equal(result.expectedPointMargin, 1);
+  assert.ok(result.regularSeasonChanceOfVictory > 0.60);
+  assert.ok(result.regularSeasonChanceOfVictory < 0.61);
+});
+
+test('supports asymmetric structural points without folding them into rated-contest share', () => {
+  const result = calculateExpectedMatchPoints({
+    singlesMatchups: [{teamCi: 900, opponentCi: 900}],
+    teamDoublesPool: [1000, 800],
+    opponentDoublesPool: [1000, 800],
+    doublesContestCount: 1,
+    venue: 'Neutral',
+    teamStructuralPoints: {otherKnownPoints: -1},
+    opponentStructuralPoints: {automaticPoints: 2},
+  });
+
+  assert.ok(result);
+  assert.equal(result.ratedContestExpectedPointShare, 0.5);
+  assert.equal(result.totalExpectedPoints, 0.5);
+  assert.equal(result.opponentExpectedPoints, 3.5);
+  assert.equal(result.expectedPointMargin, -3);
+  assert.ok(result.regularSeasonChanceOfVictory < 0.22);
+});
+
+test('rejects non-finite structural inputs instead of contaminating a prediction', () => {
+  assert.equal(
+    calculateExpectedMatchPoints({
+      singlesMatchups: [{teamCi: 900, opponentCi: 900}],
+      teamDoublesPool: [1000, 800],
+      opponentDoublesPool: [1000, 800],
+      doublesContestCount: 1,
+      teamStructuralPoints: {automaticPoints: Number.POSITIVE_INFINITY},
+    }),
+    undefined,
+  );
+
+  assert.equal(
+    calculateExpectedMatchPoints({
+      singlesMatchups: [{teamCi: 900, opponentCi: 900}],
+      teamDoublesPool: [1000, 800],
+      opponentDoublesPool: [1000, 800],
+      doublesContestCount: 1,
+      opponentStructuralPoints: {womenBonusExpectedPoints: Number.NaN},
+    }),
+    undefined,
+  );
 });
 
 test('uses the same +8 matchup layer for individual expected points', () => {
