@@ -9,7 +9,21 @@ import type {ClashVenue} from './ClashPrediction';
 export function classifyClashVenue(
   matchday: Pick<PublicMatchday, 'homeTeam' | 'courseDetails'>,
 ): ClashVenue {
-  const course = matchday.courseDetails;
-  if (!course?.homeTeamId) return 'Neutral';
-  return course.homeTeamId === matchday.homeTeam.id ? 'Home' : 'Neutral';
+  return classifyClashVenueFromIds(
+    matchday.homeTeam.id,
+    matchday.courseDetails?.homeTeamId,
+  );
+}
+
+/**
+ * ID-only form used by server-side prediction capture before a PublicMatchday
+ * view model exists. Keeping this rule here prevents CI and Team Strength from
+ * drifting into different definitions of a home match.
+ */
+export function classifyClashVenueFromIds(
+  scheduledHomeTeamId: string,
+  courseHomeTeamId: string | null | undefined,
+): ClashVenue {
+  if (!courseHomeTeamId) return 'Neutral';
+  return courseHomeTeamId === scheduledHomeTeamId ? 'Home' : 'Neutral';
 }
