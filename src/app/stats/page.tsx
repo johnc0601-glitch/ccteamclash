@@ -1,5 +1,6 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {RankingsSection} from '@/components/stats/RankingsSection';
+import {StatsHub} from '@/components/stats/StatsHub';
 import {StatsTable} from '@/components/stats/StatsTable';
 import {
   loadServerHistoricalCiGains,
@@ -233,10 +234,12 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
         <header className={styles.pageHeader}>
           <span className="eyebrow">League statistics</span>
           <h1>Stats</h1>
-          <p>Rankings and player performance by season or across the full recorded Coastal Clash history.</p>
+          <p>Current rankings and player performance in one place. Completed-season records remain in History.</p>
         </header>
-        <RankingsSection />
-        <StatsTable groups={groups} initialGroupId={requestedSeason ?? 'overall'} />
+        <StatsHub
+          performance={<StatsTable groups={groups} initialGroupId={requestedSeason ?? 'overall'} />}
+          rankings={<RankingsSection />}
+        />
       </main>
       <Footer />
     </>
