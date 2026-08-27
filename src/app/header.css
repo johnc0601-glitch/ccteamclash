@@ -50,25 +50,33 @@
     background: #111517;
   }
 
+  /* Keep the secondary links as one right-anchored cluster. The empty first
+     grid column absorbs all spare tablet width so Players/Courses/History
+     cannot drift toward the center independently of role/community links. */
   .secondary-nav-wrap {
     min-height: 40px;
-    justify-content: flex-end !important;
-    gap: 18px;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    justify-content: stretch !important;
+    column-gap: 18px;
   }
 
   .secondary-nav,
   .secondary-role-nav {
-    flex: 0 0 auto;
+    display: flex;
+    flex: none;
     width: auto;
     gap: 14px;
+    margin: 0 !important;
   }
 
   .secondary-nav {
-    margin-left: auto;
+    grid-column: 2;
   }
 
   .secondary-role-nav {
-    margin-left: 4px;
+    grid-column: 3;
     padding-left: 18px;
     border-left: 1px solid #34393b;
   }
