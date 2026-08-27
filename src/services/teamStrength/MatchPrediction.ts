@@ -8,24 +8,16 @@ import {
 } from './TeamStrength';
 import type {RosterStrengthResult, TeamStrengthSource} from './RosterStrength';
 
-// Regular-season historical calibration for the roster-strength stage. The
-// available archive has no point-in-time attendance snapshots, so Confirmed
-// Available Roster Strength intentionally uses the same conservative curve
-// until enough future attendance history exists to fit it independently.
-//
-// This is fit directly to neutral roster-strength difference + the +8 matchup
-// home effect. That avoids inventing a match point total before attendance and
-// lineup size are actually known.
-export const ROSTER_STAGE_WIN_STRENGTH_SLOPE = 0.117;
-
-export type RosterPredictionSource = Extract<
-  TeamStrengthSource,
-  'activeRoster' | 'confirmedAvailableRoster'
->;
+// The historical archive does not contain exact point-in-time season roster or
+// attendance snapshots. V1 therefore uses explicit stage-specific proxies and
+// keeps the early curves conservative.
+export const ACTIVE_ROSTER_WIN_STRENGTH_SLOPE = 0.088;
+export const CONFIRMED_AVAILABLE_WIN_STRENGTH_SLOPE = 0.088;
+export const MATCH_LINEUP_WIN_STRENGTH_SLOPE = 0.117;
 
 export type RosterBasedMatchPrediction = {
   version: typeof TEAM_STRENGTH_VERSION;
-  source: RosterPredictionSource;
+  source: TeamStrengthSource;
   strengthLabel: string;
   venue: TeamVenue;
   confidence: TeamStrengthConfidence;
@@ -33,16 +25,17 @@ export type RosterBasedMatchPrediction = {
   opponentBaseStrength: number;
   matchupStrengthDifference: number;
   expectedPointShare: number;
+  calibrationSlope: number;
   regularSeasonChanceOfVictory: number;
 };
 
 /**
- * Early regular-season prediction from stage-specific neutral roster strength.
+ * Regular-season prediction from two neutral strengths at the same information
+ * stage. Venue is applied exactly once in this prediction layer.
  *
- * Both sides must come from the same information stage. Match Lineup Strength
- * is deliberately rejected here because a locked lineup should use the
- * contest-level expected-points model rather than collapsing back to one roster
- * number. Venue is applied exactly once in this prediction layer.
+ * Active and Confirmed Available use the conservative full-roster proxy curve.
+ * Match Lineup uses the actual-participant proxy curve. Once actual singles
+ * matchups are known, callers should switch to calculateExpectedMatchPoints().
  */
 export function calculateRosterBasedMatchPrediction(input: {
   team: RosterStrengthResult;
@@ -53,7 +46,6 @@ export function calculateRosterBasedMatchPrediction(input: {
   const venue = input.venue ?? 'Neutral';
 
   if (team.source !== opponent.source) return undefined;
-  if (team.source === 'matchLineup') return undefined;
 
   const matchupStrengthDifference =
     team.activeRosterStrength -
@@ -64,8 +56,10 @@ export function calculateRosterBasedMatchPrediction(input: {
     opponent.activeRosterStrength,
     venue,
   );
-  const regularSeasonChanceOfVictory = rosterStageChanceOfVictoryFromStrengthDifference(
+  const calibrationSlope = winStrengthSlopeForSource(team.source);
+  const regularSeasonChanceOfVictory = chanceOfVictoryFromStrengthDifference(
     matchupStrengthDifference,
+    calibrationSlope,
   );
 
   return {
@@ -78,21 +72,29 @@ export function calculateRosterBasedMatchPrediction(input: {
     opponentBaseStrength: opponent.activeRosterStrength,
     matchupStrengthDifference,
     expectedPointShare,
+    calibrationSlope,
     regularSeasonChanceOfVictory,
   };
 }
 
-/**
- * Roster-stage Chance of Victory uses CI-strength difference directly because
- * early in the week the number of eventual scoring slots is not yet known.
- */
 export function rosterStageChanceOfVictoryFromStrengthDifference(
   matchupStrengthDifference: number,
+  source: TeamStrengthSource = 'activeRoster',
+): number {
+  return chanceOfVictoryFromStrengthDifference(
+    matchupStrengthDifference,
+    winStrengthSlopeForSource(source),
+  );
+}
+
+function chanceOfVictoryFromStrengthDifference(
+  matchupStrengthDifference: number,
+  slope: number,
 ): number {
   if (!Number.isFinite(matchupStrengthDifference)) return 0.5;
 
   const rawProbability = 1 / (
-    1 + Math.exp(-ROSTER_STAGE_WIN_STRENGTH_SLOPE * matchupStrengthDifference)
+    1 + Math.exp(-slope * matchupStrengthDifference)
   );
   const floor = 1 - REGULAR_SEASON_WIN_PROBABILITY_CAP;
 
@@ -100,6 +102,12 @@ export function rosterStageChanceOfVictoryFromStrengthDifference(
     REGULAR_SEASON_WIN_PROBABILITY_CAP,
     Math.max(floor, rawProbability),
   );
+}
+
+function winStrengthSlopeForSource(source: TeamStrengthSource): number {
+  if (source === 'matchLineup') return MATCH_LINEUP_WIN_STRENGTH_SLOPE;
+  if (source === 'confirmedAvailableRoster') return CONFIRMED_AVAILABLE_WIN_STRENGTH_SLOPE;
+  return ACTIVE_ROSTER_WIN_STRENGTH_SLOPE;
 }
 
 function venueCiAdjustment(venue: TeamVenue): number {

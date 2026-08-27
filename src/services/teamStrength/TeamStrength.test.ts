@@ -18,9 +18,12 @@ import {
   TEAM_STRENGTH_LABELS,
 } from './TeamStrength';
 
-test('labels roster-derived strength explicitly by information stage', () => {
+test('uses canonical labels for each roster-information stage', () => {
   assert.equal(TEAM_STRENGTH_LABELS.activeRoster, 'Active Roster Strength');
-  assert.equal(TEAM_STRENGTH_LABELS.availableRoster, 'Available Roster Strength');
+  assert.equal(
+    TEAM_STRENGTH_LABELS.confirmedAvailableRoster,
+    'Confirmed Available Roster Strength',
+  );
   assert.equal(TEAM_STRENGTH_LABELS.matchLineup, 'Match Lineup Strength');
 });
 
@@ -86,7 +89,7 @@ test('estimates unknown doubles pairings deterministically from the player pools
 
 test('builds expected match points without inventing a specific doubles pairing', () => {
   const result = calculateExpectedMatchPoints({
-    singlesMatchups: [{ teamCi: 900, opponentCi: 900 }],
+    singlesMatchups: [{teamCi: 900, opponentCi: 900}],
     teamDoublesPool: [1000, 800],
     opponentDoublesPool: [1000, 800],
     doublesContestCount: 1,
@@ -108,7 +111,7 @@ test('uses the same +8 matchup layer for individual expected points', () => {
   assert.ok(expectedContestPointShare(900, 900, 'Away') < 0.5);
 });
 
-test('maps expected point margin to a symmetric regular-season chance of victory', () => {
+test('maps expected point margin to a symmetric known-matchup chance of victory', () => {
   const even = regularSeasonChanceOfVictoryFromExpectedMargin(0);
   const plusOne = regularSeasonChanceOfVictoryFromExpectedMargin(1);
   const minusOne = regularSeasonChanceOfVictoryFromExpectedMargin(-1);
@@ -130,7 +133,7 @@ test('caps regular-season chance of victory at 95/5 to avoid false certainty', (
   );
 });
 
-test('derives regular-season chance of victory from the expected score margin', () => {
+test('derives known-matchup chance of victory from the expected score margin', () => {
   assert.equal(regularSeasonChanceOfVictoryFromExpectedPoints(18, 18), 0.5);
   assert.ok((regularSeasonChanceOfVictoryFromExpectedPoints(19, 17) ?? 0) > 0.70);
   assert.equal(regularSeasonChanceOfVictoryFromExpectedPoints(Number.NaN, 17), undefined);

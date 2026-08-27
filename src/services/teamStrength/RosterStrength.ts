@@ -5,16 +5,13 @@ import {clashSeasonStartCi} from '@/domain/story-engine/ClashSeasonReset';
 
 import {
   calculateActiveRosterStrength,
+  TEAM_STRENGTH_LABELS,
   TEAM_STRENGTH_VERSION,
   type ActiveRosterStrengthBreakdown,
   type TeamStrengthConfidence,
 } from './TeamStrength';
 
-export const TEAM_STRENGTH_STAGE_LABELS = {
-  activeRoster: 'Active Roster Strength',
-  confirmedAvailableRoster: 'Confirmed Available Roster Strength',
-  matchLineup: 'Match Lineup Strength',
-} as const;
+export const TEAM_STRENGTH_STAGE_LABELS = TEAM_STRENGTH_LABELS;
 
 export type TeamStrengthSource = keyof typeof TEAM_STRENGTH_STAGE_LABELS;
 

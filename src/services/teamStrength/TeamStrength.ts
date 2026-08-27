@@ -8,21 +8,20 @@ export const TEAM_STRENGTH_WEIGHTS = {
 
 export const TEAM_STRENGTH_LABELS = {
   activeRoster: 'Active Roster Strength',
-  availableRoster: 'Available Roster Strength',
+  confirmedAvailableRoster: 'Confirmed Available Roster Strength',
   matchLineup: 'Match Lineup Strength',
 } as const;
 
 // Historical calibration: 42 team matches / 2,568 player-result facts.
-// Active Roster Strength itself is venue-neutral. The +8 is applied only in
-// the matchup prediction layer so it cannot become part of a team's identity.
+// Roster strength itself is venue-neutral. The +8 is applied only in the
+// matchup prediction layer so it cannot become part of a team's identity.
 export const TEAM_HOME_CI_BONUS = 8;
 export const TEAM_POINT_SHARE_SCALE = 105;
 export const MATCHUP_POINT_SHARE_SCALE = 100;
 
-// Regular-season Chance of Victory calibration. The symmetric one-parameter
-// logistic fit on 34 decided home-venue regular-season matches produced a
-// slope of ~0.426, rounded to 0.43 for V1. The 95/5 cap is a deliberate
-// anti-overconfidence guardrail for the small historical sample.
+// Known-matchup regular-season Chance of Victory calibration. Once actual
+// singles matchups are known, Expected Point Margin uses this slope. Earlier
+// roster-only stages use their own strength-difference calibration.
 export const REGULAR_SEASON_WIN_MARGIN_SLOPE = 0.43;
 export const REGULAR_SEASON_WIN_PROBABILITY_CAP = 0.95;
 
@@ -67,9 +66,8 @@ export type ExpectedMatchPointsBreakdown = {
 };
 
 /**
- * Calculates venue-neutral strength from the players currently on a team's
- * active season roster. Callers are responsible for passing only active roster
- * members with a valid CI.
+ * Calculates venue-neutral strength from a roster player pool.
+ * Stage-specific adapters own which players belong in that pool.
  */
 export function calculateActiveRosterStrength(
   clashIndices: readonly number[],
@@ -84,8 +82,6 @@ export function calculateActiveRosterStrength(
 
   const topSixCi = average(topSix);
   const nextSixCi = nextSix.length ? average(nextSix) : topSixCi;
-  // The historical model substitutes the middle tier when a roster has no
-  // measured depth. Confidence communicates that the resulting score is thin.
   const depthCi = depth.length ? average(depth) : nextSixCi;
 
   const activeRosterStrength =
@@ -105,7 +101,7 @@ export function calculateActiveRosterStrength(
 }
 
 /**
- * Early-stage prediction from two venue-neutral roster strengths. Venue is
+ * Expected team point share from two venue-neutral roster strengths. Venue is
  * applied here exactly once.
  */
 export function expectedTeamPointShare(
@@ -150,14 +146,14 @@ export function effectiveDoublesCi(playerOneCi: number, playerTwoCi: number): nu
 
 /**
  * Deterministic substitute for guessing doubles teams. Every plausible pair in
- * each player pool is evaluated with the locked 80/20 doubles rule, then the
- * resulting contest expectations are averaged. No Monte Carlo is required.
+ * each known player pool is evaluated with the locked 80/20 doubles rule, then
+ * the resulting contest expectations are averaged. No Monte Carlo is required.
  *
- * Historical check: when actual singles matchups were known but doubles pairs
- * were hidden, this method plus the +8 matchup home effect predicted 38 of 41
- * decided historical team matches, the same winner count as using the actual
- * doubles pairings. Pairings still improved score calibration, so they should
- * replace this estimate once the lineup is locked.
+ * The historical pairing study supports this simplification even though
+ * captains do not pair randomly: across 84 team-match samples, actual average
+ * pair CI (907.50) was essentially identical to the all-player-pool pairing
+ * expectation (907.51). Actual partners were more similar in CI, but player
+ * selection and pairing structure offset almost exactly at aggregate level.
  */
 export function expectedDoublesPointShareFromPool(
   teamClashIndices: readonly number[],
@@ -252,11 +248,9 @@ export function calculateExpectedMatchPoints(input: {
 }
 
 /**
- * Converts Expected Point Margin to regular-season Chance of Victory.
- *
- * Positive margin favors the team being evaluated. The curve is symmetric and
- * intentionally capped at 95/5 because the current historical sample is too
- * small to justify near-certainty. Do not use this function for playoffs in V1.
+ * Converts Expected Point Margin to regular-season Chance of Victory once the
+ * matchup structure is known. Do not use this curve for early roster-only
+ * predictions or playoffs.
  */
 export function regularSeasonChanceOfVictoryFromExpectedMargin(
   expectedPointMargin: number,

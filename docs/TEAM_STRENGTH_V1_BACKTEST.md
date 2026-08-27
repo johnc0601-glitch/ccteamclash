@@ -2,46 +2,51 @@
 
 ## Purpose
 
-Establish a regular-season prediction model that is explainable, cheap to run, and does not pretend we know doubles pairings before captains publish them.
+Establish a regular-season prediction system that is explainable, stage-aware, and honest about what the historical archive actually contains.
 
-Historical source: 42 team matches and 2,568 player-result facts across the 2024-25 and 2025-26 seasons. There are 41 decided matches and one tie.
+Historical source: 42 team matches and 2,568 player-result facts across 2024-25 and 2025-26. There are 41 decided matches and one tie. Thirty-five matches are home-venue regular-season matches; 34 of those were decided.
 
-## V1 decisions
+## Important labeling correction
 
-- **Active Roster Strength is venue-neutral.**
-- Active Roster Strength remains **35% Top 6 + 35% Next 6 + 30% Depth**.
-- **Home advantage is +8 CI only in the matchup prediction layer.**
-- Regular-season doubles strength uses the established **80/20 stronger/weaker CI rule**.
-- Before doubles teams are known, do **not** invent pairings and do **not** use Monte Carlo. Average the expected result across every plausible doubles pair in each known player pool.
-- Once actual doubles teams are locked, replace the pooled estimate with the real pair strengths.
+The archive stores who actually played each historical match, but it does **not** store exact point-in-time season roster snapshots or attendance snapshots. Earlier experiments that grouped the actual participants in a match were useful, but that pool is a proxy for **Match Lineup Strength**, not true **Active Roster Strength**.
+
+To get a closer Active Roster Strength proxy, V1 reconstructs each team's season-wide roster from every player who appeared for that team during the season and carries each player's historical CI forward to the target match. That still is not a perfect point-in-time roster because membership timing is not preserved, so it remains explicitly a **season-roster proxy**.
+
+This distinction matters and is now reflected in the code and labels.
 
 ## Historical checks
 
-| Model | Correct winner | Accuracy | Point-share MAE | Point-share Brier |
-| --- | ---: | ---: | ---: | ---: |
-| Active Roster Strength, no home effect | 34 / 41 | 82.9% | 0.07546 | 0.009345 |
-| Active Roster Strength, +8 matchup home effect | 36 / 41 | 87.8% | ~0.07066 | 0.007914 |
-| Player pools, singles and doubles pairings both unknown, +8 | 36 / 41 | 87.8% | 0.07731 | 0.008529 |
-| **Actual singles matchups + pooled unknown doubles, +8** | **38 / 41** | **92.7%** | 0.07433 | 0.008126 |
-| Actual singles matchups + pooled unknown doubles, no home effect | 34 / 41 | 82.9% | 0.08135 | 0.010078 |
-| Actual singles + actual doubles pairings, +8 | 38 / 41 | 92.7% | 0.06926 | 0.007303 |
+| Information / model | Regular season | All decided matches | Interpretation |
+| --- | ---: | ---: | --- |
+| Season-roster proxy, no home effect | 24 / 34 (70.6%) | 29 / 41 (70.7%) | Closest archive proxy for Active Roster Strength |
+| **Season-roster proxy, +8 matchup home effect** | **27 / 34 (79.4%)** | **32 / 41 (78.0%)** | Early Active Roster proxy |
+| **Actual participant pool 35/35/30, +8** | **30 / 34 (88.2%)** | **36 / 41 (87.8%)** | Match Lineup Strength proxy |
+| **Actual singles matchups + pooled unknown doubles, +8** | **32 / 34 (94.1%)** | **38 / 41 (92.7%)** | Best regular-season pre-pairing model |
+| Actual singles + actual doubles pairings, +8 | 31 / 34 (91.2%) | 38 / 41 (92.7%) | Better score calibration; same all-match winner count |
 
-The important result is the fourth row: hiding the actual doubles pairings did **not** reduce historical winner accuracy once the singles matchups were known. Exact doubles pairings improved score calibration, but the winner count stayed 38/41.
+The +8 home effect remains meaningful. In the season-roster proxy it improves regular-season winner calls from 24/34 to 27/34. In the later known-matchup model, removing home dropped the broader historical winner result from 38/41 to 34/41.
 
-The +8 home effect also remains important in the hybrid expected-points model: 38/41 with it versus 34/41 without it.
+## Active Roster Strength
 
-## Regular-season prediction stages
+Active Roster Strength remains venue-neutral:
 
-1. **Active roster stage** — compare neutral Active Roster Strength values; apply +8 only for the home team inside the matchup prediction.
-2. **Player/lineup information improves** — calculate expected singles points from known matchups.
-3. **Doubles still unknown** — calculate pooled doubles expected points across plausible 80/20 pair strengths.
-4. **Doubles locked** — replace the pooled doubles estimate with actual 80/20 pair strengths.
+`0.35 × Top 6 Avg CI + 0.35 × Next 6 Avg CI + 0.30 × Depth Avg CI`
 
-This keeps the regular-season model deterministic and easy to explain while allowing prediction quality to improve as real lineup information arrives.
+The current archive cannot provide an exact historical Active Roster backtest. The season-roster proxy is deliberately used as the nearest available validation and not presented as exact historical roster truth.
+
+## Prediction stages
+
+1. **Active Roster Strength** — neutral full current season roster; +8 enters only in matchup prediction.
+2. **Confirmed Available Roster Strength** — only explicit `Playing` responses. Historical attendance snapshots do not exist, so V1 uses the conservative Active Roster calibration until new data accumulates.
+3. **Match Lineup Strength** — official locked participant pool. Historical actual participant pools provide a direct proxy for this stage.
+4. **Known singles / doubles unknown** — exact singles expectations plus deterministic pooled doubles expectations.
+5. **Actual doubles known** — replace pooled doubles with actual 80/20 pair strengths.
 
 ## Guardrails
 
-- These results are a historical backtest on a small sample, not an independent future-season validation set.
-- Do not convert small differences in expected points into overconfident win percentages yet. Calibrate Expected Margin -> Chance of Victory separately.
-- Preserve match-time CI values and lineup inputs for future backtests; never recalculate historical predictions using today's ratings.
-- Real upsets remain possible. One historical match was predicted by the pooled model as a large Riptide advantage but ended in a 16-17 loss to Wild Turkey. The model should represent expected outcomes, not certainty.
+- Do not call an actual-participant backtest an Active Roster Strength backtest.
+- Do not add home advantage to the stored strength value; apply it once in matchup prediction.
+- Do not silently drop unrated players.
+- Preserve match-time CI values and prediction inputs for future backtests.
+- Refit each stage only when the archive contains data for that stage.
+- Playoffs remain outside the regular-season probability calibration.

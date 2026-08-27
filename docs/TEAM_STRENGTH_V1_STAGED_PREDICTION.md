@@ -1,66 +1,56 @@
 # Team Strength V1 — staged prediction
 
-## Why the probability model changes with information
+## Core principle
 
-A percentage should reflect how much the model actually knows. Active Roster Strength is useful early, but it does not know attendance, singles matchups, doubles teams, or even the final number of scoring slots. Once matchup information arrives, Expected Point Margin becomes the better input.
+The percentage should get sharper as the model learns more. V1 therefore keeps the underlying strength label and probability calibration tied to the information actually available.
 
-For that reason V1 does **not** use one Chance of Victory calculation blindly at every stage.
+## Stage 1 — Active Roster Strength
 
-## Historical regular-season calibration
+Input: every current active roster player with an effective CI.
 
-The current archive has 35 home-venue regular-season matches, 34 of them decided.
+Strength is venue-neutral. Matchup prediction applies +8 only when the scheduled home team is actually on its home course.
 
-| Information stage | Historical winner calls | Accuracy | Probability calibration |
-| --- | ---: | ---: | --- |
-| Roster-strength proxy (35/35/30 +8 matchup home effect) | 30 / 34 | 88.2% | Strength-difference logistic slope 0.117 |
-| Actual singles matchups + pooled unknown doubles | 32 / 34 | 94.1% | Expected-margin logistic slope 0.43 |
-| Actual singles + actual doubles pairings | 31 / 34 | 91.2% | Exact pairings improve score calibration; V1 retains the 0.43 regular-season curve |
+Historical closest proxy: reconstructed season roster, **27/34 (79.4%)** regular-season winner calls with +8. Direct strength-difference probability slope: **0.088**.
 
-The locked-pairing row should not be read as evidence that knowing pairings is harmful. Exact doubles pairings improved projected-score calibration in the broader backtest. With only 34 decided regular-season matches, one result can change winner accuracy materially.
+The proxy is intentionally labeled as such because the old archive does not preserve exact roster membership timing.
 
-## V1 rules
+## Stage 2 — Confirmed Available Roster Strength
 
-### Active Roster Strength
+Input: only players explicitly marked `Playing`. `Unconfirmed` and `NotPlaying` are excluded.
 
-Use venue-adjusted **roster strength difference directly**:
+There is no historical point-in-time attendance archive, so V1 does **not** invent a separate calibration. It retains the conservative **0.088** strength-difference curve until the new season provides enough attendance snapshots.
 
-`team neutral strength - opponent neutral strength + venue adjustment`
+## Stage 3 — Match Lineup Strength
 
-with the regular-season +8 CI home effect applied once in that matchup difference.
+Input: official locked roster snapshot player IDs.
 
-Chance of Victory uses:
+Historical actual participant pools are the correct proxy here: **30/34 (88.2%)** regular-season winner calls with +8. Direct strength-difference slope: **0.117**.
 
-`1 / (1 + exp(-0.117 * matchup strength difference))`
+This stage can produce a sharper probability even before exact singles or doubles pairings are available.
 
-and remains capped at 95% / 5%.
+## Stage 4 — Known singles, doubles still unknown
 
-This is preferable to first converting roster strength into Expected Point Margin because, early in the week, the eventual number of scoring slots is not yet known. A direct strength-difference fit had essentially the same historical predictive quality without inventing a match size.
+Once actual singles matchups and scoring slots are known, switch to Expected Points. Unknown doubles teams use the deterministic all-plausible-pairs 80/20 model.
 
-### Confirmed Available Roster Strength
+Historical regular-season result: **32/34 (94.1%)**. Expected Point Margin uses the **0.43** probability slope.
 
-Use the same **0.117 strength-difference curve** for now. The historical archive does not contain point-in-time attendance snapshots, so fitting a separate availability curve would manufacture precision. Refit this stage after the new season creates enough attendance history.
+## Stage 5 — Actual doubles pairings known
 
-Only players explicitly marked **Playing** belong in Confirmed Available Roster Strength. `Unconfirmed` and `NotPlaying` do not.
+Replace pooled doubles expectations with actual 80/20 pair strengths. Exact pairings improved score calibration in the broader backtest, although the all-match winner count stayed 38/41 in both versions.
 
-### Known singles / doubles still unknown
+## Data quality and confidence
 
-Once actual scoring structure is known, switch to Expected Points and Expected Point Margin. Use the **0.43** expected-margin curve already implemented by the expected-points service. Doubles are estimated deterministically across plausible 80/20 pairs; no Monte Carlo is required.
+- Missing CI is resolved with the established new-player seed rule: PDGA if available, otherwise Open 825 / Women 700.
+- Existing provisional CI is preserved and flagged provisional.
+- Any provisional input prevents `Full` confidence.
+- Any unresolved/omitted player forces `Low` confidence.
+- Predictions compare like with like; do not compare Active Roster Strength directly against Confirmed Available Roster Strength.
+- The prediction source and label travel with the calculated value.
 
-### Locked lineup
+## Home
 
-Do not collapse a locked lineup back into one roster-strength number for prediction. Use the contest-level expected-points model. V1 keeps the conservative 0.43 regular-season probability curve rather than introducing another locked-lineup probability parameter from a tiny sample.
+Home is context, not team identity:
 
-## Calibration stability warning
+`neutral strength → +8 matchup adjustment → prediction`
 
-The data strongly warns against chasing season-specific probability parameters. For the early roster-strength model, fitting the two regular seasons separately produced strength-difference slopes of roughly 0.30 for 2024-25 and 0.080 for 2025-26. For the later known-matchup model, the separate expected-margin fits were also far apart (about 2.09 and 0.30).
-
-That instability is why V1 uses pooled, simple calibrations and the 95% / 5% ceiling.
-
-## Data-quality rules
-
-- A roster-strength result carries its source and label with it.
-- Predictions compare the same information stage on both teams; Active Roster Strength is not compared directly with Confirmed Available Roster Strength.
-- Missing CI values are not silently removed. When CI is absent, the roster adapter uses the established season-start seed rule: PDGA when available, otherwise Open 825 / Women 700.
-- Existing provisional CI values are preserved as current values and flagged provisional; they are not overwritten by the fallback baseline inside the model.
-- Any provisional input lowers a full roster calculation to Partial confidence. Any unresolved/omitted player lowers it to Low confidence.
-- Home advantage is never stored inside roster strength. The +8 CI home effect is applied once, inside matchup prediction.
+The +8 is never stored inside Active Roster Strength, Confirmed Available Roster Strength, or Match Lineup Strength.
