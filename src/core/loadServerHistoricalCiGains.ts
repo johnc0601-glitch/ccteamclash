@@ -2,7 +2,7 @@ import 'server-only';
 
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCiArchiveReplay';
-import {createAdminClient} from '@/lib/supabase/admin';
+import {createClient} from '@/lib/supabase/server';
 import {
   playerSeasonCiKey,
   summarizeHistoricalCiLedger,
@@ -14,16 +14,18 @@ import {
 export type HistoricalCiGainBreakdown = HistoricalCiLedgerSummary;
 
 type HistoricalCiFactRow = {
+  matchup_deduplication_key: string;
   season_id: string;
   player_id: string;
-  historical_team_match_id: number;
+  historical_team_match_id: number | null;
   format: 'Singles' | 'Doubles';
   clash_index_before: number;
   ci_delta: number;
 };
 
-type HistoricalTeamMatchOrderRow = {
-  id: number;
+type HistoricalMatchupOrderRow = {
+  deduplication_key: string;
+  historical_team_match_id: number | null;
   event_order: number;
 };
 
@@ -31,66 +33,73 @@ type HistoricalCiFactLoadResult =
   | {rows: HistoricalCiFactRow[]}
   | {fallbackReason: string};
 
+type HistoricalTeamMatchOrderResult =
+  | {orders: HistoricalTeamMatchOrder[]}
+  | {fallbackReason: string};
+
 const PAGE_SIZE = 1000;
 
 /**
- * Prefer the immutable historical CI ledger for public Stats. The ledger is
- * persisted directly from deterministic archive replay. If it is missing,
- * incomplete, or internally discontinuous, fall back to replay so correctness
- * always wins over performance. Every fallback is logged with its reason so a
- * ledger defect cannot silently restore the expensive request-time replay path.
+ * Prefer the immutable historical CI ledger for public Stats. The normal path
+ * uses only public read policies and never requires the service-role key.
+ * Deterministic replay remains the correctness fallback. Every fallback is
+ * logged with its reason so a ledger defect cannot silently restore the
+ * expensive request-time replay path.
  */
 export async function loadServerHistoricalCiGains(): Promise<Map<string, HistoricalCiGainBreakdown>> {
-  const admin = createAdminClient() as unknown as SupabaseClient;
-  const [factLoad, teamMatchResult, sourceCountResult] = await Promise.all([
-    loadAllHistoricalCiFacts(admin),
-    admin
-      .from('historical_team_matches')
-      .select('id,event_order'),
-    admin
-      .from('historical_player_matchups')
-      .select('deduplication_key', {count: 'exact', head: true}),
+  const supabase = await createClient();
+  const client = supabase as unknown as SupabaseClient;
+  const [factLoad, sourceRows] = await Promise.all([
+    loadAllHistoricalCiFacts(client),
+    loadAllHistoricalMatchupOrders(client),
   ]);
 
   if ('fallbackReason' in factLoad) {
     return loadHistoricalCiGainsFromReplay(factLoad.fallbackReason);
   }
-  if (teamMatchResult.error) throw teamMatchResult.error;
-  if (sourceCountResult.error) throw sourceCountResult.error;
+
+  if (!factLoad.rows.length) {
+    return loadHistoricalCiGainsFromReplay('historical CI ledger contains no facts');
+  }
+  if (factLoad.rows.length !== sourceRows.length) {
+    return loadHistoricalCiGainsFromReplay(
+      `historical CI ledger/source count mismatch: ${factLoad.rows.length} facts vs ${sourceRows.length} matchup rows`,
+    );
+  }
+
+  const missingFactTeamMatch = factLoad.rows.find((row) => row.historical_team_match_id === null);
+  if (missingFactTeamMatch) {
+    return loadHistoricalCiGainsFromReplay(
+      `historical CI fact ${missingFactTeamMatch.matchup_deduplication_key} is missing a team-match id`,
+    );
+  }
+
+  const orderResult = buildHistoricalTeamMatchOrders(sourceRows);
+  if ('fallbackReason' in orderResult) {
+    return loadHistoricalCiGainsFromReplay(orderResult.fallbackReason);
+  }
 
   const facts = factLoad.rows.map((row): HistoricalCiLedgerFact => ({
     seasonId: row.season_id,
     playerId: row.player_id,
-    historicalTeamMatchId: row.historical_team_match_id,
+    historicalTeamMatchId: row.historical_team_match_id as number,
     format: row.format,
     clashIndexBefore: row.clash_index_before,
     ciDelta: row.ci_delta,
   }));
-  const sourceCount = sourceCountResult.count ?? 0;
-  if (!facts.length) {
-    return loadHistoricalCiGainsFromReplay('historical CI ledger contains no facts');
-  }
-  if (facts.length !== sourceCount) {
-    return loadHistoricalCiGainsFromReplay(
-      `historical CI ledger/source count mismatch: ${facts.length} facts vs ${sourceCount} matchup rows`,
-    );
-  }
-
-  const teamMatches = ((teamMatchResult.data ?? []) as HistoricalTeamMatchOrderRow[])
-    .map((row): HistoricalTeamMatchOrder => ({id: row.id, eventOrder: row.event_order}));
-  const validation = summarizeHistoricalCiLedger(facts, teamMatches);
+  const validation = summarizeHistoricalCiLedger(facts, orderResult.orders);
   if (!validation.ok) return loadHistoricalCiGainsFromReplay(validation.reason);
   return validation.summaries;
 }
 
 async function loadAllHistoricalCiFacts(
-  admin: SupabaseClient,
+  supabase: SupabaseClient,
 ): Promise<HistoricalCiFactLoadResult> {
   const rows: HistoricalCiFactRow[] = [];
   for (let from = 0; ; from += PAGE_SIZE) {
-    const {data, error} = await admin
+    const {data, error} = await supabase
       .from('historical_clash_contest_rating_facts')
-      .select('season_id,player_id,historical_team_match_id,format,clash_index_before,ci_delta')
+      .select('matchup_deduplication_key,season_id,player_id,historical_team_match_id,format,clash_index_before,ci_delta')
       .order('matchup_deduplication_key', {ascending: true})
       .range(from, from + PAGE_SIZE - 1);
     if (error) {
@@ -105,6 +114,46 @@ async function loadAllHistoricalCiFacts(
     rows.push(...page);
     if (page.length < PAGE_SIZE) return {rows};
   }
+}
+
+async function loadAllHistoricalMatchupOrders(
+  supabase: SupabaseClient,
+): Promise<HistoricalMatchupOrderRow[]> {
+  const rows: HistoricalMatchupOrderRow[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const {data, error} = await supabase
+      .from('historical_player_matchups')
+      .select('deduplication_key,historical_team_match_id,event_order')
+      .order('deduplication_key', {ascending: true})
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = (data ?? []) as HistoricalMatchupOrderRow[];
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) return rows;
+  }
+}
+
+function buildHistoricalTeamMatchOrders(
+  rows: HistoricalMatchupOrderRow[],
+): HistoricalTeamMatchOrderResult {
+  const eventOrderByTeamMatchId = new Map<number, number>();
+  for (const row of rows) {
+    if (row.historical_team_match_id === null) {
+      return {
+        fallbackReason: `historical matchup ${row.deduplication_key} is missing a team-match id`,
+      };
+    }
+    const existing = eventOrderByTeamMatchId.get(row.historical_team_match_id);
+    if (existing !== undefined && existing !== row.event_order) {
+      return {
+        fallbackReason: `historical team match ${row.historical_team_match_id} has conflicting event orders: ${existing} vs ${row.event_order}`,
+      };
+    }
+    eventOrderByTeamMatchId.set(row.historical_team_match_id, row.event_order);
+  }
+  return {
+    orders: [...eventOrderByTeamMatchId].map(([id, eventOrder]) => ({id, eventOrder})),
+  };
 }
 
 async function loadHistoricalCiGainsFromReplay(
