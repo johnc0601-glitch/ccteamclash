@@ -10,6 +10,19 @@ type Direction = 'asc' | 'desc';
 type Limit = 25 | 'all';
 type Division = 'Open' | 'Women';
 
+const HEADER_HELP: Record<SortKey, string> = {
+  clashIndex: 'Clash Index — Match Play player rating based on match results and opponent strength',
+  matchesPlayed: 'Matches — Total recorded matches played.',
+  wins: 'Wins — Total recorded match wins.',
+  winPercentage: 'Win % — Percentage of completed matches won.',
+  singles: 'Singles — Player wins, losses and ties in singles matches.',
+  doubles: 'Doubles — Player wins, losses and ties in doubles matches.',
+  points: 'Points — Total match points earned for the player’s team.',
+  ciGain: 'CI +/- — Clash Index movement earned from recorded match results.',
+  singlesCiGain: 'S +/- — Clash Index movement earned from singles results.',
+  doublesCiGain: 'D +/- — Clash Index movement earned from doubles results.',
+};
+
 export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsGroup[]; initialGroupId?: string}) {
   const validInitialGroupId = groups.some((group) => group.id === initialGroupId) ? initialGroupId : groups[0]?.id ?? 'overall';
   const [groupId, setGroupId] = useState(validInitialGroupId);
@@ -177,7 +190,13 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
 function SortableHeader({label, sort, active, direction, onSort}: {label: string; sort: SortKey; active: SortKey; direction: Direction; onSort: (sort: SortKey) => void}) {
   return (
     <th aria-sort={active === sort ? (direction === 'desc' ? 'descending' : 'ascending') : 'none'}>
-      <button type="button" onClick={() => onSort(sort)}>{label}<span aria-hidden="true">{active === sort ? (direction === 'desc' ? ' ↓' : ' ↑') : ''}</span></button>
+      <span className={styles.headerCell}>
+        <button type="button" onClick={() => onSort(sort)}>{label}<span aria-hidden="true">{active === sort ? (direction === 'desc' ? ' ↓' : ' ↑') : ''}</span></button>
+        <details className={styles.headerInfo}>
+          <summary aria-label={`About ${label}`}>i</summary>
+          <div>{HEADER_HELP[sort]}</div>
+        </details>
+      </span>
     </th>
   );
 }
