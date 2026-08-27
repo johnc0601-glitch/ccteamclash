@@ -53,7 +53,7 @@ export async function SiteHeader() {
             <span className="primary-nav-separator" aria-hidden="true" />
             <Link href="/teams">Teams</Link>
             <Link href="/stories">Stories</Link>
-            <Link className="desktop-account" href="/account">Account</Link>
+            <Link className="desktop-account" href="/account">My Profile</Link>
           </nav>
 
           <div className="mobile-header-actions">
