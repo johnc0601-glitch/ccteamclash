@@ -86,11 +86,7 @@ implements PredictionCaptureCandidateRepository {
     const source = currentPredictionCaptureSource(match.date, now);
     if (!source) return undefined;
 
-    const matchVenue = await this.getMatchVenue(
-      match.course_id,
-      match.home_team_id,
-      match.away_team_id,
-    );
+    const matchVenue = await this.getMatchVenue(match.course_id, match.home_team_id);
 
     if (source === 'matchLineup') {
       const rosterRepository = new SupabaseMatchRosterRepository(this.supabase);
@@ -157,7 +153,6 @@ implements PredictionCaptureCandidateRepository {
   private async getMatchVenue(
     courseId: string,
     homeTeamId: string,
-    awayTeamId: string,
   ): Promise<MatchVenueClassification> {
     const {data, error} = await this.supabase
       .from('launch_courses')
@@ -165,9 +160,7 @@ implements PredictionCaptureCandidateRepository {
       .eq('id', courseId)
       .maybeSingle();
     if (error) throw error;
-    if (data?.home_team_id === homeTeamId) return 'HomeTeam';
-    if (data?.home_team_id === awayTeamId) return 'AwayTeam';
-    return 'Neutral';
+    return data?.home_team_id === homeTeamId ? 'Home' : 'Neutral';
   }
 
   private async getActiveMemberships(
