@@ -1,46 +1,87 @@
-# Team Strength V1 — scoring capacity and automatic points
+# Team Strength V1 — scoring capacity and structural points
 
-## Why this matters
+## Standard scoring base
+
+A normal Clash starts from **36 standard points**:
+
+- 18 singles points
+- 18 doubles player-points
+
+That 36-point base is the core expected-points model. Clash Index predicts the genuinely contested portions of those points.
+
+The scoreboard can still move away from a simple symmetric 36-point contest because league rules can create structural points or bonus opportunities.
+
+## Structural scoring rules
+
+Two effects are especially important:
+
+1. **Short-handed automatic points.** If a team cannot fill the required 18-player structure, some standard points become automatic for the opponent rather than being CI-rated contests.
+2. **Women bonus opportunities.** Extra female participation can create bonus-point opportunities when women play men. These are usually small — commonly one or two points — and are difficult to predict until availability or the lineup is sufficiently clear. A likely 1F-vs-2F structure can therefore create roughly two bonus-point opportunities during the round, but V1 does not assume that structure early.
+
+These are match-scoring effects, not Team Strength. They must never be baked into Active Roster Strength or Clash Index.
+
+## Why the historical CI ledger differs from final scores
 
 Clash Index player-result facts are intentionally a **player performance ledger**, not a complete copy of the final team scoreboard.
 
-The historical workbooks contain scoring rows that are not normal rated player contests, including `TRIPLES`, no-player/penalty rows and other `Misc. Points`. The historical matchup importer deliberately classifies those markers as penalty rows and excludes them from player CI history. That is correct for player rating, but it means summing player `actual_points` is not a safe way to reconstruct the official team result.
+The historical workbooks contain rows such as `TRIPLES`, no-player/penalty rows and `Misc. Points`. The historical importer deliberately excludes those special rows from player CI history. That is correct for player rating, but it means summing player `actual_points` is not a safe way to reconstruct the official team result.
 
-The 2025-26 source sheets also show that `Points Possible` can differ between the two teams in the same match. A future expected-score model therefore cannot assume every Clash is a fixed, symmetric 18-singles / 9-doubles / 36-point game.
+The 2025-26 source sheets also show asymmetric `Points Possible`, which is consistent with the structural rules above rather than evidence that the standard base itself is not 36.
 
 ## Historical audit
 
 For the 31 regular-season matches that already had official scores stored, 23 have a difference between the official score and the sum of rated player-result facts. The average absolute combined difference is about 3.39 points per match, with a maximum of 12 points.
 
-Those differences did not change the recorded winner in those 31 matches, but that does **not** make them ignorable. Four February 2025-26 matches were missing official scores in the archive. Comparing their source scoreboards with the player-fact totals shows that two of the four would have the wrong team outcome if the result were reconstructed only from rating facts:
+Four February 2025-26 matches were missing official scores in the archive. Comparing their source scoreboards with the player-fact totals shows why official scores must remain the outcome source of truth:
 
 - Dark Knights @ Ninjas — official **18-20**, rated-player facts **18-18**.
 - KB @ Hayneous OG's — official **15.5-20.5**, rated-player facts match the official score.
 - Cougar Country @ Beast Mode — official **12-24**, rated-player facts **11-18**.
 - Riptide @ Wild Turkey — official **18-18**, rated-player facts **16-17**.
 
-The official team scoreboard must therefore be the outcome source of truth for Team Strength calibration.
+Two November 2025-26 schedule-summary values were also stale. The detailed scoreboards and season totals support **KB 27-9 Wild Turkey** and **Beast Mode 21.5-15.5 Hayneous OG's**.
 
 ## V1 modeling rule
 
-Keep two layers separate:
+Keep three layers separate:
 
-1. **Rated contest expectation** — singles and ordinary doubles that can be evaluated from CI.
-2. **Known score adjustments / capacity effects** — automatic points, penalties, triples or other league-rule effects that change the team scoreboard without being an ordinary rated contest.
+1. **Team Strength** — neutral player quality.
+2. **Rated contest expectation** — ordinary singles and doubles evaluated from CI, with the +8 home matchup effect applied once.
+3. **Structural points** — automatic short-handed points, expected women bonus points, or another explicitly known scoring adjustment.
 
-Do not invent the second layer from roster size alone. Until the current-season rule is encoded and tested, early public forecasts continue to use calibrated roster-strength probabilities.
+The final prediction is:
 
-When a known scoring adjustment is available from an authoritative lineup/scoring rules engine, `calculateExpectedMatchPoints` can add that adjustment to the rated-contest expectation before converting expected margin to Chance of Victory.
+`rated expected points + structural points = expected team score`
+
+Then:
+
+`team expected score - opponent expected score = Expected Point Margin`
+
+Expected Point Margin is converted to Chance of Victory using the regular-season calibration.
 
 ## Stage behavior
 
-- **Active Roster Strength** — no scoring-capacity assumption. Early estimate only.
-- **Confirmed Available Roster Strength** — attendance narrows the player pool, but V1 still does not fabricate penalty or triples points from headcount. Early estimate only.
-- **Match Lineup Strength** — uses the locked participant pool and its calibrated participant-stage curve. It still does not pretend the exact singles/doubles/triples arrangement is known.
-- **Known singles / ordinary doubles unknown** — use rated-contest Expected Points. Add only scoring adjustments that are explicitly known.
+- **Active Roster Strength** — model the normal 36-point match. Do not guess structural points.
+- **Confirmed Available Roster Strength** — attendance narrows the player pool. If a short-handed condition is certain, deterministic automatic points may be introduced; otherwise remain conservative.
+- **Match Lineup Strength** — the 18-player participation structure is known, so automatic points can be included when the rule requires them. Women bonus points are still included only when the triggering matchup structure is sufficiently known.
+- **Known singles / ordinary doubles unknown** — calculate rated Expected Points and add only explicit structural-point components.
 - **Actual ordinary doubles known** — replace pooled doubles with actual 80/20 pair strengths.
-- **Triples / special scoring rows** — keep outside the ordinary 80/20 doubles calculation until the league rule is explicitly modeled.
 
-## Calibration guardrail
+## Code contract
 
-Never infer a historical match winner by summing `historical_clash_contest_rating_facts.actual_points` when an official team score exists. Rating facts are appropriate for CI calibration; official team scores are appropriate for Team Strength outcome calibration.
+`calculateExpectedMatchPoints` exposes structural effects explicitly:
+
+- `automaticPoints`
+- `womenBonusExpectedPoints`
+- `otherKnownPoints`
+
+The women field is intentionally an **expected** point value rather than a guaranteed point value. If the matchup only creates an opportunity, the scoring layer can assign an expectation without pretending the point is already won.
+
+## Guardrails
+
+- Standard base remains 36.
+- Never reduce Team Strength because a team is short-handed; apply the scoring consequence through automatic points.
+- Never increase Team Strength because a roster has more women; bonus opportunities are match-specific.
+- Do not infer structural points from historical player-count differences. The relationship is real but mixes multiple Clash rules.
+- Never infer a historical winner from rating-fact totals when an official team score exists.
+- Home advantage remains a separate +8 CI matchup effect and is applied exactly once.
