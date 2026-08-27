@@ -109,7 +109,6 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
         <div className={styles.mobileSortControl}>
           <select aria-label="Sort stats" value={sortKey} onChange={(event) => {setSortKey(event.target.value as SortKey); setDirection('desc');}}>
             <option value="points">Points</option>
-            <option value="currentCi">CI</option>
             <option value="ciGain">CI +/-</option>
             <option value="singlesCiGain">Singles CI +/-</option>
             <option value="doublesCiGain">Doubles CI +/-</option>
