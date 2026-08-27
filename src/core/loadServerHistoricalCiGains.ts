@@ -3,6 +3,7 @@ import 'server-only';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCiArchiveReplay';
 import {createClient} from '@/lib/supabase/server';
+import {formatHistoricalCiReplayFailure} from '@/services/statistics/HistoricalCiReplayDiagnostic';
 import {
   playerSeasonCiKey,
   summarizeHistoricalCiLedger,
@@ -160,7 +161,19 @@ async function loadHistoricalCiGainsFromReplay(
   reason: string,
 ): Promise<Map<string, HistoricalCiGainBreakdown>> {
   console.warn('[stats] Historical CI ledger fallback to deterministic replay', {reason});
-  const replay = await loadServerHistoricalCiArchiveReplay();
+
+  let replay: Awaited<ReturnType<typeof loadServerHistoricalCiArchiveReplay>>;
+  try {
+    replay = await loadServerHistoricalCiArchiveReplay();
+  } catch (error) {
+    const diagnostic = formatHistoricalCiReplayFailure(reason, error);
+    console.error('[stats] Historical CI replay fallback unavailable', {
+      reason,
+      replayError: error instanceof Error ? error.message : String(error),
+    });
+    throw new Error(diagnostic);
+  }
+
   const gains = new Map<string, HistoricalCiGainBreakdown>();
 
   for (const [seasonId, season] of replay.seasons) {
