@@ -1,5 +1,5 @@
 /* Tablet header organization. Keep the two-row desktop header until true mobile. */
-@media (min-width: 801px) and (max-width: 1100px) {
+@media (min-width: 801px) and (max-width: 1300px) {
   .primary-header .primary-nav-wrap {
     height: 68px !important;
     gap: 16px;
@@ -52,12 +52,14 @@
 
   .secondary-nav-wrap {
     min-height: 40px;
-    justify-content: flex-end;
+    justify-content: flex-end !important;
     gap: 18px;
   }
 
   .secondary-nav,
   .secondary-role-nav {
+    flex: 0 0 auto;
+    width: auto;
     gap: 14px;
   }
 
