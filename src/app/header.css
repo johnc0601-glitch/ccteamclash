@@ -1,3 +1,159 @@
+/* One-row desktop/tablet header. Keep mobile behavior below 800px. */
+@media (min-width: 801px) {
+  .primary-header .primary-nav-wrap {
+    min-height: 72px;
+    height: 72px !important;
+    gap: 18px;
+  }
+
+  .primary-header .brand {
+    gap: 9px;
+    flex: 0 0 auto;
+  }
+
+  .primary-nav {
+    display: flex;
+    align-items: center;
+    gap: 15px !important;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  .primary-nav > a {
+    min-height: 72px !important;
+    font-size: 10px !important;
+    letter-spacing: .035em !important;
+  }
+
+  .primary-nav-separator {
+    flex: 0 0 1px;
+    height: 22px;
+  }
+
+  .desktop-role-link {
+    color: var(--cc-gold) !important;
+  }
+
+  .desktop-account {
+    min-height: 34px !important;
+    padding: 0 10px;
+  }
+
+  .desktop-more {
+    position: relative;
+    flex: 0 0 auto;
+  }
+
+  .desktop-more > summary {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    padding: 0 10px;
+    border: 1px solid #3b4144;
+    border-radius: 7px;
+    color: #d7dcde;
+    cursor: pointer;
+    list-style: none;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+  }
+
+  .desktop-more > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .desktop-more[open] > summary {
+    border-color: var(--cc-gold);
+    color: var(--cc-gold);
+  }
+
+  .desktop-more-menu {
+    position: absolute;
+    z-index: 70;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 170px;
+    padding: 8px;
+    border: 1px solid #303538;
+    border-top: 3px solid var(--cc-gold);
+    border-radius: 8px;
+    background: #101315;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, .45);
+  }
+
+  .desktop-more-menu > a {
+    display: flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 0 10px;
+    border-radius: 5px;
+    color: #c7ccce;
+    font-size: 11px;
+    font-weight: 850;
+    text-transform: uppercase;
+  }
+
+  .desktop-more-menu > a:hover {
+    background: #1b2022;
+    color: var(--cc-gold);
+  }
+
+  .desktop-more-community {
+    display: flex;
+    min-height: 40px;
+    align-items: center;
+    gap: 9px;
+    padding: 0 10px;
+    border-top: 1px solid #2c3133;
+    color: #c7ccce;
+    font-size: 11px;
+    font-weight: 850;
+    text-transform: uppercase;
+  }
+
+  .secondary-header {
+    display: none !important;
+  }
+}
+
+@media (min-width: 801px) and (max-width: 1200px) {
+  .primary-header .primary-nav-wrap {
+    gap: 12px;
+  }
+
+  .primary-header .brand-mark,
+  .primary-header .brand-mark img {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .primary-header .brand strong {
+    font-size: 15px;
+  }
+
+  .primary-header .brand small {
+    font-size: 8px;
+    letter-spacing: .06em;
+  }
+
+  .primary-nav {
+    gap: 10px !important;
+  }
+
+  .primary-nav > a,
+  .desktop-more > summary {
+    font-size: 9px !important;
+  }
+
+  .desktop-account,
+  .desktop-more > summary {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+}
+
 /* Mobile sports-header refinement. Imported after theme.css. */
 @media (max-width: 800px) {
   .primary-header .primary-nav-wrap {

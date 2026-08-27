@@ -47,13 +47,18 @@ export async function SiteHeader() {
           <nav className="desktop-nav primary-nav" aria-label="Primary navigation">
             <Link href="/schedule">Schedule</Link>
             <Link href="/standings">Standings</Link>
-            <Link href="/playoffs">Playoffs</Link>
-            <Link href="/rankings">Rankings</Link>
             <Link href="/stats">Stats</Link>
-            <span className="primary-nav-separator" aria-hidden="true" />
             <Link href="/teams">Teams</Link>
+            <Link href="/players">Players</Link>
             <Link href="/stories">Stories</Link>
-            <Link className="desktop-account" href="/account">Account</Link>
+            <Link href="/courses">Courses</Link>
+            <Link href="/history">History</Link>
+            <FacebookLink size={20} />
+            {(canOpenOffice || canOpenCaptain) ? <span className="primary-nav-separator" aria-hidden="true" /> : null}
+            {canOpenOffice ? <Link className="desktop-role-link" href="/admin">Create post</Link> : null}
+            {canOpenOffice ? <Link className="desktop-role-link" href="/office">Office</Link> : null}
+            {canOpenCaptain ? <Link className="desktop-role-link" href="/captain">Captain</Link> : null}
+            <Link className="desktop-account" href="/account">My Profile</Link>
           </nav>
 
           <div className="mobile-header-actions">
@@ -65,15 +70,13 @@ export async function SiteHeader() {
                   <span>Season</span>
                   <Link href="/schedule">Schedule</Link>
                   <Link href="/standings">Standings</Link>
-                  <Link href="/playoffs">Playoffs</Link>
-                  <Link href="/rankings">Rankings</Link>
                   <Link href="/stats">Stats</Link>
                 </div>
                 <div className="mobile-nav-group">
                   <span>League</span>
                   <Link href="/teams">Teams</Link>
-                  <Link href="/stories">Stories</Link>
                   <Link href="/players">Players</Link>
+                  <Link href="/stories">Stories</Link>
                   <Link href="/courses">Courses</Link>
                   <Link href="/history">History</Link>
                 </div>
@@ -92,22 +95,6 @@ export async function SiteHeader() {
               </nav>
             </details>
           </div>
-        </div>
-      </div>
-
-      <div className="secondary-header">
-        <div className="shell secondary-nav-wrap">
-          <nav className="secondary-nav" aria-label="League navigation">
-            <Link href="/players">Players</Link>
-            <Link href="/courses">Courses</Link>
-            <Link href="/history">History</Link>
-          </nav>
-          <nav className="secondary-role-nav" aria-label="Community and role tools">
-            {canOpenOffice ? <Link className="secondary-post" href="/admin">Create post</Link> : null}
-            {canOpenOffice ? <Link href="/office">Office</Link> : null}
-            {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
-            <FacebookLink size={20} />
-          </nav>
         </div>
       </div>
     </header>
@@ -148,8 +135,6 @@ export async function Footer() {
         <div className="footer-links">
           <Link href="/schedule">Schedule</Link>
           <Link href="/standings">Standings</Link>
-          <Link href="/playoffs">Playoffs</Link>
-          <Link href="/rankings">Rankings</Link>
           <Link href="/stats">Stats</Link>
           <Link href="/history">History</Link>
           <Link href="/teams">Teams</Link>
