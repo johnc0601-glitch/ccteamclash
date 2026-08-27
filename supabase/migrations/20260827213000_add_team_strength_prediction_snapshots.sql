@@ -18,6 +18,7 @@ create table if not exists public.team_strength_prediction_snapshots (
   captured_at timestamptz not null default now(),
   venue text not null check (venue in ('Home', 'Neutral', 'Away')),
   confidence text not null check (confidence in ('Low', 'Partial', 'Full')),
+  prediction_readiness text not null check (prediction_readiness in ('Unavailable', 'EarlyEstimate', 'Ready')),
   calibration_slope numeric not null check (calibration_slope > 0),
   team_base_strength numeric not null,
   opponent_base_strength numeric not null,
@@ -66,6 +67,8 @@ comment on column public.team_strength_prediction_snapshots.source is
   'The exact information stage: Active Roster Strength, Confirmed Available Roster Strength, or Match Lineup Strength.';
 comment on column public.team_strength_prediction_snapshots.capture_reason is
   'Fixed lifecycle checkpoint used to make snapshots comparable across matches and seasons.';
+comment on column public.team_strength_prediction_snapshots.prediction_readiness is
+  'Publication gate at capture time: Unavailable, EarlyEstimate, or Ready.';
 comment on column public.team_strength_prediction_snapshots.team_player_ids is
   'Exact player-id pool used for the team-side strength calculation at capture time.';
 comment on column public.team_strength_prediction_snapshots.opponent_player_ids is

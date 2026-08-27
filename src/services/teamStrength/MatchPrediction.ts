@@ -15,18 +15,27 @@ export const ACTIVE_ROSTER_WIN_STRENGTH_SLOPE = 0.088;
 export const CONFIRMED_AVAILABLE_WIN_STRENGTH_SLOPE = 0.088;
 export const MATCH_LINEUP_WIN_STRENGTH_SLOPE = 0.117;
 
+export type PredictionReadiness = 'Unavailable' | 'EarlyEstimate' | 'Ready';
+
 export type RosterBasedMatchPrediction = {
   version: typeof TEAM_STRENGTH_VERSION;
   source: TeamStrengthSource;
   strengthLabel: string;
   venue: TeamVenue;
   confidence: TeamStrengthConfidence;
+  readiness: PredictionReadiness;
+  displayLabel: 'Prediction unavailable' | 'Early estimate' | 'Chance of Victory';
+  /** Venue-neutral stage strength. */
   teamBaseStrength: number;
+  /** Venue-neutral opponent strength at the same information stage. */
   opponentBaseStrength: number;
   matchupStrengthDifference: number;
   expectedPointShare: number;
   calibrationSlope: number;
+  /** Internal calibrated value retained for auditing and future calibration. */
   regularSeasonChanceOfVictory: number;
+  /** Null when the data-quality gate says a percentage should not be published. */
+  displayChanceOfVictory: number | null;
 };
 
 /**
@@ -61,20 +70,59 @@ export function calculateRosterBasedMatchPrediction(input: {
     matchupStrengthDifference,
     calibrationSlope,
   );
+  const confidence = lowerConfidence(team.confidence, opponent.confidence);
+  const readiness = predictionReadinessForStrengths(team, opponent);
+  const presentation = presentationForReadiness(
+    readiness,
+    regularSeasonChanceOfVictory,
+  );
 
   return {
     version: TEAM_STRENGTH_VERSION,
     source: team.source,
     strengthLabel: team.label,
     venue,
-    confidence: lowerConfidence(team.confidence, opponent.confidence),
+    confidence,
+    readiness,
+    displayLabel: presentation.label,
     teamBaseStrength: team.baseStrength,
     opponentBaseStrength: opponent.baseStrength,
     matchupStrengthDifference,
     expectedPointShare,
     calibrationSlope,
     regularSeasonChanceOfVictory,
+    displayChanceOfVictory: presentation.chanceOfVictory,
   };
+}
+
+/**
+ * Publication gate for roster-stage predictions.
+ *
+ * Missing/omitted players make a public percentage unsafe because the strength
+ * was calculated from an incomplete player pool. Thin rosters, provisional CI,
+ * fallback seeds and Partial confidence are still useful, but should be labeled
+ * as an Early estimate instead of a finished Chance of Victory.
+ */
+export function predictionReadinessForStrengths(
+  team: RosterStrengthResult,
+  opponent: RosterStrengthResult,
+): PredictionReadiness {
+  if (team.omittedPlayerCount > 0 || opponent.omittedPlayerCount > 0) {
+    return 'Unavailable';
+  }
+
+  if (
+    team.confidence !== 'Full'
+    || opponent.confidence !== 'Full'
+    || team.provisionalPlayerCount > 0
+    || opponent.provisionalPlayerCount > 0
+    || team.fallbackPlayerCount > 0
+    || opponent.fallbackPlayerCount > 0
+  ) {
+    return 'EarlyEstimate';
+  }
+
+  return 'Ready';
 }
 
 export function rosterStageChanceOfVictoryFromStrengthDifference(
@@ -85,6 +133,22 @@ export function rosterStageChanceOfVictoryFromStrengthDifference(
     matchupStrengthDifference,
     winStrengthSlopeForSource(source),
   );
+}
+
+function presentationForReadiness(
+  readiness: PredictionReadiness,
+  chanceOfVictory: number,
+): {
+  label: RosterBasedMatchPrediction['displayLabel'];
+  chanceOfVictory: number | null;
+} {
+  if (readiness === 'Unavailable') {
+    return {label: 'Prediction unavailable', chanceOfVictory: null};
+  }
+  if (readiness === 'EarlyEstimate') {
+    return {label: 'Early estimate', chanceOfVictory};
+  }
+  return {label: 'Chance of Victory', chanceOfVictory};
 }
 
 function chanceOfVictoryFromStrengthDifference(

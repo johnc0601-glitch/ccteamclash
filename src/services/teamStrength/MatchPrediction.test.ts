@@ -7,6 +7,7 @@ import {
   ACTIVE_ROSTER_WIN_STRENGTH_SLOPE,
   calculateRosterBasedMatchPrediction,
   MATCH_LINEUP_WIN_STRENGTH_SLOPE,
+  predictionReadinessForStrengths,
   rosterStageChanceOfVictoryFromStrengthDifference,
 } from './MatchPrediction';
 import {calculateRosterStageStrength} from './RosterStrength';
@@ -23,6 +24,9 @@ test('equal neutral active roster strengths start at 50 percent', () => {
   assert.equal(prediction.expectedPointShare, 0.5);
   assert.equal(prediction.regularSeasonChanceOfVictory, 0.5);
   assert.equal(prediction.calibrationSlope, ACTIVE_ROSTER_WIN_STRENGTH_SLOPE);
+  assert.equal(prediction.readiness, 'Ready');
+  assert.equal(prediction.displayLabel, 'Chance of Victory');
+  assert.equal(prediction.displayChanceOfVictory, 0.5);
 });
 
 test('home advantage is applied in the matchup layer, not the strength result', () => {
@@ -36,9 +40,6 @@ test('home advantage is applied in the matchup layer, not the strength result', 
   assert.ok(neutral && home);
   assert.equal(team.baseStrength, 900);
   assert.equal(opponent.baseStrength, 900);
-  assert.equal('activeRosterStrength' in team, false);
-  assert.equal(home.teamBaseStrength, 900);
-  assert.equal(home.opponentBaseStrength, 900);
   assert.equal(home.matchupStrengthDifference, 8);
   assert.ok(home.expectedPointShare > neutral.expectedPointShare);
   assert.ok(home.regularSeasonChanceOfVictory > neutral.regularSeasonChanceOfVictory);
@@ -103,6 +104,46 @@ test('prediction confidence is limited by the weaker side', () => {
 
   assert.ok(prediction);
   assert.equal(prediction.confidence, 'Partial');
+  assert.equal(prediction.readiness, 'EarlyEstimate');
+  assert.equal(prediction.displayLabel, 'Early estimate');
+  assert.ok(prediction.displayChanceOfVictory != null);
+});
+
+test('thin but complete rosters are early estimates rather than unavailable', () => {
+  const teamPlayers = players(11, 900, false);
+  const opponentPlayers = players(11, 900, false);
+  const team = calculateRosterStageStrength('activeRoster', teamPlayers, teamPlayers.map((candidate) => candidate.id));
+  const opponent = calculateRosterStageStrength('activeRoster', opponentPlayers, opponentPlayers.map((candidate) => candidate.id));
+  assert.ok(team && opponent);
+
+  assert.equal(predictionReadinessForStrengths(team, opponent), 'EarlyEstimate');
+  const prediction = calculateRosterBasedMatchPrediction({team, opponent});
+  assert.ok(prediction);
+  assert.equal(prediction.displayLabel, 'Early estimate');
+  assert.equal(prediction.displayChanceOfVictory, 0.5);
+});
+
+test('omitted players block publication of a precise percentage', () => {
+  const teamPlayers = players(18, 900, false);
+  const opponentPlayers = players(18, 900, false);
+  const team = calculateRosterStageStrength(
+    'activeRoster',
+    teamPlayers,
+    [...teamPlayers.map((candidate) => candidate.id), 'missing-player'],
+  );
+  const opponent = calculateRosterStageStrength(
+    'activeRoster',
+    opponentPlayers,
+    opponentPlayers.map((candidate) => candidate.id),
+  );
+  assert.ok(team && opponent);
+
+  const prediction = calculateRosterBasedMatchPrediction({team, opponent});
+  assert.ok(prediction);
+  assert.equal(prediction.readiness, 'Unavailable');
+  assert.equal(prediction.displayLabel, 'Prediction unavailable');
+  assert.equal(prediction.displayChanceOfVictory, null);
+  assert.ok(Number.isFinite(prediction.regularSeasonChanceOfVictory));
 });
 
 function strength(

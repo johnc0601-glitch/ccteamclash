@@ -16,7 +16,7 @@ test('derives fixed capture reasons from the strength source', () => {
   assert.equal(TEAM_STRENGTH_CAPTURE_REASONS.matchLineup, 'RosterLock');
 });
 
-test('freezes the exact player pool, calibration and data-quality counts', () => {
+test('freezes the exact player pool, calibration, readiness and data-quality counts', () => {
   const team = strength('activeRoster', [
     player('b', 910, false),
     player('a', 900, true),
@@ -49,6 +49,7 @@ test('freezes the exact player pool, calibration and data-quality counts', () =>
   assert.equal(snapshot.captureReason, 'PreMatch');
   assert.equal(snapshot.source, 'activeRoster');
   assert.equal(snapshot.strengthLabel, 'Active Roster Strength');
+  assert.equal(snapshot.predictionReadiness, 'EarlyEstimate');
   assert.deepEqual(snapshot.teamPlayerIds, ['a', 'b']);
   assert.deepEqual(snapshot.opponentPlayerIds, ['c', 'd']);
   assert.equal(snapshot.teamProvisionalPlayerCount, 1);
@@ -82,7 +83,7 @@ test('rejects a snapshot when prediction and roster sources differ', () => {
   );
 });
 
-test('rejects invalid capture timestamps', () => {
+test('rejects invalid capture timestamps and invalid identities', () => {
   const team = strength('matchLineup', [player('a', 900, false)]);
   const opponent = strength('matchLineup', [player('b', 900, false)]);
   assert.ok(team && opponent);
@@ -99,6 +100,19 @@ test('rejects invalid capture timestamps', () => {
       teamStrength: team,
       opponentStrength: opponent,
       capturedAt: 'not-a-date',
+    }),
+    undefined,
+  );
+
+  assert.equal(
+    buildTeamStrengthPredictionSnapshot({
+      matchId: 'match',
+      teamId: 'same',
+      opponentTeamId: 'same',
+      side: 'Home',
+      prediction,
+      teamStrength: team,
+      opponentStrength: opponent,
     }),
     undefined,
   );

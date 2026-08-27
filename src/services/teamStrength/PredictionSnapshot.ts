@@ -1,4 +1,4 @@
-import type {RosterBasedMatchPrediction} from './MatchPrediction';
+import type {PredictionReadiness, RosterBasedMatchPrediction} from './MatchPrediction';
 import type {RosterStrengthResult, TeamStrengthSource} from './RosterStrength';
 import type {TeamStrengthConfidence, TeamVenue} from './TeamStrength';
 
@@ -23,11 +23,13 @@ export type TeamStrengthPredictionSnapshot = {
   capturedAt: string;
   venue: TeamVenue;
   confidence: TeamStrengthConfidence;
+  predictionReadiness: PredictionReadiness;
   calibrationSlope: number;
   teamBaseStrength: number;
   opponentBaseStrength: number;
   matchupStrengthDifference: number;
   expectedPointShare: number;
+  /** Raw calibrated value retained even when the public readiness gate hides it. */
   chanceOfVictory: number;
   teamPlayerIds: string[];
   opponentPlayerIds: string[];
@@ -63,7 +65,11 @@ export function buildTeamStrengthPredictionSnapshot(input: {
   } = input;
 
   if (
-    prediction.source !== teamStrength.source
+    !input.matchId.trim()
+    || !input.teamId.trim()
+    || !input.opponentTeamId.trim()
+    || input.teamId === input.opponentTeamId
+    || prediction.source !== teamStrength.source
     || prediction.source !== opponentStrength.source
     || teamStrength.source !== opponentStrength.source
   ) return undefined;
@@ -83,6 +89,7 @@ export function buildTeamStrengthPredictionSnapshot(input: {
     capturedAt,
     venue: prediction.venue,
     confidence: prediction.confidence,
+    predictionReadiness: prediction.readiness,
     calibrationSlope: prediction.calibrationSlope,
     teamBaseStrength: prediction.teamBaseStrength,
     opponentBaseStrength: prediction.opponentBaseStrength,
