@@ -12,6 +12,11 @@ import type {
   TeamStatistics as TeamStatisticsResult,
 } from '@/services/statistics/StatisticsTypes';
 
+export type PlayerSeasonStatisticsSnapshot = {
+  statistics: PlayerStatisticsResult[];
+  ciMovements: Map<string, PlayerCiMovement>;
+};
+
 export class StatisticsEngine {
   private readonly teamStatistics = new TeamStatistics();
   private readonly playerStatistics = new PlayerStatistics();
@@ -41,6 +46,22 @@ export class StatisticsEngine {
     const results = await this.repository.getPublishedChallengeResults();
     return playerIds.map((playerId) =>
       this.playerStatistics.calculate(playerId, seasonId, results));
+  }
+
+  async getPlayerSeasonStatisticsSnapshot(
+    playerIds: string[],
+    seasonId: string,
+  ): Promise<PlayerSeasonStatisticsSnapshot> {
+    const results = await this.repository.getPublishedChallengeResults();
+    const statistics = playerIds.map((playerId) =>
+      this.playerStatistics.calculate(playerId, seasonId, results));
+    const ciMovements = new Map(
+      playerIds.flatMap((playerId) => {
+        const movement = this.ciMovement.calculateForSeason(playerId, seasonId, results);
+        return movement ? [[playerId, movement] as const] : [];
+      }),
+    );
+    return {statistics, ciMovements};
   }
 
   async getPlayerCareerStatistics(playerId: string): Promise<PlayerStatisticsResult> {
