@@ -52,7 +52,8 @@
 
   .secondary-nav-wrap {
     min-height: 40px;
-    gap: 14px;
+    justify-content: flex-end;
+    gap: 18px;
   }
 
   .secondary-nav,
@@ -60,30 +61,14 @@
     gap: 14px;
   }
 
-  .secondary-nav::before,
-  .secondary-role-nav::before {
-    display: inline-flex;
-    align-items: center;
-    height: 24px;
-    padding-right: 12px;
-    border-right: 1px solid #34393b;
-    color: #6f787b;
-    font-size: 8px;
-    font-weight: 950;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-  }
-
-  .secondary-nav::before {
-    content: 'League';
-  }
-
-  .secondary-role-nav::before {
-    content: 'Tools';
+  .secondary-nav {
+    margin-left: auto;
   }
 
   .secondary-role-nav {
-    margin-left: auto;
+    margin-left: 4px;
+    padding-left: 18px;
+    border-left: 1px solid #34393b;
   }
 
   .secondary-nav a,
