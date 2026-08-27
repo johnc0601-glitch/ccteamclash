@@ -16,14 +16,14 @@ test('derives fixed capture reasons from the strength source', () => {
   assert.equal(TEAM_STRENGTH_CAPTURE_REASONS.matchLineup, 'RosterLock');
 });
 
-test('freezes the exact player pool, calibration, readiness and data-quality counts', () => {
+test('freezes exact player pool, composition, shortfall, calibration and data quality', () => {
   const team = strength('activeRoster', [
-    player('b', 910, false),
-    player('a', 900, true),
+    player('b', 910, false, 'Female'),
+    player('a', 900, true, 'Male'),
   ]);
   const opponent = strength('activeRoster', [
-    player('d', 900, false),
-    player('c', 890, false),
+    player('d', 900, false, 'Male'),
+    player('c', 890, false, 'Unknown'),
   ]);
   assert.ok(team && opponent);
 
@@ -52,6 +52,14 @@ test('freezes the exact player pool, calibration, readiness and data-quality cou
   assert.equal(snapshot.predictionReadiness, 'EarlyEstimate');
   assert.deepEqual(snapshot.teamPlayerIds, ['a', 'b']);
   assert.deepEqual(snapshot.opponentPlayerIds, ['c', 'd']);
+  assert.equal(snapshot.teamFemalePlayerCount, 1);
+  assert.equal(snapshot.teamMalePlayerCount, 1);
+  assert.equal(snapshot.teamUnknownGenderPlayerCount, 0);
+  assert.equal(snapshot.opponentFemalePlayerCount, 0);
+  assert.equal(snapshot.opponentMalePlayerCount, 1);
+  assert.equal(snapshot.opponentUnknownGenderPlayerCount, 1);
+  assert.equal(snapshot.teamStandardPlayerShortfall, 16);
+  assert.equal(snapshot.opponentStandardPlayerShortfall, 16);
   assert.equal(snapshot.teamProvisionalPlayerCount, 1);
   assert.equal(snapshot.opponentProvisionalPlayerCount, 0);
   assert.equal(snapshot.capturedAt, '2026-10-01T12:00:00.000Z');
@@ -122,11 +130,16 @@ function strength(source: TeamStrengthSource, players: LaunchPlayer[]) {
   return calculateRosterStageStrength(source, players, players.map((candidate) => candidate.id));
 }
 
-function player(id: string, clashIndex: number, provisional: boolean): LaunchPlayer {
+function player(
+  id: string,
+  clashIndex: number,
+  provisional: boolean,
+  gender: LaunchPlayer['gender'] = 'Male',
+): LaunchPlayer {
   return {
     id,
     name: id,
-    gender: 'Male',
+    gender,
     pdgaNumber: '',
     pdgaRating: null,
     clashIndex,
