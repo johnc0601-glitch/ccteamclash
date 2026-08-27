@@ -97,7 +97,8 @@
   color: #858d8f;
 }
 
-.mobileSortControl {
+.mobileSortControl,
+.mobileTableWrap {
   display: none;
 }
 
@@ -195,6 +196,11 @@
   text-align: left;
 }
 
+.statsTable th:not(:first-child),
+.statsTable td:not(:first-child) {
+  width: 1%;
+}
+
 .statsTable th button {
   padding: 0;
   border: 0;
@@ -247,6 +253,61 @@
 
 .statsTable tbody tr:nth-child(even) td:first-child {
   background: #eeeae1 !important;
+}
+
+.mobileStatsTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-variant-numeric: tabular-nums;
+}
+
+.mobileStatsTable th,
+.mobileStatsTable td {
+  height: 42px;
+  padding: 5px 10px;
+  border-bottom: 1px solid #d6d1c7;
+  white-space: nowrap;
+}
+
+.mobileStatsTable th {
+  background: #e4e0d7;
+  color: #596164;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.mobileStatsTable th:first-child,
+.mobileStatsTable td:first-child {
+  width: auto;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+}
+
+.mobileStatsTable th:last-child,
+.mobileStatsTable td:last-child {
+  width: 78px;
+  text-align: right;
+}
+
+.mobileStatsTable td {
+  color: #202426;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.mobileStatsTable tbody tr:nth-child(odd) td {
+  background: #f7f4ec;
+}
+
+.mobileStatsTable tbody tr:nth-child(even) td {
+  background: #eeeae1;
+}
+
+.mobileStatsTable tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .rank {
@@ -331,18 +392,28 @@
     justify-content: space-between;
   }
 
-  .statsTable {
-    min-width: 660px;
+  .desktopTableWrap {
+    display: none;
   }
 
-  .statsTable th,
-  .statsTable td {
-    height: 34px;
-    padding: 4px 8px;
+  .mobileTableWrap {
+    display: block;
+    overflow: hidden;
   }
 
-  .statsTable th:first-child,
-  .statsTable td:first-child {
-    min-width: 165px;
+  .mobileStatsTable th,
+  .mobileStatsTable td {
+    height: 40px;
+    padding: 4px 9px;
+  }
+
+  .mobileStatsTable th:last-child,
+  .mobileStatsTable td:last-child {
+    width: 72px;
+  }
+
+  .mobileStatsTable .rank {
+    width: 20px;
+    margin-right: 5px;
   }
 }
