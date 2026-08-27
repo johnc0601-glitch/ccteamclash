@@ -15,7 +15,7 @@ class MemoryRepository implements PredictionSnapshotRepository {
   }
 }
 
-test('captures home and away snapshots together with one home-team course adjustment', async () => {
+test('captures home and away snapshots together with one home adjustment', async () => {
   const repository = new MemoryRepository();
   const home = strength('activeRoster', 900);
   const away = strength('activeRoster', 900);
@@ -28,7 +28,7 @@ test('captures home and away snapshots together with one home-team course adjust
     awayTeamId: 'away-team',
     homeStrength: home,
     awayStrength: away,
-    matchVenue: 'HomeTeam',
+    matchVenue: 'Home',
     capturedAt: '2026-10-03T12:00:00.000Z',
   });
 
@@ -45,32 +45,6 @@ test('captures home and away snapshots together with one home-team course adjust
   assert.equal(homeSnapshot.capturedAt, awaySnapshot.capturedAt);
   assert.equal(homeSnapshot.captureReason, 'PreMatch');
   assert.equal(awaySnapshot.captureReason, 'PreMatch');
-});
-
-test('gives the +8 course adjustment to the scheduled away side when it owns the course', async () => {
-  const repository = new MemoryRepository();
-  const home = strength('activeRoster', 900);
-  const away = strength('activeRoster', 900);
-  assert.ok(home && away);
-
-  const result = await captureRosterPredictionStage({
-    repository,
-    matchId: 'match-away-course',
-    homeTeamId: 'home-team',
-    awayTeamId: 'away-team',
-    homeStrength: home,
-    awayStrength: away,
-    matchVenue: 'AwayTeam',
-  });
-
-  assert.equal(result.captured, true);
-  if (!result.captured) return;
-  const [homeSnapshot, awaySnapshot] = result.snapshots;
-  assert.equal(homeSnapshot.venue, 'Away');
-  assert.equal(awaySnapshot.venue, 'Home');
-  assert.equal(homeSnapshot.matchupStrengthDifference, -8);
-  assert.equal(awaySnapshot.matchupStrengthDifference, 8);
-  assert.ok(awaySnapshot.chanceOfVictory > 0.5);
 });
 
 test('neutral venue produces symmetric neutral predictions', async () => {
@@ -112,7 +86,7 @@ test('does not write mixed information stages', async () => {
     awayTeamId: 'away-team',
     homeStrength: home,
     awayStrength: away,
-    matchVenue: 'HomeTeam',
+    matchVenue: 'Home',
   });
 
   assert.deepEqual(result, {captured: false, reason: 'StageMismatch'});
