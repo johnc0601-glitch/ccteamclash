@@ -185,7 +185,7 @@
   z-index: 2;
   background: #e4e0d7;
   color: #34393b;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
 }
@@ -193,6 +193,13 @@
 .statsTable th:first-child,
 .statsTable td:first-child {
   text-align: left;
+}
+
+.headerCell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
 }
 
 .statsTable th button {
@@ -206,6 +213,57 @@
 
 .statsTable th button:hover {
   color: var(--cc-gold, #b88900);
+}
+
+.headerInfo {
+  position: relative;
+  display: inline-flex;
+}
+
+.headerInfo summary {
+  display: inline-grid;
+  width: 12px;
+  height: 12px;
+  place-items: center;
+  border: 1px solid #8d9496;
+  border-radius: 50%;
+  color: #6f7779;
+  font-size: 8px;
+  font-weight: 950;
+  line-height: 1;
+  text-transform: none;
+  cursor: pointer;
+  list-style: none;
+}
+
+.headerInfo summary::-webkit-details-marker {
+  display: none;
+}
+
+.headerInfo[open] summary,
+.headerInfo summary:hover {
+  border-color: var(--cc-gold, #b88900);
+  color: var(--cc-gold, #b88900);
+}
+
+.headerInfo div {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  right: -8px;
+  width: 230px;
+  padding: 9px 10px;
+  border: 1px solid #34393b;
+  border-radius: 7px;
+  background: #111517;
+  color: #f5f3ec;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .25);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
 }
 
 .statsTable td,
@@ -344,5 +402,9 @@
   .statsTable th:first-child,
   .statsTable td:first-child {
     min-width: 165px;
+  }
+
+  .headerInfo div {
+    width: 205px;
   }
 }
