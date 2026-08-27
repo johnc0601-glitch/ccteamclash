@@ -1,5 +1,13 @@
 /* Mobile sports-header refinement. Imported after theme.css. */
-@media (max-width: 800px) {
+@media (max-width: 1100px) {
+  .desktop-nav {
+    display: none !important;
+  }
+
+  .secondary-header {
+    display: none !important;
+  }
+
   .primary-header .primary-nav-wrap {
     height: 92px !important;
     display: flex;
@@ -59,6 +67,7 @@
 
   .mobile-nav {
     position: relative;
+    display: block !important;
     margin: 0;
   }
 
