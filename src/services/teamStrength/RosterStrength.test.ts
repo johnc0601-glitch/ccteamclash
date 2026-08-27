@@ -8,6 +8,7 @@ import {
   calculateActiveRosterStrengthFromPlayers,
   calculateConfirmedAvailableRosterStrength,
   calculateMatchLineupStrength,
+  STANDARD_MATCH_PLAYER_COUNT,
   TEAM_STRENGTH_STAGE_LABELS,
 } from './RosterStrength';
 
@@ -18,6 +19,7 @@ test('uses explicit labels for each roster-information stage', () => {
     'Confirmed Available Roster Strength',
   );
   assert.equal(TEAM_STRENGTH_STAGE_LABELS.matchLineup, 'Match Lineup Strength');
+  assert.equal(STANDARD_MATCH_PLAYER_COUNT, 18);
 });
 
 test('uses a stage-neutral baseStrength field instead of activeRosterStrength', () => {
@@ -40,9 +42,30 @@ test('does not silently drop active players with no CI', () => {
   assert.equal(result.provisionalPlayerCount, 2);
   assert.equal(result.fallbackPlayerCount, 2);
   assert.equal(result.omittedPlayerCount, 0);
+  assert.equal(result.femalePlayerCount, 1);
+  assert.equal(result.malePlayerCount, 1);
+  assert.equal(result.unknownGenderPlayerCount, 0);
+  assert.equal(result.standardPlayerShortfall, 16);
   assert.equal(result.topSixCi, 762.5);
   assert.equal(result.baseStrength, 762.5);
   assert.equal(result.confidence, 'Low');
+});
+
+test('captures gender composition from selected players independently of CI resolution', () => {
+  const result = calculateActiveRosterStrengthFromPlayers([
+    player('female', {gender: 'Female'}),
+    player('male', {gender: 'Male'}),
+    player('unknown', {gender: 'Unknown', clashIndex: 875}),
+  ]);
+
+  assert.ok(result);
+  assert.equal(result.femalePlayerCount, 1);
+  assert.equal(result.malePlayerCount, 1);
+  assert.equal(result.unknownGenderPlayerCount, 1);
+  assert.equal(
+    result.femalePlayerCount + result.malePlayerCount + result.unknownGenderPlayerCount,
+    result.rosterPlayerCount,
+  );
 });
 
 test('preserves a current provisional CI instead of replacing it with the baseline', () => {
@@ -75,10 +98,16 @@ test('uses PDGA as the fallback seed before the division baseline', () => {
   assert.equal(result.fallbackPlayerCount, 1);
 });
 
-test('confirmed available strength includes only explicit Playing responses', () => {
-  const players = [player('playing'), player('unconfirmed'), player('not-playing')];
+test('confirmed available strength includes only explicit Playing responses and captures composition', () => {
+  const players = [
+    player('playing-female', {gender: 'Female'}),
+    player('playing-male'),
+    player('unconfirmed', {gender: 'Female'}),
+    player('not-playing'),
+  ];
   const result = calculateConfirmedAvailableRosterStrength(players, [
-    {playerId: 'playing', playerName: 'Playing', teamId: 'team', status: 'Playing'},
+    {playerId: 'playing-female', playerName: 'Playing F', teamId: 'team', status: 'Playing'},
+    {playerId: 'playing-male', playerName: 'Playing M', teamId: 'team', status: 'Playing'},
     {playerId: 'unconfirmed', playerName: 'Unconfirmed', teamId: 'team', status: 'Unconfirmed'},
     {playerId: 'not-playing', playerName: 'Not Playing', teamId: 'team', status: 'NotPlaying'},
   ]);
@@ -87,12 +116,15 @@ test('confirmed available strength includes only explicit Playing responses', ()
   assert.equal(result.source, 'confirmedAvailableRoster');
   assert.equal(result.label, 'Confirmed Available Roster Strength');
   assert.equal(result.baseStrength, 900);
-  assert.equal(result.rosterPlayerCount, 1);
-  assert.deepEqual(result.playerIds, ['playing']);
+  assert.equal(result.rosterPlayerCount, 2);
+  assert.equal(result.femalePlayerCount, 1);
+  assert.equal(result.malePlayerCount, 1);
+  assert.equal(result.standardPlayerShortfall, 16);
+  assert.deepEqual(result.playerIds.sort(), ['playing-female', 'playing-male']);
   assert.equal('activeRosterStrength' in result, false);
 });
 
-test('official lineup strength resolves immutable player ids and exposes missing data', () => {
+test('official lineup strength resolves immutable player ids and exposes missing composition data', () => {
   const roster: OfficialMatchRoster = {
     id: 'roster',
     matchId: 'match',
@@ -108,15 +140,36 @@ test('official lineup strength resolves immutable player ids and exposes missing
     ],
   };
 
-  const result = calculateMatchLineupStrength([player('known')], roster);
+  const result = calculateMatchLineupStrength([player('known', {gender: 'Female'})], roster);
   assert.ok(result);
   assert.equal(result.source, 'matchLineup');
   assert.equal(result.baseStrength, 900);
   assert.equal(result.rosterPlayerCount, 2);
   assert.equal(result.playerCount, 1);
   assert.equal(result.omittedPlayerCount, 1);
+  assert.equal(result.femalePlayerCount, 1);
+  assert.equal(result.malePlayerCount, 0);
+  assert.equal(result.unknownGenderPlayerCount, 1);
+  assert.equal(result.standardPlayerShortfall, 16);
   assert.equal(result.confidence, 'Low');
   assert.equal('activeRosterStrength' in result, false);
+});
+
+test('shortfall is diagnostic only and reaches zero at eighteen selected players', () => {
+  const players = Array.from({length: 18}, (_, index) =>
+    player(`p-${index}`, {clashIndex: 900 + index}),
+  );
+  const full = calculateActiveRosterStrengthFromPlayers(players);
+  assert.ok(full);
+  assert.equal(full.rosterPlayerCount, 18);
+  assert.equal(full.standardPlayerShortfall, 0);
+
+  const oversized = calculateActiveRosterStrengthFromPlayers([
+    ...players,
+    player('p-18'),
+  ]);
+  assert.ok(oversized);
+  assert.equal(oversized.standardPlayerShortfall, 0);
 });
 
 test('full confidence requires a complete measured player pool', () => {
