@@ -1,0 +1,1 @@
+Implementation is maintained on feature/team-strength-v1. See TEAM_STRENGTH_V1_BACKTEST.md and TEAM_STRENGTH_V1_CHANCE_OF_VICTORY.md.
