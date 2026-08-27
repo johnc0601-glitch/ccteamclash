@@ -2,14 +2,23 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  calculateRosterStrength,
+  calculateActiveRosterStrength,
   DOUBLES_HOME_CI_BONUS,
   effectiveDoublesCi,
   expectedTeamPointShare,
   homeCiBonusForFormat,
   SINGLES_HOME_CI_BONUS,
   TEAM_HOME_CI_BONUS,
+  TEAM_STRENGTH_LABELS,
 } from './TeamStrength';
+
+test('labels roster-derived strength explicitly as active roster strength', () => {
+  assert.equal(TEAM_STRENGTH_LABELS.activeRoster, 'Active Roster Strength');
+  assert.equal(
+    TEAM_STRENGTH_LABELS.homeAdjustedActiveRoster,
+    'Home-Adjusted Active Roster Strength',
+  );
+});
 
 test('weights top six, next six, and depth at 35/35/30', () => {
   const ratings = [
@@ -18,18 +27,21 @@ test('weights top six, next six, and depth at 35/35/30', () => {
     880, 870, 860, 850, 840, 830,
   ];
 
-  const result = calculateRosterStrength(ratings);
+  const result = calculateActiveRosterStrength(ratings);
   assert.ok(result);
   assert.equal(result.topSixCi, 975);
   assert.equal(result.nextSixCi, 915);
   assert.equal(result.depthCi, 855);
-  assert.equal(result.neutralStrength, 918);
-  assert.equal(result.homeStrength, 918 + TEAM_HOME_CI_BONUS);
+  assert.equal(result.activeRosterStrength, 918);
+  assert.equal(
+    result.homeAdjustedActiveRosterStrength,
+    918 + TEAM_HOME_CI_BONUS,
+  );
   assert.equal(result.confidence, 'Full');
 });
 
-test('marks incomplete rosters as low confidence instead of treating them as complete', () => {
-  const result = calculateRosterStrength([950, 940, 930, 920, 910, 900, 890, 880, 870, 860, 850]);
+test('marks incomplete active rosters as low confidence instead of treating them as complete', () => {
+  const result = calculateActiveRosterStrength([950, 940, 930, 920, 910, 900, 890, 880, 870, 860, 850]);
   assert.ok(result);
   assert.equal(result.playerCount, 11);
   assert.equal(result.confidence, 'Low');

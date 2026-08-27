@@ -6,8 +6,17 @@ export const TEAM_STRENGTH_WEIGHTS = {
   depth: 0.30,
 } as const;
 
+export const TEAM_STRENGTH_LABELS = {
+  activeRoster: 'Active Roster Strength',
+  homeAdjustedActiveRoster: 'Home-Adjusted Active Roster Strength',
+  availableRoster: 'Available Roster Strength',
+  homeAdjustedAvailableRoster: 'Home-Adjusted Available Roster Strength',
+  matchLineup: 'Match Lineup Strength',
+  homeAdjustedMatchLineup: 'Home-Adjusted Match Lineup Strength',
+} as const;
+
 // Historical calibration: 42 team matches / 2,568 player-result facts.
-// Keep the roster-level home adjustment league-wide until more home-match
+// Keep the active-roster home adjustment league-wide until more home-match
 // history exists; team-specific home effects overfit the current sample.
 export const TEAM_HOME_CI_BONUS = 8;
 export const TEAM_POINT_SHARE_SCALE = 105;
@@ -20,18 +29,24 @@ export const DOUBLES_WEAK_PLAYER_WEIGHT = 0.2;
 
 export type TeamStrengthConfidence = 'Low' | 'Partial' | 'Full';
 
-export type TeamStrengthBreakdown = {
+export type ActiveRosterStrengthBreakdown = {
   version: typeof TEAM_STRENGTH_VERSION;
   playerCount: number;
   confidence: TeamStrengthConfidence;
   topSixCi: number;
   nextSixCi: number;
   depthCi: number;
-  neutralStrength: number;
-  homeStrength: number;
+  activeRosterStrength: number;
+  homeAdjustedActiveRosterStrength: number;
 };
 
-export function calculateRosterStrength(clashIndices: readonly number[]): TeamStrengthBreakdown | undefined {
+/**
+ * Calculates strength from the players currently on a team's active season roster.
+ * Callers are responsible for passing only active roster members with a valid CI.
+ */
+export function calculateActiveRosterStrength(
+  clashIndices: readonly number[],
+): ActiveRosterStrengthBreakdown | undefined {
   const ratings = clashIndices
     .filter((rating) => Number.isFinite(rating) && rating > 0)
     .slice()
@@ -49,7 +64,7 @@ export function calculateRosterStrength(clashIndices: readonly number[]): TeamSt
   // measured depth. Confidence communicates that the resulting score is thin.
   const depthCi = depth.length ? average(depth) : nextSixCi;
 
-  const neutralStrength =
+  const activeRosterStrength =
     TEAM_STRENGTH_WEIGHTS.topSix * topSixCi +
     TEAM_STRENGTH_WEIGHTS.nextSix * nextSixCi +
     TEAM_STRENGTH_WEIGHTS.depth * depthCi;
@@ -61,8 +76,8 @@ export function calculateRosterStrength(clashIndices: readonly number[]): TeamSt
     topSixCi,
     nextSixCi,
     depthCi,
-    neutralStrength,
-    homeStrength: neutralStrength + TEAM_HOME_CI_BONUS,
+    activeRosterStrength,
+    homeAdjustedActiveRosterStrength: activeRosterStrength + TEAM_HOME_CI_BONUS,
   };
 }
 
