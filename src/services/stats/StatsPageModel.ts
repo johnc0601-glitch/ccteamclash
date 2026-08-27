@@ -6,6 +6,7 @@ import {
   type HistoricalCiLedgerSummary,
 } from '@/services/statistics/HistoricalCiLedgerSummary';
 import type {StatsPlayerView} from '@/services/stats/StatsQueryService';
+import {createSlug} from '@/shared/utils';
 
 export type StatsRow = {
   playerId: string;
@@ -94,9 +95,7 @@ export function buildHistoricalStatsGroups(
       name: matchup.season_name,
       players: new Map<string, PlayerAccumulator>(),
     };
-    if (season.name !== matchup.season_name) {
-      throw new Error(`Historical Stats season ${matchup.season_id} has conflicting names: ${season.name} / ${matchup.season_name}`);
-    }
+    if (matchup.season_name.length > season.name.length) season.name = matchup.season_name;
 
     const player = season.players.get(matchup.player_id) ?? {
       playerId: matchup.player_id,
@@ -114,7 +113,14 @@ export function buildHistoricalStatsGroups(
       doublesTies: 0,
     };
     if (player.playerName !== matchup.player_name) {
-      throw new Error(`Historical Stats player ${matchup.player_id} has conflicting names: ${player.playerName} / ${matchup.player_name}`);
+      const currentMatchesCanonicalId = createSlug(player.playerName) === matchup.player_id;
+      const incomingMatchesCanonicalId = createSlug(matchup.player_name) === matchup.player_id;
+      if (!currentMatchesCanonicalId && incomingMatchesCanonicalId) {
+        player.playerName = matchup.player_name;
+      } else if (currentMatchesCanonicalId === incomingMatchesCanonicalId
+        && matchup.player_name.localeCompare(player.playerName, undefined, {sensitivity: 'base'}) < 0) {
+        player.playerName = matchup.player_name;
+      }
     }
 
     if (matchup.player_team_name) player.teams.add(matchup.player_team_name);
