@@ -10,13 +10,16 @@ import {
   calculateRosterBasedMatchPrediction,
   type PredictionReadiness,
 } from './MatchPrediction';
-import type {MatchVenueClassification} from './PredictionLifecycle';
+import {
+  venueForScheduledSide,
+  type MatchVenueClassification,
+} from './PredictionLifecycle';
 import {calculateMatchStageStrengthPair} from './PredictionStageStrength';
 import {
   TEAM_STRENGTH_STAGE_LABELS,
   type TeamStrengthSource,
 } from './RosterStrength';
-import type {TeamStrengthConfidence, TeamVenue} from './TeamStrength';
+import type {TeamStrengthConfidence} from './TeamStrength';
 
 export type PublicMatchPrediction =
   | {
@@ -120,12 +123,12 @@ export function buildPublicMatchPrediction(
   const homePrediction = calculateRosterBasedMatchPrediction({
     team: strengths.home,
     opponent: strengths.away,
-    venue: venueForSide(input.matchVenue, 'Home'),
+    venue: venueForScheduledSide(input.matchVenue, 'Home'),
   });
   const awayPrediction = calculateRosterBasedMatchPrediction({
     team: strengths.away,
     opponent: strengths.home,
-    venue: venueForSide(input.matchVenue, 'Away'),
+    venue: venueForScheduledSide(input.matchVenue, 'Away'),
   });
   if (!homePrediction || !awayPrediction) return undefined;
 
@@ -140,19 +143,15 @@ export function buildPublicMatchPrediction(
     homeStrength: strengths.home.baseStrength,
     awayChanceOfVictory: awayPrediction.displayChanceOfVictory,
     homeChanceOfVictory: homePrediction.displayChanceOfVictory,
-    venueNote: input.matchVenue === 'Home'
-      ? 'Home advantage included (+8 CI)'
-      : 'Neutral venue — no home adjustment',
+    venueNote: venueNote(input.matchVenue),
     updateNote: updateNote(source),
   };
 }
 
-function venueForSide(
-  matchVenue: MatchVenueClassification,
-  side: 'Home' | 'Away',
-): TeamVenue {
-  if (matchVenue === 'Neutral') return 'Neutral';
-  return side === 'Home' ? 'Home' : 'Away';
+function venueNote(matchVenue: MatchVenueClassification): string {
+  if (matchVenue === 'HomeTeam') return 'Course advantage included for the home team (+8 CI)';
+  if (matchVenue === 'AwayTeam') return 'Course advantage included for the away team (+8 CI)';
+  return 'Neutral venue — no home adjustment';
 }
 
 function waitingDetail(source: TeamStrengthSource): string {
