@@ -1,0 +1,126 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import type {LaunchPlayer} from '@/domain/launch/LaunchData';
+
+import {calculateRosterBasedMatchPrediction} from './MatchPrediction';
+import {
+  buildTeamStrengthPredictionSnapshot,
+  TEAM_STRENGTH_CAPTURE_REASONS,
+} from './PredictionSnapshot';
+import {calculateRosterStageStrength, type TeamStrengthSource} from './RosterStrength';
+
+test('derives fixed capture reasons from the strength source', () => {
+  assert.equal(TEAM_STRENGTH_CAPTURE_REASONS.activeRoster, 'PreMatch');
+  assert.equal(TEAM_STRENGTH_CAPTURE_REASONS.confirmedAvailableRoster, 'AttendanceFinal');
+  assert.equal(TEAM_STRENGTH_CAPTURE_REASONS.matchLineup, 'RosterLock');
+});
+
+test('freezes the exact player pool, calibration and data-quality counts', () => {
+  const team = strength('activeRoster', [
+    player('b', 910, false),
+    player('a', 900, true),
+  ]);
+  const opponent = strength('activeRoster', [
+    player('d', 900, false),
+    player('c', 890, false),
+  ]);
+  assert.ok(team && opponent);
+
+  const prediction = calculateRosterBasedMatchPrediction({
+    team,
+    opponent,
+    venue: 'Home',
+  });
+  assert.ok(prediction);
+
+  const snapshot = buildTeamStrengthPredictionSnapshot({
+    matchId: 'match-1',
+    teamId: 'home-team',
+    opponentTeamId: 'away-team',
+    side: 'Home',
+    prediction,
+    teamStrength: team,
+    opponentStrength: opponent,
+    capturedAt: '2026-10-01T12:00:00.000Z',
+  });
+
+  assert.ok(snapshot);
+  assert.equal(snapshot.captureReason, 'PreMatch');
+  assert.equal(snapshot.source, 'activeRoster');
+  assert.equal(snapshot.strengthLabel, 'Active Roster Strength');
+  assert.deepEqual(snapshot.teamPlayerIds, ['a', 'b']);
+  assert.deepEqual(snapshot.opponentPlayerIds, ['c', 'd']);
+  assert.equal(snapshot.teamProvisionalPlayerCount, 1);
+  assert.equal(snapshot.opponentProvisionalPlayerCount, 0);
+  assert.equal(snapshot.capturedAt, '2026-10-01T12:00:00.000Z');
+});
+
+test('rejects a snapshot when prediction and roster sources differ', () => {
+  const activeTeam = strength('activeRoster', [player('a', 900, false)]);
+  const activeOpponent = strength('activeRoster', [player('b', 900, false)]);
+  const lineupTeam = strength('matchLineup', [player('a', 900, false)]);
+  assert.ok(activeTeam && activeOpponent && lineupTeam);
+
+  const prediction = calculateRosterBasedMatchPrediction({
+    team: activeTeam,
+    opponent: activeOpponent,
+  });
+  assert.ok(prediction);
+
+  assert.equal(
+    buildTeamStrengthPredictionSnapshot({
+      matchId: 'match-1',
+      teamId: 'team',
+      opponentTeamId: 'opponent',
+      side: 'Home',
+      prediction,
+      teamStrength: lineupTeam,
+      opponentStrength: activeOpponent,
+    }),
+    undefined,
+  );
+});
+
+test('rejects invalid capture timestamps', () => {
+  const team = strength('matchLineup', [player('a', 900, false)]);
+  const opponent = strength('matchLineup', [player('b', 900, false)]);
+  assert.ok(team && opponent);
+  const prediction = calculateRosterBasedMatchPrediction({team, opponent});
+  assert.ok(prediction);
+
+  assert.equal(
+    buildTeamStrengthPredictionSnapshot({
+      matchId: 'match',
+      teamId: 'team',
+      opponentTeamId: 'opponent',
+      side: 'Home',
+      prediction,
+      teamStrength: team,
+      opponentStrength: opponent,
+      capturedAt: 'not-a-date',
+    }),
+    undefined,
+  );
+});
+
+function strength(source: TeamStrengthSource, players: LaunchPlayer[]) {
+  return calculateRosterStageStrength(source, players, players.map((candidate) => candidate.id));
+}
+
+function player(id: string, clashIndex: number, provisional: boolean): LaunchPlayer {
+  return {
+    id,
+    name: id,
+    gender: 'Male',
+    pdgaNumber: '',
+    pdgaRating: null,
+    clashIndex,
+    clashIndexProvisional: provisional,
+    currentTeamId: 'team',
+    homeArea: '',
+    active: true,
+    createdAt: '2026-08-27T00:00:00Z',
+    updatedAt: '2026-08-27T00:00:00Z',
+  };
+}
