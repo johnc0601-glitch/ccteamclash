@@ -5,11 +5,11 @@ import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 
 import {
   calculateRosterBasedMatchPrediction,
-  rosterStageChanceOfVictoryFromExpectedMargin,
+  rosterStageChanceOfVictoryFromStrengthDifference,
 } from './MatchPrediction';
 import {calculateRosterStageStrength} from './RosterStrength';
 
-test('equal neutral roster strengths start at 50 percent', () => {
+test('equal neutral roster strengths start at 50 percent without inventing a match size', () => {
   const team = strength('activeRoster', 900);
   const opponent = strength('activeRoster', 900);
   assert.ok(team && opponent);
@@ -17,15 +17,12 @@ test('equal neutral roster strengths start at 50 percent', () => {
   const prediction = calculateRosterBasedMatchPrediction({
     team,
     opponent,
-    maximumPoints: 36,
     venue: 'Neutral',
   });
 
   assert.ok(prediction);
+  assert.equal(prediction.matchupStrengthDifference, 0);
   assert.equal(prediction.expectedPointShare, 0.5);
-  assert.equal(prediction.teamExpectedPoints, 18);
-  assert.equal(prediction.opponentExpectedPoints, 18);
-  assert.equal(prediction.expectedPointMargin, 0);
   assert.equal(prediction.regularSeasonChanceOfVictory, 0.5);
 });
 
@@ -34,13 +31,14 @@ test('home advantage is applied in the matchup layer, not the strength result', 
   const opponent = strength('activeRoster', 900);
   assert.ok(team && opponent);
 
-  const neutral = calculateRosterBasedMatchPrediction({team, opponent, maximumPoints: 36});
-  const home = calculateRosterBasedMatchPrediction({team, opponent, maximumPoints: 36, venue: 'Home'});
+  const neutral = calculateRosterBasedMatchPrediction({team, opponent});
+  const home = calculateRosterBasedMatchPrediction({team, opponent, venue: 'Home'});
 
   assert.ok(neutral && home);
   assert.equal(team.activeRosterStrength, 900);
   assert.equal(opponent.activeRosterStrength, 900);
-  assert.ok(home.teamExpectedPoints > neutral.teamExpectedPoints);
+  assert.equal(home.matchupStrengthDifference, 8);
+  assert.ok(home.expectedPointShare > neutral.expectedPointShare);
   assert.ok(home.regularSeasonChanceOfVictory > neutral.regularSeasonChanceOfVictory);
 });
 
@@ -53,7 +51,6 @@ test('refuses to compare different roster-information stages', () => {
     calculateRosterBasedMatchPrediction({
       team: active,
       opponent: confirmed,
-      maximumPoints: 36,
     }),
     undefined,
   );
@@ -65,17 +62,21 @@ test('locked lineup strength must use the contest-level model', () => {
   assert.ok(team && opponent);
 
   assert.equal(
-    calculateRosterBasedMatchPrediction({team, opponent, maximumPoints: 36}),
+    calculateRosterBasedMatchPrediction({team, opponent}),
     undefined,
   );
 });
 
-test('roster-stage win curve is symmetric and deliberately conservative', () => {
-  const plusOne = rosterStageChanceOfVictoryFromExpectedMargin(1);
-  const minusOne = rosterStageChanceOfVictoryFromExpectedMargin(-1);
+test('roster-stage win curve is symmetric and capped', () => {
+  const plusEight = rosterStageChanceOfVictoryFromStrengthDifference(8);
+  const minusEight = rosterStageChanceOfVictoryFromStrengthDifference(-8);
 
-  assert.ok(plusOne > 0.58 && plusOne < 0.59);
-  assert.ok(Math.abs(plusOne + minusOne - 1) < 1e-12);
+  assert.ok(plusEight > 0.71 && plusEight < 0.72);
+  assert.ok(Math.abs(plusEight + minusEight - 1) < 1e-12);
+  assert.equal(rosterStageChanceOfVictoryFromStrengthDifference(1000), 0.95);
+  assert.ok(
+    Math.abs(rosterStageChanceOfVictoryFromStrengthDifference(-1000) - 0.05) < 1e-12,
+  );
 });
 
 test('prediction confidence is limited by the weaker side', () => {
@@ -98,7 +99,6 @@ test('prediction confidence is limited by the weaker side', () => {
   const prediction = calculateRosterBasedMatchPrediction({
     team: full,
     opponent: partial,
-    maximumPoints: 36,
   });
 
   assert.ok(prediction);

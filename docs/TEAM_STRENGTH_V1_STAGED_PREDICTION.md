@@ -1,20 +1,20 @@
 # Team Strength V1 — staged prediction
 
-## Why the probability curve changes with information
+## Why the probability model changes with information
 
-A percentage should reflect how much the model actually knows. Active Roster Strength is useful early, but it does not know attendance, singles matchups, or doubles teams. Once matchup information arrives, the expected-point margin becomes more informative.
+A percentage should reflect how much the model actually knows. Active Roster Strength is useful early, but it does not know attendance, singles matchups, doubles teams, or even the final number of scoring slots. Once matchup information arrives, Expected Point Margin becomes the better input.
 
-For that reason V1 does **not** use one Chance of Victory calibration blindly at every stage.
+For that reason V1 does **not** use one Chance of Victory calculation blindly at every stage.
 
 ## Historical regular-season calibration
 
 The current archive has 35 home-venue regular-season matches, 34 of them decided.
 
-| Information stage | Historical winner calls | Accuracy | Log-loss fitted margin slope |
-| --- | ---: | ---: | ---: |
-| Roster-strength proxy (35/35/30 +8 matchup home effect) | 30 / 34 | 88.2% | 0.33 |
-| Actual singles matchups + pooled unknown doubles | 32 / 34 | 94.1% | 0.43 |
-| Actual singles + actual doubles pairings | 31 / 34 | 91.2% | 0.48 |
+| Information stage | Historical winner calls | Accuracy | Probability calibration |
+| --- | ---: | ---: | --- |
+| Roster-strength proxy (35/35/30 +8 matchup home effect) | 30 / 34 | 88.2% | Strength-difference logistic slope 0.117 |
+| Actual singles matchups + pooled unknown doubles | 32 / 34 | 94.1% | Expected-margin logistic slope 0.43 |
+| Actual singles + actual doubles pairings | 31 / 34 | 91.2% | Exact pairings improve score calibration; V1 retains the 0.43 regular-season curve |
 
 The locked-pairing row should not be read as evidence that knowing pairings is harmful. Exact doubles pairings improved projected-score calibration in the broader backtest. With only 34 decided regular-season matches, one result can change winner accuracy materially.
 
@@ -22,27 +22,39 @@ The locked-pairing row should not be read as evidence that knowing pairings is h
 
 ### Active Roster Strength
 
-Use the **0.33** expected-margin slope. This is the earliest and least certain stage.
+Use venue-adjusted **roster strength difference directly**:
+
+`team neutral strength - opponent neutral strength + venue adjustment`
+
+with the regular-season +8 CI home effect applied once in that matchup difference.
+
+Chance of Victory uses:
+
+`1 / (1 + exp(-0.117 * matchup strength difference))`
+
+and remains capped at 95% / 5%.
+
+This is preferable to first converting roster strength into Expected Point Margin because, early in the week, the eventual number of scoring slots is not yet known. A direct strength-difference fit had essentially the same historical predictive quality without inventing a match size.
 
 ### Confirmed Available Roster Strength
 
-Use the same **0.33** curve for now. The historical archive does not contain point-in-time attendance snapshots, so fitting a separate availability curve would manufacture precision. Refit this stage after the new season creates enough attendance history.
+Use the same **0.117 strength-difference curve** for now. The historical archive does not contain point-in-time attendance snapshots, so fitting a separate availability curve would manufacture precision. Refit this stage after the new season creates enough attendance history.
 
 Only players explicitly marked **Playing** belong in Confirmed Available Roster Strength. `Unconfirmed` and `NotPlaying` do not.
 
 ### Known singles / doubles still unknown
 
-Use the **0.43** curve already implemented by the expected-points service. Doubles are estimated deterministically across plausible 80/20 pairs; no Monte Carlo is required.
+Once actual scoring structure is known, switch to Expected Points and Expected Point Margin. Use the **0.43** expected-margin curve already implemented by the expected-points service. Doubles are estimated deterministically across plausible 80/20 pairs; no Monte Carlo is required.
 
 ### Locked lineup
 
-Do not collapse a locked lineup back into one roster-strength number for prediction. Use the contest-level expected-points model. V1 keeps the conservative 0.43 regular-season probability curve rather than introducing a separate 0.48 locked-lineup curve from a tiny sample.
+Do not collapse a locked lineup back into one roster-strength number for prediction. Use the contest-level expected-points model. V1 keeps the conservative 0.43 regular-season probability curve rather than introducing another locked-lineup probability parameter from a tiny sample.
 
 ## Calibration stability warning
 
-The pooled 0.43 known-matchup slope is materially more stable than pretending either individual season is enough to calibrate probability. Fitting the two regular seasons separately produced very different log-loss slopes (about 2.09 for 2024-25 and 0.30 for 2025-26). That is a sample-size warning, not a reason to chase either season-specific value.
+The data strongly warns against chasing season-specific probability parameters. For the early roster-strength model, fitting the two regular seasons separately produced strength-difference slopes of roughly 0.30 for 2024-25 and 0.080 for 2025-26. For the later known-matchup model, the separate expected-margin fits were also far apart (about 2.09 and 0.30).
 
-The regular-season display remains capped at 95% / 5%.
+That instability is why V1 uses pooled, simple calibrations and the 95% / 5% ceiling.
 
 ## Data-quality rules
 

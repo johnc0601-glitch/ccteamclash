@@ -1,6 +1,7 @@
 import {
   expectedTeamPointShare,
   REGULAR_SEASON_WIN_PROBABILITY_CAP,
+  TEAM_HOME_CI_BONUS,
   TEAM_STRENGTH_VERSION,
   type TeamStrengthConfidence,
   type TeamVenue,
@@ -11,7 +12,11 @@ import type {RosterStrengthResult, TeamStrengthSource} from './RosterStrength';
 // available archive has no point-in-time attendance snapshots, so Confirmed
 // Available Roster Strength intentionally uses the same conservative curve
 // until enough future attendance history exists to fit it independently.
-export const ROSTER_STAGE_WIN_MARGIN_SLOPE = 0.33;
+//
+// This is fit directly to neutral roster-strength difference + the +8 matchup
+// home effect. That avoids inventing a match point total before attendance and
+// lineup size are actually known.
+export const ROSTER_STAGE_WIN_STRENGTH_SLOPE = 0.117;
 
 export type RosterPredictionSource = Extract<
   TeamStrengthSource,
@@ -26,11 +31,8 @@ export type RosterBasedMatchPrediction = {
   confidence: TeamStrengthConfidence;
   teamBaseStrength: number;
   opponentBaseStrength: number;
-  maximumPoints: number;
+  matchupStrengthDifference: number;
   expectedPointShare: number;
-  teamExpectedPoints: number;
-  opponentExpectedPoints: number;
-  expectedPointMargin: number;
   regularSeasonChanceOfVictory: number;
 };
 
@@ -40,12 +42,11 @@ export type RosterBasedMatchPrediction = {
  * Both sides must come from the same information stage. Match Lineup Strength
  * is deliberately rejected here because a locked lineup should use the
  * contest-level expected-points model rather than collapsing back to one roster
- * number. Venue is applied exactly once by expectedTeamPointShare().
+ * number. Venue is applied exactly once in this prediction layer.
  */
 export function calculateRosterBasedMatchPrediction(input: {
   team: RosterStrengthResult;
   opponent: RosterStrengthResult;
-  maximumPoints: number;
   venue?: TeamVenue;
 }): RosterBasedMatchPrediction | undefined {
   const {team, opponent} = input;
@@ -53,19 +54,18 @@ export function calculateRosterBasedMatchPrediction(input: {
 
   if (team.source !== opponent.source) return undefined;
   if (team.source === 'matchLineup') return undefined;
-  if (!Number.isFinite(input.maximumPoints) || input.maximumPoints <= 0) return undefined;
 
-  const maximumPoints = input.maximumPoints;
+  const matchupStrengthDifference =
+    team.activeRosterStrength -
+    opponent.activeRosterStrength +
+    venueCiAdjustment(venue);
   const expectedPointShare = expectedTeamPointShare(
     team.activeRosterStrength,
     opponent.activeRosterStrength,
     venue,
   );
-  const teamExpectedPoints = expectedPointShare * maximumPoints;
-  const opponentExpectedPoints = maximumPoints - teamExpectedPoints;
-  const expectedPointMargin = teamExpectedPoints - opponentExpectedPoints;
-  const regularSeasonChanceOfVictory = rosterStageChanceOfVictoryFromExpectedMargin(
-    expectedPointMargin,
+  const regularSeasonChanceOfVictory = rosterStageChanceOfVictoryFromStrengthDifference(
+    matchupStrengthDifference,
   );
 
   return {
@@ -76,26 +76,23 @@ export function calculateRosterBasedMatchPrediction(input: {
     confidence: lowerConfidence(team.confidence, opponent.confidence),
     teamBaseStrength: team.activeRosterStrength,
     opponentBaseStrength: opponent.activeRosterStrength,
-    maximumPoints,
+    matchupStrengthDifference,
     expectedPointShare,
-    teamExpectedPoints,
-    opponentExpectedPoints,
-    expectedPointMargin,
     regularSeasonChanceOfVictory,
   };
 }
 
 /**
- * Roster-stage Chance of Victory is intentionally flatter than the later
- * known-matchup curve because the roster stage contains more lineup uncertainty.
+ * Roster-stage Chance of Victory uses CI-strength difference directly because
+ * early in the week the number of eventual scoring slots is not yet known.
  */
-export function rosterStageChanceOfVictoryFromExpectedMargin(
-  expectedPointMargin: number,
+export function rosterStageChanceOfVictoryFromStrengthDifference(
+  matchupStrengthDifference: number,
 ): number {
-  if (!Number.isFinite(expectedPointMargin)) return 0.5;
+  if (!Number.isFinite(matchupStrengthDifference)) return 0.5;
 
   const rawProbability = 1 / (
-    1 + Math.exp(-ROSTER_STAGE_WIN_MARGIN_SLOPE * expectedPointMargin)
+    1 + Math.exp(-ROSTER_STAGE_WIN_STRENGTH_SLOPE * matchupStrengthDifference)
   );
   const floor = 1 - REGULAR_SEASON_WIN_PROBABILITY_CAP;
 
@@ -103,6 +100,12 @@ export function rosterStageChanceOfVictoryFromExpectedMargin(
     REGULAR_SEASON_WIN_PROBABILITY_CAP,
     Math.max(floor, rawProbability),
   );
+}
+
+function venueCiAdjustment(venue: TeamVenue): number {
+  if (venue === 'Home') return TEAM_HOME_CI_BONUS;
+  if (venue === 'Away') return -TEAM_HOME_CI_BONUS;
+  return 0;
 }
 
 function lowerConfidence(
