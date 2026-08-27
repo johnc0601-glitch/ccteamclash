@@ -35,6 +35,15 @@ export type TeamStrengthPredictionSnapshot = {
   opponentPlayerIds: string[];
   teamPlayerCount: number;
   opponentPlayerCount: number;
+  teamFemalePlayerCount: number;
+  opponentFemalePlayerCount: number;
+  teamMalePlayerCount: number;
+  opponentMalePlayerCount: number;
+  teamUnknownGenderPlayerCount: number;
+  opponentUnknownGenderPlayerCount: number;
+  /** Diagnostic only; it is not itself an automatic-points calculation. */
+  teamStandardPlayerShortfall: number;
+  opponentStandardPlayerShortfall: number;
   teamProvisionalPlayerCount: number;
   opponentProvisionalPlayerCount: number;
   teamFallbackPlayerCount: number;
@@ -45,8 +54,10 @@ export type TeamStrengthPredictionSnapshot = {
 
 /**
  * Creates the immutable payload needed to calibrate the roster stages after
- * future seasons. The archive currently lacks these point-in-time inputs, so
- * the source/capture reason is derived rather than caller-authored.
+ * future seasons. In addition to CI quality, snapshots preserve gender
+ * composition and the raw 18-player shortfall so future structural-scoring
+ * studies can use what was actually known at each lifecycle checkpoint rather
+ * than reconstructing it later.
  */
 export function buildTeamStrengthPredictionSnapshot(input: {
   matchId: string;
@@ -100,6 +111,14 @@ export function buildTeamStrengthPredictionSnapshot(input: {
     opponentPlayerIds: sortedUnique(opponentStrength.playerIds),
     teamPlayerCount: teamStrength.rosterPlayerCount,
     opponentPlayerCount: opponentStrength.rosterPlayerCount,
+    teamFemalePlayerCount: teamStrength.femalePlayerCount,
+    opponentFemalePlayerCount: opponentStrength.femalePlayerCount,
+    teamMalePlayerCount: teamStrength.malePlayerCount,
+    opponentMalePlayerCount: opponentStrength.malePlayerCount,
+    teamUnknownGenderPlayerCount: teamStrength.unknownGenderPlayerCount,
+    opponentUnknownGenderPlayerCount: opponentStrength.unknownGenderPlayerCount,
+    teamStandardPlayerShortfall: teamStrength.standardPlayerShortfall,
+    opponentStandardPlayerShortfall: opponentStrength.standardPlayerShortfall,
     teamProvisionalPlayerCount: teamStrength.provisionalPlayerCount,
     opponentProvisionalPlayerCount: opponentStrength.provisionalPlayerCount,
     teamFallbackPlayerCount: teamStrength.fallbackPlayerCount,
