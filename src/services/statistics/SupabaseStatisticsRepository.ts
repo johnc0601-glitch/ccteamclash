@@ -58,11 +58,24 @@ export class SupabaseStatisticsRepository implements StatisticsRepository {
     if (playerError) throw playerError;
 
     const matchesById = new Map(matches.map((match) => [match.id, match]));
+    const contestsByMatchId = new Map<string, typeof contests>();
+    for (const contest of contests) {
+      const matchContests = contestsByMatchId.get(contest.match_id) ?? [];
+      matchContests.push(contest);
+      contestsByMatchId.set(contest.match_id, matchContests);
+    }
+    const playersByContestId = new Map<string, typeof players>();
+    for (const player of players) {
+      const contestPlayers = playersByContestId.get(player.contest_id) ?? [];
+      contestPlayers.push(player);
+      playersByContestId.set(player.contest_id, contestPlayers);
+    }
+
     return results.flatMap((result): ChallengeResult[] => {
       const match = matchesById.get(result.match_id);
       if (!match?.home_team_id || !match.away_team_id
         || result.home_score === null || result.away_score === null || !result.published_at) return [];
-      const matchContests = contests.filter((contest) => contest.match_id === result.match_id);
+      const matchContests = contestsByMatchId.get(result.match_id) ?? [];
       return [{
         id: `${result.match_id}-result`,
         seasonId: match.season_id,
@@ -74,8 +87,7 @@ export class SupabaseStatisticsRepository implements StatisticsRepository {
         awayScore: result.away_score,
         status: 'Published',
         publishedAt: result.published_at,
-        playerResults: matchContests.flatMap((contest) => players
-          .filter((player) => player.contest_id === contest.id)
+        playerResults: matchContests.flatMap((contest) => (playersByContestId.get(contest.id) ?? [])
           .map((player): PlayerResult => {
             const home = player.side === 'Home';
             const outcome = toOutcome(home ? contest.home_outcome : contest.away_outcome);
