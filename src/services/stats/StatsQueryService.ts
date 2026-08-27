@@ -41,21 +41,35 @@ export class StatsQueryService {
       this.seasons.getActive(),
     ]);
     const genderByPlayerId = new Map(allPlayers.map((player) => [player.id, player.gender]));
-    const players = allPlayers.filter((player) =>
-      player.active && (teamId === 'all' || player.teamId === teamId));
     const teamNames = new Map(teams.map((team) => [team.id, team.name]));
-    const playerIds = players.map((player) => player.id);
+    const allPlayerIds = allPlayers.map((player) => player.id);
     const snapshot = activeSeason
-      ? await this.statistics.getPlayerSeasonStatisticsSnapshot(playerIds, activeSeason.id)
+      ? await this.statistics.getPlayerSeasonStatisticsSnapshot(allPlayerIds, activeSeason.id)
       : {statistics: [], ciMovements: new Map()};
     const statisticsByPlayer = new Map(snapshot.statistics.map((entry) => [entry.playerId, entry]));
+
+    const players = allPlayers.filter((player) => {
+      const currentStatistics = statisticsByPlayer.get(player.id);
+      const hasCurrentResults = Boolean(currentStatistics?.matchesPlayed);
+      if (!player.active && !hasCurrentResults) return false;
+      if (teamId === 'all') return true;
+
+      const attributedTeamIds = new Set(currentStatistics?.teamIds ?? []);
+      if (player.active && player.teamId) attributedTeamIds.add(player.teamId);
+      return attributedTeamIds.has(teamId);
+    });
 
     const playerViews = players.map((player): StatsPlayerView => {
       const currentStatistics = statisticsByPlayer.get(player.id);
       const currentCiMovement = snapshot.ciMovements.get(player.id);
+      const attributedTeamIds = new Set(currentStatistics?.teamIds ?? []);
+      if (player.active && player.teamId) attributedTeamIds.add(player.teamId);
+      const attributedTeamNames = [...attributedTeamIds]
+        .map((attributedTeamId) => teamNames.get(attributedTeamId) ?? attributedTeamId);
+
       return {
         player,
-        teamName: player.teamId ? teamNames.get(player.teamId) ?? player.teamId : 'Unassigned',
+        teamName: attributedTeamNames.length ? attributedTeamNames.join(' / ') : 'Unassigned',
         currentSeasonId: activeSeason?.id,
         currentSeasonName: activeSeason?.name ?? 'Current season',
         currentStatistics: currentStatistics?.matchesPlayed ? currentStatistics : undefined,
