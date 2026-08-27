@@ -128,7 +128,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
         </div>
       </div>
 
-      <div className={styles.tableWrap}>
+      <div className={`${styles.tableWrap} ${styles.desktopTableWrap}`}>
         <table className={styles.statsTable}>
           <thead>
             <tr>
@@ -166,6 +166,30 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
         </table>
         {!rows.length ? <p className={styles.emptyState}>No players match these filters.</p> : null}
       </div>
+
+      <div className={`${styles.tableWrap} ${styles.mobileTableWrap}`}>
+        <table className={styles.mobileStatsTable}>
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>{mobileSortLabel(sortKey)} {direction === 'desc' ? '↓' : '↑'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const rank = sortedRows.findIndex((entry) => entry.playerId === row.playerId) + 1;
+              return (
+                <tr key={`mobile-${group.id}-${row.playerId}`}>
+                  <td><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players?search=${encodeURIComponent(row.playerName)}`}>{row.playerName}</Link></td>
+                  <td><strong>{formatMobileValue(row, sortKey)}</strong></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {!rows.length ? <p className={styles.emptyState}>No players match these filters.</p> : null}
+      </div>
+
       <p className={styles.qualifierNote}>* Fewer than 5 recorded results. CI +/-, S +/- and D +/- count earned match movement only; season reseeds are excluded.</p>
     </section>
   );
@@ -200,6 +224,26 @@ function sortLabel(key: SortKey): string {
     singles: 'singles', doubles: 'doubles', ciGain: 'CI +/-',
     singlesCiGain: 'Singles CI +/-', doublesCiGain: 'Doubles CI +/-',
   } as const)[key];
+}
+
+function mobileSortLabel(key: SortKey): string {
+  return ({
+    matchesPlayed: 'M', wins: 'W', winPercentage: 'Win %', points: 'Pts',
+    singles: 'Singles', doubles: 'Doubles', ciGain: 'CI +/-',
+    singlesCiGain: 'S +/-', doublesCiGain: 'D +/-',
+  } as const)[key];
+}
+
+function formatMobileValue(row: StatsRow, key: SortKey): string {
+  if (key === 'matchesPlayed') return String(row.matchesPlayed);
+  if (key === 'wins') return String(row.wins);
+  if (key === 'winPercentage') return `${row.winPercentage.toFixed(1)}%${row.matchesPlayed < 5 ? '*' : ''}`;
+  if (key === 'points') return formatPoints(row.points);
+  if (key === 'singles') return formatRecord(row.singlesWins, row.singlesLosses, row.singlesTies);
+  if (key === 'doubles') return formatRecord(row.doublesWins, row.doublesLosses, row.doublesTies);
+  if (key === 'ciGain') return formatCiGain(row.ciGain);
+  if (key === 'singlesCiGain') return formatCiGain(row.singlesCiGain);
+  return formatCiGain(row.doublesCiGain);
 }
 
 function recordPoints(wins: number, ties: number): number {
