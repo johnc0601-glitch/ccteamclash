@@ -21,7 +21,7 @@ export class SupabaseStatisticsRepository implements StatisticsRepository {
   async getPublishedChallengeResults(): Promise<ChallengeResult[]> {
     const {data: results, error: resultError} = await this.supabase
       .from('launch_match_results')
-      .select('*')
+      .select('match_id,home_score,away_score,published_at')
       .eq('status', 'Published');
     if (resultError) throw resultError;
     if (!results.length) return [];
@@ -33,8 +33,14 @@ export class SupabaseStatisticsRepository implements StatisticsRepository {
       {data: contests, error: contestError},
       {data: ratingFactsData, error: ratingFactsError},
     ] = await Promise.all([
-      this.supabase.from('launch_schedule_matches').select('*').in('id', matchIds),
-      this.supabase.from('launch_result_contests').select('*').in('match_id', matchIds),
+      this.supabase
+        .from('launch_schedule_matches')
+        .select('id,season_id,date,home_team_id,away_team_id')
+        .in('id', matchIds),
+      this.supabase
+        .from('launch_result_contests')
+        .select('id,match_id,format,home_outcome,away_outcome,home_score,away_score')
+        .in('match_id', matchIds),
       ratingClient
         .from('clash_contest_rating_facts')
         .select('contest_id,match_id,player_id,ci_delta')
@@ -52,7 +58,7 @@ export class SupabaseStatisticsRepository implements StatisticsRepository {
     const {data: players, error: playerError} = contestIds.length
       ? await this.supabase
         .from('launch_result_contest_players')
-        .select('*')
+        .select('contest_id,side,slot,player_id,player_name,team_id')
         .in('contest_id', contestIds)
       : {data: [], error: null};
     if (playerError) throw playerError;
