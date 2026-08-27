@@ -7,13 +7,13 @@ import {
   playerSeasonCiKey,
   type HistoricalCiGainBreakdown,
 } from '@/core/loadServerHistoricalCiGains';
-import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
+import {createServerStatsQueryService} from '@/core/createServerStatsQueryService';
 import {
   getHistoricalSeasonArchives,
   isHistoricalFemalePlayer,
   type HistoricalPlayerSeasonSummary,
 } from '@/data/historicalSeed';
-import type {PublicPlayerView} from '@/services/public/PublicPlayerService';
+import type {StatsPlayerView} from '@/services/stats/StatsQueryService';
 import styles from './Stats.module.css';
 import './compact.css';
 
@@ -86,7 +86,7 @@ function toRow(summary: HistoricalPlayerSeasonSummary, ci?: HistoricalCiGainBrea
   };
 }
 
-function toLiveRow(view: PublicPlayerView): StatsRow | undefined {
+function toLiveRow(view: StatsPlayerView): StatsRow | undefined {
   const statistics = view.currentStatistics;
   if (!statistics?.matchesPlayed) return undefined;
   return {
@@ -187,7 +187,7 @@ function buildOverallRows(groups: StatsGroup[]): StatsRow[] {
 export default async function StatsPage({searchParams}: StatsPageProps) {
   const archives = getHistoricalSeasonArchives();
   const [playerViews, historicalCiGains] = await Promise.all([
-    (await createServerPublicPlayerService()).getAll(),
+    (await createServerStatsQueryService()).getAll(),
     loadServerHistoricalCiGains(),
   ]);
   const historicalGroups: StatsGroup[] = archives.map((archive) => ({
