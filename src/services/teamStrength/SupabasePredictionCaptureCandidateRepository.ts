@@ -5,6 +5,7 @@ import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import type {TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import {SupabaseMatchRosterRepository} from '@/domain/match-roster/SupabaseMatchRosterRepository';
 import type {MatchStatus} from '@/domain/schedule/Match';
+import {classifyClashVenueFromIds} from '@/domain/story-engine/ClashVenue';
 import type {Database} from '@/lib/supabase/database';
 import {currentPredictionCaptureSource} from './PredictionCaptureSchedule';
 import type {MatchVenueClassification} from './PredictionLifecycle';
@@ -160,7 +161,7 @@ implements PredictionCaptureCandidateRepository {
       .eq('id', courseId)
       .maybeSingle();
     if (error) throw error;
-    return data?.home_team_id === homeTeamId ? 'Home' : 'Neutral';
+    return classifyClashVenueFromIds(homeTeamId, data?.home_team_id);
   }
 
   private async getActiveMemberships(
