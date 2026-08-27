@@ -15,15 +15,15 @@ type MainTab = 'season' | 'clash';
 type Division = 'open' | 'women' | 'junior';
 
 export function RankingsClient({current, clash, teamColors}: RankingsClientProps) {
-  const [tab, setTab] = useState<MainTab>('season');
+  const [tab, setTab] = useState<MainTab>('clash');
   const [selectedEntry, setSelectedEntry] = useState<HistoricalRankingEntry | null>(null);
   return <>
     <nav className={styles.mainTabs} aria-label="Ranking views">
-      <TabButton active={tab === 'season'} onClick={() => setTab('season')}>Season</TabButton>
       <TabButton active={tab === 'clash'} onClick={() => setTab('clash')}>Clash Index</TabButton>
+      <TabButton active={tab === 'season'} onClick={() => setTab('season')}>Season</TabButton>
     </nav>
-    {tab === 'season' ? (current ? <SeasonSection group={current} includeJunior onOpen={setSelectedEntry} teamColors={teamColors} /> : <p className={styles.emptyState}>No current-season rankings are available yet.</p>) : null}
     {tab === 'clash' ? <ClashSection rankings={clash} teamColors={teamColors} /> : null}
+    {tab === 'season' ? (current ? <SeasonSection group={current} includeJunior onOpen={setSelectedEntry} teamColors={teamColors} /> : <p className={styles.emptyState}>No current-season rankings are available yet.</p>) : null}
     {selectedEntry ? <DialogShell title={selectedEntry.summary.playerName} eyebrow={`Rank #${selectedEntry.rank} player card`} size="large" onClose={() => setSelectedEntry(null)}>
       <div className={styles.playerCardDialog}><div className={styles.playerCardLead}><div className={styles.playerCardAvatar} aria-hidden="true">{selectedEntry.summary.playerName.slice(0, 2).toUpperCase()}</div><div><span>{selectedEntry.summary.seasonName}</span><h3>{selectedEntry.summary.teamName}</h3><p>{selectedEntry.summary.matchesPlayed} matches played</p></div></div><PublicPlayerProfileCard profile={createProfileFromHistoricalSummary(selectedEntry.summary)} compact /><div className={styles.dialogActions}><button type="button" onClick={() => setSelectedEntry(null)} data-initial-focus>Close</button></div></div>
     </DialogShell> : null}
@@ -34,13 +34,13 @@ function TabButton({active, onClick, children}: {active: boolean; onClick: () =>
 
 function SeasonSection({group, includeJunior, onOpen, teamColors}: {group: SeasonRankingGroup; includeJunior: boolean; onOpen: (entry: HistoricalRankingEntry) => void; teamColors: Record<string, string>}) {
   const [division, setDivision] = useState<Division>('open'); const [showAll, setShowAll] = useState(false);
-  const entries = division === 'women' ? group.women : division === 'junior' ? group.junior ?? [] : group.open; const visible = showAll ? entries : entries.slice(0, 5);
-  return <section className={styles.tabPanel}><header className={styles.sectionHeading}><div><span className="eyebrow">Current season</span><h2>{group.seasonName}</h2></div></header><DivisionTabs division={division} onChange={(next) => {setDivision(next); setShowAll(false);}} includeJunior={includeJunior} /><SeasonTable entries={visible} onOpen={onOpen} teamColors={teamColors} />{entries.length > 5 ? <button type="button" className={styles.viewAll} onClick={() => setShowAll((value) => !value)}>{showAll ? 'Show Top 5' : `View All ${entries.length}`}</button> : null}</section>;
+  const entries = division === 'women' ? group.women : division === 'junior' ? group.junior ?? [] : group.open; const visible = showAll ? entries : entries.slice(0, 25);
+  return <section className={styles.tabPanel}><header className={styles.sectionHeading}><div><span className="eyebrow">Current season</span><h2>{group.seasonName}</h2></div></header><DivisionTabs division={division} onChange={(next) => {setDivision(next); setShowAll(false);}} includeJunior={includeJunior} /><SeasonTable entries={visible} onOpen={onOpen} teamColors={teamColors} />{entries.length > 25 ? <button type="button" className={styles.viewAll} onClick={() => setShowAll((value) => !value)}>{showAll ? 'Show Top 25' : `View All ${entries.length}`}</button> : null}</section>;
 }
 
 function ClashSection({rankings, teamColors}: {rankings: RankingsClientProps['clash']; teamColors: Record<string, string>}) {
-  const [division, setDivision] = useState<Division>('open'); const [showAll, setShowAll] = useState(false); const entries = rankings[division]; const defaultCount = division === 'open' ? 25 : 5; const visible = showAll ? entries : entries.slice(0, defaultCount);
-  return <section className={styles.tabPanel}><header className={styles.sectionHeading}><div><span className="eyebrow">Current ratings</span><h2>Clash Index</h2></div><p>Clash Index is a match-play rating and is separate from season standings. * = ghost/provisional start.</p></header><DivisionTabs division={division} onChange={(next) => {setDivision(next); setShowAll(false);}} includeJunior /><ClashTable entries={visible} teamColors={teamColors} />{entries.length > defaultCount ? <button type="button" className={styles.viewAll} onClick={() => setShowAll((value) => !value)}>{showAll ? `Show Top ${defaultCount}` : `View All ${entries.length}`}</button> : null}</section>;
+  const [division, setDivision] = useState<Division>('open'); const [showAll, setShowAll] = useState(false); const entries = rankings[division]; const defaultCount = division === 'open' ? 25 : division === 'women' ? 10 : 10; const visible = showAll ? entries : entries.slice(0, defaultCount);
+  return <section className={styles.tabPanel}><header className={styles.sectionHeading}><div><span className="eyebrow">Current ratings</span><h2>Clash Index</h2></div><p>Open shows the Top 25 and Women shows the Top 10. Clash Index is a match-play rating and is separate from season standings. * = ghost/provisional start.</p></header><DivisionTabs division={division} onChange={(next) => {setDivision(next); setShowAll(false);}} includeJunior /><ClashTable entries={visible} teamColors={teamColors} />{entries.length > defaultCount ? <button type="button" className={styles.viewAll} onClick={() => setShowAll((value) => !value)}>{showAll ? `Show Top ${defaultCount}` : `View All ${entries.length}`}</button> : null}</section>;
 }
 
 function DivisionTabs({division, onChange, includeJunior}: {division: Division; onChange: (division: Division) => void; includeJunior: boolean}) {return <div className={styles.divisionTabs} role="tablist" aria-label="Ranking division"><TabButton active={division === 'open'} onClick={() => onChange('open')}>Open</TabButton><TabButton active={division === 'women'} onClick={() => onChange('women')}>Women</TabButton>{includeJunior ? <TabButton active={division === 'junior'} onClick={() => onChange('junior')}>Junior</TabButton> : null}</div>;}
