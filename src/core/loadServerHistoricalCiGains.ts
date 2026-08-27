@@ -96,10 +96,16 @@ async function loadAllHistoricalCiFacts(
   supabase: SupabaseClient,
 ): Promise<HistoricalCiFactLoadResult> {
   const rows: HistoricalCiFactRow[] = [];
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const {data, error} = await supabase
+  let from = 0;
+  let expectedCount: number | null = null;
+
+  while (true) {
+    const {data, error, count} = await supabase
       .from('historical_clash_contest_rating_facts')
-      .select('matchup_deduplication_key,season_id,player_id,historical_team_match_id,format,clash_index_before,ci_delta')
+      .select(
+        'matchup_deduplication_key,season_id,player_id,historical_team_match_id,format,clash_index_before,ci_delta',
+        {count: 'exact'},
+      )
       .order('matchup_deduplication_key', {ascending: true})
       .range(from, from + PAGE_SIZE - 1);
     if (error) {
@@ -110,9 +116,19 @@ async function loadAllHistoricalCiFacts(
       }
       throw error;
     }
+
+    if (expectedCount === null && count !== null) expectedCount = count;
     const page = (data ?? []) as HistoricalCiFactRow[];
     rows.push(...page);
-    if (page.length < PAGE_SIZE) return {rows};
+
+    if (expectedCount !== null && rows.length >= expectedCount) return {rows};
+    if (page.length === 0) {
+      if (expectedCount !== null && rows.length !== expectedCount) {
+        return {fallbackReason: `historical CI ledger pagination ended early: loaded ${rows.length} of ${expectedCount} facts`};
+      }
+      return {rows};
+    }
+    from += page.length;
   }
 }
 
@@ -120,16 +136,29 @@ async function loadAllHistoricalMatchupOrders(
   supabase: SupabaseClient,
 ): Promise<HistoricalMatchupOrderRow[]> {
   const rows: HistoricalMatchupOrderRow[] = [];
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const {data, error} = await supabase
+  let from = 0;
+  let expectedCount: number | null = null;
+
+  while (true) {
+    const {data, error, count} = await supabase
       .from('historical_player_matchups')
-      .select('deduplication_key,historical_team_match_id,event_order')
+      .select('deduplication_key,historical_team_match_id,event_order', {count: 'exact'})
       .order('deduplication_key', {ascending: true})
       .range(from, from + PAGE_SIZE - 1);
     if (error) throw error;
+
+    if (expectedCount === null && count !== null) expectedCount = count;
     const page = (data ?? []) as HistoricalMatchupOrderRow[];
     rows.push(...page);
-    if (page.length < PAGE_SIZE) return rows;
+
+    if (expectedCount !== null && rows.length >= expectedCount) return rows;
+    if (page.length === 0) {
+      if (expectedCount !== null && rows.length !== expectedCount) {
+        throw new Error(`Historical matchup pagination ended early: loaded ${rows.length} of ${expectedCount} rows`);
+      }
+      return rows;
+    }
+    from += page.length;
   }
 }
 
