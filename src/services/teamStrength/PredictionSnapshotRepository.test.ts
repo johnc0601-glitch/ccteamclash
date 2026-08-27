@@ -28,6 +28,14 @@ test('maps the immutable prediction snapshot to the database row without relabel
     opponentPlayerIds: ['c', 'd'],
     teamPlayerCount: 2,
     opponentPlayerCount: 2,
+    teamFemalePlayerCount: 1,
+    opponentFemalePlayerCount: 0,
+    teamMalePlayerCount: 1,
+    opponentMalePlayerCount: 1,
+    teamUnknownGenderPlayerCount: 0,
+    opponentUnknownGenderPlayerCount: 1,
+    teamStandardPlayerShortfall: 16,
+    opponentStandardPlayerShortfall: 16,
     teamProvisionalPlayerCount: 1,
     opponentProvisionalPlayerCount: 0,
     teamFallbackPlayerCount: 1,
@@ -48,4 +56,11 @@ test('maps the immutable prediction snapshot to the database row without relabel
   assert.equal(row.matchup_strength_difference, 18);
   assert.deepEqual(row.team_player_ids, ['a', 'b']);
   assert.deepEqual(row.opponent_player_ids, ['c', 'd']);
+  assert.equal(row.team_female_player_count, 1);
+  assert.equal(row.opponent_female_player_count, 0);
+  assert.equal(row.team_male_player_count, 1);
+  assert.equal(row.opponent_male_player_count, 1);
+  assert.equal(row.opponent_unknown_gender_player_count, 1);
+  assert.equal(row.team_standard_player_shortfall, 16);
+  assert.equal(row.opponent_standard_player_shortfall, 16);
 });
