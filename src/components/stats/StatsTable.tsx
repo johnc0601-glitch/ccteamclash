@@ -51,6 +51,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
   }, [group, division, team, search]);
 
   const sortedRows = useMemo(() => [...filteredRows].sort((a, b) => compareRows(a, b, sortKey, direction)), [filteredRows, sortKey, direction]);
+  const rankByPlayerId = useMemo(() => new Map(sortedRows.map((row, index) => [row.playerId, index + 1])), [sortedRows]);
   const rows = limit === 'all' ? sortedRows : sortedRows.slice(0, limit);
   const hasCustomView = division !== 'Open' || team !== 'all' || search.trim() !== '' || limit !== 25 || sortKey !== 'points' || direction !== 'desc';
 
@@ -158,7 +159,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
           </thead>
           <tbody>
             {rows.map((row) => {
-              const rank = sortedRows.findIndex((entry) => entry.playerId === row.playerId) + 1;
+              const rank = rankByPlayerId.get(row.playerId) ?? 0;
               return (
                 <tr key={`${group.id}-${row.playerId}`}>
                   <td><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players?search=${encodeURIComponent(row.playerName)}`}>{row.playerName}</Link></td>
@@ -189,7 +190,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
           </thead>
           <tbody>
             {rows.map((row) => {
-              const rank = sortedRows.findIndex((entry) => entry.playerId === row.playerId) + 1;
+              const rank = rankByPlayerId.get(row.playerId) ?? 0;
               return (
                 <tr key={`mobile-${group.id}-${row.playerId}`}>
                   <td><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players?search=${encodeURIComponent(row.playerName)}`}>{row.playerName}</Link></td>
