@@ -7,6 +7,7 @@ import {SupabaseMatchRosterRepository} from '@/domain/match-roster/SupabaseMatch
 import type {MatchStatus} from '@/domain/schedule/Match';
 import type {Database} from '@/lib/supabase/database';
 import {currentPredictionCaptureSource} from './PredictionCaptureSchedule';
+import type {MatchVenueClassification} from './PredictionLifecycle';
 import type {
   PredictionCaptureCandidate,
   PredictionCaptureCandidateRepository,
@@ -21,7 +22,6 @@ type MatchRow = {
   date: string | null;
   status: string;
 };
-
 type MembershipRow = {team_id: string; player_id: string};
 type AttendanceRow = {team_id: string; player_id: string; status: string};
 
@@ -86,7 +86,11 @@ implements PredictionCaptureCandidateRepository {
     const source = currentPredictionCaptureSource(match.date, now);
     if (!source) return undefined;
 
-    const matchVenue = await this.getMatchVenue(match.course_id, match.home_team_id);
+    const matchVenue = await this.getMatchVenue(
+      match.course_id,
+      match.home_team_id,
+      match.away_team_id,
+    );
 
     if (source === 'matchLineup') {
       const rosterRepository = new SupabaseMatchRosterRepository(this.supabase);
@@ -153,14 +157,17 @@ implements PredictionCaptureCandidateRepository {
   private async getMatchVenue(
     courseId: string,
     homeTeamId: string,
-  ): Promise<'Home' | 'Neutral'> {
+    awayTeamId: string,
+  ): Promise<MatchVenueClassification> {
     const {data, error} = await this.supabase
       .from('launch_courses')
       .select('home_team_id')
       .eq('id', courseId)
       .maybeSingle();
     if (error) throw error;
-    return data?.home_team_id === homeTeamId ? 'Home' : 'Neutral';
+    if (data?.home_team_id === homeTeamId) return 'HomeTeam';
+    if (data?.home_team_id === awayTeamId) return 'AwayTeam';
+    return 'Neutral';
   }
 
   private async getActiveMemberships(
