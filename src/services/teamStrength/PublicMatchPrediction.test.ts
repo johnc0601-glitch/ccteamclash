@@ -24,9 +24,7 @@ test('public prediction stage advances from active roster to availability to loc
   );
 });
 
-test('active-roster forecast includes the home-course adjustment exactly once', () => {
-  const homePlayers = players('home', 18, 900);
-  const awayPlayers = players('away', 18, 900);
+test('active-roster forecast includes home advantage once but remains an early estimate', () => {
   const prediction = buildPublicMatchPrediction({
     matchDate: '2026-10-03',
     matchStatus: 'Scheduled',
@@ -34,14 +32,15 @@ test('active-roster forecast includes the home-course adjustment exactly once', 
     homeTeamId: 'home',
     awayTeamId: 'away',
     matchVenue: 'Home',
-    homePlayers,
-    awayPlayers,
+    homePlayers: players('home', 18, 900),
+    awayPlayers: players('away', 18, 900),
     now: new Date('2026-10-01T12:00:00Z'),
   });
 
   assert.ok(prediction && prediction.state === 'calculated');
   assert.equal(prediction.stageLabel, 'Active Roster Strength');
-  assert.equal(prediction.displayLabel, 'Chance of Victory');
+  assert.equal(prediction.readiness, 'EarlyEstimate');
+  assert.equal(prediction.displayLabel, 'Early estimate');
   assert.ok((prediction.homeChanceOfVictory ?? 0) > 0.5);
   assert.ok((prediction.awayChanceOfVictory ?? 1) < 0.5);
   assert.equal(prediction.homeStrength, 900);
@@ -49,7 +48,7 @@ test('active-roster forecast includes the home-course adjustment exactly once', 
   assert.match(prediction.venueNote, /Home-course advantage/);
 });
 
-test('neutral equal teams remain a 50-50 forecast', () => {
+test('neutral equal teams remain a 50-50 early estimate', () => {
   const prediction = buildPublicMatchPrediction({
     matchDate: '2026-10-03',
     matchStatus: 'Scheduled',
@@ -63,11 +62,12 @@ test('neutral equal teams remain a 50-50 forecast', () => {
   });
 
   assert.ok(prediction && prediction.state === 'calculated');
+  assert.equal(prediction.displayLabel, 'Early estimate');
   assert.equal(prediction.homeChanceOfVictory, 0.5);
   assert.equal(prediction.awayChanceOfVictory, 0.5);
 });
 
-test('confirmed available stage uses only players marked Playing', () => {
+test('confirmed available stage uses only Playing players and remains early', () => {
   const homePlayers = players('home', 18, 900);
   const awayPlayers = players('away', 18, 900);
   const prediction = buildPublicMatchPrediction({
@@ -87,6 +87,8 @@ test('confirmed available stage uses only players marked Playing', () => {
   assert.ok(prediction && prediction.state === 'calculated');
   assert.equal(prediction.source, 'confirmedAvailableRoster');
   assert.equal(prediction.stageLabel, 'Confirmed Available Roster Strength');
+  assert.equal(prediction.readiness, 'EarlyEstimate');
+  assert.equal(prediction.displayLabel, 'Early estimate');
 });
 
 test('locked lineup stage waits rather than falling back to an earlier player pool', () => {
@@ -107,7 +109,7 @@ test('locked lineup stage waits rather than falling back to an earlier player po
   assert.equal(prediction.stageLabel, 'Match Lineup Strength');
 });
 
-test('locked lineup stage calculates once both official rosters exist', () => {
+test('complete locked lineup becomes Chance of Victory', () => {
   const homePlayers = players('home', 18, 910);
   const awayPlayers = players('away', 18, 900);
   const prediction = buildPublicMatchPrediction({
@@ -129,6 +131,8 @@ test('locked lineup stage calculates once both official rosters exist', () => {
   assert.ok(prediction && prediction.state === 'calculated');
   assert.equal(prediction.source, 'matchLineup');
   assert.equal(prediction.stageLabel, 'Match Lineup Strength');
+  assert.equal(prediction.readiness, 'Ready');
+  assert.equal(prediction.displayLabel, 'Chance of Victory');
   assert.ok((prediction.homeChanceOfVictory ?? 0) > 0.5);
 });
 

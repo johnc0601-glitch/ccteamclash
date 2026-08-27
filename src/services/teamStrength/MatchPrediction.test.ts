@@ -12,7 +12,7 @@ import {
 } from './MatchPrediction';
 import {calculateRosterStageStrength} from './RosterStrength';
 
-test('equal neutral active roster strengths start at 50 percent', () => {
+test('equal neutral active roster strengths start at 50 percent as an early estimate', () => {
   const team = strength('activeRoster', 900);
   const opponent = strength('activeRoster', 900);
   assert.ok(team && opponent);
@@ -24,8 +24,8 @@ test('equal neutral active roster strengths start at 50 percent', () => {
   assert.equal(prediction.expectedPointShare, 0.5);
   assert.equal(prediction.regularSeasonChanceOfVictory, 0.5);
   assert.equal(prediction.calibrationSlope, ACTIVE_ROSTER_WIN_STRENGTH_SLOPE);
-  assert.equal(prediction.readiness, 'Ready');
-  assert.equal(prediction.displayLabel, 'Chance of Victory');
+  assert.equal(prediction.readiness, 'EarlyEstimate');
+  assert.equal(prediction.displayLabel, 'Early estimate');
   assert.equal(prediction.displayChanceOfVictory, 0.5);
 });
 
@@ -54,9 +54,21 @@ test('refuses to compare different roster-information stages', () => {
     calculateRosterBasedMatchPrediction({team: active, opponent: confirmed}),
     undefined,
   );
+  assert.equal(predictionReadinessForStrengths(active, confirmed), 'Unavailable');
 });
 
-test('official match lineup uses the stronger participant-pool calibration', () => {
+test('confirmed available remains an early estimate even with complete measured players', () => {
+  const team = strength('confirmedAvailableRoster', 900);
+  const opponent = strength('confirmedAvailableRoster', 900);
+  assert.ok(team && opponent);
+
+  const prediction = calculateRosterBasedMatchPrediction({team, opponent});
+  assert.ok(prediction);
+  assert.equal(prediction.readiness, 'EarlyEstimate');
+  assert.equal(prediction.displayLabel, 'Early estimate');
+});
+
+test('complete official match lineup is the first roster stage labeled Chance of Victory', () => {
   const activeTeam = strength('activeRoster', 908);
   const activeOpponent = strength('activeRoster', 900);
   const lineupTeam = strength('matchLineup', 908);
@@ -69,6 +81,9 @@ test('official match lineup uses the stronger participant-pool calibration', () 
   assert.ok(active && lineup);
   assert.equal(lineup.calibrationSlope, MATCH_LINEUP_WIN_STRENGTH_SLOPE);
   assert.ok(lineup.regularSeasonChanceOfVictory > active.regularSeasonChanceOfVictory);
+  assert.equal(active.readiness, 'EarlyEstimate');
+  assert.equal(lineup.readiness, 'Ready');
+  assert.equal(lineup.displayLabel, 'Chance of Victory');
 });
 
 test('stage-specific win curves are symmetric and capped', () => {
@@ -89,12 +104,12 @@ test('prediction confidence is limited by the weaker side', () => {
   partialPlayers[17] = player('p-17', 900, true);
 
   const full = calculateRosterStageStrength(
-    'activeRoster',
+    'matchLineup',
     fullPlayers,
     fullPlayers.map((candidate) => candidate.id),
   );
   const partial = calculateRosterStageStrength(
-    'activeRoster',
+    'matchLineup',
     partialPlayers,
     partialPlayers.map((candidate) => candidate.id),
   );
@@ -112,8 +127,8 @@ test('prediction confidence is limited by the weaker side', () => {
 test('thin but complete rosters are early estimates rather than unavailable', () => {
   const teamPlayers = players(11, 900, false);
   const opponentPlayers = players(11, 900, false);
-  const team = calculateRosterStageStrength('activeRoster', teamPlayers, teamPlayers.map((candidate) => candidate.id));
-  const opponent = calculateRosterStageStrength('activeRoster', opponentPlayers, opponentPlayers.map((candidate) => candidate.id));
+  const team = calculateRosterStageStrength('matchLineup', teamPlayers, teamPlayers.map((candidate) => candidate.id));
+  const opponent = calculateRosterStageStrength('matchLineup', opponentPlayers, opponentPlayers.map((candidate) => candidate.id));
   assert.ok(team && opponent);
 
   assert.equal(predictionReadinessForStrengths(team, opponent), 'EarlyEstimate');
@@ -123,16 +138,16 @@ test('thin but complete rosters are early estimates rather than unavailable', ()
   assert.equal(prediction.displayChanceOfVictory, 0.5);
 });
 
-test('omitted players block publication of a precise percentage', () => {
+test('omitted players block publication of a percentage', () => {
   const teamPlayers = players(18, 900, false);
   const opponentPlayers = players(18, 900, false);
   const team = calculateRosterStageStrength(
-    'activeRoster',
+    'matchLineup',
     teamPlayers,
     [...teamPlayers.map((candidate) => candidate.id), 'missing-player'],
   );
   const opponent = calculateRosterStageStrength(
-    'activeRoster',
+    'matchLineup',
     opponentPlayers,
     opponentPlayers.map((candidate) => candidate.id),
   );

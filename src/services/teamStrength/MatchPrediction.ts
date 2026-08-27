@@ -57,9 +57,7 @@ export function calculateRosterBasedMatchPrediction(input: {
   if (team.source !== opponent.source) return undefined;
 
   const matchupStrengthDifference =
-    team.baseStrength -
-    opponent.baseStrength +
-    venueCiAdjustment(venue);
+    team.baseStrength - opponent.baseStrength + venueCiAdjustment(venue);
   const expectedPointShare = expectedTeamPointShare(
     team.baseStrength,
     opponent.baseStrength,
@@ -98,18 +96,22 @@ export function calculateRosterBasedMatchPrediction(input: {
 /**
  * Publication gate for roster-stage predictions.
  *
- * Missing/omitted players make a public percentage unsafe because the strength
- * was calculated from an incomplete player pool. Thin rosters, provisional CI,
- * fallback seeds and Partial confidence are still useful, but should be labeled
- * as an Early estimate instead of a finished Chance of Victory.
+ * Active Roster and Confirmed Available are always early estimates even when
+ * every underlying CI is measured. Those stages still contain lineup
+ * uncertainty, and their current probability curves rely on historical proxies.
+ * A finished "Chance of Victory" label is reserved for a complete, measured
+ * Match Lineup. Missing players block percentage publication entirely.
  */
 export function predictionReadinessForStrengths(
   team: RosterStrengthResult,
   opponent: RosterStrengthResult,
 ): PredictionReadiness {
+  if (team.source !== opponent.source) return 'Unavailable';
   if (team.omittedPlayerCount > 0 || opponent.omittedPlayerCount > 0) {
     return 'Unavailable';
   }
+
+  if (team.source !== 'matchLineup') return 'EarlyEstimate';
 
   if (
     team.confidence !== 'Full'
