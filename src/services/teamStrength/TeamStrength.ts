@@ -12,6 +12,10 @@ export const TEAM_STRENGTH_LABELS = {
   matchLineup: 'Match Lineup Strength',
 } as const;
 
+// A standard Clash has 36 points before structural scoring effects such as
+// automatic points or women bonus opportunities are applied.
+export const STANDARD_MATCH_POINTS = 36;
+
 // Historical calibration: 42 team matches / 2,568 player-result facts.
 // Roster strength itself is venue-neutral. The +8 is applied only in the
 // matchup prediction layer so it cannot become part of a team's identity.
@@ -52,16 +56,41 @@ export type SinglesMatchup = {
   opponentCi: number;
 };
 
+/**
+ * Match-specific scoring effects that are outside ordinary CI-rated contests.
+ * These values must come from known Clash rules / lineup structure. V1 never
+ * infers them silently from roster size or historical residuals.
+ */
+export type StructuralPointComponents = {
+  automaticPoints?: number;
+  womenBonusExpectedPoints?: number;
+  otherKnownPoints?: number;
+};
+
+export type ResolvedStructuralPointComponents = {
+  automaticPoints: number;
+  womenBonusExpectedPoints: number;
+  otherKnownPoints: number;
+  total: number;
+};
+
 export type ExpectedMatchPointsBreakdown = {
   version: typeof TEAM_STRENGTH_VERSION;
   venue: TeamVenue;
+  standardMatchPoints: typeof STANDARD_MATCH_POINTS;
   singlesContestCount: number;
   doublesContestCount: number;
   singlesExpectedPoints: number;
   doublesExpectedPoints: number;
+  ratedContestExpectedPoints: number;
+  opponentRatedContestExpectedPoints: number;
+  teamStructuralPoints: ResolvedStructuralPointComponents;
+  opponentStructuralPoints: ResolvedStructuralPointComponents;
   totalExpectedPoints: number;
-  maximumPoints: number;
-  expectedPointShare: number;
+  opponentExpectedPoints: number;
+  expectedPointMargin: number;
+  modeledContestMaximumPoints: number;
+  ratedContestExpectedPointShare: number;
   regularSeasonChanceOfVictory: number;
 };
 
@@ -148,12 +177,6 @@ export function effectiveDoublesCi(playerOneCi: number, playerTwoCi: number): nu
  * Deterministic substitute for guessing doubles teams. Every plausible pair in
  * each known player pool is evaluated with the locked 80/20 doubles rule, then
  * the resulting contest expectations are averaged. No Monte Carlo is required.
- *
- * The historical pairing study supports this simplification even though
- * captains do not pair randomly: across 84 team-match samples, actual average
- * pair CI (907.50) was essentially identical to the all-player-pool pairing
- * expectation (907.51). Actual partners were more similar in CI, but player
- * selection and pairing structure offset almost exactly at aggregate level.
  */
 export function expectedDoublesPointShareFromPool(
   teamClashIndices: readonly number[],
@@ -180,9 +203,12 @@ export function expectedDoublesPointShareFromPool(
 
 /**
  * Regular-season hybrid once singles matchups are known: exact singles
- * expectations plus an all-plausible-pairs doubles estimate. Doubles contests
- * are worth two team points because both players in the pair contribute a team
- * point in the historical scoring ledger.
+ * expectations plus an all-plausible-pairs doubles estimate.
+ *
+ * The ordinary CI-rated layer is kept separate from structural points. A short
+ * roster can turn standard slots into automatic points; extra women can create
+ * bonus-point opportunities. Those effects are supplied explicitly by the
+ * rules/lineup layer and never alter Team Strength itself.
  */
 export function calculateExpectedMatchPoints(input: {
   singlesMatchups: readonly SinglesMatchup[];
@@ -190,6 +216,8 @@ export function calculateExpectedMatchPoints(input: {
   opponentDoublesPool: readonly number[];
   doublesContestCount: number;
   venue?: TeamVenue;
+  teamStructuralPoints?: StructuralPointComponents;
+  opponentStructuralPoints?: StructuralPointComponents;
 }): ExpectedMatchPointsBreakdown | undefined {
   const venue = input.venue ?? 'Neutral';
   const singlesMatchups = input.singlesMatchups.filter(
@@ -198,6 +226,10 @@ export function calculateExpectedMatchPoints(input: {
   const doublesContestCount = Number.isFinite(input.doublesContestCount)
     ? Math.max(0, Math.floor(input.doublesContestCount))
     : 0;
+  const teamStructuralPoints = resolveStructuralPoints(input.teamStructuralPoints);
+  const opponentStructuralPoints = resolveStructuralPoints(input.opponentStructuralPoints);
+
+  if (!teamStructuralPoints || !opponentStructuralPoints) return undefined;
 
   const doublesPointShare = doublesContestCount
     ? expectedDoublesPointShareFromPool(
@@ -218,17 +250,21 @@ export function calculateExpectedMatchPoints(input: {
     (doublesPointShare ?? 0) *
     doublesContestCount *
     DOUBLES_TEAM_POINTS_PER_CONTEST;
-  const maximumPoints =
+  const modeledContestMaximumPoints =
     singlesMatchups.length +
     doublesContestCount * DOUBLES_TEAM_POINTS_PER_CONTEST;
 
-  if (!maximumPoints) return undefined;
+  if (!modeledContestMaximumPoints) return undefined;
 
-  const totalExpectedPoints = singlesExpectedPoints + doublesExpectedPoints;
-  const opponentExpectedPoints = maximumPoints - totalExpectedPoints;
-  const regularSeasonChanceOfVictory = regularSeasonChanceOfVictoryFromExpectedPoints(
-    totalExpectedPoints,
-    opponentExpectedPoints,
+  const ratedContestExpectedPoints = singlesExpectedPoints + doublesExpectedPoints;
+  const opponentRatedContestExpectedPoints =
+    modeledContestMaximumPoints - ratedContestExpectedPoints;
+  const totalExpectedPoints = ratedContestExpectedPoints + teamStructuralPoints.total;
+  const opponentExpectedPoints =
+    opponentRatedContestExpectedPoints + opponentStructuralPoints.total;
+  const expectedPointMargin = totalExpectedPoints - opponentExpectedPoints;
+  const regularSeasonChanceOfVictory = regularSeasonChanceOfVictoryFromExpectedMargin(
+    expectedPointMargin,
   );
 
   if (regularSeasonChanceOfVictory == null) return undefined;
@@ -236,13 +272,21 @@ export function calculateExpectedMatchPoints(input: {
   return {
     version: TEAM_STRENGTH_VERSION,
     venue,
+    standardMatchPoints: STANDARD_MATCH_POINTS,
     singlesContestCount: singlesMatchups.length,
     doublesContestCount,
     singlesExpectedPoints,
     doublesExpectedPoints,
+    ratedContestExpectedPoints,
+    opponentRatedContestExpectedPoints,
+    teamStructuralPoints,
+    opponentStructuralPoints,
     totalExpectedPoints,
-    maximumPoints,
-    expectedPointShare: totalExpectedPoints / maximumPoints,
+    opponentExpectedPoints,
+    expectedPointMargin,
+    modeledContestMaximumPoints,
+    ratedContestExpectedPointShare:
+      ratedContestExpectedPoints / modeledContestMaximumPoints,
     regularSeasonChanceOfVictory,
   };
 }
@@ -283,6 +327,27 @@ export function regularSeasonChanceOfVictoryFromExpectedPoints(
 
 export function homeCiBonusForFormat(format: 'Singles' | 'Doubles'): number {
   return format === 'Singles' ? SINGLES_HOME_CI_BONUS : DOUBLES_HOME_CI_BONUS;
+}
+
+function resolveStructuralPoints(
+  input?: StructuralPointComponents,
+): ResolvedStructuralPointComponents | undefined {
+  const automaticPoints = input?.automaticPoints ?? 0;
+  const womenBonusExpectedPoints = input?.womenBonusExpectedPoints ?? 0;
+  const otherKnownPoints = input?.otherKnownPoints ?? 0;
+
+  if (
+    !Number.isFinite(automaticPoints)
+    || !Number.isFinite(womenBonusExpectedPoints)
+    || !Number.isFinite(otherKnownPoints)
+  ) return undefined;
+
+  return {
+    automaticPoints,
+    womenBonusExpectedPoints,
+    otherKnownPoints,
+    total: automaticPoints + womenBonusExpectedPoints + otherKnownPoints,
+  };
 }
 
 function possibleDoublesPairStrengths(clashIndices: readonly number[]): number[] {
