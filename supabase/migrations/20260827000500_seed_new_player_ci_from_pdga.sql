@@ -43,23 +43,3 @@ create trigger seed_new_player_ci_from_pdga
 before insert or update of pdga_rating on public.launch_players
 for each row
 execute function private.seed_new_player_ci_from_pdga();
-
--- Repair existing players who are still explicitly provisional and meet the
--- same zero-history definition. This is intentionally narrow and does not
--- touch returning players or anyone with a rated/frozen Clash match.
-update public.launch_players p
-set clash_index = p.pdga_rating,
-    updated_at = clock_timestamp()
-where p.clash_index_provisional = true
-  and p.pdga_rating is not null
-  and nullif(btrim(coalesce(p.pdga_number, '')), '') is not null
-  and p.clash_index is distinct from p.pdga_rating
-  and not exists (
-    select 1 from public.historical_player_matchups h where h.player_id = p.id
-  )
-  and not exists (
-    select 1 from public.clash_contest_rating_facts f where f.player_id = p.id
-  )
-  and not exists (
-    select 1 from public.clash_match_rating_snapshots s where s.player_id = p.id
-  );
