@@ -102,7 +102,7 @@ export async function completePlayerSetup(formData: FormData) {
 export async function submitSeasonApplication(formData: FormData) {
   const seasonId = readFormValue(formData, 'seasonId');
   const requestedTeamId = readFormValue(formData, 'requestedTeamId');
-  let playerType = readPlayerType(readFormValue(formData, 'playerType'));
+  const playerType = readPlayerType(readFormValue(formData, 'playerType'));
   let gender = readApplicationGender(readFormValue(formData, 'gender'));
   if (!seasonId || !requestedTeamId) redirect('/account?error=Choose a team and complete all registration fields.');
 
@@ -121,29 +121,22 @@ export async function submitSeasonApplication(formData: FormData) {
     redirect('/account?error=Connect your player record before choosing a team.');
   }
 
-  const [{data: priorApplication}, {data: playerRow}] = await Promise.all([
-    launchSupabase
-      .from('launch_player_applications')
-      .select('player_type, gender, created_at')
-      .eq('profile_id', profile.id)
-      .eq('status', 'Approved')
-      .neq('season_id', seasonId)
-      .order('created_at', {ascending: false})
-      .limit(1)
-      .maybeSingle(),
+  const [{data: playerRow, error: playerError}, {data: genderLocked, error: genderLockError}] = await Promise.all([
     launchSupabase
       .from('launch_players')
       .select('gender')
       .eq('id', profile.player_id)
       .maybeSingle(),
+    launchSupabase.rpc('launch_player_gender_locked', {target_player_id: profile.player_id}),
   ]);
+  if (playerError) redirect(`/account?error=${encodeURIComponent(playerError.message)}`);
+  if (genderLockError) redirect(`/account?error=${encodeURIComponent(genderLockError.message)}`);
 
-  const establishedPlayerType = readPlayerType(priorApplication?.player_type ?? '');
-  const establishedGender = readApplicationGender(playerRow?.gender ?? '')
-    ?? readApplicationGender(priorApplication?.gender ?? '');
-
-  if (establishedPlayerType && establishedGender) {
-    playerType = establishedPlayerType;
+  if (genderLocked === true) {
+    const establishedGender = readApplicationGender(playerRow?.gender ?? '');
+    if (!establishedGender) {
+      redirect('/account?error=Your permanent player division is missing. Ask the commissioner to review your player record.');
+    }
     gender = establishedGender;
   }
 
@@ -201,7 +194,7 @@ export async function updatePassword(formData: FormData) {
   const {data, error: userError} = await supabase.auth.getUser();
   if (userError || !data.user) redirect('/account?error=Request a new password reset link before changing your password.');
   const {error} = await supabase.auth.updateUser({password});
-  if (error) redirect(`/account/reset-password?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
+  if (error) redirect('/account/reset-password?error=${encodeURIComponent(getAuthErrorMessage(error))}');
   revalidatePath('/account');
   redirect('/account?notice=Password updated. You are signed in.');
 }
