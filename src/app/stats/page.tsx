@@ -1,4 +1,5 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
+import {RankingsSection} from '@/components/stats/RankingsSection';
 import {StatsTable} from '@/components/stats/StatsTable';
 import {
   loadServerHistoricalCiGains,
@@ -49,7 +50,6 @@ export type StatsGroup = {
   rows: StatsRow[];
 };
 
-// Public stats currently require three recorded matches in the selected view.
 const MIN_STATS_MATCHES = 3;
 
 function compactSeasonName(name: string): string {
@@ -233,8 +233,9 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
         <header className={styles.pageHeader}>
           <span className="eyebrow">League statistics</span>
           <h1>Stats</h1>
-          <p>Player performance by season or across the full recorded Coastal Clash history.</p>
+          <p>Rankings and player performance by season or across the full recorded Coastal Clash history.</p>
         </header>
+        <RankingsSection />
         <StatsTable groups={groups} initialGroupId={requestedSeason ?? 'overall'} />
       </main>
       <Footer />
