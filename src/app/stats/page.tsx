@@ -19,6 +19,8 @@ import type {StatsGroup, StatsRow} from '@/services/stats/StatsTypes';
 import styles from './Stats.module.css';
 import './compact.css';
 
+export type {StatsGroup, StatsRow} from '@/services/stats/StatsTypes';
+
 type StatsPageProps = {
   searchParams: Promise<{season?: string | string[]}>;
 };
