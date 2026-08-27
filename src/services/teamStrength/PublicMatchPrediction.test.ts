@@ -24,7 +24,7 @@ test('public prediction stage advances from active roster to availability to loc
   );
 });
 
-test('active-roster forecast includes the home matchup adjustment exactly once', () => {
+test('active-roster forecast includes the home-team course adjustment exactly once', () => {
   const homePlayers = players('home', 18, 900);
   const awayPlayers = players('away', 18, 900);
   const prediction = buildPublicMatchPrediction({
@@ -33,7 +33,7 @@ test('active-roster forecast includes the home matchup adjustment exactly once',
     hasPublishedResult: false,
     homeTeamId: 'home',
     awayTeamId: 'away',
-    matchVenue: 'Home',
+    matchVenue: 'HomeTeam',
     homePlayers,
     awayPlayers,
     now: new Date('2026-10-01T12:00:00Z'),
@@ -46,6 +46,26 @@ test('active-roster forecast includes the home matchup adjustment exactly once',
   assert.ok((prediction.awayChanceOfVictory ?? 1) < 0.5);
   assert.equal(prediction.homeStrength, 900);
   assert.equal(prediction.awayStrength, 900);
+  assert.match(prediction.venueNote, /home team/);
+});
+
+test('scheduled away team receives the course adjustment when it owns the selected course', () => {
+  const prediction = buildPublicMatchPrediction({
+    matchDate: '2026-10-03',
+    matchStatus: 'Scheduled',
+    hasPublishedResult: false,
+    homeTeamId: 'home',
+    awayTeamId: 'away',
+    matchVenue: 'AwayTeam',
+    homePlayers: players('home', 18, 900),
+    awayPlayers: players('away', 18, 900),
+    now: new Date('2026-10-01T12:00:00Z'),
+  });
+
+  assert.ok(prediction && prediction.state === 'calculated');
+  assert.ok((prediction.awayChanceOfVictory ?? 0) > 0.5);
+  assert.ok((prediction.homeChanceOfVictory ?? 1) < 0.5);
+  assert.match(prediction.venueNote, /away team/);
 });
 
 test('neutral equal teams remain a 50-50 forecast', () => {
@@ -95,7 +115,7 @@ test('locked lineup stage waits rather than falling back to an earlier player po
     hasPublishedResult: false,
     homeTeamId: 'home',
     awayTeamId: 'away',
-    matchVenue: 'Home',
+    matchVenue: 'HomeTeam',
     homePlayers: players('home', 18, 900),
     awayPlayers: players('away', 18, 900),
     now: new Date('2026-10-03T19:01:00Z'),
@@ -138,7 +158,7 @@ test('a published result suppresses live recomputation of the pre-match forecast
     hasPublishedResult: true,
     homeTeamId: 'home',
     awayTeamId: 'away',
-    matchVenue: 'Home',
+    matchVenue: 'HomeTeam',
     homePlayers: players('home', 18, 900),
     awayPlayers: players('away', 18, 900),
     now: new Date('2026-10-01T12:00:00Z'),
