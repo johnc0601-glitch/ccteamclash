@@ -15,10 +15,15 @@ export const TEAM_STRENGTH_STAGE_LABELS = TEAM_STRENGTH_LABELS;
 
 export type TeamStrengthSource = keyof typeof TEAM_STRENGTH_STAGE_LABELS;
 
-export type RosterStrengthResult = Omit<ActiveRosterStrengthBreakdown, 'confidence'> & {
+export type RosterStrengthResult = Omit<
+  ActiveRosterStrengthBreakdown,
+  'confidence' | 'activeRosterStrength'
+> & {
   version: typeof TEAM_STRENGTH_VERSION;
   source: TeamStrengthSource;
   label: (typeof TEAM_STRENGTH_STAGE_LABELS)[TeamStrengthSource];
+  /** Venue-neutral strength for whichever information stage `source` names. */
+  baseStrength: number;
   confidence: TeamStrengthConfidence;
   rosterPlayerCount: number;
   measuredPlayerCount: number;
@@ -119,19 +124,25 @@ export function calculateRosterStageStrength(
   const base = calculateActiveRosterStrength(resolved.map((player) => player.ci));
   if (!base) return undefined;
 
+  const {
+    activeRosterStrength: baseStrength,
+    confidence: rosterConfidence,
+    ...baseBreakdown
+  } = base;
   const provisionalPlayerCount = resolved.filter((player) => player.provisional).length;
   const fallbackPlayerCount = resolved.filter((player) => player.fallback).length;
   const measuredPlayerCount = resolved.length - provisionalPlayerCount;
   const confidence = dataAwareConfidence(
-    base.confidence,
+    rosterConfidence,
     provisionalPlayerCount,
     omittedPlayerCount,
   );
 
   return {
-    ...base,
+    ...baseBreakdown,
     source,
     label: TEAM_STRENGTH_STAGE_LABELS[source],
+    baseStrength,
     confidence,
     rosterPlayerCount: uniquePlayerIds.length,
     measuredPlayerCount,

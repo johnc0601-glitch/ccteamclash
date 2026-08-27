@@ -34,8 +34,11 @@ test('home advantage is applied in the matchup layer, not the strength result', 
   const home = calculateRosterBasedMatchPrediction({team, opponent, venue: 'Home'});
 
   assert.ok(neutral && home);
-  assert.equal(team.activeRosterStrength, 900);
-  assert.equal(opponent.activeRosterStrength, 900);
+  assert.equal(team.baseStrength, 900);
+  assert.equal(opponent.baseStrength, 900);
+  assert.equal('activeRosterStrength' in team, false);
+  assert.equal(home.teamBaseStrength, 900);
+  assert.equal(home.opponentBaseStrength, 900);
   assert.equal(home.matchupStrengthDifference, 8);
   assert.ok(home.expectedPointShare > neutral.expectedPointShare);
   assert.ok(home.regularSeasonChanceOfVictory > neutral.regularSeasonChanceOfVictory);

@@ -48,12 +48,12 @@ export function calculateRosterBasedMatchPrediction(input: {
   if (team.source !== opponent.source) return undefined;
 
   const matchupStrengthDifference =
-    team.activeRosterStrength -
-    opponent.activeRosterStrength +
+    team.baseStrength -
+    opponent.baseStrength +
     venueCiAdjustment(venue);
   const expectedPointShare = expectedTeamPointShare(
-    team.activeRosterStrength,
-    opponent.activeRosterStrength,
+    team.baseStrength,
+    opponent.baseStrength,
     venue,
   );
   const calibrationSlope = winStrengthSlopeForSource(team.source);
@@ -68,8 +68,8 @@ export function calculateRosterBasedMatchPrediction(input: {
     strengthLabel: team.label,
     venue,
     confidence: lowerConfidence(team.confidence, opponent.confidence),
-    teamBaseStrength: team.activeRosterStrength,
-    opponentBaseStrength: opponent.activeRosterStrength,
+    teamBaseStrength: team.baseStrength,
+    opponentBaseStrength: opponent.baseStrength,
     matchupStrengthDifference,
     expectedPointShare,
     calibrationSlope,

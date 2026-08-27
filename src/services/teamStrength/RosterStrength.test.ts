@@ -20,6 +20,13 @@ test('uses explicit labels for each roster-information stage', () => {
   assert.equal(TEAM_STRENGTH_STAGE_LABELS.matchLineup, 'Match Lineup Strength');
 });
 
+test('uses a stage-neutral baseStrength field instead of activeRosterStrength', () => {
+  const result = calculateActiveRosterStrengthFromPlayers([player('p-1')]);
+  assert.ok(result);
+  assert.equal(result.baseStrength, 900);
+  assert.equal('activeRosterStrength' in result, false);
+});
+
 test('does not silently drop active players with no CI', () => {
   const players = [
     player('male-fallback', {gender: 'Male', clashIndex: null}),
@@ -34,7 +41,7 @@ test('does not silently drop active players with no CI', () => {
   assert.equal(result.fallbackPlayerCount, 2);
   assert.equal(result.omittedPlayerCount, 0);
   assert.equal(result.topSixCi, 762.5);
-  assert.equal(result.activeRosterStrength, 762.5);
+  assert.equal(result.baseStrength, 762.5);
   assert.equal(result.confidence, 'Low');
 });
 
@@ -48,7 +55,7 @@ test('preserves a current provisional CI instead of replacing it with the baseli
   ]);
 
   assert.ok(result);
-  assert.equal(result.activeRosterStrength, 850);
+  assert.equal(result.baseStrength, 850);
   assert.equal(result.provisionalPlayerCount, 1);
   assert.equal(result.fallbackPlayerCount, 0);
 });
@@ -63,7 +70,7 @@ test('uses PDGA as the fallback seed before the division baseline', () => {
   ]);
 
   assert.ok(result);
-  assert.equal(result.activeRosterStrength, 912);
+  assert.equal(result.baseStrength, 912);
   assert.equal(result.provisionalPlayerCount, 1);
   assert.equal(result.fallbackPlayerCount, 1);
 });
@@ -79,8 +86,10 @@ test('confirmed available strength includes only explicit Playing responses', ()
   assert.ok(result);
   assert.equal(result.source, 'confirmedAvailableRoster');
   assert.equal(result.label, 'Confirmed Available Roster Strength');
+  assert.equal(result.baseStrength, 900);
   assert.equal(result.rosterPlayerCount, 1);
   assert.deepEqual(result.playerIds, ['playing']);
+  assert.equal('activeRosterStrength' in result, false);
 });
 
 test('official lineup strength resolves immutable player ids and exposes missing data', () => {
@@ -102,10 +111,12 @@ test('official lineup strength resolves immutable player ids and exposes missing
   const result = calculateMatchLineupStrength([player('known')], roster);
   assert.ok(result);
   assert.equal(result.source, 'matchLineup');
+  assert.equal(result.baseStrength, 900);
   assert.equal(result.rosterPlayerCount, 2);
   assert.equal(result.playerCount, 1);
   assert.equal(result.omittedPlayerCount, 1);
   assert.equal(result.confidence, 'Low');
+  assert.equal('activeRosterStrength' in result, false);
 });
 
 test('full confidence requires a complete measured player pool', () => {
