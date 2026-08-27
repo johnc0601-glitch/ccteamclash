@@ -37,6 +37,7 @@ export type RosterStrengthResult = Omit<
   unknownGenderPlayerCount: number;
   /** Diagnostic only. Never convert this to automatic points without the rules layer. */
   standardPlayerShortfall: number;
+  /** Exact selected stage pool, including ids whose CI could not be resolved. */
   playerIds: string[];
 };
 
@@ -168,7 +169,7 @@ export function calculateRosterStageStrength(
       0,
       STANDARD_MATCH_PLAYER_COUNT - uniquePlayerIds.length,
     ),
-    playerIds: resolved.map((player) => player.playerId),
+    playerIds: uniquePlayerIds,
   };
 }
 
