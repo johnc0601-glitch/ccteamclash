@@ -12,6 +12,7 @@ import {
 } from './TeamStrength';
 
 export const TEAM_STRENGTH_STAGE_LABELS = TEAM_STRENGTH_LABELS;
+export const STANDARD_MATCH_PLAYER_COUNT = 18;
 
 export type TeamStrengthSource = keyof typeof TEAM_STRENGTH_STAGE_LABELS;
 
@@ -30,6 +31,12 @@ export type RosterStrengthResult = Omit<
   provisionalPlayerCount: number;
   fallbackPlayerCount: number;
   omittedPlayerCount: number;
+  femalePlayerCount: number;
+  malePlayerCount: number;
+  /** Includes explicit Unknown gender and selected ids missing a player record. */
+  unknownGenderPlayerCount: number;
+  /** Diagnostic only. Never convert this to automatic points without the rules layer. */
+  standardPlayerShortfall: number;
   playerIds: string[];
 };
 
@@ -38,6 +45,12 @@ type ResolvedPlayerCi = {
   ci: number;
   provisional: boolean;
   fallback: boolean;
+};
+
+type RosterComposition = {
+  femalePlayerCount: number;
+  malePlayerCount: number;
+  unknownGenderPlayerCount: number;
 };
 
 /**
@@ -106,6 +119,7 @@ export function calculateRosterStageStrength(
   if (!uniquePlayerIds.length) return undefined;
 
   const playersById = new Map(players.map((player) => [player.id, player]));
+  const composition = rosterComposition(uniquePlayerIds, playersById);
   const resolved: ResolvedPlayerCi[] = [];
   let omittedPlayerCount = 0;
 
@@ -149,7 +163,38 @@ export function calculateRosterStageStrength(
     provisionalPlayerCount,
     fallbackPlayerCount,
     omittedPlayerCount,
+    ...composition,
+    standardPlayerShortfall: Math.max(
+      0,
+      STANDARD_MATCH_PLAYER_COUNT - uniquePlayerIds.length,
+    ),
     playerIds: resolved.map((player) => player.playerId),
+  };
+}
+
+function rosterComposition(
+  playerIds: readonly string[],
+  playersById: ReadonlyMap<string, LaunchPlayer>,
+): RosterComposition {
+  let femalePlayerCount = 0;
+  let malePlayerCount = 0;
+  let unknownGenderPlayerCount = 0;
+
+  for (const playerId of playerIds) {
+    const player = playersById.get(playerId);
+    if (!player || player.gender === 'Unknown') {
+      unknownGenderPlayerCount += 1;
+    } else if (player.gender === 'Female') {
+      femalePlayerCount += 1;
+    } else {
+      malePlayerCount += 1;
+    }
+  }
+
+  return {
+    femalePlayerCount,
+    malePlayerCount,
+    unknownGenderPlayerCount,
   };
 }
 
