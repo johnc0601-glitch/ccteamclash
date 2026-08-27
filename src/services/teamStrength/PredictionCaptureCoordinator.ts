@@ -17,17 +17,7 @@ const CAPTURE_ELIGIBLE_STATUSES = new Set<MatchStatus>([
   'Rain Delay',
 ]);
 
-export type PredictionCaptureCoordinatorResult =
-  | PredictionCaptureResult
-  | {captured: false; reason: 'NotDue' | 'NotEligible' | 'MissingInputs'};
-
-/**
- * Coordinates one roster-stage capture using only data that is valid in the
- * current lifecycle window. It intentionally refuses to backfill an earlier
- * stage from later information and refuses post-result capture, which prevents
- * today's CI from leaking into a historical pre-match snapshot.
- */
-export async function captureCurrentRosterPrediction(input: {
+export type PredictionCaptureCoordinatorInput = {
   repository: PredictionSnapshotRepository;
   matchId: string;
   matchDate: string;
@@ -41,7 +31,21 @@ export async function captureCurrentRosterPrediction(input: {
   awayAttendance?: readonly TeamAttendanceMember[];
   officialRosters?: readonly OfficialMatchRoster[];
   now?: Date;
-}): Promise<PredictionCaptureCoordinatorResult> {
+};
+
+export type PredictionCaptureCoordinatorResult =
+  | PredictionCaptureResult
+  | {captured: false; reason: 'NotDue' | 'NotEligible' | 'MissingInputs'};
+
+/**
+ * Coordinates one roster-stage capture using only data that is valid in the
+ * current lifecycle window. It intentionally refuses to backfill an earlier
+ * stage from later information and refuses post-result capture, which prevents
+ * today's CI from leaking into a historical pre-match snapshot.
+ */
+export async function captureCurrentRosterPrediction(
+  input: PredictionCaptureCoordinatorInput,
+): Promise<PredictionCaptureCoordinatorResult> {
   if (!CAPTURE_ELIGIBLE_STATUSES.has(input.matchStatus)) {
     return {captured: false, reason: 'NotEligible'};
   }
