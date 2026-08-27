@@ -19,6 +19,13 @@ export const TEAM_HOME_CI_BONUS = 8;
 export const TEAM_POINT_SHARE_SCALE = 105;
 export const MATCHUP_POINT_SHARE_SCALE = 100;
 
+// Regular-season Chance of Victory calibration. The symmetric one-parameter
+// logistic fit on 34 decided home-venue regular-season matches produced a
+// slope of ~0.426, rounded to 0.43 for V1. The 95/5 cap is a deliberate
+// anti-overconfidence guardrail for the small historical sample.
+export const REGULAR_SEASON_WIN_MARGIN_SLOPE = 0.43;
+export const REGULAR_SEASON_WIN_PROBABILITY_CAP = 0.95;
+
 // Format-level home effects remain available to the CI/statistics layer. The
 // regular-season expected-points model below intentionally uses the single +8
 // matchup adjustment for both formats.
@@ -56,6 +63,7 @@ export type ExpectedMatchPointsBreakdown = {
   totalExpectedPoints: number;
   maximumPoints: number;
   expectedPointShare: number;
+  regularSeasonChanceOfVictory: number;
 };
 
 /**
@@ -221,6 +229,13 @@ export function calculateExpectedMatchPoints(input: {
   if (!maximumPoints) return undefined;
 
   const totalExpectedPoints = singlesExpectedPoints + doublesExpectedPoints;
+  const opponentExpectedPoints = maximumPoints - totalExpectedPoints;
+  const regularSeasonChanceOfVictory = regularSeasonChanceOfVictoryFromExpectedPoints(
+    totalExpectedPoints,
+    opponentExpectedPoints,
+  );
+
+  if (regularSeasonChanceOfVictory == null) return undefined;
 
   return {
     version: TEAM_STRENGTH_VERSION,
@@ -232,7 +247,44 @@ export function calculateExpectedMatchPoints(input: {
     totalExpectedPoints,
     maximumPoints,
     expectedPointShare: totalExpectedPoints / maximumPoints,
+    regularSeasonChanceOfVictory,
   };
+}
+
+/**
+ * Converts Expected Point Margin to regular-season Chance of Victory.
+ *
+ * Positive margin favors the team being evaluated. The curve is symmetric and
+ * intentionally capped at 95/5 because the current historical sample is too
+ * small to justify near-certainty. Do not use this function for playoffs in V1.
+ */
+export function regularSeasonChanceOfVictoryFromExpectedMargin(
+  expectedPointMargin: number,
+): number | undefined {
+  if (!Number.isFinite(expectedPointMargin)) return undefined;
+
+  const rawProbability = 1 / (
+    1 + Math.exp(-REGULAR_SEASON_WIN_MARGIN_SLOPE * expectedPointMargin)
+  );
+  const floor = 1 - REGULAR_SEASON_WIN_PROBABILITY_CAP;
+
+  return Math.min(
+    REGULAR_SEASON_WIN_PROBABILITY_CAP,
+    Math.max(floor, rawProbability),
+  );
+}
+
+export function regularSeasonChanceOfVictoryFromExpectedPoints(
+  teamExpectedPoints: number,
+  opponentExpectedPoints: number,
+): number | undefined {
+  if (!Number.isFinite(teamExpectedPoints) || !Number.isFinite(opponentExpectedPoints)) {
+    return undefined;
+  }
+
+  return regularSeasonChanceOfVictoryFromExpectedMargin(
+    teamExpectedPoints - opponentExpectedPoints,
+  );
 }
 
 export function homeCiBonusForFormat(format: 'Singles' | 'Doubles'): number {

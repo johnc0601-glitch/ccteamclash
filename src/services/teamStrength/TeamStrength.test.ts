@@ -10,6 +10,9 @@ import {
   expectedDoublesPointShareFromPool,
   expectedTeamPointShare,
   homeCiBonusForFormat,
+  REGULAR_SEASON_WIN_PROBABILITY_CAP,
+  regularSeasonChanceOfVictoryFromExpectedMargin,
+  regularSeasonChanceOfVictoryFromExpectedPoints,
   SINGLES_HOME_CI_BONUS,
   TEAM_HOME_CI_BONUS,
   TEAM_STRENGTH_LABELS,
@@ -96,10 +99,39 @@ test('builds expected match points without inventing a specific doubles pairing'
   assert.equal(result.totalExpectedPoints, 1.5);
   assert.equal(result.maximumPoints, 3);
   assert.equal(result.expectedPointShare, 0.5);
+  assert.equal(result.regularSeasonChanceOfVictory, 0.5);
 });
 
 test('uses the same +8 matchup layer for individual expected points', () => {
   assert.equal(expectedContestPointShare(900, 900), 0.5);
   assert.ok(expectedContestPointShare(900, 900, 'Home') > 0.5);
   assert.ok(expectedContestPointShare(900, 900, 'Away') < 0.5);
+});
+
+test('maps expected point margin to a symmetric regular-season chance of victory', () => {
+  const even = regularSeasonChanceOfVictoryFromExpectedMargin(0);
+  const plusOne = regularSeasonChanceOfVictoryFromExpectedMargin(1);
+  const minusOne = regularSeasonChanceOfVictoryFromExpectedMargin(-1);
+
+  assert.equal(even, 0.5);
+  assert.ok(plusOne != null && plusOne > 0.60 && plusOne < 0.61);
+  assert.ok(minusOne != null);
+  assert.ok(Math.abs((plusOne ?? 0) + minusOne - 1) < 1e-12);
+});
+
+test('caps regular-season chance of victory at 95/5 to avoid false certainty', () => {
+  assert.equal(
+    regularSeasonChanceOfVictoryFromExpectedMargin(100),
+    REGULAR_SEASON_WIN_PROBABILITY_CAP,
+  );
+  assert.equal(
+    regularSeasonChanceOfVictoryFromExpectedMargin(-100),
+    1 - REGULAR_SEASON_WIN_PROBABILITY_CAP,
+  );
+});
+
+test('derives regular-season chance of victory from the expected score margin', () => {
+  assert.equal(regularSeasonChanceOfVictoryFromExpectedPoints(18, 18), 0.5);
+  assert.ok((regularSeasonChanceOfVictoryFromExpectedPoints(19, 17) ?? 0) > 0.70);
+  assert.equal(regularSeasonChanceOfVictoryFromExpectedPoints(Number.NaN, 17), undefined);
 });
