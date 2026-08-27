@@ -1,8 +1,8 @@
 import 'server-only';
 
 import type {SupabaseClient} from '@supabase/supabase-js';
+import {createHistoricalStatsReadClient} from '@/core/createHistoricalStatsReadClient';
 import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCiArchiveReplay';
-import {createClient} from '@/lib/supabase/server';
 import {formatHistoricalCiReplayFailure} from '@/services/statistics/HistoricalCiReplayDiagnostic';
 import {
   playerSeasonCiKey,
@@ -48,8 +48,7 @@ const PAGE_SIZE = 1000;
  * expensive request-time replay path.
  */
 export async function loadServerHistoricalCiGains(): Promise<Map<string, HistoricalCiGainBreakdown>> {
-  const supabase = await createClient();
-  const client = supabase as unknown as SupabaseClient;
+  const client = await createHistoricalStatsReadClient();
   const [factLoad, sourceRows] = await Promise.all([
     loadAllHistoricalCiFacts(client),
     loadAllHistoricalMatchupOrders(client),
