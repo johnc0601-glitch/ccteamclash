@@ -155,7 +155,12 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     hasPublishedResult: Boolean(publishedResult),
     homeTeamId: match.homeTeamId,
     awayTeamId: match.awayTeamId,
-    matchVenue: course?.homeTeamId === match.homeTeamId ? 'Home' : 'Neutral',
+    matchVenue:
+      course?.homeTeamId === match.homeTeamId
+        ? 'HomeTeam'
+        : course?.homeTeamId === match.awayTeamId
+          ? 'AwayTeam'
+          : 'Neutral',
     homePlayers: homePredictionPlayers,
     awayPlayers: awayPredictionPlayers,
     homeAttendance: availability?.get(match.homeTeamId),
