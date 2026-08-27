@@ -51,19 +51,14 @@ export async function SiteHeader() {
             <Link href="/teams">Teams</Link>
             <Link href="/players">Players</Link>
             <Link href="/stories">Stories</Link>
+            <Link href="/courses">Courses</Link>
+            <Link href="/history">History</Link>
+            <FacebookLink size={20} />
             {(canOpenOffice || canOpenCaptain) ? <span className="primary-nav-separator" aria-hidden="true" /> : null}
+            {canOpenOffice ? <Link className="desktop-role-link" href="/admin">Create post</Link> : null}
             {canOpenOffice ? <Link className="desktop-role-link" href="/office">Office</Link> : null}
             {canOpenCaptain ? <Link className="desktop-role-link" href="/captain">Captain</Link> : null}
             <Link className="desktop-account" href="/account">My Profile</Link>
-            <details className="desktop-more">
-              <summary>More</summary>
-              <div className="desktop-more-menu">
-                <Link href="/courses">Courses</Link>
-                <Link href="/history">History</Link>
-                {canOpenOffice ? <Link href="/admin">Create post</Link> : null}
-                <div className="desktop-more-community"><FacebookLink size={20} /><span>Facebook</span></div>
-              </div>
-            </details>
           </nav>
 
           <div className="mobile-header-actions">
