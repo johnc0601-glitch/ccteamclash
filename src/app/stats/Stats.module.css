@@ -195,6 +195,11 @@
   text-align: left;
 }
 
+.statsTable th:not(:first-child),
+.statsTable td:not(:first-child) {
+  width: 1%;
+}
+
 .statsTable th button {
   padding: 0;
   border: 0;
