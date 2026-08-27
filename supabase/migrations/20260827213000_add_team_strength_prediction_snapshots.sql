@@ -3,7 +3,9 @@
 -- The historical archive tells us who actually played, but it does not preserve
 -- exact Active Roster or attendance-state inputs from before old matches. That
 -- makes stage-specific calibration weaker than it should be. These internal
--- snapshots preserve the inputs needed to validate future seasons honestly.
+-- snapshots preserve the inputs needed to validate future seasons honestly,
+-- including gender composition and the raw 18-player shortfall needed to study
+-- structural Clash scoring without reconstructing it later.
 
 create table if not exists public.team_strength_prediction_snapshots (
   id bigint generated always as identity primary key,
@@ -29,6 +31,14 @@ create table if not exists public.team_strength_prediction_snapshots (
   opponent_player_ids jsonb not null check (jsonb_typeof(opponent_player_ids) = 'array'),
   team_player_count integer not null check (team_player_count >= 0),
   opponent_player_count integer not null check (opponent_player_count >= 0),
+  team_female_player_count integer not null check (team_female_player_count >= 0),
+  opponent_female_player_count integer not null check (opponent_female_player_count >= 0),
+  team_male_player_count integer not null check (team_male_player_count >= 0),
+  opponent_male_player_count integer not null check (opponent_male_player_count >= 0),
+  team_unknown_gender_player_count integer not null check (team_unknown_gender_player_count >= 0),
+  opponent_unknown_gender_player_count integer not null check (opponent_unknown_gender_player_count >= 0),
+  team_standard_player_shortfall integer not null check (team_standard_player_shortfall >= 0),
+  opponent_standard_player_shortfall integer not null check (opponent_standard_player_shortfall >= 0),
   team_provisional_player_count integer not null check (team_provisional_player_count >= 0),
   opponent_provisional_player_count integer not null check (opponent_provisional_player_count >= 0),
   team_fallback_player_count integer not null check (team_fallback_player_count >= 0),
@@ -44,6 +54,16 @@ create table if not exists public.team_strength_prediction_snapshots (
       (source = 'activeRoster' and capture_reason = 'PreMatch')
       or (source = 'confirmedAvailableRoster' and capture_reason = 'AttendanceFinal')
       or (source = 'matchLineup' and capture_reason = 'RosterLock')
+    ),
+  constraint team_strength_prediction_snapshot_team_gender_total
+    check (
+      team_female_player_count + team_male_player_count + team_unknown_gender_player_count
+      = team_player_count
+    ),
+  constraint team_strength_prediction_snapshot_opponent_gender_total
+    check (
+      opponent_female_player_count + opponent_male_player_count + opponent_unknown_gender_player_count
+      = opponent_player_count
     )
 );
 
@@ -70,6 +90,14 @@ comment on column public.team_strength_prediction_snapshots.capture_reason is
 comment on column public.team_strength_prediction_snapshots.prediction_readiness is
   'Publication gate at capture time: Unavailable, EarlyEstimate, or Ready.';
 comment on column public.team_strength_prediction_snapshots.team_player_ids is
-  'Exact player-id pool used for the team-side strength calculation at capture time.';
+  'Exact player-id pool selected for the team-side strength stage at capture time.';
 comment on column public.team_strength_prediction_snapshots.opponent_player_ids is
-  'Exact opponent player-id pool used for the strength calculation at capture time.';
+  'Exact opponent player-id pool selected for the strength stage at capture time.';
+comment on column public.team_strength_prediction_snapshots.team_female_player_count is
+  'Female players in the exact selected team pool; retained for future structural bonus-point calibration.';
+comment on column public.team_strength_prediction_snapshots.opponent_female_player_count is
+  'Female players in the exact selected opponent pool; retained for future structural bonus-point calibration.';
+comment on column public.team_strength_prediction_snapshots.team_standard_player_shortfall is
+  'Diagnostic max(0, 18 - selected team player count); not itself an automatic-points award.';
+comment on column public.team_strength_prediction_snapshots.opponent_standard_player_shortfall is
+  'Diagnostic max(0, 18 - selected opponent player count); not itself an automatic-points award.';
