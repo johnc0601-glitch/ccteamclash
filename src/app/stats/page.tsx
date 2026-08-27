@@ -4,6 +4,7 @@ import {
   loadServerHistoricalCiGains,
   playerSeasonCiKey,
 } from '@/core/loadServerHistoricalCiGains';
+import {loadServerHistoricalGenderMap} from '@/core/loadServerHistoricalGenderMap';
 import {createServerStatsQueryService} from '@/core/createServerStatsQueryService';
 import {getHistoricalSeasonArchives} from '@/data/historicalSeed';
 import {
@@ -30,11 +31,17 @@ function compactSeasonName(name: string): string {
 export default async function StatsPage({searchParams}: StatsPageProps) {
   const archives = getHistoricalSeasonArchives();
   const statsQueryService = await createServerStatsQueryService();
-  const [statsSnapshot, historicalCiGains] = await Promise.all([
+  const [statsSnapshot, historicalCiGains, historicalGenderOverrides] = await Promise.all([
     statsQueryService.getSnapshot(),
     loadServerHistoricalCiGains(),
+    loadServerHistoricalGenderMap(),
   ]);
-  const {playerViews, genderByPlayerId} = statsSnapshot;
+  const {playerViews} = statsSnapshot;
+  const genderByPlayerId = new Map(statsSnapshot.genderByPlayerId);
+  for (const [playerId, gender] of historicalGenderOverrides) {
+    genderByPlayerId.set(playerId, gender);
+  }
+
   const historicalGroups: StatsGroup[] = archives.map((archive) => ({
     id: archive.seasonId,
     label: compactSeasonName(archive.seasonName),
