@@ -14,6 +14,10 @@ type RankingsClientProps = {current?: SeasonRankingGroup; clash: {open: ClashRan
 type MainTab = 'season' | 'clash';
 type Division = 'open' | 'women' | 'junior';
 
+const clashHeaderHelpStyle: CSSProperties = {position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 4};
+const clashInfoSummaryStyle: CSSProperties = {width: 13, height: 13, display: 'inline-grid', placeItems: 'center', border: '1px solid currentColor', borderRadius: '50%', fontFamily: 'Arial, sans-serif', fontSize: 8, fontWeight: 900, lineHeight: 1, cursor: 'pointer', listStyle: 'none'};
+const clashInfoPopupStyle: CSSProperties = {position: 'absolute', zIndex: 20, top: 20, right: 0, width: 230, padding: '9px 10px', border: '1px solid #34393b', borderRadius: 7, background: '#171b1d', color: '#f5f3ec', boxShadow: '0 12px 28px rgba(0,0,0,.28)', fontSize: 10, fontWeight: 700, lineHeight: 1.35, textAlign: 'left', whiteSpace: 'normal', textTransform: 'none'};
+
 export function RankingsClient({current, clash, teamColors}: RankingsClientProps) {
   const [tab, setTab] = useState<MainTab>('clash');
   const [selectedEntry, setSelectedEntry] = useState<HistoricalRankingEntry | null>(null);
@@ -53,7 +57,7 @@ function SeasonTable({entries, onOpen, teamColors}: {entries: HistoricalRankingE
 
 function ClashTable({entries, teamColors}: {entries: ClashRankingEntry[]; teamColors: Record<string, string>}) {
   if (!entries.length) return <p className={styles.emptyState}>No Clash Index ratings are available in this division yet.</p>;
-  return <div className={styles.tableWrap}><table className={styles.rankingTable}><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Clash Index</th></tr></thead><tbody>{entries.map((entry) => <tr key={entry.playerId} data-team={entry.teamName} style={teamAccentStyle(teamColors[entry.teamName])}><td><strong>{entry.rank}</strong></td><td>{entry.playerName}</td><td>{entry.teamName}</td><td className={styles.clashValue}>{entry.clashIndex}{entry.provisional ? '*' : ''}</td></tr>)}</tbody></table></div>;
+  return <div className={styles.tableWrap}><table className={styles.rankingTable}><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th><span style={clashHeaderHelpStyle}>Clash Index<details style={{position: 'relative', display: 'inline-block', textTransform: 'none'}}><summary aria-label="About Clash Index" style={clashInfoSummaryStyle}>i</summary><div style={clashInfoPopupStyle}>Clash Index — Match Play player rating based on match results and opponent strength</div></details></span></th></tr></thead><tbody>{entries.map((entry) => <tr key={entry.playerId} data-team={entry.teamName} style={teamAccentStyle(teamColors[entry.teamName])}><td><strong>{entry.rank}</strong></td><td>{entry.playerName}</td><td>{entry.teamName}</td><td className={styles.clashValue}>{entry.clashIndex}{entry.provisional ? '*' : ''}</td></tr>)}</tbody></table></div>;
 }
 
 function teamAccentStyle(color?: string): CSSProperties {return color ? ({'--team-accent': color} as CSSProperties) : {};}
