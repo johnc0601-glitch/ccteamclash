@@ -28,7 +28,7 @@ export function StatsHub({performance, rankings}: {performance: ReactNode; ranki
         </select>
       </div>
       <div hidden={view !== 'performance'}>{performance}</div>
-      <div id="rankings" hidden={view !== 'rankings'}>{rankings}</div>
+      <div hidden={view !== 'rankings'}>{rankings}</div>
     </section>
   );
 }
