@@ -51,7 +51,7 @@ describe('StatsPageModel historical gender classification', () => {
     ['abby-bertone', 'Female'],
   ]);
 
-  it('classifies Lizzie Goddard under Women and keeps her above the three-match threshold', () => {
+  it('classifies Lizzie Goddard under Women', () => {
     const statsRow = toHistoricalStatsRow(
       findHistoricalSummary('lizzie-goddard'),
       undefined,
@@ -63,7 +63,7 @@ describe('StatsPageModel historical gender classification', () => {
     expect(qualifiesStatsRow(statsRow)).toBe(true);
   });
 
-  it('classifies Abby Bertone under Women but excludes her only by the three-match threshold', () => {
+  it('classifies Abby Bertone under Women and keeps low-sample players in Show All', () => {
     const statsRow = toHistoricalStatsRow(
       findHistoricalSummary('abby-bertone'),
       undefined,
@@ -72,7 +72,12 @@ describe('StatsPageModel historical gender classification', () => {
 
     expect(statsRow.gender).toBe('Women');
     expect(statsRow.matchesPlayed).toBe(2);
-    expect(qualifiesStatsRow(statsRow)).toBe(false);
+    expect(qualifiesStatsRow(statsRow)).toBe(true);
+  });
+
+  it('includes a player with one recorded result but excludes zero-result rows', () => {
+    expect(qualifiesStatsRow(row({matchesPlayed: 1}))).toBe(true);
+    expect(qualifiesStatsRow(row({matchesPlayed: 0}))).toBe(false);
   });
 
   it('uses the legacy-name fallback when a historical identity has no canonical gender', () => {

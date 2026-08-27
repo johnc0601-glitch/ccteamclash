@@ -34,7 +34,7 @@ export type StatsGroup = {
   rows: StatsRow[];
 };
 
-export const MIN_STATS_MATCHES = 3;
+export const MIN_STATS_MATCHES = 1;
 
 export function resolveHistoricalStatsGender(
   playerId: string,
