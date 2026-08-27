@@ -6,7 +6,7 @@ export interface PredictionSnapshotRepository {
   saveIfAbsent(snapshots: readonly TeamStrengthPredictionSnapshot[]): Promise<void>;
 }
 
-type SnapshotInsert = {
+export type PredictionSnapshotInsert = {
   match_id: string;
   team_id: string;
   opponent_team_id: string;
@@ -37,43 +37,25 @@ type SnapshotInsert = {
   opponent_omitted_player_count: number;
 };
 
-type SnapshotRow = SnapshotInsert & {id: number};
-
-type SnapshotDatabase = {
-  public: {
-    Tables: {
-      team_strength_prediction_snapshots: {
-        Row: SnapshotRow;
-        Insert: SnapshotInsert;
-        Update: Partial<SnapshotInsert>;
-        Relationships: [];
-      };
-    };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
-    Enums: Record<string, never>;
-    CompositeTypes: Record<string, never>;
-  };
-};
-
 /**
  * Service-role repository for immutable Team Strength calibration snapshots.
  * Duplicate lifecycle captures are ignored rather than updated, preserving the
  * first point-in-time observation for a stage/model pair.
+ *
+ * The generated Database type does not include the staged table until the
+ * migration lands, so the table call is deliberately isolated behind one
+ * narrow cast instead of widening the rest of the Team Strength code.
  */
 export class SupabasePredictionSnapshotRepository implements PredictionSnapshotRepository {
-  private readonly snapshotClient: SupabaseClient<SnapshotDatabase>;
-
-  constructor(supabase: SupabaseClient<Database>) {
-    this.snapshotClient = supabase as unknown as SupabaseClient<SnapshotDatabase>;
-  }
+  constructor(private readonly supabase: SupabaseClient<Database>) {}
 
   async saveIfAbsent(snapshots: readonly TeamStrengthPredictionSnapshot[]): Promise<void> {
     if (!snapshots.length) return;
 
-    const {error} = await this.snapshotClient
+    const snapshotClient = this.supabase as any;
+    const {error} = await snapshotClient
       .from('team_strength_prediction_snapshots')
-      .upsert(snapshots.map(toInsert), {
+      .upsert(snapshots.map(toPredictionSnapshotInsert), {
         onConflict: 'match_id,side,source,model_version',
         ignoreDuplicates: true,
       });
@@ -84,11 +66,7 @@ export class SupabasePredictionSnapshotRepository implements PredictionSnapshotR
 
 export function toPredictionSnapshotInsert(
   snapshot: TeamStrengthPredictionSnapshot,
-): SnapshotInsert {
-  return toInsert(snapshot);
-}
-
-function toInsert(snapshot: TeamStrengthPredictionSnapshot): SnapshotInsert {
+): PredictionSnapshotInsert {
   return {
     match_id: snapshot.matchId,
     team_id: snapshot.teamId,
