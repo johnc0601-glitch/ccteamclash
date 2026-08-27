@@ -39,6 +39,8 @@ export type StatsRow = {
   doublesLosses: number;
   doublesTies: number;
   points: number;
+  /** Current Clash Index rating. */
+  currentCi?: number;
   /** Earned Clash Index movement only. Undefined until the season ledger is complete. */
   ciGain?: number;
   singlesCiGain?: number;
@@ -58,7 +60,7 @@ function compactSeasonName(name: string): string {
   return withoutLeagueName.replace(/(\d{4})-(\d{4})/, (_match, firstYear: string, secondYear: string) => `${firstYear}–${secondYear.slice(2)}`);
 }
 
-function toRow(summary: HistoricalPlayerSeasonSummary, ci?: HistoricalCiGainBreakdown): StatsRow {
+function toRow(summary: HistoricalPlayerSeasonSummary, ci?: HistoricalCiGainBreakdown, currentCi?: number): StatsRow {
   const {wins, losses, ties} = summary.overallRecord;
   return {
     playerId: summary.playerId,
@@ -78,6 +80,7 @@ function toRow(summary: HistoricalPlayerSeasonSummary, ci?: HistoricalCiGainBrea
     doublesLosses: summary.doublesRecord.losses,
     doublesTies: summary.doublesRecord.ties,
     points: wins + ties * .5,
+    ...(currentCi !== undefined ? {currentCi} : {}),
     ...(ci ? {
       ciGain: ci.ciGain,
       singlesCiGain: ci.singlesCiGain,
@@ -107,6 +110,7 @@ function toLiveRow(view: PublicPlayerView): StatsRow | undefined {
     doublesLosses: statistics.doublesRecord.losses,
     doublesTies: statistics.doublesRecord.ties,
     points: statistics.pointsEarned,
+    currentCi: view.player.clashIndex ?? undefined,
     ciGain: view.currentCiGain,
     singlesCiGain: view.currentSinglesCiGain,
     doublesCiGain: view.currentDoublesCiGain,
@@ -190,6 +194,9 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
     (await createServerPublicPlayerService()).getAll(),
     loadServerHistoricalCiGains(),
   ]);
+  const currentCiByPlayer = new Map(
+    playerViews.map((view) => [view.player.id, view.player.clashIndex ?? undefined]),
+  );
   const historicalGroups: StatsGroup[] = archives.map((archive) => ({
     id: archive.seasonId,
     label: compactSeasonName(archive.seasonName),
@@ -198,6 +205,7 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
       .map((summary) => toRow(
         summary,
         historicalCiGains.get(playerSeasonCiKey(archive.seasonId, summary.playerId)),
+        currentCiByPlayer.get(summary.playerId),
       )),
   }));
 
