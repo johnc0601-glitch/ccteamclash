@@ -5,7 +5,7 @@ import {useMemo, useState} from 'react';
 import type {StatsGroup, StatsRow} from '@/app/stats/page';
 import styles from '@/app/stats/Stats.module.css';
 
-type SortKey = 'matchesPlayed' | 'wins' | 'winPercentage' | 'points' | 'singles' | 'doubles' | 'currentCi' | 'ciGain' | 'singlesCiGain' | 'doublesCiGain';
+type SortKey = 'matchesPlayed' | 'wins' | 'winPercentage' | 'points' | 'singles' | 'doubles' | 'ciGain' | 'singlesCiGain' | 'doublesCiGain';
 type Direction = 'asc' | 'desc';
 type Limit = 25 | 'all';
 type Division = 'Open' | 'Women';
@@ -17,7 +17,6 @@ const HEADER_HELP: Record<SortKey, string> = {
   singles: 'Singles — Player wins, losses and ties in singles matches.',
   doubles: 'Doubles — Player wins, losses and ties in doubles matches.',
   points: 'Points — Total match points earned for the player’s team.',
-  currentCi: 'CI — Current Clash Index rating.',
   ciGain: 'CI +/- — Clash Index movement earned from recorded match results.',
   singlesCiGain: 'S +/- — Clash Index movement earned from singles results.',
   doublesCiGain: 'D +/- — Clash Index movement earned from doubles results.',
@@ -152,7 +151,6 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
               <SortableHeader label="Singles" sort="singles" active={sortKey} direction={direction} onSort={toggleSort} />
               <SortableHeader label="Doubles" sort="doubles" active={sortKey} direction={direction} onSort={toggleSort} />
               <SortableHeader label="Pts" sort="points" active={sortKey} direction={direction} onSort={toggleSort} />
-              <SortableHeader label="CI" sort="currentCi" active={sortKey} direction={direction} onSort={toggleSort} />
               <SortableHeader label="CI +/-" sort="ciGain" active={sortKey} direction={direction} onSort={toggleSort} />
               <SortableHeader label="S +/-" sort="singlesCiGain" active={sortKey} direction={direction} onSort={toggleSort} />
               <SortableHeader label="D +/-" sort="doublesCiGain" active={sortKey} direction={direction} onSort={toggleSort} />
@@ -170,7 +168,6 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
                   <td>{formatRecord(row.singlesWins, row.singlesLosses, row.singlesTies)}</td>
                   <td>{formatRecord(row.doublesWins, row.doublesLosses, row.doublesTies)}</td>
                   <td><strong>{formatPoints(row.points)}</strong></td>
-                  <td><strong>{formatCi(row.currentCi)}</strong></td>
                   <td><strong>{formatCiGain(row.ciGain)}</strong></td>
                   <td>{formatCiGain(row.singlesCiGain)}</td>
                   <td>{formatCiGain(row.doublesCiGain)}</td>
@@ -228,7 +225,7 @@ function compareRows(a: StatsRow, b: StatsRow, key: SortKey, direction: Directio
   const factor = direction === 'asc' ? 1 : -1;
   if (key === 'singles') return (recordPoints(a.singlesWins, a.singlesTies) - recordPoints(b.singlesWins, b.singlesTies)) * factor || a.playerName.localeCompare(b.playerName);
   if (key === 'doubles') return (recordPoints(a.doublesWins, a.doublesTies) - recordPoints(b.doublesWins, b.doublesTies)) * factor || a.playerName.localeCompare(b.playerName);
-  if (key === 'currentCi' || key === 'ciGain' || key === 'singlesCiGain' || key === 'doublesCiGain') {
+  if (key === 'ciGain' || key === 'singlesCiGain' || key === 'doublesCiGain') {
     const aValue = a[key];
     const bValue = b[key];
     if (aValue === undefined && bValue === undefined) return a.playerName.localeCompare(b.playerName);
@@ -242,7 +239,7 @@ function compareRows(a: StatsRow, b: StatsRow, key: SortKey, direction: Directio
 function sortLabel(key: SortKey): string {
   return ({
     matchesPlayed: 'matches', wins: 'wins', winPercentage: 'win %', points: 'points',
-    singles: 'singles', doubles: 'doubles', currentCi: 'CI', ciGain: 'CI +/-',
+    singles: 'singles', doubles: 'doubles', ciGain: 'CI +/-',
     singlesCiGain: 'Singles CI +/-', doublesCiGain: 'Doubles CI +/-',
   } as const)[key];
 }
@@ -250,7 +247,7 @@ function sortLabel(key: SortKey): string {
 function mobileSortLabel(key: SortKey): string {
   return ({
     matchesPlayed: 'M', wins: 'W', winPercentage: 'Win %', points: 'Pts',
-    singles: 'Singles', doubles: 'Doubles', currentCi: 'CI', ciGain: 'CI +/-',
+    singles: 'Singles', doubles: 'Doubles', ciGain: 'CI +/-',
     singlesCiGain: 'S +/-', doublesCiGain: 'D +/-',
   } as const)[key];
 }
@@ -262,7 +259,6 @@ function formatMobileValue(row: StatsRow, key: SortKey): string {
   if (key === 'points') return formatPoints(row.points);
   if (key === 'singles') return formatRecord(row.singlesWins, row.singlesLosses, row.singlesTies);
   if (key === 'doubles') return formatRecord(row.doublesWins, row.doublesLosses, row.doublesTies);
-  if (key === 'currentCi') return formatCi(row.currentCi);
   if (key === 'ciGain') return formatCiGain(row.ciGain);
   if (key === 'singlesCiGain') return formatCiGain(row.singlesCiGain);
   return formatCiGain(row.doublesCiGain);
@@ -278,11 +274,6 @@ function formatRecord(wins: number, losses: number, ties: number): string {
 
 function formatPoints(points: number): string {
   return Number.isInteger(points) ? String(points) : points.toFixed(1);
-}
-
-function formatCi(value: number | undefined): string {
-  if (value === undefined) return '—';
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
 function formatCiGain(value: number | undefined): string {
