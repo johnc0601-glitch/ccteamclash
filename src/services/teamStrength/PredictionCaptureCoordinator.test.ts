@@ -102,7 +102,7 @@ function baseInput(repository: PredictionSnapshotRepository) {
     matchStatus: 'Scheduled' as const,
     homeTeamId: 'home',
     awayTeamId: 'away',
-    matchVenue: 'HomeTeam' as const,
+    matchVenue: 'Home' as const,
     homePlayers: players('home', 900),
     awayPlayers: players('away', 900),
   };
