@@ -77,7 +77,7 @@ function candidate(matchId: string): PredictionCaptureCandidate {
     matchStatus: 'Scheduled',
     homeTeamId: 'home',
     awayTeamId: 'away',
-    matchVenue: 'Home',
+    matchVenue: 'HomeTeam',
     homePlayers: players('home'),
     awayPlayers: players('away'),
   };
