@@ -1,16 +1,13 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {StatsTable} from '@/components/stats/StatsTable';
-import {
-  loadServerHistoricalCiGains,
-  playerSeasonCiKey,
-} from '@/core/loadServerHistoricalCiGains';
+import {loadServerHistoricalCiGains} from '@/core/loadServerHistoricalCiGains';
 import {loadServerHistoricalGenderMap} from '@/core/loadServerHistoricalGenderMap';
+import {loadServerHistoricalStatsRows} from '@/core/loadServerHistoricalStatsRows';
 import {createServerStatsQueryService} from '@/core/createServerStatsQueryService';
-import {getHistoricalSeasonArchives} from '@/data/historicalSeed';
 import {
+  buildHistoricalStatsGroups,
   buildOverallRows,
   qualifiesStatsRow,
-  toHistoricalStatsRow,
   toLiveStatsRow,
   type StatsGroup,
 } from '@/services/stats/StatsPageModel';
@@ -29,12 +26,12 @@ function compactSeasonName(name: string): string {
 }
 
 export default async function StatsPage({searchParams}: StatsPageProps) {
-  const archives = getHistoricalSeasonArchives();
   const statsQueryService = await createServerStatsQueryService();
-  const [statsSnapshot, historicalCiGains, historicalGenderOverrides] = await Promise.all([
+  const [statsSnapshot, historicalCiGains, historicalGenderOverrides, historicalMatchupRows] = await Promise.all([
     statsQueryService.getSnapshot(),
     loadServerHistoricalCiGains(),
     loadServerHistoricalGenderMap(),
+    loadServerHistoricalStatsRows(),
   ]);
   const {playerViews} = statsSnapshot;
   const genderByPlayerId = new Map(statsSnapshot.genderByPlayerId);
@@ -42,23 +39,19 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
     genderByPlayerId.set(playerId, gender);
   }
 
-  const historicalGroups: StatsGroup[] = archives.map((archive) => ({
-    id: archive.seasonId,
-    label: compactSeasonName(archive.seasonName),
-    rows: archive.playerSummaries
-      .filter((summary) => summary.matchesPlayed > 0)
-      .map((summary) => toHistoricalStatsRow(
-        summary,
-        historicalCiGains.get(playerSeasonCiKey(archive.seasonId, summary.playerId)),
-        genderByPlayerId,
-      )),
+  const historicalGroups = buildHistoricalStatsGroups(
+    historicalMatchupRows,
+    historicalCiGains,
+    genderByPlayerId,
+  ).map((group) => ({
+    ...group,
+    label: compactSeasonName(group.label),
   }));
 
   const overallClashIndexByPlayer = new Map<string, number>();
-  for (const archive of archives) {
-    for (const summary of archive.playerSummaries) {
-      const ci = historicalCiGains.get(playerSeasonCiKey(archive.seasonId, summary.playerId));
-      if (ci) overallClashIndexByPlayer.set(summary.playerId, ci.endingCi);
+  for (const group of historicalGroups) {
+    for (const row of group.rows) {
+      if (row.clashIndex != null) overallClashIndexByPlayer.set(row.playerId, row.clashIndex);
     }
   }
   for (const view of playerViews) {

@@ -1,7 +1,10 @@
 import type {HistoricalPlayerSeasonSummary} from '@/data/historicalSeed';
 import {isHistoricalFemalePlayer} from '@/data/historicalSeed';
 import type {Player} from '@/models/Player';
-import type {HistoricalCiLedgerSummary} from '@/services/statistics/HistoricalCiLedgerSummary';
+import {
+  playerSeasonCiKey,
+  type HistoricalCiLedgerSummary,
+} from '@/services/statistics/HistoricalCiLedgerSummary';
 import type {StatsPlayerView} from '@/services/stats/StatsQueryService';
 
 export type StatsRow = {
@@ -34,6 +37,17 @@ export type StatsGroup = {
   rows: StatsRow[];
 };
 
+export type HistoricalStatsMatchupRowInput = {
+  deduplication_key: string;
+  season_id: string;
+  season_name: string;
+  match_format: string;
+  player_id: string;
+  player_name: string;
+  player_team_name: string;
+  outcome: string;
+};
+
 export const MIN_STATS_MATCHES = 1;
 
 export function resolveHistoricalStatsGender(
@@ -45,6 +59,131 @@ export function resolveHistoricalStatsGender(
   if (canonicalGender === 'Female') return 'Women';
   if (canonicalGender === 'Male') return 'Open';
   return isHistoricalFemalePlayer(playerName) ? 'Women' : 'Open';
+}
+
+export function buildHistoricalStatsGroups(
+  matchupRows: HistoricalStatsMatchupRowInput[],
+  ciByPlayerSeason: ReadonlyMap<string, HistoricalCiLedgerSummary>,
+  genderByPlayerId: ReadonlyMap<string, Player['gender']>,
+): StatsGroup[] {
+  type PlayerAccumulator = {
+    playerId: string;
+    playerName: string;
+    teams: Set<string>;
+    matchesPlayed: number;
+    wins: number;
+    losses: number;
+    ties: number;
+    singlesWins: number;
+    singlesLosses: number;
+    singlesTies: number;
+    doublesWins: number;
+    doublesLosses: number;
+    doublesTies: number;
+  };
+  type SeasonAccumulator = {
+    id: string;
+    name: string;
+    players: Map<string, PlayerAccumulator>;
+  };
+
+  const seasons = new Map<string, SeasonAccumulator>();
+  for (const matchup of matchupRows) {
+    const season = seasons.get(matchup.season_id) ?? {
+      id: matchup.season_id,
+      name: matchup.season_name,
+      players: new Map<string, PlayerAccumulator>(),
+    };
+    if (season.name !== matchup.season_name) {
+      throw new Error(`Historical Stats season ${matchup.season_id} has conflicting names: ${season.name} / ${matchup.season_name}`);
+    }
+
+    const player = season.players.get(matchup.player_id) ?? {
+      playerId: matchup.player_id,
+      playerName: matchup.player_name,
+      teams: new Set<string>(),
+      matchesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      ties: 0,
+      singlesWins: 0,
+      singlesLosses: 0,
+      singlesTies: 0,
+      doublesWins: 0,
+      doublesLosses: 0,
+      doublesTies: 0,
+    };
+    if (player.playerName !== matchup.player_name) {
+      throw new Error(`Historical Stats player ${matchup.player_id} has conflicting names: ${player.playerName} / ${matchup.player_name}`);
+    }
+
+    if (matchup.player_team_name) player.teams.add(matchup.player_team_name);
+    player.matchesPlayed += 1;
+
+    const outcome = matchup.outcome.trim().toUpperCase();
+    const format = matchup.match_format.trim().toLowerCase();
+    const isSingles = format === 'singles';
+    const isDoubles = format === 'doubles';
+    if (!isSingles && !isDoubles) {
+      throw new Error(`Historical Stats matchup ${matchup.deduplication_key} has unsupported format ${matchup.match_format}`);
+    }
+
+    if (outcome === 'W') {
+      player.wins += 1;
+      if (isSingles) player.singlesWins += 1;
+      else player.doublesWins += 1;
+    } else if (outcome === 'L') {
+      player.losses += 1;
+      if (isSingles) player.singlesLosses += 1;
+      else player.doublesLosses += 1;
+    } else if (outcome === 'T') {
+      player.ties += 1;
+      if (isSingles) player.singlesTies += 1;
+      else player.doublesTies += 1;
+    } else {
+      throw new Error(`Historical Stats matchup ${matchup.deduplication_key} has unsupported outcome ${matchup.outcome}`);
+    }
+
+    season.players.set(matchup.player_id, player);
+    seasons.set(matchup.season_id, season);
+  }
+
+  return [...seasons.values()]
+    .sort((a, b) => b.id.localeCompare(a.id))
+    .map((season): StatsGroup => ({
+      id: season.id,
+      label: season.name,
+      rows: [...season.players.values()].map((player): StatsRow => {
+        const teamNames = [...player.teams].sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
+        const ci = ciByPlayerSeason.get(playerSeasonCiKey(season.id, player.playerId));
+        const decisions = player.wins + player.losses + player.ties;
+        return {
+          playerId: player.playerId,
+          playerName: player.playerName,
+          teamName: teamNames.length > 1 ? 'Multiple teams' : teamNames[0] ?? '',
+          teamNames,
+          gender: resolveHistoricalStatsGender(player.playerId, player.playerName, genderByPlayerId),
+          matchesPlayed: player.matchesPlayed,
+          wins: player.wins,
+          losses: player.losses,
+          ties: player.ties,
+          winPercentage: decisions ? ((player.wins + player.ties * .5) / decisions) * 100 : 0,
+          singlesWins: player.singlesWins,
+          singlesLosses: player.singlesLosses,
+          singlesTies: player.singlesTies,
+          doublesWins: player.doublesWins,
+          doublesLosses: player.doublesLosses,
+          doublesTies: player.doublesTies,
+          points: player.wins + player.ties * .5,
+          ...(ci ? {
+            clashIndex: ci.endingCi,
+            ciGain: ci.ciGain,
+            singlesCiGain: ci.singlesCiGain,
+            doublesCiGain: ci.doublesCiGain,
+          } : {}),
+        };
+      }),
+    }));
 }
 
 export function toHistoricalStatsRow(
