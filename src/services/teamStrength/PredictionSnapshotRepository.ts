@@ -29,6 +29,14 @@ export type PredictionSnapshotInsert = {
   opponent_player_ids: string[];
   team_player_count: number;
   opponent_player_count: number;
+  team_female_player_count: number;
+  opponent_female_player_count: number;
+  team_male_player_count: number;
+  opponent_male_player_count: number;
+  team_unknown_gender_player_count: number;
+  opponent_unknown_gender_player_count: number;
+  team_standard_player_shortfall: number;
+  opponent_standard_player_shortfall: number;
   team_provisional_player_count: number;
   opponent_provisional_player_count: number;
   team_fallback_player_count: number;
@@ -90,6 +98,14 @@ export function toPredictionSnapshotInsert(
     opponent_player_ids: snapshot.opponentPlayerIds,
     team_player_count: snapshot.teamPlayerCount,
     opponent_player_count: snapshot.opponentPlayerCount,
+    team_female_player_count: snapshot.teamFemalePlayerCount,
+    opponent_female_player_count: snapshot.opponentFemalePlayerCount,
+    team_male_player_count: snapshot.teamMalePlayerCount,
+    opponent_male_player_count: snapshot.opponentMalePlayerCount,
+    team_unknown_gender_player_count: snapshot.teamUnknownGenderPlayerCount,
+    opponent_unknown_gender_player_count: snapshot.opponentUnknownGenderPlayerCount,
+    team_standard_player_shortfall: snapshot.teamStandardPlayerShortfall,
+    opponent_standard_player_shortfall: snapshot.opponentStandardPlayerShortfall,
     team_provisional_player_count: snapshot.teamProvisionalPlayerCount,
     opponent_provisional_player_count: snapshot.opponentProvisionalPlayerCount,
     team_fallback_player_count: snapshot.teamFallbackPlayerCount,
