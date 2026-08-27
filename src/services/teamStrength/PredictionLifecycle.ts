@@ -10,8 +10,9 @@ import type {PredictionSnapshotRepository} from './PredictionSnapshotRepository'
 import type {RosterStrengthResult, TeamStrengthSource} from './RosterStrength';
 import type {TeamVenue} from './TeamStrength';
 
-/** Which scheduled side owns the course. */
-export type MatchVenueClassification = 'HomeTeam' | 'AwayTeam' | 'Neutral';
+// Matchday CI already defines a home venue as the scheduled home team playing
+// on its registered home course. Any other selected course is neutral.
+export type MatchVenueClassification = 'Home' | 'Neutral';
 
 export type PredictionCaptureResult =
   | {
@@ -28,9 +29,8 @@ export type PredictionCaptureResult =
 
 /**
  * Builds and persists the two sides of one immutable roster-stage prediction.
- * Both sides share one capture timestamp. Course advantage follows the team
- * whose registered home course is being used, even if that team is stored as
- * the scheduled away side. Neutral/other courses receive no venue adjustment.
+ * Both sides share one capture timestamp. Home advantage is oriented per side:
+ * Home/Away for a true home venue and Neutral/Neutral for a neutral course.
  */
 export async function captureRosterPredictionStage(input: {
   repository: PredictionSnapshotRepository;
@@ -107,18 +107,10 @@ export async function captureRosterPredictionStage(input: {
   };
 }
 
-export function venueForScheduledSide(
-  matchVenue: MatchVenueClassification,
-  side: 'Home' | 'Away',
-): TeamVenue {
-  if (matchVenue === 'Neutral') return 'Neutral';
-  if (matchVenue === 'HomeTeam') return side === 'Home' ? 'Home' : 'Away';
-  return side === 'Away' ? 'Home' : 'Away';
-}
-
 function venueForSide(
   matchVenue: MatchVenueClassification,
   side: 'Home' | 'Away',
 ): TeamVenue {
-  return venueForScheduledSide(matchVenue, side);
+  if (matchVenue === 'Neutral') return 'Neutral';
+  return side === 'Home' ? 'Home' : 'Away';
 }
