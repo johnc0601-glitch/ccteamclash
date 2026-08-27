@@ -1,3 +1,98 @@
+/* Tablet header organization. Keep the two-row desktop header until true mobile. */
+@media (min-width: 801px) and (max-width: 1100px) {
+  .primary-header .primary-nav-wrap {
+    height: 68px !important;
+    gap: 16px;
+  }
+
+  .primary-header .brand {
+    gap: 9px;
+    flex: 0 0 auto;
+  }
+
+  .primary-header .brand-mark,
+  .primary-header .brand-mark img {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .primary-header .brand strong {
+    font-size: 16px;
+  }
+
+  .primary-header .brand small {
+    font-size: 8px;
+    letter-spacing: .07em;
+  }
+
+  .primary-nav {
+    gap: 12px !important;
+    margin-left: auto;
+  }
+
+  .primary-nav > a {
+    min-height: 68px !important;
+    font-size: 10px !important;
+    letter-spacing: .035em !important;
+  }
+
+  .desktop-account {
+    min-height: 32px !important;
+    padding: 0 9px;
+  }
+
+  .primary-nav-separator {
+    height: 20px;
+  }
+
+  .secondary-header {
+    min-height: 40px;
+    background: #111517;
+  }
+
+  .secondary-nav-wrap {
+    min-height: 40px;
+    gap: 14px;
+  }
+
+  .secondary-nav,
+  .secondary-role-nav {
+    gap: 14px;
+  }
+
+  .secondary-nav::before,
+  .secondary-role-nav::before {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    padding-right: 12px;
+    border-right: 1px solid #34393b;
+    color: #6f787b;
+    font-size: 8px;
+    font-weight: 950;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+
+  .secondary-nav::before {
+    content: 'League';
+  }
+
+  .secondary-role-nav::before {
+    content: 'Tools';
+  }
+
+  .secondary-role-nav {
+    margin-left: auto;
+  }
+
+  .secondary-nav a,
+  .secondary-role-nav a {
+    line-height: 40px;
+    font-size: 9px;
+  }
+}
+
 /* Mobile sports-header refinement. Imported after theme.css. */
 @media (max-width: 800px) {
   .primary-header .primary-nav-wrap {
