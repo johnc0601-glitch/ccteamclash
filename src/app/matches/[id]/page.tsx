@@ -21,10 +21,8 @@ import {MatchRosterService} from '@/domain/match-roster/MatchRosterService';
 import {isMatchAttendanceOpen, isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
 import type {OfficialMatchRoster, OfficialSnapshotState} from '@/domain/match-roster/MatchRosterSnapshot';
 import {parseMatchRosterSnapshotStartAt, snapshotErrorClass} from '@/domain/match-roster/MatchRosterSnapshotAutomation';
-import type {LockedMatchStructure} from '@/domain/match-roster/MatchStructureLock';
 import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
 import {SupabaseMatchRosterRepository} from '@/domain/match-roster/SupabaseMatchRosterRepository';
-import {SupabaseMatchStructureRepository} from '@/domain/match-roster/SupabaseMatchStructureRepository';
 import type {Match} from '@/domain/schedule/Match';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
@@ -131,22 +129,6 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
   const predictionSource = match.date ? resolvePublicPredictionSource(match.date, now) : undefined;
   const officialRosters = officialSnapshot?.status === 'complete' ? officialSnapshot.rosters : undefined;
-  let lockedStructure: LockedMatchStructure | undefined;
-  if (
-    predictionSource === 'matchLineup'
-    && officialRosters
-    && process.env.SUPABASE_SERVICE_ROLE_KEY
-  ) {
-    try {
-      lockedStructure = await new SupabaseMatchStructureRepository(createAdminClient()).getLocked(matchId);
-    } catch (error) {
-      console.error('Locked pre-match structure is unavailable.', {
-        matchId,
-        errorClass: error instanceof Error ? error.name : 'UnknownError',
-      });
-    }
-  }
-
   let homePredictionPlayers = matchday.homeTeam.roster;
   let awayPredictionPlayers = matchday.awayTeam.roster;
 
@@ -168,7 +150,6 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   }
 
   const matchPrediction = buildPublicMatchPrediction({
-    matchId,
     matchDate: match.date,
     matchStatus: match.status,
     hasPublishedResult: Boolean(publishedResult),
@@ -180,7 +161,6 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     homeAttendance: availability?.get(match.homeTeamId),
     awayAttendance: availability?.get(match.awayTeamId),
     officialRosters,
-    lockedStructure,
     now,
   });
 
