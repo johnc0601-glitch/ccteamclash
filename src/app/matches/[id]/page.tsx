@@ -2,6 +2,7 @@ import type {CSSProperties} from 'react';
 import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
+import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
@@ -26,6 +27,10 @@ import type {Match} from '@/domain/schedule/Match';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 import {resolveMatchday, type PublicMatchday} from '@/services/matches/MatchdayService';
+import {
+  buildPublicMatchPrediction,
+  resolvePublicPredictionSource,
+} from '@/services/teamStrength/PublicMatchPrediction';
 import styles from './Matchday.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -74,8 +79,9 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
   if (!event || !match || !match.homeTeamId || !match.awayTeamId || !match.courseId) notFound();
 
-  const locked = isMatchRosterLocked(match);
-  const availabilityOpen = !locked && isMatchAttendanceOpen(match);
+  const now = new Date();
+  const locked = isMatchRosterLocked(match, now);
+  const availabilityOpen = !locked && isMatchAttendanceOpen(match, now);
   const teamIds = [match.homeTeamId, match.awayTeamId];
   const [rosterPlayerIdsByTeam, teamResults, course] = await Promise.all([
     locked ? Promise.resolve(new Map(teamIds.map((teamId) => [teamId, new Set<string>()]))) : getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds),
@@ -123,6 +129,46 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
   const attendanceRepository = new SupabaseMatchRosterRepository(supabase);
   const actor = userResult.data.user ? await attendanceRepository.getAttendanceActor(userResult.data.user.id) : undefined;
+  const canViewMatchPrediction = actor?.profileStatus === 'Approved' && actor.profileRole === 'Commissioner';
+  const predictionSource = canViewMatchPrediction && match.date
+    ? resolvePublicPredictionSource(match.date, now)
+    : undefined;
+  const officialRosters = officialSnapshot?.status === 'complete' ? officialSnapshot.rosters : undefined;
+  let homePredictionPlayers = matchday.homeTeam.roster;
+  let awayPredictionPlayers = matchday.awayTeam.roster;
+
+  if (predictionSource === 'matchLineup' && officialRosters) {
+    const homeRoster = officialRosters.find((roster) => roster.teamId === match.homeTeamId);
+    const awayRoster = officialRosters.find((roster) => roster.teamId === match.awayTeamId);
+    if (homeRoster && awayRoster) {
+      const homeIds = homeRoster.players.map((player) => player.playerId);
+      const awayIds = awayRoster.players.map((player) => player.playerId);
+      const lineupPlayers = await getPlayersByIds(supabase, [...new Set([...homeIds, ...awayIds])]);
+      const playersById = new Map(lineupPlayers.map((player) => [player.id, player]));
+      homePredictionPlayers = homeIds
+        .map((playerId) => playersById.get(playerId))
+        .filter((player): player is LaunchPlayer => Boolean(player));
+      awayPredictionPlayers = awayIds
+        .map((playerId) => playersById.get(playerId))
+        .filter((player): player is LaunchPlayer => Boolean(player));
+    }
+  }
+
+  const matchPrediction = canViewMatchPrediction ? buildPublicMatchPrediction({
+    matchDate: match.date,
+    matchStatus: match.status,
+    hasPublishedResult: Boolean(publishedResult),
+    homeTeamId: match.homeTeamId,
+    awayTeamId: match.awayTeamId,
+    matchVenue: course?.homeTeamId === match.homeTeamId ? 'Home' : 'Neutral',
+    homePlayers: homePredictionPlayers,
+    awayPlayers: awayPredictionPlayers,
+    homeAttendance: availability?.get(match.homeTeamId),
+    awayAttendance: availability?.get(match.awayTeamId),
+    officialRosters,
+    now,
+  }) : undefined;
+
   const openUnlockTeamIds = locked ? await getOpenRosterUnlockTeamIds(supabase, matchId) : new Set<string>();
 
   const personalAttendance = !locked && userResult.data.user ? await matchRosterService.getPersonalAttendance(userResult.data.user.id, matchId) : undefined;
@@ -148,6 +194,14 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
       <main className={styles.page} style={pageBackground}>
         <MatchHero matchday={matchday} />
         <div className={`shell ${styles.content}`}>
+          {matchPrediction ? (
+            <MatchPredictionCard
+              prediction={matchPrediction}
+              awayTeamName={matchday.awayTeam.name}
+              homeTeamName={matchday.homeTeam.name}
+            />
+          ) : null}
+
           <MatchScoreboard matchday={matchday} result={publishedResult} contests={publishedResult ? contests : []} />
 
           {personalAttendance ? (
