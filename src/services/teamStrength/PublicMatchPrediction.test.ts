@@ -4,8 +4,10 @@ import test from 'node:test';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import type {TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import type {OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
+import type {TeamStrengthPredictionSnapshot} from './PredictionSnapshot';
 import {
   buildPublicMatchPrediction,
+  buildPublicMatchPredictionFromSnapshot,
   resolvePublicPredictionSource,
 } from './PublicMatchPrediction';
 
@@ -139,6 +141,75 @@ test('complete match lineup is the final public pre-match prediction stage', () 
   assert.ok((prediction.homeChanceOfVictory ?? 0) > 0.5);
   assert.equal('homeExpectedPoints' in prediction, false);
   assert.equal('awayExpectedPoints' in prediction, false);
+});
+
+test('frozen snapshot remains the displayed prediction even if live CI later changes', () => {
+  const snapshot: TeamStrengthPredictionSnapshot = {
+    matchId: 'match',
+    teamId: 'home',
+    opponentTeamId: 'away',
+    side: 'Home',
+    source: 'matchLineup',
+    captureReason: 'RosterLock',
+    strengthLabel: 'Match Lineup Strength',
+    modelVersion: 'team-strength-v1',
+    capturedAt: '2026-10-03T19:00:00.000Z',
+    venue: 'Home',
+    confidence: 'Full',
+    predictionReadiness: 'Ready',
+    calibrationSlope: 0.117,
+    teamBaseStrength: 910,
+    opponentBaseStrength: 900,
+    matchupStrengthDifference: 18,
+    expectedPointShare: 0.5259,
+    chanceOfVictory: 0.891,
+    teamPlayerIds: ['home-0'],
+    opponentPlayerIds: ['away-0'],
+    teamPlayerClashIndexes: [{playerId: 'home-0', clashIndex: 910}],
+    opponentPlayerClashIndexes: [{playerId: 'away-0', clashIndex: 900}],
+    teamPlayerCount: 1,
+    opponentPlayerCount: 1,
+    teamFemalePlayerCount: 0,
+    opponentFemalePlayerCount: 0,
+    teamMalePlayerCount: 1,
+    opponentMalePlayerCount: 1,
+    teamUnknownGenderPlayerCount: 0,
+    opponentUnknownGenderPlayerCount: 0,
+    teamStandardPlayerShortfall: 17,
+    opponentStandardPlayerShortfall: 17,
+    teamProvisionalPlayerCount: 0,
+    opponentProvisionalPlayerCount: 0,
+    teamFallbackPlayerCount: 0,
+    opponentFallbackPlayerCount: 0,
+    teamOmittedPlayerCount: 0,
+    opponentOmittedPlayerCount: 0,
+  };
+
+  const frozen = buildPublicMatchPredictionFromSnapshot(snapshot);
+  assert.ok(frozen && frozen.state === 'calculated');
+  assert.equal(frozen.homeStrength, 910);
+  assert.equal(frozen.awayStrength, 900);
+  assert.equal(frozen.homeChanceOfVictory, 0.891);
+  assert.equal(frozen.awayChanceOfVictory, 0.109);
+
+  const liveAfterCiChange = buildPublicMatchPrediction({
+    matchDate: '2026-10-03',
+    matchStatus: 'Scheduled',
+    hasPublishedResult: false,
+    homeTeamId: 'home',
+    awayTeamId: 'away',
+    matchVenue: 'Home',
+    homePlayers: players('home', 18, 980),
+    awayPlayers: players('away', 18, 860),
+    officialRosters: [
+      officialRoster('home', players('home', 18, 980)),
+      officialRoster('away', players('away', 18, 860)),
+    ],
+    now: new Date('2026-10-03T20:00:00Z'),
+  });
+
+  assert.ok(liveAfterCiChange && liveAfterCiChange.state === 'calculated');
+  assert.notEqual(liveAfterCiChange.homeChanceOfVictory, frozen.homeChanceOfVictory);
 });
 
 test('a published result suppresses live recomputation of the pre-match forecast', () => {
