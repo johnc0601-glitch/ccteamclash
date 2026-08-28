@@ -16,10 +16,10 @@ test('uses the existing Eastern attendance and roster locks as fixed prediction 
     'confirmedAvailableRoster',
     'matchLineup',
   ]);
-  // Oct. 2/3, 2026 are still EDT (UTC-4).
+  // Oct. 2, 2026 is still EDT (UTC-4).
   assert.equal(checkpoints[0].captureAt.toISOString(), '2026-10-02T04:00:00.000Z');
   assert.equal(checkpoints[1].captureAt.toISOString(), '2026-10-02T16:00:00.000Z');
-  assert.equal(checkpoints[2].captureAt.toISOString(), '2026-10-03T19:00:00.000Z');
+  assert.equal(checkpoints[2].captureAt.toISOString(), '2026-10-02T19:00:00.000Z');
 });
 
 test('only exposes the stage whose point-in-time inputs are still valid', () => {
@@ -38,7 +38,7 @@ test('only exposes the stage whose point-in-time inputs are still valid', () => 
     'confirmedAvailableRoster',
   );
   assert.equal(
-    currentPredictionCaptureSource(matchDate, new Date('2026-10-03T19:00:00.000Z')),
+    currentPredictionCaptureSource(matchDate, new Date('2026-10-02T19:00:00.000Z')),
     'matchLineup',
   );
 });
@@ -47,11 +47,11 @@ test('does not backfill a missed early stage with later information', () => {
   const matchDate = '2026-10-03';
 
   assert.equal(
-    currentPredictionCaptureSource(matchDate, new Date('2026-10-03T12:00:00.000Z')),
+    currentPredictionCaptureSource(matchDate, new Date('2026-10-02T18:00:00.000Z')),
     'confirmedAvailableRoster',
   );
   assert.notEqual(
-    currentPredictionCaptureSource(matchDate, new Date('2026-10-03T12:00:00.000Z')),
+    currentPredictionCaptureSource(matchDate, new Date('2026-10-02T18:00:00.000Z')),
     'activeRoster',
   );
 });
