@@ -5,6 +5,7 @@ import {
   captureAtForSource,
   currentPredictionCaptureSource,
   predictionCaptureCheckpoints,
+  predictionCaptureEligibility,
 } from './PredictionCaptureSchedule';
 
 test('uses the existing Eastern attendance and roster locks as fixed prediction checkpoints', () => {
@@ -40,6 +41,23 @@ test('only exposes the stage whose point-in-time inputs are still valid', () => 
   assert.equal(
     currentPredictionCaptureSource(matchDate, new Date('2026-10-03T19:00:00.000Z')),
     'matchLineup',
+  );
+});
+
+test('expires Match Lineup capture after the finite grace window', () => {
+  const matchDate = '2026-10-03';
+
+  assert.deepEqual(
+    predictionCaptureEligibility(matchDate, new Date('2026-10-03T20:59:59.999Z')),
+    {eligible: true, source: 'matchLineup'},
+  );
+  assert.deepEqual(
+    predictionCaptureEligibility(matchDate, new Date('2026-10-03T21:00:00.000Z')),
+    {eligible: false, reason: 'Expired'},
+  );
+  assert.equal(
+    currentPredictionCaptureSource(matchDate, new Date('2026-10-03T21:00:00.000Z')),
+    undefined,
   );
 });
 
