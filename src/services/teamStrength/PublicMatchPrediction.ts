@@ -5,7 +5,9 @@ import {
   getPlayerAttendanceLockAt,
 } from '@/domain/match-roster/MatchRosterLock';
 import type {OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
+import type {LockedMatchStructure} from '@/domain/match-roster/MatchStructureLock';
 import type {MatchStatus} from '@/domain/schedule/Match';
+import {calculateLockedMatchStructurePrediction} from './LockedMatchStructurePrediction';
 import {
   calculateRosterBasedMatchPrediction,
   type PredictionReadiness,
@@ -18,6 +20,8 @@ import {
 } from './RosterStrength';
 import type {TeamStrengthConfidence, TeamVenue} from './TeamStrength';
 
+export type PublicPredictionSource = TeamStrengthSource | 'matchStructureLock';
+
 export type PublicMatchPrediction =
   | {
       state: 'waiting';
@@ -29,8 +33,11 @@ export type PublicMatchPrediction =
     }
   | {
       state: 'calculated';
-      source: TeamStrengthSource;
+      source: PublicPredictionSource;
+      /** Information stage shown in the card header. */
       stageLabel: string;
+      /** Canonical strength label shown beside the neutral strength number. */
+      strengthLabel: string;
       displayLabel: 'Prediction unavailable' | 'Early estimate' | 'Chance of Victory';
       readiness: PredictionReadiness;
       confidence: TeamStrengthConfidence;
@@ -38,6 +45,8 @@ export type PublicMatchPrediction =
       homeStrength: number;
       awayChanceOfVictory: number | null;
       homeChanceOfVictory: number | null;
+      awayExpectedPoints?: number;
+      homeExpectedPoints?: number;
       venueNote: string;
       updateNote: string;
     };
@@ -54,6 +63,7 @@ export type PublicMatchPredictionInput = {
   homeAttendance?: readonly TeamAttendanceMember[];
   awayAttendance?: readonly TeamAttendanceMember[];
   officialRosters?: readonly OfficialMatchRoster[];
+  lockedStructure?: LockedMatchStructure;
   now?: Date;
 };
 
@@ -61,7 +71,9 @@ export type PublicMatchPredictionInput = {
  * Public display stages intentionally differ from immutable capture windows.
  * The active-roster forecast can be shown as soon as a match is scheduled.
  * Confirmed Available replaces it at Friday noon ET, and Match Lineup replaces
- * that at the official match-day roster lock.
+ * that at the official match-day roster lock. A separately persisted matchup
+ * structure may then upgrade Match Lineup to exact Singles/Doubles Expected
+ * Points without relabeling the underlying neutral strength.
  */
 export function resolvePublicPredictionSource(
   matchDate: string,
@@ -117,6 +129,39 @@ export function buildPublicMatchPrediction(
     };
   }
 
+  if (
+    source === 'matchLineup'
+    && input.lockedStructure
+    && structureMatchesScheduledTeams(input.lockedStructure, input)
+  ) {
+    const exact = calculateLockedMatchStructurePrediction({
+      structure: input.lockedStructure,
+      players: [...input.homePlayers, ...input.awayPlayers],
+      venue: venueForSide(input.matchVenue, 'Home'),
+    });
+
+    if (exact) {
+      const ready = exact.confidence === 'Full';
+      return {
+        state: 'calculated',
+        source: 'matchStructureLock',
+        stageLabel: 'Locked Matchups',
+        strengthLabel: strengths.home.label,
+        displayLabel: ready ? 'Chance of Victory' : 'Early estimate',
+        readiness: ready ? 'Ready' : 'EarlyEstimate',
+        confidence: exact.confidence,
+        awayStrength: strengths.away.baseStrength,
+        homeStrength: strengths.home.baseStrength,
+        awayChanceOfVictory: exact.awayChanceOfVictory,
+        homeChanceOfVictory: exact.homeChanceOfVictory,
+        awayExpectedPoints: exact.awayExpectedPoints,
+        homeExpectedPoints: exact.homeExpectedPoints,
+        venueNote: venueNote(input.matchVenue),
+        updateNote: 'Exact Singles and Doubles structure locked',
+      };
+    }
+  }
+
   const homePrediction = calculateRosterBasedMatchPrediction({
     team: strengths.home,
     opponent: strengths.away,
@@ -133,6 +178,7 @@ export function buildPublicMatchPrediction(
     state: 'calculated',
     source,
     stageLabel: strengths.home.label,
+    strengthLabel: strengths.home.label,
     displayLabel: homePrediction.displayLabel,
     readiness: homePrediction.readiness,
     confidence: homePrediction.confidence,
@@ -140,11 +186,17 @@ export function buildPublicMatchPrediction(
     homeStrength: strengths.home.baseStrength,
     awayChanceOfVictory: awayPrediction.displayChanceOfVictory,
     homeChanceOfVictory: homePrediction.displayChanceOfVictory,
-    venueNote: input.matchVenue === 'Home'
-      ? 'Home-course advantage included (+8 CI)'
-      : 'Neutral venue — no home adjustment',
+    venueNote: venueNote(input.matchVenue),
     updateNote: updateNote(source),
   };
+}
+
+function structureMatchesScheduledTeams(
+  structure: LockedMatchStructure,
+  input: Pick<PublicMatchPredictionInput, 'homeTeamId' | 'awayTeamId'>,
+): boolean {
+  return structure.homeTeamId === input.homeTeamId
+    && structure.awayTeamId === input.awayTeamId;
 }
 
 function venueForSide(
@@ -153,6 +205,12 @@ function venueForSide(
 ): TeamVenue {
   if (matchVenue === 'Neutral') return 'Neutral';
   return side === 'Home' ? 'Home' : 'Away';
+}
+
+function venueNote(matchVenue: MatchVenueClassification): string {
+  return matchVenue === 'Home'
+    ? 'Home-course advantage included (+8 CI)'
+    : 'Neutral venue — no home adjustment';
 }
 
 function waitingDetail(source: TeamStrengthSource): string {
