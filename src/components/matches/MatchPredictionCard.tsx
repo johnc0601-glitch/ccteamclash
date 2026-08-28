@@ -74,7 +74,7 @@ function CalculatedForecast({
           side="Away"
           teamName={awayTeamName}
           percent={awayPercent}
-          strengthLabel={prediction.stageLabel}
+          strengthLabel={prediction.strengthLabel}
           strength={prediction.awayStrength}
         />
         <div className={styles.divider}>VS</div>
@@ -82,7 +82,7 @@ function CalculatedForecast({
           side="Home"
           teamName={homeTeamName}
           percent={homePercent}
-          strengthLabel={prediction.stageLabel}
+          strengthLabel={prediction.strengthLabel}
           strength={prediction.homeStrength}
           align="right"
         />
