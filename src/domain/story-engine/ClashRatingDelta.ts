@@ -2,7 +2,7 @@ export const CLASH_EXPECTATION_DIVISOR = 100;
 export const CLASH_UPSET_EXPONENT = 1.8;
 export const CLASH_MIN_MOVEMENT = 2;
 export const CLASH_MAX_MOVEMENT = 28;
-export const CLASH_DOUBLES_MOVEMENT_MULTIPLIER = 0.75;
+export const CLASH_DOUBLES_MOVEMENT_MULTIPLIER = 0.5;
 
 export type ClashActualScore = 0 | 0.5 | 1;
 
@@ -31,8 +31,10 @@ export function clashCiDelta(actual: ClashActualScore, expected: number): number
 }
 
 /**
- * Doubles carries 75% of the normal per-player CI movement. The 80/20 pair
- * weighting is used only to calculate pair strength and win probability.
+ * Doubles carries 50% of the normal per-player CI movement, so the two
+ * partners collectively receive approximately one normal rating adjustment.
+ * The 80/20 pair weighting is used only to calculate pair strength and win
+ * probability.
  */
 export function clashDoublesCiDelta(actual: ClashActualScore, expected: number): number {
   const baseDelta = clashCiDelta(actual, expected);
