@@ -99,7 +99,7 @@ test('round-trips persisted frozen CI without replacing unresolved null values',
   assert.notEqual(restored.teamPlayerClashIndexes, snapshot.teamPlayerClashIndexes);
 });
 
-test('loads the frozen Home Match Lineup snapshot for retrospective analysis', async () => {
+test('loads the frozen Home snapshot for the requested stage and model version', async () => {
   const snapshot = makeSnapshot();
   const row = toPredictionSnapshotInsert(snapshot);
   const calls: unknown[][] = [];
@@ -126,7 +126,7 @@ test('loads the frozen Home Match Lineup snapshot for retrospective analysis', a
   };
 
   const repository = new SupabasePredictionSnapshotRepository(supabase as any);
-  const restored = await repository.findHomeMatchLineupSnapshot(' match ');
+  const restored = await repository.findHomeSnapshot(' match ', 'matchLineup', ' team-strength-v1 ');
 
   assert.deepEqual(restored, snapshot);
   assert.deepEqual(calls, [
@@ -138,6 +138,37 @@ test('loads the frozen Home Match Lineup snapshot for retrospective analysis', a
     ['eq', 'model_version', 'team-strength-v1'],
     ['maybeSingle'],
   ]);
+});
+
+test('retrospective Match Lineup reader stays model-version isolated', async () => {
+  const calls: unknown[][] = [];
+  const query = {
+    select(columns: string) {
+      calls.push(['select', columns]);
+      return this;
+    },
+    eq(column: string, value: string) {
+      calls.push(['eq', column, value]);
+      return this;
+    },
+    async maybeSingle() {
+      calls.push(['maybeSingle']);
+      return {data: null, error: null};
+    },
+  };
+  const supabase = {
+    from(table: string) {
+      calls.push(['from', table]);
+      return query;
+    },
+  };
+
+  const repository = new SupabasePredictionSnapshotRepository(supabase as any);
+  assert.equal(
+    await repository.findHomeMatchLineupSnapshot('match', 'team-strength-v2'),
+    undefined,
+  );
+  assert.ok(calls.some((call) => call[0] === 'eq' && call[1] === 'model_version' && call[2] === 'team-strength-v2'));
 });
 
 test('does not query persistence for an empty retrospective match id', async () => {
