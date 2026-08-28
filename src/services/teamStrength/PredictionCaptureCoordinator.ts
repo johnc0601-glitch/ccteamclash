@@ -7,7 +7,7 @@ import {
   type MatchVenueClassification,
   type PredictionCaptureResult,
 } from './PredictionLifecycle';
-import {currentPredictionCaptureSource} from './PredictionCaptureSchedule';
+import {predictionCaptureEligibility} from './PredictionCaptureSchedule';
 import type {PredictionSnapshotRepository} from './PredictionSnapshotRepository';
 import {calculateMatchStageStrengthPair} from './PredictionStageStrength';
 
@@ -35,13 +35,13 @@ export type PredictionCaptureCoordinatorInput = {
 
 export type PredictionCaptureCoordinatorResult =
   | PredictionCaptureResult
-  | {captured: false; reason: 'NotDue' | 'NotEligible' | 'MissingInputs'};
+  | {captured: false; reason: 'NotDue' | 'Expired' | 'NotEligible' | 'MissingInputs'};
 
 /**
  * Coordinates one roster-stage capture using only data that is valid in the
  * current lifecycle window. It intentionally refuses to backfill an earlier
- * stage from later information and refuses post-result capture, which prevents
- * today's CI from leaking into a historical pre-match snapshot.
+ * stage from later information and refuses post-result or expired capture,
+ * preventing today's CI from leaking into a historical pre-match snapshot.
  */
 export async function captureCurrentRosterPrediction(
   input: PredictionCaptureCoordinatorInput,
@@ -51,8 +51,11 @@ export async function captureCurrentRosterPrediction(
   }
 
   const now = input.now ?? new Date();
-  const source = currentPredictionCaptureSource(input.matchDate, now);
-  if (!source) return {captured: false, reason: 'NotDue'};
+  const eligibility = predictionCaptureEligibility(input.matchDate, now);
+  if (!eligibility.eligible) {
+    return {captured: false, reason: eligibility.reason};
+  }
+  const source = eligibility.source;
 
   const strengths = calculateMatchStageStrengthPair({
     source,
