@@ -143,7 +143,12 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
       registrationSeason = openSeason as RegistrationSeason | null;
 
       if (registrationSeason) {
-        const [{data: existingApplication}, {data: seasonTeams}, {data: priorApplication}] = await Promise.all([
+        const [
+          {data: existingApplication},
+          {data: seasonTeams},
+          {data: priorApplication},
+          {data: genderLocked},
+        ] = await Promise.all([
           launchSupabase
             .from('launch_player_applications')
             .select('status, requested_team_id, player_type, gender')
@@ -163,22 +168,23 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
             .order('created_at', {ascending: false})
             .limit(1)
             .maybeSingle(),
+          launchSupabase.rpc('launch_player_gender_locked', {target_player_id: profile.playerId}),
         ]);
         application = existingApplication as RegistrationApplication | null;
 
         const linkedPlayer = players.find((player) => player.id === profile?.playerId);
-        const establishedPlayerType = priorApplication?.player_type === 'Adult' || priorApplication?.player_type === 'Junior'
+        const previousPlayerType = priorApplication?.player_type === 'Adult' || priorApplication?.player_type === 'Junior'
           ? priorApplication.player_type
-          : null;
+          : 'Adult';
         const establishedGender = linkedPlayer?.gender === 'Male' || linkedPlayer?.gender === 'Female'
           ? linkedPlayer.gender
           : priorApplication?.gender === 'Male' || priorApplication?.gender === 'Female'
             ? priorApplication.gender
             : null;
 
-        if (establishedPlayerType && establishedGender) {
+        if (genderLocked === true && establishedGender) {
           establishedRegistration = {
-            playerType: establishedPlayerType,
+            playerType: previousPlayerType,
             gender: establishedGender,
           };
         }
@@ -335,7 +341,7 @@ function MemberProfile({
           <h2>{registrationSeason.name}</h2>
           <p className={styles.linkingNote}>
             {establishedRegistration
-              ? `Player record connected as ${linkedPlayer?.name}. Choose a team to finish registration. Your established player type and division carry forward automatically.`
+              ? `Player record connected as ${linkedPlayer?.name}. Your division is permanently locked. Choose your team and Junior status for this season.`
               : `Player record connected as ${linkedPlayer?.name}. Choose a team and division to finish registration.`}
           </p>
           <form className={styles.form} action={submitSeasonApplication}>
@@ -345,22 +351,25 @@ function MemberProfile({
               <option value="" disabled>Choose your team</option>
               {registrationTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
             </select>
+            <label style={{display: 'flex', alignItems: 'center', gap: '10px', textTransform: 'none'}}>
+              <input
+                name="playerType"
+                type="checkbox"
+                value="Junior"
+                defaultChecked={establishedRegistration?.playerType === 'Junior'}
+                style={{width: 'auto', minHeight: 'auto'}}
+              />
+              <input name="playerType" type="hidden" value="Adult" />
+              <span>Junior this season</span>
+            </label>
             {establishedRegistration ? (
               <>
-                <input name="playerType" type="hidden" value={establishedRegistration.playerType} />
                 <input name="gender" type="hidden" value={establishedRegistration.gender} />
-                <label>Player type</label>
-                <div className={styles.connected}><strong>{establishedRegistration.playerType}</strong></div>
                 <label>Division</label>
-                <div className={styles.connected}><strong>{establishedRegistration.gender}</strong></div>
+                <div className={styles.connected}><strong>{establishedRegistration.gender}</strong><span>Permanent</span></div>
               </>
             ) : (
               <>
-                <label style={{display: 'flex', alignItems: 'center', gap: '10px', textTransform: 'none'}}>
-                  <input name="playerType" type="checkbox" value="Junior" style={{width: 'auto', minHeight: 'auto'}} />
-                  <input name="playerType" type="hidden" value="Adult" />
-                  <span>Junior</span>
-                </label>
                 <label htmlFor="accountGender">Division</label>
                 <select id="accountGender" name="gender" required defaultValue="">
                   <option value="" disabled>Choose division</option>

@@ -75,6 +75,19 @@ export class StatisticsEngine {
     return new Map(movements);
   }
 
+  async getPlayerSeasonStatisticsSnapshot(playerIds: string[], seasonId: string): Promise<{
+    statistics: PlayerStatisticsResult[];
+    ciMovements: Map<string, PlayerCiMovement>;
+  }> {
+    const results = await this.repository.getPublishedChallengeResults();
+    const statistics = playerIds.map((playerId) => this.playerStatistics.calculate(playerId, seasonId, results));
+    const ciMovements = new Map(playerIds.flatMap((playerId) => {
+      const movement = this.ciMovement.calculateForSeason(playerId, seasonId, results);
+      return movement ? [[playerId, movement] as const] : [];
+    }));
+    return {statistics, ciMovements};
+  }
+
   async getPlayerMatchHistory(playerId: string, limit?: number): Promise<PlayerMatchHistoryEntry[]> {
     const results = await this.repository.getPublishedChallengeResults();
     return this.playerStatistics.getMatchHistory(playerId, results, limit);
