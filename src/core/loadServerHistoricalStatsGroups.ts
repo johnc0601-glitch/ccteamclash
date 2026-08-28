@@ -12,6 +12,8 @@ import {
   type StatsRow,
 } from '@/services/stats/StatsPageModel';
 
+const PAGE_SIZE = 1000;
+
 type HistoricalStatsSummaryRow = {
   season_id: string;
   season_name: string;
@@ -37,15 +39,25 @@ export async function loadServerHistoricalStatsGroups(
   genderByPlayerId: ReadonlyMap<string, Player['gender']>,
 ): Promise<StatsGroup[]> {
   const supabase = await createHistoricalStatsReadClient();
-  const {data, error} = await supabase
-    .from('historical_player_stats_summary')
-    .select('season_id,season_name,player_id,player_name,team_names,matches_played,wins,losses,ties,win_percentage,singles_wins,singles_losses,singles_ties,doubles_wins,doubles_losses,doubles_ties,points')
-    .order('season_id', {ascending: false})
-    .order('player_id', {ascending: true});
+  const summaries: HistoricalStatsSummaryRow[] = [];
+  let from = 0;
 
-  if (error) throw error;
+  while (true) {
+    const {data, error} = await supabase
+      .from('historical_player_stats_summary')
+      .select('season_id,season_name,player_id,player_name,team_names,matches_played,wins,losses,ties,win_percentage,singles_wins,singles_losses,singles_ties,doubles_wins,doubles_losses,doubles_ties,points')
+      .order('season_id', {ascending: false})
+      .order('player_id', {ascending: true})
+      .range(from, from + PAGE_SIZE - 1);
 
-  const summaries = (data ?? []) as HistoricalStatsSummaryRow[];
+    if (error) throw error;
+
+    const page = (data ?? []) as HistoricalStatsSummaryRow[];
+    if (page.length === 0) break;
+    summaries.push(...page);
+    from += page.length;
+  }
+
   const seasons = new Map<string, StatsGroup>();
   const seenPlayerSeasons = new Set<string>();
 
