@@ -75,6 +75,21 @@ test('rejects a player who is not on that side official roster', () => {
   assert.ok(result.errors.some((error) => error.includes('Home singles player away-1 is not on the official roster')));
 });
 
+test('rejects a half-filled doubles pair at lock time', () => {
+  const result = buildLockedMatchStructure({
+    ...baseInput(),
+    doubles: [{
+      position: 1,
+      homePlayerIds: ['home-1', null],
+      awayPlayerIds: ['away-1', 'away-2'],
+    }],
+  });
+
+  assert.equal(result.ok, false);
+  if (result.ok) return;
+  assert.ok(result.errors.includes('Home doubles position 1 must contain two players or be empty.'));
+});
+
 test('permits intentionally empty locked slots and counts exact structural capacity', () => {
   const singles = Array.from({length: 17}, (_, index) => ({
     position: index + 1,
@@ -111,6 +126,23 @@ test('requires official snapshots for the scheduled teams and match', () => {
   assert.equal(result.ok, false);
   if (result.ok) return;
   assert.ok(result.errors.includes('Official away roster is unavailable.'));
+});
+
+test('blocks authoritative structure while an official roster needs commissioner review', () => {
+  const input = baseInput();
+  const result = buildLockedMatchStructure({
+    ...input,
+    officialRosters: [
+      {...input.officialRosters[0], needsCommissionerReview: true},
+      input.officialRosters[1],
+    ],
+  });
+
+  assert.equal(result.ok, false);
+  if (result.ok) return;
+  assert.ok(result.errors.includes(
+    'Official home roster requires commissioner review before structure lock.',
+  ));
 });
 
 function baseInput() {
