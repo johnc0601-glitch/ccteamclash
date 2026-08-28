@@ -2,10 +2,9 @@ import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {StatsTable} from '@/components/stats/StatsTable';
 import {loadServerHistoricalCiGains} from '@/core/loadServerHistoricalCiGains';
 import {loadServerHistoricalGenderMap} from '@/core/loadServerHistoricalGenderMap';
-import {loadServerHistoricalStatsRows} from '@/core/loadServerHistoricalStatsRows';
+import {loadServerHistoricalStatsGroups} from '@/core/loadServerHistoricalStatsGroups';
 import {createServerStatsQueryService} from '@/core/createServerStatsQueryService';
 import {
-  buildHistoricalStatsGroups,
   buildOverallRows,
   qualifiesStatsRow,
   toLiveStatsRow,
@@ -27,11 +26,10 @@ function compactSeasonName(name: string): string {
 
 export default async function StatsPage({searchParams}: StatsPageProps) {
   const statsQueryService = await createServerStatsQueryService();
-  const [statsSnapshot, historicalCiGains, historicalGenderOverrides, historicalMatchupRows] = await Promise.all([
+  const [statsSnapshot, historicalCiGains, historicalGenderOverrides] = await Promise.all([
     statsQueryService.getSnapshot(),
     loadServerHistoricalCiGains(),
     loadServerHistoricalGenderMap(),
-    loadServerHistoricalStatsRows(),
   ]);
   const {playerViews} = statsSnapshot;
   const genderByPlayerId = new Map(statsSnapshot.genderByPlayerId);
@@ -39,11 +37,10 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
     genderByPlayerId.set(playerId, gender);
   }
 
-  const historicalGroups = buildHistoricalStatsGroups(
-    historicalMatchupRows,
+  const historicalGroups = (await loadServerHistoricalStatsGroups(
     historicalCiGains,
     genderByPlayerId,
-  ).map((group) => ({
+  )).map((group) => ({
     ...group,
     label: compactSeasonName(group.label),
   }));
