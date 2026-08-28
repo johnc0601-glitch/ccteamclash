@@ -16,7 +16,7 @@ test('derives fixed capture reasons from the strength source', () => {
   assert.equal(TEAM_STRENGTH_CAPTURE_REASONS.matchLineup, 'RosterLock');
 });
 
-test('freezes exact player pool, composition, shortfall, calibration and data quality', () => {
+test('freezes exact player pool, CI, composition, shortfall, calibration and data quality', () => {
   const team = strength('activeRoster', [
     player('b', 910, false, 'Female'),
     player('a', 900, true, 'Male'),
@@ -52,6 +52,14 @@ test('freezes exact player pool, composition, shortfall, calibration and data qu
   assert.equal(snapshot.predictionReadiness, 'EarlyEstimate');
   assert.deepEqual(snapshot.teamPlayerIds, ['a', 'b']);
   assert.deepEqual(snapshot.opponentPlayerIds, ['c', 'd']);
+  assert.deepEqual(snapshot.teamPlayerClashIndexes, [
+    {playerId: 'a', clashIndex: 900},
+    {playerId: 'b', clashIndex: 910},
+  ]);
+  assert.deepEqual(snapshot.opponentPlayerClashIndexes, [
+    {playerId: 'c', clashIndex: 890},
+    {playerId: 'd', clashIndex: 900},
+  ]);
   assert.equal(snapshot.teamFemalePlayerCount, 1);
   assert.equal(snapshot.teamMalePlayerCount, 1);
   assert.equal(snapshot.teamUnknownGenderPlayerCount, 0);
@@ -63,6 +71,12 @@ test('freezes exact player pool, composition, shortfall, calibration and data qu
   assert.equal(snapshot.teamProvisionalPlayerCount, 1);
   assert.equal(snapshot.opponentProvisionalPlayerCount, 0);
   assert.equal(snapshot.capturedAt, '2026-10-01T12:00:00.000Z');
+
+  team.playerClashIndexes[0].clashIndex = 123;
+  assert.deepEqual(snapshot.teamPlayerClashIndexes, [
+    {playerId: 'a', clashIndex: 900},
+    {playerId: 'b', clashIndex: 910},
+  ]);
 });
 
 test('rejects a snapshot when prediction and roster sources differ', () => {

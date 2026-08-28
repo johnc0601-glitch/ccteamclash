@@ -27,6 +27,8 @@ export type PredictionSnapshotInsert = {
   chance_of_victory: number;
   team_player_ids: string[];
   opponent_player_ids: string[];
+  team_player_clash_indexes: TeamStrengthPredictionSnapshot['teamPlayerClashIndexes'];
+  opponent_player_clash_indexes: TeamStrengthPredictionSnapshot['opponentPlayerClashIndexes'];
   team_player_count: number;
   opponent_player_count: number;
   team_female_player_count: number;
@@ -96,6 +98,8 @@ export function toPredictionSnapshotInsert(
     chance_of_victory: snapshot.chanceOfVictory,
     team_player_ids: snapshot.teamPlayerIds,
     opponent_player_ids: snapshot.opponentPlayerIds,
+    team_player_clash_indexes: snapshot.teamPlayerClashIndexes,
+    opponent_player_clash_indexes: snapshot.opponentPlayerClashIndexes,
     team_player_count: snapshot.teamPlayerCount,
     opponent_player_count: snapshot.opponentPlayerCount,
     team_female_player_count: snapshot.teamFemalePlayerCount,

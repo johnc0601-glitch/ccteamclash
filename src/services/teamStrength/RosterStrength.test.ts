@@ -49,6 +49,10 @@ test('does not silently drop active players with no CI', () => {
   assert.equal(result.topSixCi, 762.5);
   assert.equal(result.baseStrength, 762.5);
   assert.equal(result.confidence, 'Low');
+  assert.deepEqual(result.playerClashIndexes, [
+    {playerId: 'male-fallback', clashIndex: 825},
+    {playerId: 'female-fallback', clashIndex: 700},
+  ]);
 });
 
 test('captures gender composition from selected players independently of CI resolution', () => {
@@ -96,6 +100,9 @@ test('uses PDGA as the fallback seed before the division baseline', () => {
   assert.equal(result.baseStrength, 912);
   assert.equal(result.provisionalPlayerCount, 1);
   assert.equal(result.fallbackPlayerCount, 1);
+  assert.deepEqual(result.playerClashIndexes, [
+    {playerId: 'pdga-fallback', clashIndex: 912},
+  ]);
 });
 
 test('confirmed available strength includes only explicit Playing responses and captures composition', () => {
@@ -152,6 +159,10 @@ test('official lineup strength resolves immutable player ids and exposes missing
   assert.equal(result.unknownGenderPlayerCount, 1);
   assert.equal(result.standardPlayerShortfall, 16);
   assert.equal(result.confidence, 'Low');
+  assert.deepEqual(result.playerClashIndexes, [
+    {playerId: 'known', clashIndex: 900},
+    {playerId: 'missing', clashIndex: null},
+  ]);
   assert.equal('activeRosterStrength' in result, false);
 });
 

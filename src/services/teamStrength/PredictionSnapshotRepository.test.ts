@@ -26,6 +26,14 @@ test('maps the immutable prediction snapshot to the database row without relabel
     chanceOfVictory: 0.83,
     teamPlayerIds: ['a', 'b'],
     opponentPlayerIds: ['c', 'd'],
+    teamPlayerClashIndexes: [
+      {playerId: 'a', clashIndex: 900},
+      {playerId: 'b', clashIndex: 825},
+    ],
+    opponentPlayerClashIndexes: [
+      {playerId: 'c', clashIndex: 890},
+      {playerId: 'd', clashIndex: null},
+    ],
     teamPlayerCount: 2,
     opponentPlayerCount: 2,
     teamFemalePlayerCount: 1,
@@ -56,6 +64,14 @@ test('maps the immutable prediction snapshot to the database row without relabel
   assert.equal(row.matchup_strength_difference, 18);
   assert.deepEqual(row.team_player_ids, ['a', 'b']);
   assert.deepEqual(row.opponent_player_ids, ['c', 'd']);
+  assert.deepEqual(row.team_player_clash_indexes, [
+    {playerId: 'a', clashIndex: 900},
+    {playerId: 'b', clashIndex: 825},
+  ]);
+  assert.deepEqual(row.opponent_player_clash_indexes, [
+    {playerId: 'c', clashIndex: 890},
+    {playerId: 'd', clashIndex: null},
+  ]);
   assert.equal(row.team_female_player_count, 1);
   assert.equal(row.opponent_female_player_count, 0);
   assert.equal(row.team_male_player_count, 1);

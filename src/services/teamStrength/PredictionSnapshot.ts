@@ -1,5 +1,9 @@
 import type {PredictionReadiness, RosterBasedMatchPrediction} from './MatchPrediction';
-import type {RosterStrengthResult, TeamStrengthSource} from './RosterStrength';
+import type {
+  FrozenPlayerClashIndex,
+  RosterStrengthResult,
+  TeamStrengthSource,
+} from './RosterStrength';
 import type {TeamStrengthConfidence, TeamVenue} from './TeamStrength';
 
 export const TEAM_STRENGTH_CAPTURE_REASONS = {
@@ -33,6 +37,10 @@ export type TeamStrengthPredictionSnapshot = {
   chanceOfVictory: number;
   teamPlayerIds: string[];
   opponentPlayerIds: string[];
+  /** Exact point-in-time CI used for each selected team player. */
+  teamPlayerClashIndexes: FrozenPlayerClashIndex[];
+  /** Exact point-in-time CI used for each selected opponent player. */
+  opponentPlayerClashIndexes: FrozenPlayerClashIndex[];
   teamPlayerCount: number;
   opponentPlayerCount: number;
   teamFemalePlayerCount: number;
@@ -54,10 +62,10 @@ export type TeamStrengthPredictionSnapshot = {
 
 /**
  * Creates the immutable payload needed to calibrate the roster stages after
- * future seasons. In addition to CI quality, snapshots preserve gender
- * composition and the raw 18-player shortfall so future structural-scoring
- * studies can use what was actually known at each lifecycle checkpoint rather
- * than reconstructing it later.
+ * future seasons. In addition to CI quality, snapshots preserve the exact
+ * point-in-time CI used for every selected player, gender composition, and the
+ * raw 18-player shortfall. Post-match analysis can therefore use only what was
+ * known at the lifecycle checkpoint instead of leaking later CI updates.
  */
 export function buildTeamStrengthPredictionSnapshot(input: {
   matchId: string;
@@ -109,6 +117,8 @@ export function buildTeamStrengthPredictionSnapshot(input: {
     chanceOfVictory: prediction.regularSeasonChanceOfVictory,
     teamPlayerIds: sortedUnique(teamStrength.playerIds),
     opponentPlayerIds: sortedUnique(opponentStrength.playerIds),
+    teamPlayerClashIndexes: sortedPlayerClashIndexes(teamStrength.playerClashIndexes),
+    opponentPlayerClashIndexes: sortedPlayerClashIndexes(opponentStrength.playerClashIndexes),
     teamPlayerCount: teamStrength.rosterPlayerCount,
     opponentPlayerCount: opponentStrength.rosterPlayerCount,
     teamFemalePlayerCount: teamStrength.femalePlayerCount,
@@ -130,4 +140,12 @@ export function buildTeamStrengthPredictionSnapshot(input: {
 
 function sortedUnique(values: readonly string[]): string[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
+}
+
+function sortedPlayerClashIndexes(
+  values: readonly FrozenPlayerClashIndex[],
+): FrozenPlayerClashIndex[] {
+  return values
+    .map(({playerId, clashIndex}) => ({playerId, clashIndex}))
+    .sort((left, right) => left.playerId.localeCompare(right.playerId));
 }

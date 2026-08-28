@@ -4,8 +4,9 @@
 -- exact Active Roster or attendance-state inputs from before old matches. That
 -- makes stage-specific calibration weaker than it should be. These internal
 -- snapshots preserve the inputs needed to validate future seasons honestly,
--- including gender composition and the raw 18-player shortfall needed to study
--- structural Clash scoring without reconstructing it later.
+-- including frozen per-player CI, gender composition, and the raw 18-player
+-- shortfall needed to study structural Clash scoring without reconstructing it
+-- from later player ratings.
 
 create table if not exists public.team_strength_prediction_snapshots (
   id bigint generated always as identity primary key,
@@ -29,6 +30,8 @@ create table if not exists public.team_strength_prediction_snapshots (
   chance_of_victory numeric not null check (chance_of_victory between 0 and 1),
   team_player_ids jsonb not null check (jsonb_typeof(team_player_ids) = 'array'),
   opponent_player_ids jsonb not null check (jsonb_typeof(opponent_player_ids) = 'array'),
+  team_player_clash_indexes jsonb not null check (jsonb_typeof(team_player_clash_indexes) = 'array'),
+  opponent_player_clash_indexes jsonb not null check (jsonb_typeof(opponent_player_clash_indexes) = 'array'),
   team_player_count integer not null check (team_player_count >= 0),
   opponent_player_count integer not null check (opponent_player_count >= 0),
   team_female_player_count integer not null check (team_female_player_count >= 0),
@@ -93,6 +96,10 @@ comment on column public.team_strength_prediction_snapshots.team_player_ids is
   'Exact player-id pool selected for the team-side strength stage at capture time.';
 comment on column public.team_strength_prediction_snapshots.opponent_player_ids is
   'Exact opponent player-id pool selected for the strength stage at capture time.';
+comment on column public.team_strength_prediction_snapshots.team_player_clash_indexes is
+  'Point-in-time player-id/Clash-Index pairs used by the team strength calculation; null CI means unresolved at capture time.';
+comment on column public.team_strength_prediction_snapshots.opponent_player_clash_indexes is
+  'Point-in-time opponent player-id/Clash-Index pairs used by the strength calculation; null CI means unresolved at capture time.';
 comment on column public.team_strength_prediction_snapshots.team_female_player_count is
   'Female players in the exact selected team pool; retained for future structural bonus-point calibration.';
 comment on column public.team_strength_prediction_snapshots.opponent_female_player_count is

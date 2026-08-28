@@ -16,6 +16,12 @@ export const STANDARD_MATCH_PLAYER_COUNT = 18;
 
 export type TeamStrengthSource = keyof typeof TEAM_STRENGTH_STAGE_LABELS;
 
+export type FrozenPlayerClashIndex = {
+  playerId: string;
+  /** Exact CI used at this stage; null means the selected player was unresolved. */
+  clashIndex: number | null;
+};
+
 export type RosterStrengthResult = Omit<
   ActiveRosterStrengthBreakdown,
   'confidence' | 'activeRosterStrength'
@@ -39,6 +45,8 @@ export type RosterStrengthResult = Omit<
   standardPlayerShortfall: number;
   /** Exact selected stage pool, including ids whose CI could not be resolved. */
   playerIds: string[];
+  /** Point-in-time CI used for every selected player, including unresolved nulls. */
+  playerClashIndexes: FrozenPlayerClashIndex[];
 };
 
 type ResolvedPlayerCi = {
@@ -122,6 +130,7 @@ export function calculateRosterStageStrength(
   const playersById = new Map(players.map((player) => [player.id, player]));
   const composition = rosterComposition(uniquePlayerIds, playersById);
   const resolved: ResolvedPlayerCi[] = [];
+  const playerClashIndexes: FrozenPlayerClashIndex[] = [];
   let omittedPlayerCount = 0;
 
   for (const playerId of uniquePlayerIds) {
@@ -129,11 +138,13 @@ export function calculateRosterStageStrength(
     const playerCi = player ? resolvePlayerCi(player) : undefined;
 
     if (!playerCi) {
+      playerClashIndexes.push({playerId, clashIndex: null});
       omittedPlayerCount += 1;
       continue;
     }
 
     resolved.push(playerCi);
+    playerClashIndexes.push({playerId, clashIndex: playerCi.ci});
   }
 
   const base = calculateActiveRosterStrength(resolved.map((player) => player.ci));
@@ -170,6 +181,7 @@ export function calculateRosterStageStrength(
       STANDARD_MATCH_PLAYER_COUNT - uniquePlayerIds.length,
     ),
     playerIds: uniquePlayerIds,
+    playerClashIndexes,
   };
 }
 
