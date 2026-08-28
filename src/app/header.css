@@ -218,6 +218,17 @@
     margin: 0;
   }
 
+  /* Author CSS elsewhere forces the nested nav to display:grid. Explicitly
+     restore native <details> closed-state behavior so commissioner-only menu
+     contents cannot leak out as an empty floating box. */
+  .mobile-nav:not([open]) > nav {
+    display: none !important;
+  }
+
+  .mobile-nav[open] > nav {
+    display: grid !important;
+  }
+
   .mobile-nav > summary {
     width: 42px;
     height: 42px;
