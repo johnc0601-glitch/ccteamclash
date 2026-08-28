@@ -1,5 +1,6 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {StatsTable} from '@/components/stats/StatsTable';
+import {redirect} from 'next/navigation';
 import {loadServerHistoricalCiGains} from '@/core/loadServerHistoricalCiGains';
 import {loadServerHistoricalGenderMap} from '@/core/loadServerHistoricalGenderMap';
 import {loadServerHistoricalStatsGroups} from '@/core/loadServerHistoricalStatsGroups';
@@ -15,6 +16,8 @@ import './compact.css';
 
 export type {StatsGroup, StatsRow} from '@/services/stats/StatsPageModel';
 
+export type StatsGroupOption = Pick<StatsGroup, 'id' | 'label'>;
+
 type StatsPageProps = {
   searchParams: Promise<{season?: string | string[]}>;
 };
@@ -25,6 +28,8 @@ function compactSeasonName(name: string): string {
 }
 
 export default async function StatsPage({searchParams}: StatsPageProps) {
+  const query = await searchParams;
+  const requestedSeason = Array.isArray(query.season) ? query.season[0] : query.season;
   const statsQueryService = await createServerStatsQueryService();
   const [statsSnapshot, historicalCiGains, historicalGenderOverrides] = await Promise.all([
     statsQueryService.getSnapshot(),
@@ -82,10 +87,16 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
     ...seasonGroups,
   ];
 
-  console.info('[stats] Stats groups ready', groups.map((group) => ({id: group.id, players: group.rows.length})));
+  const selectedGroupId = requestedSeason ?? 'overall';
+  const selectedGroup = groups.find((group) => group.id === selectedGroupId);
+  if (!selectedGroup || requestedSeason === 'overall') redirect('/stats');
+  const groupOptions: StatsGroupOption[] = groups.map(({id, label}) => ({id, label}));
 
-  const query = await searchParams;
-  const requestedSeason = Array.isArray(query.season) ? query.season[0] : query.season;
+  console.info('[stats] Stats group ready', {
+    id: selectedGroup.id,
+    players: selectedGroup.rows.length,
+    availableGroups: groupOptions.length,
+  });
 
   return (
     <>
@@ -96,7 +107,7 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
           <h1>Stats</h1>
           <p>Player performance by season or across the full recorded Coastal Clash history.</p>
         </header>
-        <StatsTable groups={groups} initialGroupId={requestedSeason ?? 'overall'} />
+        <StatsTable group={selectedGroup} groupOptions={groupOptions} />
       </main>
       <Footer />
     </>

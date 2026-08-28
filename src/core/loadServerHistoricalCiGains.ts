@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type {SupabaseClient} from '@supabase/supabase-js';
+import {unstable_cache} from 'next/cache';
 import {createHistoricalStatsReadClient} from '@/core/createHistoricalStatsReadClient';
 import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCiArchiveReplay';
 import {formatHistoricalCiReplayFailure} from '@/services/statistics/HistoricalCiReplayDiagnostic';
@@ -48,10 +49,9 @@ const PAGE_SIZE = 1000;
  * expensive request-time replay path.
  */
 export async function loadServerHistoricalCiGains(): Promise<Map<string, HistoricalCiGainBreakdown>> {
-  const client = await createHistoricalStatsReadClient();
   const [factLoad, sourceRows] = await Promise.all([
-    loadAllHistoricalCiFacts(client),
-    loadAllHistoricalMatchupOrders(client),
+    loadCachedHistoricalCiFacts(),
+    loadCachedHistoricalMatchupOrders(),
   ]);
 
   if ('fallbackReason' in factLoad) {
@@ -91,6 +91,18 @@ export async function loadServerHistoricalCiGains(): Promise<Map<string, Histori
   if (!validation.ok) return loadHistoricalCiGainsFromReplay(validation.reason);
   return validation.summaries;
 }
+
+const loadCachedHistoricalCiFacts = unstable_cache(
+  async () => loadAllHistoricalCiFacts(await createHistoricalStatsReadClient()),
+  ['historical-ci-facts-v1'],
+  {revalidate: 3600, tags: ['historical-stats']},
+);
+
+const loadCachedHistoricalMatchupOrders = unstable_cache(
+  async () => loadAllHistoricalMatchupOrders(await createHistoricalStatsReadClient()),
+  ['historical-matchup-orders-v1'],
+  {revalidate: 3600, tags: ['historical-stats']},
+);
 
 async function loadAllHistoricalCiFacts(
   supabase: SupabaseClient,

@@ -1,5 +1,6 @@
 import 'server-only';
 
+import {unstable_cache} from 'next/cache';
 import {createHistoricalStatsReadClient} from '@/core/createHistoricalStatsReadClient';
 import type {Player} from '@/models/Player';
 import {
@@ -38,26 +39,7 @@ export async function loadServerHistoricalStatsGroups(
   ciByPlayerSeason: ReadonlyMap<string, HistoricalCiLedgerSummary>,
   genderByPlayerId: ReadonlyMap<string, Player['gender']>,
 ): Promise<StatsGroup[]> {
-  const supabase = await createHistoricalStatsReadClient();
-  const summaries: HistoricalStatsSummaryRow[] = [];
-  let from = 0;
-
-  while (true) {
-    const {data, error} = await supabase
-      .from('historical_player_stats_summary')
-      .select('season_id,season_name,player_id,player_name,team_names,matches_played,wins,losses,ties,win_percentage,singles_wins,singles_losses,singles_ties,doubles_wins,doubles_losses,doubles_ties,points')
-      .order('season_id', {ascending: false})
-      .order('player_id', {ascending: true})
-      .range(from, from + PAGE_SIZE - 1);
-
-    if (error) throw error;
-
-    const page = (data ?? []) as HistoricalStatsSummaryRow[];
-    if (page.length === 0) break;
-    summaries.push(...page);
-    from += page.length;
-  }
-
+  const summaries = await loadCachedHistoricalStatsSummaries();
   const seasons = new Map<string, StatsGroup>();
   const seenPlayerSeasons = new Set<string>();
 
@@ -121,3 +103,31 @@ export async function loadServerHistoricalStatsGroups(
 
   return groups;
 }
+
+const loadCachedHistoricalStatsSummaries = unstable_cache(
+  async (): Promise<HistoricalStatsSummaryRow[]> => {
+    const supabase = await createHistoricalStatsReadClient();
+    const summaries: HistoricalStatsSummaryRow[] = [];
+    let from = 0;
+
+    while (true) {
+      const {data, error} = await supabase
+        .from('historical_player_stats_summary')
+        .select('season_id,season_name,player_id,player_name,team_names,matches_played,wins,losses,ties,win_percentage,singles_wins,singles_losses,singles_ties,doubles_wins,doubles_losses,doubles_ties,points')
+        .order('season_id', {ascending: false})
+        .order('player_id', {ascending: true})
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (error) throw error;
+
+      const page = (data ?? []) as HistoricalStatsSummaryRow[];
+      if (page.length === 0) break;
+      summaries.push(...page);
+      from += page.length;
+    }
+
+    return summaries;
+  },
+  ['historical-stats-summary-v1'],
+  {revalidate: 3600, tags: ['historical-stats']},
+);

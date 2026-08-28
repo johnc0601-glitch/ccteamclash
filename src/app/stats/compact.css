@@ -18,49 +18,6 @@ main.page-shell table td:first-child span:first-child {
 }
 
 @media (max-width: 760px) {
-  /* Lock the dedicated mobile Stats table to a true two-column layout. */
-  main.page-shell table[class*="mobileStatsTable"] {
-    display: table !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    table-layout: fixed !important;
-    border-collapse: collapse !important;
-  }
-
-  main.page-shell table[class*="mobileStatsTable"] thead {
-    display: table-header-group !important;
-  }
-
-  main.page-shell table[class*="mobileStatsTable"] tbody {
-    display: table-row-group !important;
-  }
-
-  main.page-shell table[class*="mobileStatsTable"] tr {
-    display: table-row !important;
-    width: auto !important;
-  }
-
-  main.page-shell table[class*="mobileStatsTable"] th,
-  main.page-shell table[class*="mobileStatsTable"] td {
-    display: table-cell !important;
-    min-width: 0 !important;
-  }
-
-  main.page-shell table[class*="mobileStatsTable"] th:first-child,
-  main.page-shell table[class*="mobileStatsTable"] td:first-child {
-    position: static !important;
-    width: auto !important;
-    min-width: 0 !important;
-  }
-
-  main.page-shell table[class*="mobileStatsTable"] th:last-child,
-  main.page-shell table[class*="mobileStatsTable"] td:last-child {
-    width: 78px !important;
-    min-width: 78px !important;
-    text-align: right !important;
-  }
-
   main.page-shell section > div:has(> article) {
     display: grid;
     grid-template-columns: repeat(4, minmax(125px, 1fr));

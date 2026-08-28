@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import {useRouter} from 'next/navigation';
 import {useMemo, useState} from 'react';
-import type {StatsGroup, StatsRow} from '@/app/stats/page';
+import type {StatsGroup, StatsGroupOption, StatsRow} from '@/app/stats/page';
 import styles from '@/app/stats/Stats.module.css';
 
 type SortKey = 'clashIndex' | 'matchesPlayed' | 'wins' | 'winPercentage' | 'points' | 'singles' | 'doubles' | 'ciGain' | 'singlesCiGain' | 'doublesCiGain';
@@ -23,9 +24,8 @@ const HEADER_HELP: Record<SortKey, string> = {
   doublesCiGain: 'D +/- — Clash Index movement earned from doubles results.',
 };
 
-export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsGroup[]; initialGroupId?: string}) {
-  const validInitialGroupId = groups.some((group) => group.id === initialGroupId) ? initialGroupId : groups[0]?.id ?? 'overall';
-  const [groupId, setGroupId] = useState(validInitialGroupId);
+export function StatsTable({group, groupOptions}: {group: StatsGroup; groupOptions: StatsGroupOption[]}) {
+  const router = useRouter();
   const [sortKey, setSortKey] = useState<SortKey>('clashIndex');
   const [direction, setDirection] = useState<Direction>('desc');
   const [limit, setLimit] = useState<Limit>(25);
@@ -33,15 +33,12 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
   const [team, setTeam] = useState('all');
   const [search, setSearch] = useState('');
 
-  const group = groups.find((entry) => entry.id === groupId) ?? groups[0];
   const teams = useMemo(() => {
-    if (!group) return [];
     return Array.from(new Set(group.rows.flatMap((row) => row.teamNames).filter(Boolean)))
       .sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
   }, [group]);
 
   const filteredRows = useMemo(() => {
-    if (!group) return [];
     const query = search.trim().toLowerCase();
     return group.rows.filter((row) => {
       const divisionMatch = division === 'Women' ? row.gender === 'Women' : true;
@@ -53,12 +50,13 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
 
   const sortedRows = useMemo(() => [...filteredRows].sort((a, b) => compareRows(a, b, sortKey, direction)), [filteredRows, sortKey, direction]);
   const rows = limit === 'all' ? sortedRows : sortedRows.slice(0, limit);
+  const rankedRows = useMemo(() => rows.map((row, index) => ({row, rank: index + 1})), [rows]);
   const hasCustomView = division !== 'Open' || team !== 'all' || search.trim() !== '' || limit !== 25 || sortKey !== 'clashIndex' || direction !== 'desc';
 
   function selectGroup(nextGroupId: string) {
-    setGroupId(nextGroupId);
+    if (nextGroupId === group.id) return;
     resetControls();
-    window.history.replaceState(window.history.state, '', nextGroupId === 'overall' ? '/stats' : `/stats?season=${encodeURIComponent(nextGroupId)}`);
+    router.replace(nextGroupId === 'overall' ? '/stats' : `/stats?season=${encodeURIComponent(nextGroupId)}`, {scroll: false});
   }
 
   function resetControls() {
@@ -79,14 +77,12 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
     setDirection('desc');
   }
 
-  if (!group) return null;
-
   return (
     <section className={styles.statsShell}>
       <div className={styles.controls}>
         <div className={styles.seasonTabs} aria-label="Stats season">
-          {groups.map((entry) => (
-            <button key={entry.id} type="button" className={entry.id === group.id ? styles.activeSeason : undefined} onClick={() => selectGroup(entry.id)}>
+          {groupOptions.map((entry) => (
+            <button key={entry.id} type="button" aria-pressed={entry.id === group.id} className={entry.id === group.id ? styles.activeSeason : undefined} onClick={() => selectGroup(entry.id)}>
               {entry.label}
             </button>
           ))}
@@ -94,8 +90,8 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
 
         <div className={styles.secondaryControls}>
           <div className={styles.divisionTabs} aria-label="Stats division">
-            <button type="button" className={division === 'Open' ? styles.activeDivision : undefined} onClick={() => {setDivision('Open'); setLimit(25);}}>Open</button>
-            <button type="button" className={division === 'Women' ? styles.activeDivision : undefined} onClick={() => {setDivision('Women'); setLimit(25);}}>Women</button>
+            <button type="button" aria-pressed={division === 'Open'} className={division === 'Open' ? styles.activeDivision : undefined} onClick={() => {setDivision('Open'); setLimit(25);}}>Open</button>
+            <button type="button" aria-pressed={division === 'Women'} className={division === 'Women' ? styles.activeDivision : undefined} onClick={() => {setDivision('Women'); setLimit(25);}}>Women</button>
           </div>
 
           <select aria-label="Filter by team" value={team} onChange={(event) => {setTeam(event.target.value); setLimit(25);}}>
@@ -160,8 +156,7 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
-              const rank = sortedRows.findIndex((entry) => entry.playerId === row.playerId) + 1;
+            {rankedRows.map(({row, rank}) => {
               return (
                 <tr key={`${group.id}-${row.playerId}`}>
                   <td><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players?search=${encodeURIComponent(row.playerName)}`}>{row.playerName}</Link></td>
@@ -175,29 +170,6 @@ export function StatsTable({groups, initialGroupId = 'overall'}: {groups: StatsG
                   <td><strong>{formatCiGain(row.ciGain)}</strong></td>
                   <td>{formatCiGain(row.singlesCiGain)}</td>
                   <td>{formatCiGain(row.doublesCiGain)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {!rows.length ? <p className={styles.emptyState}>No players match these filters.</p> : null}
-      </div>
-
-      <div className={`${styles.tableWrap} ${styles.mobileTableWrap}`}>
-        <table className={styles.mobileStatsTable}>
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th>{mobileSortLabel(sortKey)} {direction === 'desc' ? '↓' : '↑'}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const rank = sortedRows.findIndex((entry) => entry.playerId === row.playerId) + 1;
-              return (
-                <tr key={`mobile-${group.id}-${row.playerId}`}>
-                  <td><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players?search=${encodeURIComponent(row.playerName)}`}>{row.playerName}</Link></td>
-                  <td><strong>{formatMobileValue(row, sortKey)}</strong></td>
                 </tr>
               );
             })}
@@ -263,27 +235,6 @@ function sortLabel(key: SortKey): string {
     singles: 'singles', doubles: 'doubles', ciGain: 'CI +/-',
     singlesCiGain: 'Singles CI +/-', doublesCiGain: 'Doubles CI +/-',
   } as const)[key];
-}
-
-function mobileSortLabel(key: SortKey): string {
-  return ({
-    clashIndex: 'CI', matchesPlayed: 'M', wins: 'W', winPercentage: 'Win %', points: 'Pts',
-    singles: 'Singles', doubles: 'Doubles', ciGain: 'CI +/-',
-    singlesCiGain: 'S +/-', doublesCiGain: 'D +/-',
-  } as const)[key];
-}
-
-function formatMobileValue(row: StatsRow, key: SortKey): string {
-  if (key === 'clashIndex') return formatCi(row.clashIndex);
-  if (key === 'matchesPlayed') return String(row.matchesPlayed);
-  if (key === 'wins') return String(row.wins);
-  if (key === 'winPercentage') return `${row.winPercentage.toFixed(1)}%${row.matchesPlayed < 5 ? '*' : ''}`;
-  if (key === 'points') return formatPoints(row.points);
-  if (key === 'singles') return formatRecord(row.singlesWins, row.singlesLosses, row.singlesTies);
-  if (key === 'doubles') return formatRecord(row.doublesWins, row.doublesLosses, row.doublesTies);
-  if (key === 'ciGain') return formatCiGain(row.ciGain);
-  if (key === 'singlesCiGain') return formatCiGain(row.singlesCiGain);
-  return formatCiGain(row.doublesCiGain);
 }
 
 function recordPoints(wins: number, ties: number): number {

@@ -97,8 +97,7 @@
   color: #858d8f;
 }
 
-.mobileSortControl,
-.mobileTableWrap {
+.mobileSortControl {
   display: none;
 }
 
@@ -313,61 +312,6 @@
   background: #eeeae1 !important;
 }
 
-.mobileStatsTable {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-variant-numeric: tabular-nums;
-}
-
-.mobileStatsTable th,
-.mobileStatsTable td {
-  height: 42px;
-  padding: 5px 10px;
-  border-bottom: 1px solid #d6d1c7;
-  white-space: nowrap;
-}
-
-.mobileStatsTable th {
-  background: #e4e0d7;
-  color: #596164;
-  font-size: 9px;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.mobileStatsTable th:first-child,
-.mobileStatsTable td:first-child {
-  width: auto;
-  overflow: hidden;
-  text-align: left;
-  text-overflow: ellipsis;
-}
-
-.mobileStatsTable th:last-child,
-.mobileStatsTable td:last-child {
-  width: 78px;
-  text-align: right;
-}
-
-.mobileStatsTable td {
-  color: #202426;
-  font-size: 11px;
-  font-weight: 750;
-}
-
-.mobileStatsTable tbody tr:nth-child(odd) td {
-  background: #f7f4ec;
-}
-
-.mobileStatsTable tbody tr:nth-child(even) td {
-  background: #eeeae1;
-}
-
-.mobileStatsTable tbody tr:last-child td {
-  border-bottom: 0;
-}
-
 .rank {
   display: inline-block;
   width: 22px;
@@ -443,10 +387,6 @@
     overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
-  }
-
-  .mobileTableWrap {
-    display: none;
   }
 
   .statsTable {

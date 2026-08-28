@@ -50,14 +50,14 @@ test('explicit reviewed historical seed override is used', () => {
   });
 });
 
-test('reviewed Zach Settle floor prevents an 825 provisional start', () => {
+test('reviewed Zach Settle override prevents an 825 provisional start', () => {
   const seeds = resolveHistoricalCiSeeds(
     'coastal-clash-2025-2026',
     [{playerId: 'zach-settle', playerName: 'Zach Settle', gender: 'Male'}],
     [],
   );
 
-  assert.equal(seeds[0].pdgaRating, 900);
+  assert.equal(seeds[0].pdgaRating, 935);
   assert.equal(seeds[0].source, 'HistoricalOverride');
 });
 
