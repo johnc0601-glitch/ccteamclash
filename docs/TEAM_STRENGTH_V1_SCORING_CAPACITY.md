@@ -7,16 +7,16 @@ A normal Clash starts from **36 standard points**:
 - 18 singles points
 - 18 doubles player-points
 
-That 36-point base is the core expected-points model. Clash Index predicts the genuinely contested portions of those points.
+That 36-point base is the core match-scoring frame. Clash Index predicts ordinary contested performance; structural scoring remains a separate layer.
 
-The scoreboard can still move away from a simple symmetric 36-point contest because league rules can create structural points or bonus opportunities.
+The official scoreboard can move away from a simple symmetric 36-point contest because league rules can create automatic points, bonus opportunities, penalties, or other adjustments.
 
 ## Structural scoring rules
 
 Two effects are especially important:
 
-1. **Short-handed automatic points.** If a team cannot fill the required 18-player structure, some standard points become automatic for the opponent rather than being CI-rated contests.
-2. **Women bonus opportunities.** Extra female participation can create bonus-point opportunities when women play men. These are usually small — commonly one or two points — and are difficult to predict until availability or the lineup is sufficiently clear. A likely 1F-vs-2F structure can therefore create roughly two bonus-point opportunities during the round, but V1 does not assume that structure early.
+1. **Short-handed automatic points.** If a team cannot fill the required 18-player structure, some standard points become automatic for the opponent rather than being ordinary CI-rated contests.
+2. **Women bonus opportunities.** Extra female participation can create bonus-point opportunities when women play men. These are usually small — commonly one or two points — but a roster gender count alone does not prove the exact matchup structure or awarded points. A likely 1F-vs-2F structure can therefore create roughly two bonus opportunities, but V1 does not convert that roster fact directly into public expected points.
 
 These are match-scoring effects, not Team Strength. They must never be baked into Active Roster Strength or Clash Index.
 
@@ -26,7 +26,7 @@ Clash Index player-result facts are intentionally a **player performance ledger*
 
 The historical workbooks contain rows such as `TRIPLES`, no-player/penalty rows and `Misc. Points`. The historical importer deliberately excludes those special rows from player CI history. That is correct for player rating, but it means summing player `actual_points` is not a safe way to reconstruct the official team result.
 
-The 2025-26 source sheets also show asymmetric `Points Possible`, which is consistent with the structural rules above rather than evidence that the standard base itself is not 36.
+The 2025-26 source sheets also show asymmetric `Points Possible`, which is consistent with structural scoring rather than evidence that the standard base itself is not 36.
 
 ## Historical audit
 
@@ -43,45 +43,46 @@ Two November 2025-26 schedule-summary values were also stale. The detailed score
 
 ## V1 modeling rule
 
-Keep three layers separate:
+Keep three concepts separate:
 
-1. **Team Strength** — neutral player quality.
-2. **Rated contest expectation** — ordinary singles and doubles evaluated from CI, with the +8 home matchup effect applied once.
-3. **Structural points** — automatic short-handed points, expected women bonus points, or another explicitly known scoring adjustment.
+1. **Team Strength** — venue-neutral player quality.
+2. **Public roster prediction** — Active Roster, Confirmed Available, then Match Lineup, with the +8 venue adjustment applied only in matchup prediction.
+3. **Structural scoring** — automatic points, women bonus points, penalties, or another official scoring adjustment, kept separate from CI.
 
-The final prediction is:
+The public V1 forecast remains roster-based through Match Lineup Strength. It does not draft or infer exact singles/doubles matchups in order to create a fourth prediction stage.
 
-`rated expected points + structural points = expected team score`
+For post-match retrospective analysis, ordinary completed contests can be replayed from frozen CI and actual recorded pairings. Official scores remain truth, so structural scoring is reconciled as:
 
-Then:
+`structural adjustment = official team score - actual points from complete CI-rated contests`
 
-`team expected score - opponent expected score = Expected Point Margin`
+That residual is preserved without guessing a category the stored result facts cannot prove.
 
-Expected Point Margin is converted to Chance of Victory using the regular-season calibration.
+## Public stage behavior
 
-## Stage behavior
+- **Active Roster Strength** — no structural-point guessing. Roster shortfall/composition can remain diagnostic data.
+- **Confirmed Available Roster Strength** — attendance narrows the player pool; shortfall/composition remain diagnostics rather than changing neutral Team Strength.
+- **Match Lineup Strength** — final public pre-match stage. The locked participant pool sharpens the roster prediction, but the website does not draft or expose exact singles/doubles pairings.
 
-- **Active Roster Strength** — model the normal 36-point match. Do not guess structural points.
-- **Confirmed Available Roster Strength** — attendance narrows the player pool. If a short-handed condition is certain, deterministic automatic points may be introduced; otherwise remain conservative.
-- **Match Lineup Strength** — the 18-player participation structure is known, so automatic points can be included when the rule requires them. Women bonus points are still included only when the triggering matchup structure is sufficiently known.
-- **Known singles / ordinary doubles unknown** — calculate rated Expected Points and add only explicit structural-point components.
-- **Actual ordinary doubles known** — replace pooled doubles with actual 80/20 pair strengths.
+There are no public Stage 4 or Stage 5 matchup predictions in V1.
 
-## Code contract
+## Post-match retrospective behavior
 
-`calculateExpectedMatchPoints` exposes structural effects explicitly:
+After the match:
 
-- `automaticPoints`
-- `womenBonusExpectedPoints`
-- `otherKnownPoints`
+- actual `ResultContest` singles opponents are evaluated using the two frozen Match Lineup CIs;
+- actual doubles pairs use the locked **80/20** effective-CI rule;
+- venue comes from the frozen prediction snapshot, so +8 is applied exactly once;
+- official team scores reconcile structural scoring through the residual formula above;
+- if a required frozen CI is missing or `null`, retrospective analysis remains unavailable rather than substituting a newer rating.
 
-The women field is intentionally an **expected** point value rather than a guaranteed point value. If the matchup only creates an opportunity, the scoring layer can assign an expectation without pretending the point is already won.
+`calculateExpectedMatchPoints` remains a calibration/research helper for known matchup inputs. It is not the public pre-match prediction path.
 
 ## Guardrails
 
 - Standard base remains 36.
-- Never reduce Team Strength because a team is short-handed; apply the scoring consequence through automatic points.
+- Never reduce Team Strength because a team is short-handed; structural scoring is separate.
 - Never increase Team Strength because a roster has more women; bonus opportunities are match-specific.
-- Do not infer structural points from historical player-count differences. The relationship is real but mixes multiple Clash rules.
+- Do not infer structural points from historical player-count differences alone.
 - Never infer a historical winner from rating-fact totals when an official team score exists.
 - Home advantage remains a separate +8 CI matchup effect and is applied exactly once.
+- Actual singles/doubles pairings are post-match retrospective data only.

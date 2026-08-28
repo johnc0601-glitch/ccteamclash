@@ -2,7 +2,9 @@
 
 ## Question
 
-Captains do not pair doubles teams randomly, but predicting the exact pairs before lineups are published is difficult. Does treating every plausible pair as an equal scenario materially distort expected doubles strength?
+Captains do not pair doubles teams randomly. Historically, how different were actual 80/20 doubles pairs from a simple pooled-pair estimate, and what does that tell us about future calibration?
+
+The website does **not** draft singles or doubles matchups. Actual pairings are post-match result data, not a public pre-match prediction stage.
 
 ## Historical sample
 
@@ -49,14 +51,16 @@ Team-level average lifts were small relative to their match-to-match variation, 
 
 ## V1 decision
 
-Keep the deterministic pooled doubles model for regular-season predictions before pairings are known.
+Do **not** add a public pre-match doubles-pairing stage or a captain-specific pairing adjustment.
 
-This is better than Monte Carlo for V1 because it is:
+The pooled-pair result remains useful as historical calibration evidence and as a deterministic research baseline because it is:
 
 - deterministic;
 - cheap;
 - easy to explain;
-- historically very close to the actual aggregate pair strength;
+- historically very close to aggregate actual pair strength;
 - free of unsupported captain-specific adjustments.
 
-When actual doubles teams become available, replace the pooled estimate with the real 80/20 pairs. For future playoff analysis, the lower actual partner-rating gap may be useful for modeling score variance and matchup paths even though it does not require an aggregate regular-season strength correction.
+For completed matches, retrospective analysis uses the **actual recorded doubles pairs** with the locked 80/20 rule and the frozen pre-match Match Lineup CI values. It does not replace those actual pairs with a pooled estimate and it never looks up today's CI.
+
+For future playoff or scenario research outside V1, the lower actual partner-rating gap may be useful for modeling score variance and matchup paths even though the current evidence does not support an aggregate team-specific pairing correction.
