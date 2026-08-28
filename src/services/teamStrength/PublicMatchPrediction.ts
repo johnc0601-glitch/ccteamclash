@@ -52,7 +52,8 @@ export type PublicMatchPrediction =
     };
 
 export type PublicMatchPredictionInput = {
-  matchId: string;
+  /** Required only when an immutable matchup structure is supplied. */
+  matchId?: string;
   matchDate: string | null;
   matchStatus: MatchStatus;
   hasPublishedResult: boolean;
@@ -99,8 +100,7 @@ export function buildPublicMatchPrediction(
   input: PublicMatchPredictionInput,
 ): PublicMatchPrediction | undefined {
   if (
-    !input.matchId.trim()
-    || !input.matchDate
+    !input.matchDate
     || input.hasPublishedResult
     || input.matchStatus === 'Completed'
     || input.matchStatus === 'Cancelled'
@@ -197,9 +197,12 @@ function structureMatchesScheduledMatch(
   structure: LockedMatchStructure,
   input: Pick<PublicMatchPredictionInput, 'matchId' | 'homeTeamId' | 'awayTeamId'>,
 ): boolean {
-  return structure.matchId === input.matchId
+  return Boolean(
+    input.matchId
+    && structure.matchId === input.matchId
     && structure.homeTeamId === input.homeTeamId
-    && structure.awayTeamId === input.awayTeamId;
+    && structure.awayTeamId === input.awayTeamId,
+  );
 }
 
 function venueForSide(
