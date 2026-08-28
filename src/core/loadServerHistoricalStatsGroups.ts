@@ -38,8 +38,9 @@ type HistoricalStatsSummaryRow = {
 export async function loadServerHistoricalStatsGroups(
   ciByPlayerSeason: ReadonlyMap<string, HistoricalCiLedgerSummary>,
   genderByPlayerId: ReadonlyMap<string, Player['gender']>,
+  seasonId?: string,
 ): Promise<StatsGroup[]> {
-  const summaries = await loadCachedHistoricalStatsSummaries();
+  const summaries = await loadCachedHistoricalStatsSummaries(seasonId);
   const seasons = new Map<string, StatsGroup>();
   const seenPlayerSeasons = new Set<string>();
 
@@ -105,18 +106,19 @@ export async function loadServerHistoricalStatsGroups(
 }
 
 const loadCachedHistoricalStatsSummaries = unstable_cache(
-  async (): Promise<HistoricalStatsSummaryRow[]> => {
+  async (seasonId?: string): Promise<HistoricalStatsSummaryRow[]> => {
     const supabase = await createHistoricalStatsReadClient();
     const summaries: HistoricalStatsSummaryRow[] = [];
     let from = 0;
 
     while (true) {
-      const {data, error} = await supabase
+      let query = supabase
         .from('historical_player_stats_summary')
         .select('season_id,season_name,player_id,player_name,team_names,matches_played,wins,losses,ties,win_percentage,singles_wins,singles_losses,singles_ties,doubles_wins,doubles_losses,doubles_ties,points')
         .order('season_id', {ascending: false})
-        .order('player_id', {ascending: true})
-        .range(from, from + PAGE_SIZE - 1);
+        .order('player_id', {ascending: true});
+      if (seasonId) query = query.eq('season_id', seasonId);
+      const {data, error} = await query.range(from, from + PAGE_SIZE - 1);
 
       if (error) throw error;
 

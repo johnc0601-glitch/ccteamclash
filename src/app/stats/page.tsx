@@ -5,6 +5,7 @@ import {loadServerHistoricalCiGains} from '@/core/loadServerHistoricalCiGains';
 import {loadServerHistoricalGenderMap} from '@/core/loadServerHistoricalGenderMap';
 import {loadServerHistoricalStatsGroups} from '@/core/loadServerHistoricalStatsGroups';
 import {createServerStatsQueryService} from '@/core/createServerStatsQueryService';
+import {getHistoricalSeasonArchives} from '@/data/historicalSeed';
 import {
   buildOverallRows,
   qualifiesStatsRow,
@@ -39,67 +40,82 @@ function compactSeasonName(name: string): string {
 export default async function StatsPage({searchParams}: StatsPageProps) {
   const query = await searchParams;
   const requestedSeason = Array.isArray(query.season) ? query.season[0] : query.season;
+  if (requestedSeason === 'overall') redirect('/stats');
   const statsQueryService = await createServerStatsQueryService();
-  const [statsSnapshot, historicalCiGains, historicalGenderOverrides] = await Promise.all([
-    statsQueryService.getSnapshot(),
-    loadServerHistoricalCiGains(),
-    loadServerHistoricalGenderMap(),
-  ]);
+  const statsSnapshot = await statsQueryService.getSnapshot();
   const {playerViews} = statsSnapshot;
-  const genderByPlayerId = new Map(statsSnapshot.genderByPlayerId);
-  for (const [playerId, gender] of historicalGenderOverrides) {
-    genderByPlayerId.set(playerId, gender);
-  }
-
-  const historicalGroups = (await loadServerHistoricalStatsGroups(
-    historicalCiGains,
-    genderByPlayerId,
-  )).map((group) => ({
-    ...group,
-    label: compactSeasonName(group.label),
-  }));
-
-  const overallClashIndexByPlayer = new Map<string, number>();
-  for (const group of historicalGroups) {
-    for (const row of group.rows) {
-      if (row.clashIndex != null) overallClashIndexByPlayer.set(row.playerId, row.clashIndex);
-    }
-  }
-  for (const view of playerViews) {
-    if (view.player.clashIndex != null) overallClashIndexByPlayer.set(view.player.id, view.player.clashIndex);
-  }
-
   const activeSeasonId = playerViews.find((view) => view.currentSeasonId)?.currentSeasonId;
   const activeSeasonName = playerViews.find((view) => view.currentSeasonId)?.currentSeasonName;
-  const historicalSeasonIds = new Set(historicalGroups.map((group) => group.id));
+  const historicalOptions: StatsGroupOption[] = getHistoricalSeasonArchives().map((archive) => ({
+    id: archive.seasonId,
+    label: compactSeasonName(archive.seasonName),
+  }));
+  const historicalSeasonIds = new Set(historicalOptions.map((option) => option.id));
+  if (requestedSeason && requestedSeason !== activeSeasonId && !historicalSeasonIds.has(requestedSeason)) {
+    redirect('/stats');
+  }
+
   const liveRows = playerViews.flatMap((view) => {
     const row = toLiveStatsRow(view);
     return row ? [row] : [];
   });
-  const liveGroup = activeSeasonId && activeSeasonName && !historicalSeasonIds.has(activeSeasonId)
-    ? [{id: activeSeasonId, label: compactSeasonName(activeSeasonName), rows: liveRows}]
-    : [];
-  const sourceSeasonGroups = [...liveGroup, ...historicalGroups];
-  const seasonGroups = sourceSeasonGroups.map((group) => ({
-    ...group,
-    // Array.filter passes (row, index, array). Wrap the qualifier so the
-    // array index cannot be mistaken for its optional minimumMatches value.
-    rows: group.rows.filter((row) => qualifiesStatsRow(row)),
-  }));
-  const groups: StatsGroup[] = [
-    {
+  const liveGroup: StatsGroup | undefined = activeSeasonId && activeSeasonName && !historicalSeasonIds.has(activeSeasonId)
+    ? {id: activeSeasonId, label: compactSeasonName(activeSeasonName), rows: liveRows}
+    : undefined;
+  const requestedHistoricalSeason = requestedSeason && historicalSeasonIds.has(requestedSeason)
+    ? requestedSeason
+    : undefined;
+  const needsHistoricalData = !requestedSeason || Boolean(requestedHistoricalSeason);
+  let historicalGroups: StatsGroup[] = [];
+  if (needsHistoricalData) {
+    const genderByPlayerId = new Map(statsSnapshot.genderByPlayerId);
+    const [historicalCiGains, historicalGenderOverrides] = await Promise.all([
+      loadServerHistoricalCiGains(requestedHistoricalSeason),
+      loadServerHistoricalGenderMap(),
+    ]);
+    for (const [playerId, gender] of historicalGenderOverrides) {
+      genderByPlayerId.set(playerId, gender);
+    }
+    historicalGroups = (await loadServerHistoricalStatsGroups(
+      historicalCiGains,
+      genderByPlayerId,
+      requestedHistoricalSeason,
+    )).map((group) => ({...group, label: compactSeasonName(group.label)}));
+  }
+
+  let selectedGroup: StatsGroup | undefined;
+  if (!requestedSeason) {
+    const sourceSeasonGroups = [...(liveGroup ? [liveGroup] : []), ...historicalGroups];
+    const overallClashIndexByPlayer = new Map<string, number>();
+    for (const group of historicalGroups) {
+      for (const row of group.rows) {
+        if (row.clashIndex != null) overallClashIndexByPlayer.set(row.playerId, row.clashIndex);
+      }
+    }
+    for (const view of playerViews) {
+      if (view.player.clashIndex != null) overallClashIndexByPlayer.set(view.player.id, view.player.clashIndex);
+    }
+    selectedGroup = {
       id: 'overall',
       label: 'Overall',
       rows: buildOverallRows(sourceSeasonGroups, overallClashIndexByPlayer)
         .filter((row) => qualifiesStatsRow(row)),
-    },
-    ...seasonGroups,
-  ];
+    };
+  } else if (requestedSeason === liveGroup?.id) {
+    selectedGroup = {...liveGroup, rows: liveGroup.rows.filter((row) => qualifiesStatsRow(row))};
+  } else {
+    const historicalGroup = historicalGroups.find((group) => group.id === requestedSeason);
+    if (historicalGroup) {
+      selectedGroup = {...historicalGroup, rows: historicalGroup.rows.filter((row) => qualifiesStatsRow(row))};
+    }
+  }
+  if (!selectedGroup) redirect('/stats');
 
-  const selectedGroupId = requestedSeason ?? 'overall';
-  const selectedGroup = groups.find((group) => group.id === selectedGroupId);
-  if (!selectedGroup || requestedSeason === 'overall') redirect('/stats');
-  const groupOptions: StatsGroupOption[] = groups.map(({id, label}) => ({id, label}));
+  const groupOptions: StatsGroupOption[] = [
+    {id: 'overall', label: 'Overall'},
+    ...(liveGroup ? [{id: liveGroup.id, label: liveGroup.label}] : []),
+    ...historicalOptions,
+  ];
   const initialView = parseStatsViewState(query);
 
   console.info('[stats] Stats group ready', {
