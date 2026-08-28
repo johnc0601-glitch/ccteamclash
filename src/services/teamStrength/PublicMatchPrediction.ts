@@ -52,6 +52,7 @@ export type PublicMatchPrediction =
     };
 
 export type PublicMatchPredictionInput = {
+  matchId: string;
   matchDate: string | null;
   matchStatus: MatchStatus;
   hasPublishedResult: boolean;
@@ -98,7 +99,8 @@ export function buildPublicMatchPrediction(
   input: PublicMatchPredictionInput,
 ): PublicMatchPrediction | undefined {
   if (
-    !input.matchDate
+    !input.matchId.trim()
+    || !input.matchDate
     || input.hasPublishedResult
     || input.matchStatus === 'Completed'
     || input.matchStatus === 'Cancelled'
@@ -132,7 +134,7 @@ export function buildPublicMatchPrediction(
   if (
     source === 'matchLineup'
     && input.lockedStructure
-    && structureMatchesScheduledTeams(input.lockedStructure, input)
+    && structureMatchesScheduledMatch(input.lockedStructure, input)
   ) {
     const exact = calculateLockedMatchStructurePrediction({
       structure: input.lockedStructure,
@@ -191,11 +193,12 @@ export function buildPublicMatchPrediction(
   };
 }
 
-function structureMatchesScheduledTeams(
+function structureMatchesScheduledMatch(
   structure: LockedMatchStructure,
-  input: Pick<PublicMatchPredictionInput, 'homeTeamId' | 'awayTeamId'>,
+  input: Pick<PublicMatchPredictionInput, 'matchId' | 'homeTeamId' | 'awayTeamId'>,
 ): boolean {
-  return structure.homeTeamId === input.homeTeamId
+  return structure.matchId === input.matchId
+    && structure.homeTeamId === input.homeTeamId
     && structure.awayTeamId === input.awayTeamId;
 }
 
