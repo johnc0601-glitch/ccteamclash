@@ -43,8 +43,9 @@ export type RosterBasedMatchPrediction = {
  * stage. Venue is applied exactly once in this prediction layer.
  *
  * Active and Confirmed Available use the conservative full-roster proxy curve.
- * Match Lineup uses the actual-participant proxy curve. Once actual singles
- * matchups are known, callers should switch to calculateExpectedMatchPoints().
+ * Match Lineup uses the actual-participant proxy curve and is the final public
+ * pre-match stage. Exact singles/doubles pairings are used only after the match
+ * for retrospective analysis/calibration; they never upgrade the public forecast.
  */
 export function calculateRosterBasedMatchPrediction(input: {
   team: RosterStrengthResult;

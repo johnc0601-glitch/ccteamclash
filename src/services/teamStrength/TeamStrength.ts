@@ -23,9 +23,9 @@ export const TEAM_HOME_CI_BONUS = 8;
 export const TEAM_POINT_SHARE_SCALE = 105;
 export const MATCHUP_POINT_SHARE_SCALE = 100;
 
-// Known-matchup regular-season Chance of Victory calibration. Once actual
-// singles matchups are known, Expected Point Margin uses this slope. Earlier
-// roster-only stages use their own strength-difference calibration.
+// Known-matchup regular-season Chance of Victory calibration for post-match
+// retrospective analysis. Actual recorded pairings feed Expected Point Margin
+// and this slope; public roster-only stages use their own calibration curves.
 export const REGULAR_SEASON_WIN_MARGIN_SLOPE = 0.43;
 export const REGULAR_SEASON_WIN_PROBABILITY_CAP = 0.95;
 
@@ -154,8 +154,8 @@ export function expectedMatchPointsFromRosterStrength(
 }
 
 /**
- * Contest expectation for the regular-season expected-points model. This uses
- * the single league-wide +8 home adjustment rather than format-specific CI
+ * Contest expectation for post-match retrospective/calibration analysis. This
+ * uses the single league-wide +8 home adjustment rather than format-specific CI
  * adjustments.
  */
 export function expectedContestPointShare(
@@ -174,9 +174,9 @@ export function effectiveDoublesCi(playerOneCi: number, playerTwoCi: number): nu
 }
 
 /**
- * Deterministic substitute for guessing doubles teams. Every plausible pair in
- * each known player pool is evaluated with the locked 80/20 doubles rule, then
- * the resulting contest expectations are averaged. No Monte Carlo is required.
+ * Deterministic calibration helper for a known player pool. Every plausible
+ * pair is evaluated with the locked 80/20 doubles rule, then the resulting
+ * contest expectations are averaged. This is not a public pre-match stage.
  */
 export function expectedDoublesPointShareFromPool(
   teamClashIndices: readonly number[],
@@ -202,8 +202,9 @@ export function expectedDoublesPointShareFromPool(
 }
 
 /**
- * Regular-season hybrid once singles matchups are known: exact singles
- * expectations plus an all-plausible-pairs doubles estimate.
+ * Legacy retrospective/calibration helper for recorded singles plus a pooled
+ * doubles estimate. It is not used to upgrade the public pre-match forecast;
+ * exact post-match pair analysis uses the recorded result contests directly.
  *
  * The ordinary CI-rated layer is kept separate from structural points. A short
  * roster can turn standard slots into automatic points; extra women can create
@@ -292,9 +293,10 @@ export function calculateExpectedMatchPoints(input: {
 }
 
 /**
- * Converts Expected Point Margin to regular-season Chance of Victory once the
- * matchup structure is known. Do not use this curve for early roster-only
- * predictions or playoffs.
+ * Converts Expected Point Margin to regular-season Chance of Victory for
+ * post-match retrospective/calibration analysis once actual matchup structure
+ * is recorded. Do not use this curve for public roster-only predictions or
+ * playoffs.
  */
 export function regularSeasonChanceOfVictoryFromExpectedMargin(
   expectedPointMargin: number,
