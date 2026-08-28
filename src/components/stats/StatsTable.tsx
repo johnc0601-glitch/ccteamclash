@@ -170,7 +170,7 @@ export function StatsTable({group, groupOptions, initialView}: {group: StatsGrou
             {rankedRows.map(({row, rank}) => {
               return (
                 <tr key={`${group.id}-${row.playerId}`}>
-                  <td><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players?search=${encodeURIComponent(row.playerName)}`}>{row.playerName}</Link></td>
+                  <td><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players?player=${encodeURIComponent(row.playerId)}`}>{row.playerName}</Link></td>
                   <td><strong>{formatCi(row.clashIndex)}</strong></td>
                   <td>{row.matchesPlayed}</td>
                   <td>{row.wins}</td>

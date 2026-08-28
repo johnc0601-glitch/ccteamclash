@@ -4,13 +4,17 @@ import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerSe
 import styles from './Players.module.css';
 
 type PlayersPageProps = {
-  searchParams: Promise<{search?: string | string[]}>;
+  searchParams: Promise<{
+    player?: string | string[];
+    search?: string | string[];
+  }>;
 };
 
 export default async function PlayersPage({searchParams}: PlayersPageProps) {
-  const playerViews = await (await createServerPublicPlayerService()).getAll();
   const query = await searchParams;
+  const initialPlayerId = Array.isArray(query.player) ? query.player[0] : query.player;
   const initialSearch = Array.isArray(query.search) ? query.search[0] : query.search;
+  const playerViews = await (await createServerPublicPlayerService()).getAll('all', initialPlayerId);
 
   return (
     <>
@@ -22,6 +26,7 @@ export default async function PlayersPage({searchParams}: PlayersPageProps) {
         <PublicPlayerDirectory
           players={playerViews}
           initialMode="search"
+          initialPlayerId={initialPlayerId ?? ''}
           initialSearch={initialSearch ?? ''}
           showRankingsLink
         />
