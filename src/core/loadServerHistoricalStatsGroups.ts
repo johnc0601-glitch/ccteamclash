@@ -2,6 +2,7 @@ import 'server-only';
 
 import {unstable_cache} from 'next/cache';
 import {createHistoricalStatsReadClient} from '@/core/createHistoricalStatsReadClient';
+import {HISTORICAL_STATS_CACHE_TAG} from '@/core/historicalStatsCacheTag';
 import type {Player} from '@/models/Player';
 import {
   playerSeasonCiKey,
@@ -131,5 +132,5 @@ const loadCachedHistoricalStatsSummaries = unstable_cache(
     return summaries;
   },
   ['historical-stats-summary-v1'],
-  {revalidate: 3600, tags: ['historical-stats']},
+  {revalidate: 3600, tags: [HISTORICAL_STATS_CACHE_TAG]},
 );

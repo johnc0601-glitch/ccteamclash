@@ -3,8 +3,10 @@ import 'server-only';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {unstable_cache} from 'next/cache';
 import {createHistoricalStatsReadClient} from '@/core/createHistoricalStatsReadClient';
+import {HISTORICAL_STATS_CACHE_TAG} from '@/core/historicalStatsCacheTag';
 import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCiArchiveReplay';
 import {formatHistoricalCiReplayFailure} from '@/services/statistics/HistoricalCiReplayDiagnostic';
+import {selectHistoricalCiReplaySummaries} from '@/services/statistics/HistoricalCiReplaySelection';
 import {
   playerSeasonCiKey,
   summarizeHistoricalCiLedger,
@@ -97,13 +99,13 @@ export async function loadServerHistoricalCiGains(seasonId?: string): Promise<Ma
 const loadCachedHistoricalCiFacts = unstable_cache(
   async (seasonId?: string) => loadAllHistoricalCiFacts(await createHistoricalStatsReadClient(), seasonId),
   ['historical-ci-facts-v1'],
-  {revalidate: 3600, tags: ['historical-stats']},
+  {revalidate: 3600, tags: [HISTORICAL_STATS_CACHE_TAG]},
 );
 
 const loadCachedHistoricalMatchupOrders = unstable_cache(
   async (seasonId?: string) => loadAllHistoricalMatchupOrders(await createHistoricalStatsReadClient(), seasonId),
   ['historical-matchup-orders-v1'],
-  {revalidate: 3600, tags: ['historical-stats']},
+  {revalidate: 3600, tags: [HISTORICAL_STATS_CACHE_TAG]},
 );
 
 async function loadAllHistoricalCiFacts(
@@ -200,30 +202,7 @@ async function loadHistoricalCiGainsFromReplay(
     throw new Error(diagnostic);
   }
 
-  const gains = new Map<string, HistoricalCiGainBreakdown>();
-
-  for (const [replaySeasonId, season] of replay.seasons) {
-    if (requestedSeasonId && replaySeasonId !== requestedSeasonId) continue;
-    const splitByPlayer = new Map<string, {singlesCiGain: number; doublesCiGain: number}>();
-    for (const fact of season.facts) {
-      const split = splitByPlayer.get(fact.playerId) ?? {singlesCiGain: 0, doublesCiGain: 0};
-      if (fact.format === 'Singles') split.singlesCiGain += fact.ciDelta;
-      else split.doublesCiGain += fact.ciDelta;
-      splitByPlayer.set(fact.playerId, split);
-    }
-
-    for (const [playerId, endingCi] of season.endingRatings) {
-      const split = splitByPlayer.get(playerId) ?? {singlesCiGain: 0, doublesCiGain: 0};
-      gains.set(playerSeasonCiKey(replaySeasonId, playerId), {
-        ciGain: split.singlesCiGain + split.doublesCiGain,
-        singlesCiGain: split.singlesCiGain,
-        doublesCiGain: split.doublesCiGain,
-        endingCi,
-      });
-    }
-  }
-
-  return gains;
+  return selectHistoricalCiReplaySummaries(replay.seasons, requestedSeasonId);
 }
 
 export {playerSeasonCiKey};

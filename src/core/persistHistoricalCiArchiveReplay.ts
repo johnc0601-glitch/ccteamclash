@@ -3,6 +3,7 @@ import 'server-only';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCiArchiveReplay';
+import {invalidateHistoricalStatsCache} from '@/core/historicalStatsCache';
 
 export const EXPECTED_COMPLETE_HISTORICAL_CI_FACTS = 2568;
 
@@ -47,5 +48,6 @@ export async function persistHistoricalCiArchiveReplay(
     throw new Error(`Historical CI ledger inserted ${(inserted.data ?? []).length}/${expectedFacts} facts`);
   }
 
+  invalidateHistoricalStatsCache();
   return {insertedFacts: expectedFacts, expectedFacts};
 }
