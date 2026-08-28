@@ -79,6 +79,18 @@ test('requires official rosters after roster lock', async () => {
   assert.equal(complete.snapshots[0].captureReason, 'RosterLock');
 });
 
+test('marks a missed Match Lineup snapshot expired instead of backfilling later CI', async () => {
+  const repository = new MemoryRepository();
+  const result = await captureCurrentRosterPrediction({
+    ...baseInput(repository),
+    officialRosters: [officialRoster('home', 'home-0'), officialRoster('away', 'away-0')],
+    now: new Date('2026-10-03T21:00:00.000Z'),
+  });
+
+  assert.deepEqual(result, {captured: false, reason: 'Expired'});
+  assert.equal(repository.saved.length, 0);
+});
+
 test('refuses cancelled and completed matches to prevent late data leakage', async () => {
   for (const matchStatus of ['Cancelled', 'Completed'] as const) {
     const repository = new MemoryRepository();
