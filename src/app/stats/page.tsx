@@ -68,14 +68,16 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
   const sourceSeasonGroups = [...liveGroup, ...historicalGroups];
   const seasonGroups = sourceSeasonGroups.map((group) => ({
     ...group,
-    rows: group.rows.filter(qualifiesStatsRow),
+    // Array.filter passes (row, index, array). Wrap the qualifier so the
+    // array index cannot be mistaken for its optional minimumMatches value.
+    rows: group.rows.filter((row) => qualifiesStatsRow(row)),
   }));
   const groups: StatsGroup[] = [
     {
       id: 'overall',
       label: 'Overall',
       rows: buildOverallRows(sourceSeasonGroups, overallClashIndexByPlayer)
-        .filter(qualifiesStatsRow),
+        .filter((row) => qualifiesStatsRow(row)),
     },
     ...seasonGroups,
   ];
