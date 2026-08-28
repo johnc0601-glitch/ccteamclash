@@ -96,7 +96,8 @@ function buildHistoricalFact(
   frozenRatings: ReadonlyMap<string, number>,
   venue: ClashVenue,
 ): HistoricalReplayFact {
-  if (venue === 'Home' && row.playerSide !== 'Home' && row.playerSide !== 'Away') {
+  const side: 'Home' | 'Away' | null = venue === 'Neutral' ? null : row.playerSide ?? null;
+  if (venue === 'Home' && side === null) {
     throw new Error(`Historical row ${row.deduplicationKey} is missing playerSide for a home-site match`);
   }
 
@@ -108,8 +109,8 @@ function buildHistoricalFact(
 
   if (row.format === 'Singles') {
     const opponentCi = requireRating(frozenRatings, row.opponentOnePlayerId);
-    const playerEffective = playerCi + (venue === 'Home' && row.playerSide === 'Home' ? SINGLES_HOME_BONUS : 0);
-    opponentEffectiveCi = opponentCi + (venue === 'Home' && row.playerSide === 'Away' ? SINGLES_HOME_BONUS : 0);
+    const playerEffective = playerCi + (venue === 'Home' && side === 'Home' ? SINGLES_HOME_BONUS : 0);
+    opponentEffectiveCi = opponentCi + (venue === 'Home' && side === 'Away' ? SINGLES_HOME_BONUS : 0);
     probability = eloProbability(playerEffective, opponentEffectiveCi);
     ciDelta = clashCiDelta(actual, probability);
   } else {
@@ -138,7 +139,7 @@ function buildHistoricalFact(
     opponentTeamId: row.opponentTeamId,
     opponentTeamName: row.opponentTeamName,
     format: row.format,
-    side: venue === 'Neutral' ? null : row.playerSide,
+    side,
     venue,
     outcome: row.outcome,
     clashIndexBefore: playerCi,
