@@ -52,10 +52,6 @@ declare
   v_lock_id uuid;
   v_existing_status text;
 begin
-  if auth.role() <> 'service_role' then
-    raise exception 'Match structure finalization requires service role.';
-  end if;
-
   if nullif(btrim(p_match_id), '') is null
     or nullif(btrim(p_home_team_id), '') is null
     or nullif(btrim(p_away_team_id), '') is null
@@ -132,6 +128,9 @@ begin
 end;
 $$;
 
+-- Execution privilege is the authorization boundary. Avoid checking auth.role()
+-- inside the security-definer function so server/database service clients are
+-- not coupled to JWT request context.
 revoke all on function public.save_locked_match_structure(text, text, text, text, timestamptz, jsonb)
   from public, anon, authenticated;
 grant execute on function public.save_locked_match_structure(text, text, text, text, timestamptz, jsonb)
