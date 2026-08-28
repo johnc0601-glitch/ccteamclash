@@ -1,24 +1,33 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
 import type {Database} from '@/lib/supabase/database';
 import type {TeamStrengthPredictionSnapshot} from './PredictionSnapshot';
+import {TEAM_STRENGTH_VERSION} from './TeamStrength';
 
 export interface PredictionSnapshotRepository {
   saveIfAbsent(snapshots: readonly TeamStrengthPredictionSnapshot[]): Promise<void>;
+}
+
+/** Read-only contract used by post-match retrospective/calibration analysis. */
+export interface PredictionSnapshotReader {
+  findHomeMatchLineupSnapshot(
+    matchId: string,
+    modelVersion?: string,
+  ): Promise<TeamStrengthPredictionSnapshot | undefined>;
 }
 
 export type PredictionSnapshotInsert = {
   match_id: string;
   team_id: string;
   opponent_team_id: string;
-  side: string;
-  source: string;
-  capture_reason: string;
+  side: TeamStrengthPredictionSnapshot['side'];
+  source: TeamStrengthPredictionSnapshot['source'];
+  capture_reason: TeamStrengthPredictionSnapshot['captureReason'];
   strength_label: string;
   model_version: string;
   captured_at: string;
-  venue: string;
-  confidence: string;
-  prediction_readiness: string;
+  venue: TeamStrengthPredictionSnapshot['venue'];
+  confidence: TeamStrengthPredictionSnapshot['confidence'];
+  prediction_readiness: TeamStrengthPredictionSnapshot['predictionReadiness'];
   calibration_slope: number;
   team_base_strength: number;
   opponent_base_strength: number;
@@ -56,7 +65,9 @@ export type PredictionSnapshotInsert = {
  * migration lands, so the table call is deliberately isolated behind one
  * narrow cast instead of widening the rest of the Team Strength code.
  */
-export class SupabasePredictionSnapshotRepository implements PredictionSnapshotRepository {
+export class SupabasePredictionSnapshotRepository implements
+  PredictionSnapshotRepository,
+  PredictionSnapshotReader {
   constructor(private readonly supabase: SupabaseClient<Database>) {}
 
   async saveIfAbsent(snapshots: readonly TeamStrengthPredictionSnapshot[]): Promise<void> {
@@ -71,6 +82,30 @@ export class SupabasePredictionSnapshotRepository implements PredictionSnapshotR
       });
 
     if (error) throw error;
+  }
+
+  async findHomeMatchLineupSnapshot(
+    matchId: string,
+    modelVersion: string = TEAM_STRENGTH_VERSION,
+  ): Promise<TeamStrengthPredictionSnapshot | undefined> {
+    const normalizedMatchId = matchId.trim();
+    const normalizedModelVersion = modelVersion.trim();
+    if (!normalizedMatchId || !normalizedModelVersion) return undefined;
+
+    const snapshotClient = this.supabase as any;
+    const {data, error} = await snapshotClient
+      .from('team_strength_prediction_snapshots')
+      .select('*')
+      .eq('match_id', normalizedMatchId)
+      .eq('side', 'Home')
+      .eq('source', 'matchLineup')
+      .eq('model_version', normalizedModelVersion)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return undefined;
+
+    return fromPredictionSnapshotRow(data as PredictionSnapshotInsert);
   }
 }
 
@@ -116,5 +151,56 @@ export function toPredictionSnapshotInsert(
     opponent_fallback_player_count: snapshot.opponentFallbackPlayerCount,
     team_omitted_player_count: snapshot.teamOmittedPlayerCount,
     opponent_omitted_player_count: snapshot.opponentOmittedPlayerCount,
+  };
+}
+
+/** Converts the persisted snake-case row back into the immutable snapshot shape. */
+export function fromPredictionSnapshotRow(
+  row: PredictionSnapshotInsert,
+): TeamStrengthPredictionSnapshot {
+  return {
+    matchId: row.match_id,
+    teamId: row.team_id,
+    opponentTeamId: row.opponent_team_id,
+    side: row.side,
+    source: row.source,
+    captureReason: row.capture_reason,
+    strengthLabel: row.strength_label,
+    modelVersion: row.model_version,
+    capturedAt: row.captured_at,
+    venue: row.venue,
+    confidence: row.confidence,
+    predictionReadiness: row.prediction_readiness,
+    calibrationSlope: row.calibration_slope,
+    teamBaseStrength: row.team_base_strength,
+    opponentBaseStrength: row.opponent_base_strength,
+    matchupStrengthDifference: row.matchup_strength_difference,
+    expectedPointShare: row.expected_point_share,
+    chanceOfVictory: row.chance_of_victory,
+    teamPlayerIds: [...row.team_player_ids],
+    opponentPlayerIds: [...row.opponent_player_ids],
+    teamPlayerClashIndexes: row.team_player_clash_indexes.map(({playerId, clashIndex}) => ({
+      playerId,
+      clashIndex,
+    })),
+    opponentPlayerClashIndexes: row.opponent_player_clash_indexes.map(
+      ({playerId, clashIndex}) => ({playerId, clashIndex}),
+    ),
+    teamPlayerCount: row.team_player_count,
+    opponentPlayerCount: row.opponent_player_count,
+    teamFemalePlayerCount: row.team_female_player_count,
+    opponentFemalePlayerCount: row.opponent_female_player_count,
+    teamMalePlayerCount: row.team_male_player_count,
+    opponentMalePlayerCount: row.opponent_male_player_count,
+    teamUnknownGenderPlayerCount: row.team_unknown_gender_player_count,
+    opponentUnknownGenderPlayerCount: row.opponent_unknown_gender_player_count,
+    teamStandardPlayerShortfall: row.team_standard_player_shortfall,
+    opponentStandardPlayerShortfall: row.opponent_standard_player_shortfall,
+    teamProvisionalPlayerCount: row.team_provisional_player_count,
+    opponentProvisionalPlayerCount: row.opponent_provisional_player_count,
+    teamFallbackPlayerCount: row.team_fallback_player_count,
+    opponentFallbackPlayerCount: row.opponent_fallback_player_count,
+    teamOmittedPlayerCount: row.team_omitted_player_count,
+    opponentOmittedPlayerCount: row.opponent_omitted_player_count,
   };
 }
