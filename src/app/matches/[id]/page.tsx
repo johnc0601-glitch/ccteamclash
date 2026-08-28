@@ -29,8 +29,10 @@ import {createClient} from '@/lib/supabase/server';
 import {resolveMatchday, type PublicMatchday} from '@/services/matches/MatchdayService';
 import {
   buildPublicMatchPrediction,
+  buildPublicMatchPredictionFromSnapshot,
   resolvePublicPredictionSource,
 } from '@/services/teamStrength/PublicMatchPrediction';
+import {SupabasePredictionSnapshotRepository} from '@/services/teamStrength/PredictionSnapshotRepository';
 import styles from './Matchday.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -149,7 +151,30 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     }
   }
 
-  const matchPrediction = buildPublicMatchPrediction({
+  let frozenMatchPrediction;
+  if (
+    predictionSource
+    && !publishedResult
+    && match.status !== 'Completed'
+    && match.status !== 'Cancelled'
+    && process.env.SUPABASE_SERVICE_ROLE_KEY
+  ) {
+    try {
+      const predictionSnapshotRepository = new SupabasePredictionSnapshotRepository(createAdminClient());
+      const snapshot = await predictionSnapshotRepository.findHomeSnapshot(matchId, predictionSource);
+      frozenMatchPrediction = snapshot
+        ? buildPublicMatchPredictionFromSnapshot(snapshot)
+        : undefined;
+    } catch (error) {
+      console.error('Frozen public match prediction is unavailable.', {
+        matchId,
+        source: predictionSource,
+        errorClass: error instanceof Error ? error.name : 'UnknownError',
+      });
+    }
+  }
+
+  const matchPrediction = frozenMatchPrediction ?? buildPublicMatchPrediction({
     matchDate: match.date,
     matchStatus: match.status,
     hasPublishedResult: Boolean(publishedResult),
