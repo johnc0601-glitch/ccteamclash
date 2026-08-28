@@ -24,13 +24,27 @@ const historicalPlayer: Player = {
   teamId: '',
   pdgaNumber: '',
   pdgaRating: null,
+  clashIndex: null,
   gender: 'Female',
   active: false,
   createdAt: '2025-01-01T00:00:00Z',
   updatedAt: '2025-01-01T00:00:00Z',
 };
 
-const team: Team = {
+const inactiveCurrentPlayer: Player = {
+  id: 'p2',
+  name: 'Player Two',
+  teamId: '',
+  pdgaNumber: '67890',
+  pdgaRating: 920,
+  clashIndex: 980,
+  gender: 'Female',
+  active: false,
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
+};
+
+const teamA: Team = {
   id: 'team-a',
   name: 'Team A',
   shortName: 'A',
@@ -48,6 +62,8 @@ const team: Team = {
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
 };
+
+const teamB: Team = {...teamA, id: 'team-b', name: 'Team B', shortName: 'B'};
 
 const season: Season = {
   id: 'season-1',
@@ -80,8 +96,21 @@ const statistics: PlayerStatistics = {
   currentStreak: 'W1',
 };
 
+const inactiveStatistics: PlayerStatistics = {
+  ...statistics,
+  playerId: 'p2',
+  playerName: 'Player Two',
+  teamIds: ['team-b'],
+  matchesPlayed: 1,
+  overallRecord: {wins: 1, losses: 0, ties: 0},
+  singlesRecord: {wins: 1, losses: 0, ties: 0},
+  doublesRecord: {wins: 0, losses: 0, ties: 0},
+  winPercentage: 100,
+  pointsEarned: 1,
+};
+
 describe('StatsQueryService', () => {
-  it('loads players once, keeps canonical historical genders, and snapshots only active players', async () => {
+  it('loads players once, preserves canonical historical genders, and snapshots all player ids', async () => {
     let playerLoads = 0;
     let snapshotCalls = 0;
     const service = new StatsQueryService(
@@ -92,12 +121,12 @@ describe('StatsQueryService', () => {
           return [activePlayer, historicalPlayer];
         },
       },
-      {getAll: async () => [team]},
+      {getAll: async () => [teamA]},
       {getActive: async () => season},
       {
         getPlayerSeasonStatisticsSnapshot: async (playerIds, seasonId) => {
           snapshotCalls += 1;
-          expect(playerIds).toEqual(['p1']);
+          expect(playerIds).toEqual(['p1', 'lizzie-goddard']);
           expect(seasonId).toBe('season-1');
           return {
             statistics: [statistics],
@@ -130,5 +159,49 @@ describe('StatsQueryService', () => {
       currentSinglesCiGain: 8,
       currentDoublesCiGain: -2,
     });
+  });
+
+  it('keeps inactive players who already have published current-season results', async () => {
+    const service = new StatsQueryService(
+      {getAll: async () => [inactiveCurrentPlayer]},
+      {getAll: async () => [teamB]},
+      {getActive: async () => season},
+      {
+        getPlayerSeasonStatisticsSnapshot: async () => ({
+          statistics: [inactiveStatistics],
+          ciMovements: new Map(),
+        }),
+      },
+    );
+
+    const snapshot = await service.getSnapshot('team-b');
+
+    expect(snapshot.playerViews).toHaveLength(1);
+    expect(snapshot.playerViews[0]).toMatchObject({
+      player: {id: 'p2', active: false},
+      teamName: 'Team B',
+      currentStatistics: {matchesPlayed: 1},
+    });
+  });
+
+  it('attributes a transferred active player to both result teams and the current team', async () => {
+    const transferredPlayer: Player = {...activePlayer, teamId: 'team-b'};
+    const service = new StatsQueryService(
+      {getAll: async () => [transferredPlayer]},
+      {getAll: async () => [teamA, teamB]},
+      {getActive: async () => season},
+      {
+        getPlayerSeasonStatisticsSnapshot: async () => ({
+          statistics: [statistics],
+          ciMovements: new Map(),
+        }),
+      },
+    );
+
+    const fromOldTeam = await service.getSnapshot('team-a');
+    const fromCurrentTeam = await service.getSnapshot('team-b');
+
+    expect(fromOldTeam.playerViews[0]?.teamName).toBe('Team A / Team B');
+    expect(fromCurrentTeam.playerViews[0]?.teamName).toBe('Team A / Team B');
   });
 });

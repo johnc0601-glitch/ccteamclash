@@ -1,8 +1,8 @@
 import 'server-only';
 
 import type {SupabaseClient} from '@supabase/supabase-js';
+import {createHistoricalStatsReadClient} from '@/core/createHistoricalStatsReadClient';
 import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCiArchiveReplay';
-import {createClient} from '@/lib/supabase/server';
 import {formatHistoricalCiReplayFailure} from '@/services/statistics/HistoricalCiReplayDiagnostic';
 import {
   playerSeasonCiKey,
@@ -48,8 +48,7 @@ const PAGE_SIZE = 1000;
  * expensive request-time replay path.
  */
 export async function loadServerHistoricalCiGains(): Promise<Map<string, HistoricalCiGainBreakdown>> {
-  const supabase = await createClient();
-  const client = supabase as unknown as SupabaseClient;
+  const client = await createHistoricalStatsReadClient();
   const [factLoad, sourceRows] = await Promise.all([
     loadAllHistoricalCiFacts(client),
     loadAllHistoricalMatchupOrders(client),
@@ -97,7 +96,9 @@ async function loadAllHistoricalCiFacts(
   supabase: SupabaseClient,
 ): Promise<HistoricalCiFactLoadResult> {
   const rows: HistoricalCiFactRow[] = [];
-  for (let from = 0; ; from += PAGE_SIZE) {
+  let from = 0;
+
+  while (true) {
     const {data, error} = await supabase
       .from('historical_clash_contest_rating_facts')
       .select('matchup_deduplication_key,season_id,player_id,historical_team_match_id,format,clash_index_before,ci_delta')
@@ -111,9 +112,11 @@ async function loadAllHistoricalCiFacts(
       }
       throw error;
     }
+
     const page = (data ?? []) as HistoricalCiFactRow[];
+    if (page.length === 0) return {rows};
     rows.push(...page);
-    if (page.length < PAGE_SIZE) return {rows};
+    from += page.length;
   }
 }
 
@@ -121,16 +124,20 @@ async function loadAllHistoricalMatchupOrders(
   supabase: SupabaseClient,
 ): Promise<HistoricalMatchupOrderRow[]> {
   const rows: HistoricalMatchupOrderRow[] = [];
-  for (let from = 0; ; from += PAGE_SIZE) {
+  let from = 0;
+
+  while (true) {
     const {data, error} = await supabase
       .from('historical_player_matchups')
       .select('deduplication_key,historical_team_match_id,event_order')
       .order('deduplication_key', {ascending: true})
       .range(from, from + PAGE_SIZE - 1);
     if (error) throw error;
+
     const page = (data ?? []) as HistoricalMatchupOrderRow[];
+    if (page.length === 0) return rows;
     rows.push(...page);
-    if (page.length < PAGE_SIZE) return rows;
+    from += page.length;
   }
 }
 
