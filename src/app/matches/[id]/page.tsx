@@ -2,6 +2,7 @@ import type {CSSProperties} from 'react';
 import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
+import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
@@ -26,6 +27,10 @@ import type {Match} from '@/domain/schedule/Match';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 import {resolveMatchday, type PublicMatchday} from '@/services/matches/MatchdayService';
+import {
+  buildPublicMatchPrediction,
+  resolvePublicPredictionSource,
+} from '@/services/teamStrength/PublicMatchPrediction';
 import styles from './Matchday.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -74,8 +79,9 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
   if (!event || !match || !match.homeTeamId || !match.awayTeamId || !match.courseId) notFound();
 
-  const locked = isMatchRosterLocked(match);
-  const availabilityOpen = !locked && isMatchAttendanceOpen(match);
+  const now = new Date();
+  const locked = isMatchRosterLocked(match, now);
+  const availabilityOpen = !locked && isMatchAttendanceOpen(match, now);
   const teamIds = [match.homeTeamId, match.awayTeamId];
   const [rosterPlayerIdsByTeam, teamResults, course] = await Promise.all([
     locked ? Promise.resolve(new Map(teamIds.map((teamId) => [teamId, new Set<string>()]))) : getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds),
@@ -121,6 +127,43 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     }
   }
 
+  const predictionSource = match.date ? resolvePublicPredictionSource(match.date, now) : undefined;
+  const officialRosters = officialSnapshot?.status === 'complete' ? officialSnapshot.rosters : undefined;
+  let homePredictionPlayers = matchday.homeTeam.roster;
+  let awayPredictionPlayers = matchday.awayTeam.roster;
+
+  if (predictionSource === 'matchLineup' && officialRosters) {
+    const homeRoster = officialRosters.find((roster) => roster.teamId === match.homeTeamId);
+    const awayRoster = officialRosters.find((roster) => roster.teamId === match.awayTeamId);
+    if (homeRoster && awayRoster) {
+      const homeIds = homeRoster.players.map((player) => player.playerId);
+      const awayIds = awayRoster.players.map((player) => player.playerId);
+      const lineupPlayers = await getPlayersByIds(supabase, [...new Set([...homeIds, ...awayIds])]);
+      const playersById = new Map(lineupPlayers.map((player) => [player.id, player]));
+      homePredictionPlayers = homeIds
+        .map((playerId) => playersById.get(playerId))
+        .filter((player): player is LaunchPlayer => Boolean(player));
+      awayPredictionPlayers = awayIds
+        .map((playerId) => playersById.get(playerId))
+        .filter((player): player is LaunchPlayer => Boolean(player));
+    }
+  }
+
+  const matchPrediction = buildPublicMatchPrediction({
+    matchDate: match.date,
+    matchStatus: match.status,
+    hasPublishedResult: Boolean(publishedResult),
+    homeTeamId: match.homeTeamId,
+    awayTeamId: match.awayTeamId,
+    matchVenue: course?.homeTeamId === match.homeTeamId ? 'Home' : 'Neutral',
+    homePlayers: homePredictionPlayers,
+    awayPlayers: awayPredictionPlayers,
+    homeAttendance: availability?.get(match.homeTeamId),
+    awayAttendance: availability?.get(match.awayTeamId),
+    officialRosters,
+    now,
+  });
+
   const attendanceRepository = new SupabaseMatchRosterRepository(supabase);
   const actor = userResult.data.user ? await attendanceRepository.getAttendanceActor(userResult.data.user.id) : undefined;
   const openUnlockTeamIds = locked ? await getOpenRosterUnlockTeamIds(supabase, matchId) : new Set<string>();
@@ -148,6 +191,14 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
       <main className={styles.page} style={pageBackground}>
         <MatchHero matchday={matchday} />
         <div className={`shell ${styles.content}`}>
+          {matchPrediction ? (
+            <MatchPredictionCard
+              prediction={matchPrediction}
+              awayTeamName={matchday.awayTeam.name}
+              homeTeamName={matchday.homeTeam.name}
+            />
+          ) : null}
+
           <MatchScoreboard matchday={matchday} result={publishedResult} contests={publishedResult ? contests : []} />
 
           {personalAttendance ? (
@@ -241,7 +292,26 @@ async function getPlayersByIds(supabase: Awaited<ReturnType<typeof createClient>
   if (!playerIds.length) return [];
   const {data, error} = await supabase.from('launch_players').select('*').in('id', playerIds).order('name');
   if (error) throw error;
-  return (data ?? []).map((row) => ({id: row.id, name: row.name, gender: row.gender as LaunchPlayer['gender'], pdgaNumber: row.pdga_number, pdgaRating: row.pdga_rating, clashIndex: (row as typeof row & {clash_index: number | null}).clash_index, currentTeamId: row.current_team_id, homeArea: row.home_area, active: row.active, createdAt: row.created_at, updatedAt: row.updated_at}));
+  return (data ?? []).map((row) => {
+    const rating = row as typeof row & {
+      clash_index?: number | null;
+      clash_index_provisional?: boolean | null;
+    };
+    return {
+      id: row.id,
+      name: row.name,
+      gender: row.gender as LaunchPlayer['gender'],
+      pdgaNumber: row.pdga_number,
+      pdgaRating: row.pdga_rating,
+      clashIndex: rating.clash_index ?? null,
+      clashIndexProvisional: rating.clash_index_provisional ?? false,
+      currentTeamId: row.current_team_id,
+      homeArea: row.home_area,
+      active: row.active,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  });
 }
 
 async function getSeasonRosterPlayerIdsByTeam(supabase: Awaited<ReturnType<typeof createClient>>, seasonId: string, teamIds: string[]): Promise<Map<string, Set<string>> | null> {
