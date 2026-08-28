@@ -190,7 +190,7 @@ test('frozen snapshot remains the displayed prediction even if live CI later cha
   assert.equal(frozen.homeStrength, 910);
   assert.equal(frozen.awayStrength, 900);
   assert.equal(frozen.homeChanceOfVictory, 0.891);
-  assert.equal(frozen.awayChanceOfVictory, 0.109);
+  assert.ok(Math.abs((frozen.awayChanceOfVictory ?? 0) - 0.109) < 1e-12);
 
   const liveAfterCiChange = buildPublicMatchPrediction({
     matchDate: '2026-10-03',
