@@ -5,6 +5,8 @@ import {unstable_cache} from 'next/cache';
 import {createHistoricalStatsReadClient} from '@/core/createHistoricalStatsReadClient';
 import {HISTORICAL_STATS_CACHE_TAG} from '@/core/historicalStatsCacheTag';
 import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCiArchiveReplay';
+import {replaceHistoricalCiArchiveReplay} from '@/core/persistHistoricalCiArchiveReplay';
+import {CLASH_MODEL_VERSION} from '@/domain/story-engine/ClashPrediction';
 import {formatHistoricalCiReplayFailure} from '@/services/statistics/HistoricalCiReplayDiagnostic';
 import {selectHistoricalCiReplaySummaries} from '@/services/statistics/HistoricalCiReplaySelection';
 import {
@@ -25,6 +27,7 @@ type HistoricalCiFactRow = {
   format: 'Singles' | 'Doubles';
   clash_index_before: number;
   ci_delta: number;
+  algorithm_version: string;
 };
 
 type HistoricalMatchupOrderRow = {
@@ -66,6 +69,14 @@ export async function loadServerHistoricalCiGains(seasonId?: string): Promise<Ma
   if (factLoad.rows.length !== sourceRows.length) {
     return loadHistoricalCiGainsFromReplay(
       `historical CI ledger/source count mismatch: ${factLoad.rows.length} facts vs ${sourceRows.length} matchup rows`,
+      seasonId,
+    );
+  }
+
+  const mismatchedVersion = factLoad.rows.find((row) => row.algorithm_version !== CLASH_MODEL_VERSION);
+  if (mismatchedVersion) {
+    return loadHistoricalCiGainsFromReplay(
+      `historical CI ledger model mismatch: ${mismatchedVersion.algorithm_version} vs ${CLASH_MODEL_VERSION}`,
       seasonId,
     );
   }
@@ -118,7 +129,7 @@ async function loadAllHistoricalCiFacts(
   while (true) {
     let query = supabase
       .from('historical_clash_contest_rating_facts')
-      .select('matchup_deduplication_key,season_id,player_id,historical_team_match_id,format,clash_index_before,ci_delta')
+      .select('matchup_deduplication_key,season_id,player_id,historical_team_match_id,format,clash_index_before,ci_delta,algorithm_version')
       .order('matchup_deduplication_key', {ascending: true});
     if (seasonId) query = query.eq('season_id', seasonId);
     const {data, error} = await query.range(from, from + PAGE_SIZE - 1);
@@ -200,6 +211,20 @@ async function loadHistoricalCiGainsFromReplay(
       replayError: error instanceof Error ? error.message : String(error),
     });
     throw new Error(diagnostic);
+  }
+
+  try {
+    const rebuilt = await replaceHistoricalCiArchiveReplay(replay);
+    console.info('[stats] Historical CI ledger rebuilt from deterministic replay', {
+      reason,
+      facts: rebuilt.insertedFacts,
+      algorithmVersion: CLASH_MODEL_VERSION,
+    });
+  } catch (error) {
+    console.error('[stats] Historical CI ledger rebuild failed; serving deterministic replay', {
+      reason,
+      rebuildError: error instanceof Error ? error.message : String(error),
+    });
   }
 
   return selectHistoricalCiReplaySummaries(replay.seasons, requestedSeasonId);
