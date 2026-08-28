@@ -97,15 +97,11 @@ async function loadAllHistoricalCiFacts(
 ): Promise<HistoricalCiFactLoadResult> {
   const rows: HistoricalCiFactRow[] = [];
   let from = 0;
-  let expectedCount: number | null = null;
 
   while (true) {
-    const {data, error, count} = await supabase
+    const {data, error} = await supabase
       .from('historical_clash_contest_rating_facts')
-      .select(
-        'matchup_deduplication_key,season_id,player_id,historical_team_match_id,format,clash_index_before,ci_delta',
-        {count: 'exact'},
-      )
+      .select('matchup_deduplication_key,season_id,player_id,historical_team_match_id,format,clash_index_before,ci_delta')
       .order('matchup_deduplication_key', {ascending: true})
       .range(from, from + PAGE_SIZE - 1);
     if (error) {
@@ -117,17 +113,9 @@ async function loadAllHistoricalCiFacts(
       throw error;
     }
 
-    if (expectedCount === null && count !== null) expectedCount = count;
     const page = (data ?? []) as HistoricalCiFactRow[];
+    if (page.length === 0) return {rows};
     rows.push(...page);
-
-    if (expectedCount !== null && rows.length >= expectedCount) return {rows};
-    if (page.length === 0) {
-      if (expectedCount !== null && rows.length !== expectedCount) {
-        return {fallbackReason: `historical CI ledger pagination ended early: loaded ${rows.length} of ${expectedCount} facts`};
-      }
-      return {rows};
-    }
     from += page.length;
   }
 }
@@ -137,27 +125,18 @@ async function loadAllHistoricalMatchupOrders(
 ): Promise<HistoricalMatchupOrderRow[]> {
   const rows: HistoricalMatchupOrderRow[] = [];
   let from = 0;
-  let expectedCount: number | null = null;
 
   while (true) {
-    const {data, error, count} = await supabase
+    const {data, error} = await supabase
       .from('historical_player_matchups')
-      .select('deduplication_key,historical_team_match_id,event_order', {count: 'exact'})
+      .select('deduplication_key,historical_team_match_id,event_order')
       .order('deduplication_key', {ascending: true})
       .range(from, from + PAGE_SIZE - 1);
     if (error) throw error;
 
-    if (expectedCount === null && count !== null) expectedCount = count;
     const page = (data ?? []) as HistoricalMatchupOrderRow[];
+    if (page.length === 0) return rows;
     rows.push(...page);
-
-    if (expectedCount !== null && rows.length >= expectedCount) return rows;
-    if (page.length === 0) {
-      if (expectedCount !== null && rows.length !== expectedCount) {
-        throw new Error(`Historical matchup pagination ended early: loaded ${rows.length} of ${expectedCount} rows`);
-      }
-      return rows;
-    }
     from += page.length;
   }
 }

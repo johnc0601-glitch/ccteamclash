@@ -9,35 +9,24 @@ export async function loadServerHistoricalStatsRows(): Promise<HistoricalStatsMa
   const supabase = await createHistoricalStatsReadClient();
   const rows: HistoricalStatsMatchupRowInput[] = [];
   let from = 0;
-  let expectedCount: number | null = null;
 
   while (true) {
-    const {data, error, count} = await supabase
+    const {data, error} = await supabase
       .from('historical_player_matchups')
-      .select(
-        'deduplication_key,season_id,season_name,match_format,player_id,player_name,player_team_name,outcome',
-        {count: 'exact'},
-      )
+      .select('deduplication_key,season_id,season_name,match_format,player_id,player_name,player_team_name,outcome')
       .order('season_id', {ascending: true})
       .order('deduplication_key', {ascending: true})
       .range(from, from + PAGE_SIZE - 1);
 
     if (error) throw error;
-    if (expectedCount === null && count !== null) expectedCount = count;
 
     const page = (data ?? []) as HistoricalStatsMatchupRowInput[];
+    if (page.length === 0) return rows;
     rows.push(...page);
 
-    if (expectedCount !== null && rows.length >= expectedCount) return rows;
-    if (page.length === 0) {
-      if (expectedCount !== null && rows.length !== expectedCount) {
-        throw new Error(`Historical Stats archive pagination ended early: loaded ${rows.length} of ${expectedCount} rows`);
-      }
-      return rows;
-    }
-
-    // Advance by what PostgREST actually returned. This remains correct even
-    // when an API max-row limit is lower than PAGE_SIZE.
+    // Advance by what PostgREST actually returned. Do not infer completion
+    // from page size or count metadata because API row caps can be lower than
+    // the requested range and count metadata may itself be capped.
     from += page.length;
   }
 }
