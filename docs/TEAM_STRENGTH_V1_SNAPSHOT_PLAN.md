@@ -2,9 +2,9 @@
 
 ## Why this exists
 
-The current historical archive is strong at result-level reconstruction but weak at early prediction stages. It stores actual participants and contest facts, not exact point-in-time season rosters or attendance states.
+The historical archive is strong at result-level reconstruction but weak at early prediction stages. It stores actual participants and contest facts, not exact point-in-time season rosters or attendance states.
 
-That forced the V1 backtest to use proxies for Active Roster Strength and Confirmed Available Roster Strength. It also makes old automatic-point and women-bonus reconstruction less reliable than it should be.
+That forced the V1 backtest to use proxies for Active Roster Strength and Confirmed Available Roster Strength. It also means a later retrospective replay must not look up a player's newer Clash Index.
 
 The new snapshot model prevents both problems from repeating.
 
@@ -29,17 +29,27 @@ Every snapshot stores:
 - base neutral strengths and venue-adjusted matchup difference;
 - expected point share and Chance of Victory;
 - calibration slope and confidence;
-- exact selected player IDs on both sides, including selected IDs whose CI cannot be resolved;
+- exact selected player IDs on both sides;
+- **the exact per-player Clash Index used for every selected ID**;
+- an explicit `null` CI when a selected player could not be resolved at capture time;
 - total selected player count;
 - female, male and unknown/unresolved gender counts;
 - raw shortfall from the standard 18-player structure;
 - provisional, fallback and omitted-player counts.
 
+The per-player CI pair is the critical calibration lock. A future replay must use the captured value, including fallback CI, and must never substitute a player's current rating for a captured `null`.
+
 The gender counts are constrained to sum to the selected player count. A selected ID with no current player record is counted as unknown for composition purposes rather than disappearing from the snapshot.
 
-The raw shortfall field is a **diagnostic**, not an automatic-points award. The rules layer decides when a lineup shortfall is sufficiently known to turn into deterministic structural points.
+The raw shortfall field is a **diagnostic**, not an automatic-points award. Structural scoring remains separate from roster strength.
 
-This is enough to reproduce the published roster-stage prediction later without looking up today's roster or today's CI values, and to study structural scoring with the information that actually existed before the match.
+This is enough to reproduce the published roster-stage prediction later without looking up today's roster or today's CI values.
+
+## Post-match calibration
+
+Actual singles/doubles pairings are not captured as a pre-match stage. After the match, `ResultContest` assignments are combined with the frozen **Match Lineup** player-CI snapshot.
+
+Ordinary complete contests are replayed from frozen CI. The official team score remains the scoring truth; any residual between ordinary CI-rated contest points and the official score is retained separately as structural scoring (automatic points, women bonus points, penalties, or another official adjustment).
 
 ## Storage policy
 
@@ -58,8 +68,9 @@ After a full season of snapshots, we can fit and compare probability curves inde
 We can also test, without reconstruction bias:
 
 - how often a Friday attendance shortfall becomes a true locked-lineup shortfall;
-- the actual automatic-point effect of locked short rosters;
+- the official structural-score residual associated with short rosters;
 - women bonus opportunity frequency by female-count differential;
-- whether matchup-level CI can predict how often those bonus opportunities are converted.
+- whether matchup-level frozen CI predicts how often those opportunities are converted;
+- how the post-match actual-pairing model compares with the three public roster stages.
 
 That will replace the current Active/availability proxy assumptions with real point-in-time evidence.

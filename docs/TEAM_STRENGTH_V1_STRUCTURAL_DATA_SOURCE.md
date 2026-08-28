@@ -1,50 +1,53 @@
 # Team Strength V1 — structural scoring data source
 
-## What the current site already stores
+## What the site already stores
 
-The results subsystem already has exact contest assignments:
+The results subsystem already has the post-match contest assignments needed for retrospective analysis:
 
-- `launch_result_contests` identifies Singles/Doubles and contest position.
-- `launch_result_contest_players` identifies Home/Away player slots.
+- `launch_result_contests` identifies Singles/Doubles, contest position and result.
+- `launch_result_contest_players` identifies the actual Home/Away players and doubles pairs.
+- the published team score is the official scoring truth.
 
-That is enough to count the exact standard singles and doubles player-slots represented in a completed contest layout.
+Captains draft singles and doubles in person on event day. The website does **not** need a separate pre-match matchup-builder or match-structure lock.
 
-## Why it is not wired directly into the pre-match forecast yet
+## Public pre-match behavior
 
-The same contest tables are used by the mutable **Draft result editor**. `ResultsService.saveDraft()` can save any valid subset of contests and does not require a complete 18-singles / 9-doubles layout until a later workflow supplies the rest.
+The public forecast stops at **Match Lineup Strength**. It stays roster-based through all three stages:
 
-Therefore the mere absence of a player slot in a Draft cannot safely mean “automatic point.” It may only mean the commissioner/captain has not finished entering the contests yet.
+1. Active Roster Strength
+2. Confirmed Available Roster Strength
+3. Match Lineup Strength
 
-V1 must not mistake data-entry progress for a competitive disadvantage.
+Raw shortfall from 18 and gender composition may be captured as structural diagnostics, but V1 does not upgrade the public forecast to exact singles/doubles pairings.
 
-## Safe rule
+## Post-match retrospective data source
 
-Automatic points may be calculated from contest assignments only after a separate signal establishes that the matchup/contest layout is finalized.
+After a result is final, actual `ResultContest` assignments provide the real singles opponents and doubles pairs. `RetrospectiveMatchAnalysis.ts` combines those assignments with the frozen Match Lineup player-CI snapshot.
 
-`ContestStructuralScoring.ts` now enforces that contract:
+A complete ordinary contest is CI-rated retrospectively:
 
-- `auditContestPlayerSlots()` can inspect any contest set without changing a prediction.
-- `exactAutomaticPointsFromFinalizedContestLayout(contests, false)` returns no structural adjustment.
-- only `layoutFinalized=true` permits missing singles/doubles player-slots to become automatic points.
+- Singles uses the two frozen player CIs.
+- Doubles uses the actual pair on each side with the locked **80/20** effective-CI rule.
+- venue comes from the frozen pre-match snapshot, so the +8 home effect is not reconstructed later.
 
-This is intentionally separate from result publication. A future pre-match matchup-builder could finalize assignments before play without publishing a result.
+If a required frozen CI is missing or explicitly `null`, the retrospective analysis is unavailable for that contest set. V1 never substitutes a newer CI.
 
-## Current V1 behavior
+## Structural scoring rule
 
-Until a trustworthy pre-match “layout finalized” signal exists:
+Incomplete result slots are not forced into the CI-rated layer. They may represent automatic/forfeit scoring or another structural condition.
 
-- Active Roster and Confirmed Available remain roster-stage forecasts.
-- Match Lineup uses the locked participant pool but does not invent exact automatic points from unique-player count.
-- raw shortfall from 18 and female composition are captured in immutable prediction snapshots.
-- women bonus opportunity counts can be identified from lineup composition, but they are not blindly converted to expected points.
+V1 reconciles structural scoring from the official score:
 
-## Future extension
+`structural adjustment = official team score - actual points from complete CI-rated contests`
 
-The cleanest future workflow is a small immutable **match structure lock** containing:
+That residual can include automatic points, women bonus points, penalties, or another official Clash scoring adjustment. V1 preserves the effect without guessing a category the stored result data cannot prove.
 
-- finalized singles assignments;
-- finalized doubles assignments;
-- explicit automatic slots;
-- the female-vs-male bonus-triggering assignments.
+`ContestStructuralScoring.ts` remains a low-level slot-audit utility, but no pre-match match-structure repository is required.
 
-When that exists, Team Strength can move from Match Lineup Strength to the known-matchup Expected Points model before play begins, without using result-entry data or leaking post-match information.
+## Guardrails
+
+- Result contests are post-match retrospective data, not a public prediction input.
+- Official team scores are the truth for match outcomes and structural reconciliation.
+- Structural scoring never changes Team Strength or Clash Index.
+- Do not infer exact women bonus awards from roster gender counts alone.
+- Do not use current player CI in a historical replay.

@@ -2,13 +2,15 @@
 
 ## Core principle
 
-The percentage should get sharper as the model learns more. V1 therefore keeps the underlying strength label and probability calibration tied to the information actually available.
+The public percentage should get sharper only as roster information improves. V1 keeps the underlying strength label and probability calibration tied to the information actually available before play.
+
+The website does **not** draft singles or doubles matchups. Captains draft in person on event day, so actual pairings are not a public pre-match prediction stage.
 
 ## Stage 1 — Active Roster Strength
 
 Input: every current active roster player with an effective CI.
 
-Strength is venue-neutral. Matchup prediction applies +8 only when the scheduled home team is actually on its home course.
+Strength is venue-neutral. Matchup prediction applies +8 only when the scheduled home team is actually on its registered home course.
 
 Historical closest proxy: reconstructed season roster, **27/34 (79.4%)** regular-season winner calls with +8. Direct strength-difference probability slope: **0.088**.
 
@@ -26,17 +28,17 @@ Input: official locked roster snapshot player IDs.
 
 Historical actual participant pools are the correct proxy here: **30/34 (88.2%)** regular-season winner calls with +8. Direct strength-difference slope: **0.117**.
 
-This stage can produce a sharper probability even before exact singles or doubles pairings are available.
+This is the **final public pre-match stage**. It remains roster-based even though captains may already be drafting pairings in person.
 
-## Stage 4 — Known singles, doubles still unknown
+## Post-match retrospective analysis — not a public stage
 
-Once actual singles matchups and scoring slots are known, switch to Expected Points. Unknown doubles teams use the deterministic all-plausible-pairs 80/20 model.
+After the match, actual `ResultContest` singles opponents and doubles pairs can be combined with the **frozen Match Lineup CI snapshot**. That replay is used for retrospective analytics and future model calibration only.
 
-Historical regular-season result: **32/34 (94.1%)**. Expected Point Margin uses the **0.43** probability slope.
+Known singles with pooled doubles produced the historical **32/34 (94.1%)** regular-season winner result. Once actual result pairings are available, exact doubles use the locked **80/20** pair strength rule.
 
-## Stage 5 — Actual doubles pairings known
+The known-matchup retrospective model uses **Expected Point Margin** with slope **0.43**, capped at **95% / 5%**.
 
-Replace pooled doubles expectations with actual 80/20 pair strengths. Exact pairings improved score calibration in the broader backtest, although the all-match winner count stayed 38/41 in both versions.
+Official team scores remain the truth. Any difference between ordinary CI-rated contest points and the official score is retained as a structural scoring adjustment rather than pushed into CI strength.
 
 ## Data quality and confidence
 
@@ -46,6 +48,7 @@ Replace pooled doubles expectations with actual 80/20 pair strengths. Exact pair
 - Any unresolved/omitted player forces `Low` confidence.
 - Predictions compare like with like; do not compare Active Roster Strength directly against Confirmed Available Roster Strength.
 - The prediction source and label travel with the calculated value.
+- Prediction snapshots freeze each selected player's exact CI value, including an explicit `null` when it was unresolved. Retrospective analysis must never substitute a newer CI.
 
 ## Home
 
