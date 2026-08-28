@@ -19,7 +19,7 @@ test('public prediction stage advances from active roster to availability to loc
     'confirmedAvailableRoster',
   );
   assert.equal(
-    resolvePublicPredictionSource('2026-10-03', new Date('2026-10-03T19:01:00Z')),
+    resolvePublicPredictionSource('2026-10-03', new Date('2026-10-02T19:01:00Z')),
     'matchLineup',
   );
 });
@@ -103,7 +103,7 @@ test('match lineup stage waits rather than falling back to an earlier player poo
     matchVenue: 'Home',
     homePlayers: players('home', 18, 900),
     awayPlayers: players('away', 18, 900),
-    now: new Date('2026-10-03T19:01:00Z'),
+    now: new Date('2026-10-02T19:01:00Z'),
   });
 
   assert.ok(prediction && prediction.state === 'waiting');
@@ -127,7 +127,7 @@ test('complete match lineup is the final public pre-match prediction stage', () 
       officialRoster('home', homePlayers),
       officialRoster('away', awayPlayers),
     ],
-    now: new Date('2026-10-03T19:01:00Z'),
+    now: new Date('2026-10-02T19:01:00Z'),
   });
 
   assert.ok(prediction && prediction.state === 'calculated');
