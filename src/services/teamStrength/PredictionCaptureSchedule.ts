@@ -10,6 +10,12 @@ export type PredictionCaptureCheckpoint = {
   captureAt: Date;
 };
 
+export const MATCH_LINEUP_CAPTURE_GRACE_MS = 2 * 60 * 60 * 1000;
+
+export type PredictionCaptureEligibility =
+  | {eligible: true; source: TeamStrengthSource}
+  | {eligible: false; reason: 'NotDue' | 'Expired'};
+
 /**
  * Fixed regular-season Team Strength checkpoints.
  *
@@ -35,33 +41,45 @@ export function predictionCaptureCheckpoints(
 
 /**
  * Returns the one information stage that is valid to capture at `now`.
- * Earlier stages are deliberately not backfilled using later data: a missed
- * PreMatch or AttendanceFinal snapshot should remain missing rather than being
- * mislabeled with a player pool observed after its checkpoint window.
+ * Earlier stages are deliberately not backfilled using later data. Match Lineup
+ * also has a finite grace window so a delayed job cannot silently preserve a
+ * later CI state as though it were the roster-lock prediction.
  */
-export function currentPredictionCaptureSource(
+export function predictionCaptureEligibility(
   matchDate: string,
   now = new Date(),
-): TeamStrengthSource | undefined {
+): PredictionCaptureEligibility {
   const checkpoints = predictionCaptureCheckpoints(matchDate);
-  if (checkpoints.length !== 3) return undefined;
+  if (checkpoints.length !== 3) return {eligible: false, reason: 'NotDue'};
 
   const [preMatch, attendanceFinal, rosterLock] = checkpoints;
   const timestamp = now.getTime();
 
-  if (
-    timestamp >= preMatch.captureAt.getTime()
-    && timestamp < attendanceFinal.captureAt.getTime()
-  ) return 'activeRoster';
+  if (timestamp < preMatch.captureAt.getTime()) {
+    return {eligible: false, reason: 'NotDue'};
+  }
 
-  if (
-    timestamp >= attendanceFinal.captureAt.getTime()
-    && timestamp < rosterLock.captureAt.getTime()
-  ) return 'confirmedAvailableRoster';
+  if (timestamp < attendanceFinal.captureAt.getTime()) {
+    return {eligible: true, source: 'activeRoster'};
+  }
 
-  if (timestamp >= rosterLock.captureAt.getTime()) return 'matchLineup';
+  if (timestamp < rosterLock.captureAt.getTime()) {
+    return {eligible: true, source: 'confirmedAvailableRoster'};
+  }
 
-  return undefined;
+  if (timestamp < rosterLock.captureAt.getTime() + MATCH_LINEUP_CAPTURE_GRACE_MS) {
+    return {eligible: true, source: 'matchLineup'};
+  }
+
+  return {eligible: false, reason: 'Expired'};
+}
+
+export function currentPredictionCaptureSource(
+  matchDate: string,
+  now = new Date(),
+): TeamStrengthSource | undefined {
+  const eligibility = predictionCaptureEligibility(matchDate, now);
+  return eligibility.eligible ? eligibility.source : undefined;
 }
 
 export function captureAtForSource(
