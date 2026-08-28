@@ -11,6 +11,7 @@ import {
   toLiveStatsRow,
   type StatsGroup,
 } from '@/services/stats/StatsPageModel';
+import {parseStatsViewState} from '@/services/stats/StatsViewState';
 import styles from './Stats.module.css';
 import './compact.css';
 
@@ -19,7 +20,15 @@ export type {StatsGroup, StatsRow} from '@/services/stats/StatsPageModel';
 export type StatsGroupOption = Pick<StatsGroup, 'id' | 'label'>;
 
 type StatsPageProps = {
-  searchParams: Promise<{season?: string | string[]}>;
+  searchParams: Promise<{
+    season?: string | string[];
+    division?: string | string[];
+    team?: string | string[];
+    q?: string | string[];
+    sort?: string | string[];
+    direction?: string | string[];
+    limit?: string | string[];
+  }>;
 };
 
 function compactSeasonName(name: string): string {
@@ -91,6 +100,7 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
   const selectedGroup = groups.find((group) => group.id === selectedGroupId);
   if (!selectedGroup || requestedSeason === 'overall') redirect('/stats');
   const groupOptions: StatsGroupOption[] = groups.map(({id, label}) => ({id, label}));
+  const initialView = parseStatsViewState(query);
 
   console.info('[stats] Stats group ready', {
     id: selectedGroup.id,
@@ -107,7 +117,7 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
           <h1>Stats</h1>
           <p>Player performance by season or across the full recorded Coastal Clash history.</p>
         </header>
-        <StatsTable group={selectedGroup} groupOptions={groupOptions} />
+        <StatsTable key={selectedGroup.id} group={selectedGroup} groupOptions={groupOptions} initialView={initialView} />
       </main>
       <Footer />
     </>

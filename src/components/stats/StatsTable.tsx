@@ -2,14 +2,17 @@
 
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import type {StatsGroup, StatsGroupOption, StatsRow} from '@/app/stats/page';
+import {
+  toStatsViewSearchParams,
+  type StatsDirection as Direction,
+  type StatsDivision as Division,
+  type StatsLimit as Limit,
+  type StatsSortKey as SortKey,
+  type StatsViewState,
+} from '@/services/stats/StatsViewState';
 import styles from '@/app/stats/Stats.module.css';
-
-type SortKey = 'clashIndex' | 'matchesPlayed' | 'wins' | 'winPercentage' | 'points' | 'singles' | 'doubles' | 'ciGain' | 'singlesCiGain' | 'doublesCiGain';
-type Direction = 'asc' | 'desc';
-type Limit = 25 | 'all';
-type Division = 'Open' | 'Women';
 
 const HEADER_HELP: Record<SortKey, string> = {
   clashIndex: 'Clash Index — Match Play player rating based on match results and opponent strength',
@@ -24,14 +27,23 @@ const HEADER_HELP: Record<SortKey, string> = {
   doublesCiGain: 'D +/- — Clash Index movement earned from doubles results.',
 };
 
-export function StatsTable({group, groupOptions}: {group: StatsGroup; groupOptions: StatsGroupOption[]}) {
+export function StatsTable({group, groupOptions, initialView}: {group: StatsGroup; groupOptions: StatsGroupOption[]; initialView: StatsViewState}) {
   const router = useRouter();
-  const [sortKey, setSortKey] = useState<SortKey>('clashIndex');
-  const [direction, setDirection] = useState<Direction>('desc');
-  const [limit, setLimit] = useState<Limit>(25);
-  const [division, setDivision] = useState<Division>('Open');
-  const [team, setTeam] = useState('all');
-  const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>(initialView.sortKey);
+  const [direction, setDirection] = useState<Direction>(initialView.direction);
+  const [limit, setLimit] = useState<Limit>(initialView.limit);
+  const [division, setDivision] = useState<Division>(initialView.division);
+  const [team, setTeam] = useState(() => initialView.team === 'all'
+    || group.rows.some((row) => row.teamNames.includes(initialView.team))
+    ? initialView.team
+    : 'all');
+  const [search, setSearch] = useState(initialView.search);
+
+  useEffect(() => {
+    const params = toStatsViewSearchParams(group.id, {division, team, search: search.trim(), sortKey, direction, limit});
+    const nextUrl = params.size ? `/stats?${params}` : '/stats';
+    window.history.replaceState(window.history.state, '', nextUrl);
+  }, [group.id, division, team, search, sortKey, direction, limit]);
 
   const teams = useMemo(() => {
     return Array.from(new Set(group.rows.flatMap((row) => row.teamNames).filter(Boolean)))
@@ -55,7 +67,6 @@ export function StatsTable({group, groupOptions}: {group: StatsGroup; groupOptio
 
   function selectGroup(nextGroupId: string) {
     if (nextGroupId === group.id) return;
-    resetControls();
     router.replace(nextGroupId === 'overall' ? '/stats' : `/stats?season=${encodeURIComponent(nextGroupId)}`, {scroll: false});
   }
 
