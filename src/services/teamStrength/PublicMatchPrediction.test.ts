@@ -4,6 +4,7 @@ import test from 'node:test';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import type {TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import type {OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
+import type {LockedMatchStructure} from '@/domain/match-roster/MatchStructureLock';
 import {
   buildPublicMatchPrediction,
   resolvePublicPredictionSource,
@@ -26,6 +27,7 @@ test('public prediction stage advances from active roster to availability to loc
 
 test('active-roster forecast includes home advantage once but remains an early estimate', () => {
   const prediction = buildPublicMatchPrediction({
+    matchId: 'match',
     matchDate: '2026-10-03',
     matchStatus: 'Scheduled',
     hasPublishedResult: false,
@@ -39,6 +41,7 @@ test('active-roster forecast includes home advantage once but remains an early e
 
   assert.ok(prediction && prediction.state === 'calculated');
   assert.equal(prediction.stageLabel, 'Active Roster Strength');
+  assert.equal(prediction.strengthLabel, 'Active Roster Strength');
   assert.equal(prediction.readiness, 'EarlyEstimate');
   assert.equal(prediction.displayLabel, 'Early estimate');
   assert.ok((prediction.homeChanceOfVictory ?? 0) > 0.5);
@@ -50,6 +53,7 @@ test('active-roster forecast includes home advantage once but remains an early e
 
 test('neutral equal teams remain a 50-50 early estimate', () => {
   const prediction = buildPublicMatchPrediction({
+    matchId: 'match',
     matchDate: '2026-10-03',
     matchStatus: 'Scheduled',
     hasPublishedResult: false,
@@ -71,6 +75,7 @@ test('confirmed available stage uses only Playing players and remains early', ()
   const homePlayers = players('home', 18, 900);
   const awayPlayers = players('away', 18, 900);
   const prediction = buildPublicMatchPrediction({
+    matchId: 'match',
     matchDate: '2026-10-03',
     matchStatus: 'Scheduled',
     hasPublishedResult: false,
@@ -87,12 +92,14 @@ test('confirmed available stage uses only Playing players and remains early', ()
   assert.ok(prediction && prediction.state === 'calculated');
   assert.equal(prediction.source, 'confirmedAvailableRoster');
   assert.equal(prediction.stageLabel, 'Confirmed Available Roster Strength');
+  assert.equal(prediction.strengthLabel, 'Confirmed Available Roster Strength');
   assert.equal(prediction.readiness, 'EarlyEstimate');
   assert.equal(prediction.displayLabel, 'Early estimate');
 });
 
 test('locked lineup stage waits rather than falling back to an earlier player pool', () => {
   const prediction = buildPublicMatchPrediction({
+    matchId: 'match',
     matchDate: '2026-10-03',
     matchStatus: 'Scheduled',
     hasPublishedResult: false,
@@ -113,6 +120,7 @@ test('complete locked lineup becomes Chance of Victory', () => {
   const homePlayers = players('home', 18, 910);
   const awayPlayers = players('away', 18, 900);
   const prediction = buildPublicMatchPrediction({
+    matchId: 'match',
     matchDate: '2026-10-03',
     matchStatus: 'Scheduled',
     hasPublishedResult: false,
@@ -131,13 +139,72 @@ test('complete locked lineup becomes Chance of Victory', () => {
   assert.ok(prediction && prediction.state === 'calculated');
   assert.equal(prediction.source, 'matchLineup');
   assert.equal(prediction.stageLabel, 'Match Lineup Strength');
+  assert.equal(prediction.strengthLabel, 'Match Lineup Strength');
   assert.equal(prediction.readiness, 'Ready');
   assert.equal(prediction.displayLabel, 'Chance of Victory');
   assert.ok((prediction.homeChanceOfVictory ?? 0) > 0.5);
 });
 
+test('locked matchup structure upgrades lineup forecast to exact expected-points stage', () => {
+  const homePlayers = players('home', 18, 900);
+  const awayPlayers = players('away', 18, 900);
+  const prediction = buildPublicMatchPrediction({
+    matchId: 'match',
+    matchDate: '2026-10-03',
+    matchStatus: 'Scheduled',
+    hasPublishedResult: false,
+    homeTeamId: 'home',
+    awayTeamId: 'away',
+    matchVenue: 'Home',
+    homePlayers,
+    awayPlayers,
+    officialRosters: [
+      officialRoster('home', homePlayers),
+      officialRoster('away', awayPlayers),
+    ],
+    lockedStructure: structure(),
+    now: new Date('2026-10-03T19:01:00Z'),
+  });
+
+  assert.ok(prediction && prediction.state === 'calculated');
+  assert.equal(prediction.source, 'matchStructureLock');
+  assert.equal(prediction.stageLabel, 'Locked Matchups');
+  assert.equal(prediction.strengthLabel, 'Match Lineup Strength');
+  assert.equal(prediction.displayLabel, 'Chance of Victory');
+  assert.ok((prediction.homeChanceOfVictory ?? 0) > 0.5);
+  assert.ok((prediction.homeExpectedPoints ?? 0) > 18);
+  assert.ok((prediction.awayExpectedPoints ?? 36) < 18);
+});
+
+test('a structure from a different match cannot upgrade this match prediction', () => {
+  const homePlayers = players('home', 18, 900);
+  const awayPlayers = players('away', 18, 900);
+  const wrongStructure = {...structure(), matchId: 'other-match'};
+  const prediction = buildPublicMatchPrediction({
+    matchId: 'match',
+    matchDate: '2026-10-03',
+    matchStatus: 'Scheduled',
+    hasPublishedResult: false,
+    homeTeamId: 'home',
+    awayTeamId: 'away',
+    matchVenue: 'Neutral',
+    homePlayers,
+    awayPlayers,
+    officialRosters: [
+      officialRoster('home', homePlayers),
+      officialRoster('away', awayPlayers),
+    ],
+    lockedStructure: wrongStructure,
+    now: new Date('2026-10-03T19:01:00Z'),
+  });
+
+  assert.ok(prediction && prediction.state === 'calculated');
+  assert.equal(prediction.source, 'matchLineup');
+});
+
 test('a published result suppresses live recomputation of the pre-match forecast', () => {
   const prediction = buildPublicMatchPrediction({
+    matchId: 'match',
     matchDate: '2026-10-03',
     matchStatus: 'Scheduled',
     hasPublishedResult: true,
@@ -205,5 +272,26 @@ function officialRoster(
       updatedBy: null,
       updatedAt: '2026-10-03T19:00:00Z',
     })),
+  };
+}
+
+function structure(): LockedMatchStructure {
+  return {
+    matchId: 'match',
+    homeTeamId: 'home',
+    awayTeamId: 'away',
+    status: 'Locked',
+    singles: Array.from({length: 18}, (_, index) => ({
+      position: index + 1,
+      homePlayerId: `home-${index}`,
+      awayPlayerId: `away-${index}`,
+    })),
+    doubles: Array.from({length: 9}, (_, index) => ({
+      position: index + 1,
+      homePlayerIds: [`home-${index * 2}`, `home-${index * 2 + 1}`] as [string | null, string | null],
+      awayPlayerIds: [`away-${index * 2}`, `away-${index * 2 + 1}`] as [string | null, string | null],
+    })),
+    lockedBy: 'commissioner',
+    lockedAt: '2026-10-03T19:00:00.000Z',
   };
 }
