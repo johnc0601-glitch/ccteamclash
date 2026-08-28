@@ -15,9 +15,9 @@ export function getPlayerAttendanceLockAt(matchDate: string): Date | undefined {
 }
 
 export function getMatchRosterLockAt(matchDate: string): Date | undefined {
-  const parsed = parseMatchDate(matchDate);
-  if (!parsed) return undefined;
-  return easternDateTime(parsed.year, parsed.month, parsed.day, 15);
+  const friday = getMatchWeekFriday(matchDate);
+  if (!friday) return undefined;
+  return easternDateTime(friday.year, friday.month, friday.day, 15);
 }
 
 export function isPlayerAttendanceOpen(match: AttendanceMatch, now = new Date()): boolean {

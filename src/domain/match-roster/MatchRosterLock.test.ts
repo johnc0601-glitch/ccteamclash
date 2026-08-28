@@ -31,9 +31,9 @@ test('captain attendance window still opens Friday midnight Eastern before a Sat
   assert.equal(isMatchAttendanceOpen(match, new Date('2026-10-02T04:00:00.000Z')), true);
 });
 
-test('captain attendance closes when the roster locks at 3 PM Eastern on match day', () => {
-  assert.equal(getMatchRosterLockAt(match.date!)?.toISOString(), '2026-10-03T19:00:00.000Z');
-  assert.equal(isMatchAttendanceOpen(match, new Date('2026-10-03T18:59:59.000Z')), true);
-  assert.equal(isMatchAttendanceOpen(match, new Date('2026-10-03T19:00:00.000Z')), false);
-  assert.equal(isMatchRosterLocked(match, new Date('2026-10-03T19:00:00.000Z')), true);
+test('captain attendance closes when the roster locks at 3 PM Eastern on Friday', () => {
+  assert.equal(getMatchRosterLockAt(match.date!)?.toISOString(), '2026-10-02T19:00:00.000Z');
+  assert.equal(isMatchAttendanceOpen(match, new Date('2026-10-02T18:59:59.000Z')), true);
+  assert.equal(isMatchAttendanceOpen(match, new Date('2026-10-02T19:00:00.000Z')), false);
+  assert.equal(isMatchRosterLocked(match, new Date('2026-10-02T19:00:00.000Z')), true);
 });
