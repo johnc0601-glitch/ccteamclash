@@ -2,7 +2,10 @@ import 'server-only';
 
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {createAdminClient} from '@/lib/supabase/admin';
-import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCiArchiveReplay';
+import {
+  loadServerHistoricalCiArchiveReplay,
+} from '@/core/loadServerHistoricalCiArchiveReplay';
+import type {HistoricalCiArchiveReplayResult} from '@/services/statistics/HistoricalCiArchiveReplay';
 import {invalidateHistoricalStatsCache} from '@/core/historicalStatsCache';
 
 export const EXPECTED_COMPLETE_HISTORICAL_CI_FACTS = 2568;
@@ -37,8 +40,6 @@ export async function persistHistoricalCiArchiveReplay(
     throw new Error(`Historical CI ledger is not empty (${existing.count ?? 0} existing facts)`);
   }
 
-  // One PostgREST INSERT statement keeps the publication all-or-nothing at the
-  // database statement level. Never batch this immutable initial backfill.
   const inserted = await admin
     .from('historical_clash_contest_rating_facts')
     .insert(replay.ledger)
@@ -46,6 +47,34 @@ export async function persistHistoricalCiArchiveReplay(
   if (inserted.error) throw inserted.error;
   if ((inserted.data ?? []).length !== expectedFacts) {
     throw new Error(`Historical CI ledger inserted ${(inserted.data ?? []).length}/${expectedFacts} facts`);
+  }
+
+  invalidateHistoricalStatsCache();
+  return {insertedFacts: expectedFacts, expectedFacts};
+}
+
+/**
+ * Rebuilds the reviewed historical CI ledger after an intentional model change.
+ * The primary key set is unchanged, so one PostgREST UPSERT replaces all 2,568
+ * facts atomically at the statement level without an empty-ledger window.
+ */
+export async function replaceHistoricalCiArchiveReplay(
+  replay?: HistoricalCiArchiveReplayResult,
+  expectedFacts: number = EXPECTED_COMPLETE_HISTORICAL_CI_FACTS,
+): Promise<HistoricalCiPersistenceResult> {
+  const resolvedReplay = replay ?? await loadServerHistoricalCiArchiveReplay();
+  if (resolvedReplay.ledger.length !== expectedFacts) {
+    throw new Error(`Historical CI replay produced ${resolvedReplay.ledger.length}/${expectedFacts} expected facts`);
+  }
+
+  const admin = createAdminClient() as unknown as SupabaseClient;
+  const replaced = await admin
+    .from('historical_clash_contest_rating_facts')
+    .upsert(resolvedReplay.ledger, {onConflict: 'matchup_deduplication_key'})
+    .select('matchup_deduplication_key');
+  if (replaced.error) throw replaced.error;
+  if ((replaced.data ?? []).length !== expectedFacts) {
+    throw new Error(`Historical CI ledger rebuilt ${(replaced.data ?? []).length}/${expectedFacts} facts`);
   }
 
   invalidateHistoricalStatsCache();
