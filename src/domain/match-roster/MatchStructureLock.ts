@@ -42,7 +42,9 @@ export type MatchStructureSlotCounts = {
  *
  * The official roster snapshot answers "who may play". This lock answers
  * "where are they playing". Empty slots are legal and intentional because they
- * are the authoritative input for automatic structural points.
+ * are the authoritative input for automatic structural points. A doubles side
+ * is either a complete two-player pair or empty; one-player doubles teams are
+ * not a valid locked structure.
  */
 export function buildLockedMatchStructure(input: {
   matchId: string;
@@ -76,6 +78,12 @@ export function buildLockedMatchStructure(input: {
 
   if (!homeRoster) errors.push('Official home roster is unavailable.');
   if (!awayRoster) errors.push('Official away roster is unavailable.');
+  if (homeRoster?.needsCommissionerReview) {
+    errors.push('Official home roster requires commissioner review before structure lock.');
+  }
+  if (awayRoster?.needsCommissionerReview) {
+    errors.push('Official away roster requires commissioner review before structure lock.');
+  }
 
   const singles = normalizeSingles(input.singles ?? [], errors);
   const doubles = normalizeDoubles(input.doubles ?? [], errors);
@@ -183,8 +191,8 @@ function normalizeDoubles(
     const position = index + 1;
     return byPosition.get(position) ?? {
       position,
-      homePlayerIds: [null, null],
-      awayPlayerIds: [null, null],
+      homePlayerIds: [null, null] as const,
+      awayPlayerIds: [null, null] as const,
     };
   });
 }
@@ -207,7 +215,12 @@ function validateAssignments(
     }
 
     for (const slot of doubles) {
-      for (const playerId of playersForDoublesSide(slot, side)) {
+      const pair = playersForDoublesSide(slot, side);
+      const filled = pair.filter((playerId) => Boolean(playerId)).length;
+      if (filled === 1) {
+        errors.push(`${side} doubles position ${slot.position} must contain two players or be empty.`);
+      }
+      for (const playerId of pair) {
         validatePlayer(playerId, rosterPlayerIds, doublesSeen, `${side} doubles`, errors);
       }
     }
