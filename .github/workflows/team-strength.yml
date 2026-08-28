@@ -27,6 +27,6 @@ jobs:
           node-version: 22
           cache: npm
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
       - name: Run Team Strength tests
         run: npm run test:team-strength
