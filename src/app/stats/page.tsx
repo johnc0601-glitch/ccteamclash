@@ -79,6 +79,9 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
     },
     ...seasonGroups,
   ];
+
+  console.info('[stats] Stats groups ready', groups.map((group) => ({id: group.id, players: group.rows.length})));
+
   const query = await searchParams;
   const requestedSeason = Array.isArray(query.season) ? query.season[0] : query.season;
 
