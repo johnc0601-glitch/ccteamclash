@@ -1,9 +1,12 @@
 import 'server-only';
 
 import type {SupabaseClient} from '@supabase/supabase-js';
+import {unstable_cache} from 'next/cache';
 import {createHistoricalStatsReadClient} from '@/core/createHistoricalStatsReadClient';
+import {HISTORICAL_STATS_CACHE_TAG} from '@/core/historicalStatsCacheTag';
 import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCiArchiveReplay';
 import {formatHistoricalCiReplayFailure} from '@/services/statistics/HistoricalCiReplayDiagnostic';
+import {selectHistoricalCiReplaySummaries} from '@/services/statistics/HistoricalCiReplaySelection';
 import {
   playerSeasonCiKey,
   summarizeHistoricalCiLedger,
@@ -47,23 +50,23 @@ const PAGE_SIZE = 1000;
  * logged with its reason so a ledger defect cannot silently restore the
  * expensive request-time replay path.
  */
-export async function loadServerHistoricalCiGains(): Promise<Map<string, HistoricalCiGainBreakdown>> {
-  const client = await createHistoricalStatsReadClient();
+export async function loadServerHistoricalCiGains(seasonId?: string): Promise<Map<string, HistoricalCiGainBreakdown>> {
   const [factLoad, sourceRows] = await Promise.all([
-    loadAllHistoricalCiFacts(client),
-    loadAllHistoricalMatchupOrders(client),
+    loadCachedHistoricalCiFacts(seasonId),
+    loadCachedHistoricalMatchupOrders(seasonId),
   ]);
 
   if ('fallbackReason' in factLoad) {
-    return loadHistoricalCiGainsFromReplay(factLoad.fallbackReason);
+    return loadHistoricalCiGainsFromReplay(factLoad.fallbackReason, seasonId);
   }
 
   if (!factLoad.rows.length) {
-    return loadHistoricalCiGainsFromReplay('historical CI ledger contains no facts');
+    return loadHistoricalCiGainsFromReplay('historical CI ledger contains no facts', seasonId);
   }
   if (factLoad.rows.length !== sourceRows.length) {
     return loadHistoricalCiGainsFromReplay(
       `historical CI ledger/source count mismatch: ${factLoad.rows.length} facts vs ${sourceRows.length} matchup rows`,
+      seasonId,
     );
   }
 
@@ -71,12 +74,13 @@ export async function loadServerHistoricalCiGains(): Promise<Map<string, Histori
   if (missingFactTeamMatch) {
     return loadHistoricalCiGainsFromReplay(
       `historical CI fact ${missingFactTeamMatch.matchup_deduplication_key} is missing a team-match id`,
+      seasonId,
     );
   }
 
   const orderResult = buildHistoricalTeamMatchOrders(sourceRows);
   if ('fallbackReason' in orderResult) {
-    return loadHistoricalCiGainsFromReplay(orderResult.fallbackReason);
+    return loadHistoricalCiGainsFromReplay(orderResult.fallbackReason, seasonId);
   }
 
   const facts = factLoad.rows.map((row): HistoricalCiLedgerFact => ({
@@ -88,22 +92,36 @@ export async function loadServerHistoricalCiGains(): Promise<Map<string, Histori
     ciDelta: row.ci_delta,
   }));
   const validation = summarizeHistoricalCiLedger(facts, orderResult.orders);
-  if (!validation.ok) return loadHistoricalCiGainsFromReplay(validation.reason);
+  if (!validation.ok) return loadHistoricalCiGainsFromReplay(validation.reason, seasonId);
   return validation.summaries;
 }
 
+const loadCachedHistoricalCiFacts = unstable_cache(
+  async (seasonId?: string) => loadAllHistoricalCiFacts(await createHistoricalStatsReadClient(), seasonId),
+  ['historical-ci-facts-v1'],
+  {revalidate: 3600, tags: [HISTORICAL_STATS_CACHE_TAG]},
+);
+
+const loadCachedHistoricalMatchupOrders = unstable_cache(
+  async (seasonId?: string) => loadAllHistoricalMatchupOrders(await createHistoricalStatsReadClient(), seasonId),
+  ['historical-matchup-orders-v1'],
+  {revalidate: 3600, tags: [HISTORICAL_STATS_CACHE_TAG]},
+);
+
 async function loadAllHistoricalCiFacts(
   supabase: SupabaseClient,
+  seasonId?: string,
 ): Promise<HistoricalCiFactLoadResult> {
   const rows: HistoricalCiFactRow[] = [];
   let from = 0;
 
   while (true) {
-    const {data, error} = await supabase
+    let query = supabase
       .from('historical_clash_contest_rating_facts')
       .select('matchup_deduplication_key,season_id,player_id,historical_team_match_id,format,clash_index_before,ci_delta')
-      .order('matchup_deduplication_key', {ascending: true})
-      .range(from, from + PAGE_SIZE - 1);
+      .order('matchup_deduplication_key', {ascending: true});
+    if (seasonId) query = query.eq('season_id', seasonId);
+    const {data, error} = await query.range(from, from + PAGE_SIZE - 1);
     if (error) {
       if (isMissingHistoricalLedger(error)) {
         return {
@@ -122,16 +140,18 @@ async function loadAllHistoricalCiFacts(
 
 async function loadAllHistoricalMatchupOrders(
   supabase: SupabaseClient,
+  seasonId?: string,
 ): Promise<HistoricalMatchupOrderRow[]> {
   const rows: HistoricalMatchupOrderRow[] = [];
   let from = 0;
 
   while (true) {
-    const {data, error} = await supabase
+    let query = supabase
       .from('historical_player_matchups')
       .select('deduplication_key,historical_team_match_id,event_order')
-      .order('deduplication_key', {ascending: true})
-      .range(from, from + PAGE_SIZE - 1);
+      .order('deduplication_key', {ascending: true});
+    if (seasonId) query = query.eq('season_id', seasonId);
+    const {data, error} = await query.range(from, from + PAGE_SIZE - 1);
     if (error) throw error;
 
     const page = (data ?? []) as HistoricalMatchupOrderRow[];
@@ -166,6 +186,7 @@ function buildHistoricalTeamMatchOrders(
 
 async function loadHistoricalCiGainsFromReplay(
   reason: string,
+  requestedSeasonId?: string,
 ): Promise<Map<string, HistoricalCiGainBreakdown>> {
   console.warn('[stats] Historical CI ledger fallback to deterministic replay', {reason});
 
@@ -181,29 +202,7 @@ async function loadHistoricalCiGainsFromReplay(
     throw new Error(diagnostic);
   }
 
-  const gains = new Map<string, HistoricalCiGainBreakdown>();
-
-  for (const [seasonId, season] of replay.seasons) {
-    const splitByPlayer = new Map<string, {singlesCiGain: number; doublesCiGain: number}>();
-    for (const fact of season.facts) {
-      const split = splitByPlayer.get(fact.playerId) ?? {singlesCiGain: 0, doublesCiGain: 0};
-      if (fact.format === 'Singles') split.singlesCiGain += fact.ciDelta;
-      else split.doublesCiGain += fact.ciDelta;
-      splitByPlayer.set(fact.playerId, split);
-    }
-
-    for (const [playerId, endingCi] of season.endingRatings) {
-      const split = splitByPlayer.get(playerId) ?? {singlesCiGain: 0, doublesCiGain: 0};
-      gains.set(playerSeasonCiKey(seasonId, playerId), {
-        ciGain: split.singlesCiGain + split.doublesCiGain,
-        singlesCiGain: split.singlesCiGain,
-        doublesCiGain: split.doublesCiGain,
-        endingCi,
-      });
-    }
-  }
-
-  return gains;
+  return selectHistoricalCiReplaySummaries(replay.seasons, requestedSeasonId);
 }
 
 export {playerSeasonCiKey};

@@ -26,7 +26,7 @@ export type PublicPlayerView = {
   history: PublicPlayerHistory[];
 };
 
-type PlayerProvider = Pick<PlayerService, 'getAll'>;
+type PlayerProvider = Pick<PlayerService, 'getAll' | 'getById'>;
 type TeamProvider = Pick<TeamService, 'getAll'>;
 type SeasonProvider = Pick<SeasonService, 'getAll' | 'getActive'>;
 type StatisticsProvider = Pick<
@@ -63,9 +63,11 @@ export class PublicPlayerService {
     this.completeHistory = completeHistory;
   }
 
-  async getAll(teamId = 'all'): Promise<PublicPlayerView[]> {
+  async getAll(teamId = 'all', playerId?: string): Promise<PublicPlayerView[]> {
     const [players, teams, seasons, activeSeason] = await Promise.all([
-      this.players.getAll({status: 'active', teamId}),
+      playerId
+        ? this.players.getById(playerId).then((player) => player ? [player] : [])
+        : this.players.getAll({status: 'active', teamId}),
       this.teams.getAll(),
       this.seasons.getAll(),
       this.seasons.getActive(),

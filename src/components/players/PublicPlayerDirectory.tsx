@@ -12,6 +12,7 @@ type PublicPlayerDirectoryProps = {
   players: PublicPlayerView[];
   showFilters?: boolean;
   initialMode?: 'list' | 'search';
+  initialPlayerId?: string;
   initialSearch?: string;
   showRankingsLink?: boolean;
 };
@@ -44,19 +45,24 @@ export function PublicPlayerDirectory({
   players,
   showFilters = true,
   initialMode = 'list',
+  initialPlayerId = '',
   initialSearch = '',
   showRankingsLink = false,
 }: PublicPlayerDirectoryProps) {
   const [search, setSearch] = useState(initialSearch);
+  const [selectedPlayerId, setSelectedPlayerId] = useState(initialPlayerId.trim());
   const normalizedSearch = normalizeSearchText(search);
   const normalizedInitialSearch = normalizeSearchText(initialSearch);
   const searchablePlayers = uniquePlayers(players);
   const searchRequired = showFilters && initialMode === 'search';
   const hasSearch = normalizedSearch.length > 0;
-  const visiblePlayers = searchRequired && !hasSearch
+  const hasSelection = selectedPlayerId.length > 0 || hasSearch;
+  const visiblePlayers = searchRequired && !hasSelection
     ? []
     : searchablePlayers.filter(({player}) =>
-      !normalizedSearch || [player.name, player.pdgaNumber].some((value) => normalizeSearchText(value).includes(normalizedSearch)));
+      selectedPlayerId
+        ? player.id === selectedPlayerId
+        : !normalizedSearch || [player.name, player.pdgaNumber].some((value) => normalizeSearchText(value).includes(normalizedSearch)));
 
   return (
     <>
@@ -66,7 +72,10 @@ export function PublicPlayerDirectory({
           <input
             type="search"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => {
+              setSelectedPlayerId('');
+              setSearch(event.target.value);
+            }}
             placeholder="Search by player name"
           />
         </label>
@@ -76,7 +85,9 @@ export function PublicPlayerDirectory({
       <div className={styles.directory}>
         {visiblePlayers.map((playerView) => {
           const {player, teamName, currentSeasonName, currentStatistics, careerStatistics} = playerView;
-          const openFromLink = normalizedInitialSearch.length > 0 && normalizeSearchText(player.name) === normalizedInitialSearch;
+          const openFromLink = selectedPlayerId
+            ? player.id === selectedPlayerId
+            : normalizedInitialSearch.length > 0 && normalizeSearchText(player.name) === normalizedInitialSearch;
 
           return (
             <details className={styles.player} key={player.id} open={openFromLink || undefined}>
@@ -99,8 +110,8 @@ export function PublicPlayerDirectory({
         })}
         {!visiblePlayers.length ? (
           <div className={styles.empty}>
-            <h2>{searchRequired && !hasSearch ? 'Search for a player' : 'No players found'}</h2>
-            <p>{searchRequired && !hasSearch
+            <h2>{searchRequired && !hasSelection ? 'Search for a player' : 'No players found'}</h2>
+            <p>{searchRequired && !hasSelection
               ? 'Player details will appear here as soon as you start typing.'
               : 'Try another player name.'}</p>
             {showRankingsLink ? <Link href="/rankings">View rankings</Link> : null}

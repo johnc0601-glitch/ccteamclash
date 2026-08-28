@@ -26,9 +26,9 @@ test('singles display uses the player-first score with an en dash', () => {
   assert.equal(formatSinglesHistoryScore(entry), '7–5');
 });
 
-test('history wording uses vs at home and @ away', () => {
+test('history wording uses vs at home and at away', () => {
   assert.equal(formatHistoryVenue(entry), 'vs Opponent Team • 2026');
-  assert.equal(formatHistoryVenue({...entry, isHome: false}), '@ Opponent Team • 2026');
+  assert.equal(formatHistoryVenue({...entry, isHome: false}), 'at Opponent Team • 2026');
 });
 
 test('complete history groups seasons and preserves newest-first ordering', () => {
