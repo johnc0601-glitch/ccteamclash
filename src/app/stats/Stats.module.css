@@ -23,6 +23,18 @@
   font-size: 13px;
 }
 
+.archiveNotice {
+  margin: -6px 0 16px;
+  padding: 9px 11px;
+  border: 1px solid #d5c47d;
+  border-radius: 8px;
+  background: #f5edc8;
+  color: #5d5328;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
 .statsShell,
 .controls {
   display: grid;
@@ -356,6 +368,10 @@
 @media (max-width: 760px) {
   .pageHeader {
     margin-bottom: 14px;
+  }
+
+  .archiveNotice {
+    margin-top: -2px;
   }
 
   .secondaryControls {

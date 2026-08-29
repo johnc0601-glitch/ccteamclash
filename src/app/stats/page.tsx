@@ -48,6 +48,7 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
   }
   const {selectedGroup, groupOptions} = pageData;
   const initialView = parseStatsViewState(query);
+  const showProductionArchiveNotice = process.env.VERCEL_ENV != null && process.env.VERCEL_ENV !== 'production';
 
   console.info('[stats] Stats group ready', {
     id: selectedGroup.id,
@@ -64,6 +65,11 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
           <h1>Stats</h1>
           <p>Player performance by season or across the full recorded Coastal Clash history.</p>
         </header>
+        {showProductionArchiveNotice ? (
+          <p className={styles.archiveNotice} role="note">
+            Stats are shown from the production archive. Live data on this preview deployment may differ.
+          </p>
+        ) : null}
         <StatsTable key={selectedGroup.id} group={selectedGroup} groupOptions={groupOptions} initialView={initialView} />
       </main>
       <Footer />
