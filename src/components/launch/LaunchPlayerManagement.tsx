@@ -42,8 +42,9 @@ export function LaunchPlayerManagement({
   teams = [],
 }: LaunchPlayerManagementProps) {
   const [search, setSearch] = useState('');
-  const activePlayers = players.filter((player) => player.active);
   const teamById = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams]);
+  const rosteredPlayerCount = Object.keys(activeSeasonTeamByPlayerId).length;
+  const memberPlayerCount = profiles.filter((profile) => Boolean(profile.playerId)).length;
   const visiblePlayers = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return players;
@@ -69,8 +70,8 @@ export function LaunchPlayerManagement({
 
       <div className={styles.summaryGrid}>
         <SummaryCard label="Players" value={players.length} />
-        <SummaryCard label="Active" value={activePlayers.length} />
-        <SummaryCard label="Inactive" value={players.length - activePlayers.length} />
+        <SummaryCard label="Rostered" value={rosteredPlayerCount} />
+        <SummaryCard label="Members" value={memberPlayerCount} />
       </div>
 
       <div className={styles.grid}>
@@ -119,9 +120,6 @@ export function LaunchPlayerManagement({
                           </label>
                           {currentTeamName ? (
                             <span className={styles.activeBadge}>{currentTeamName}</span>
-                          ) : null}
-                          {!player.active ? (
-                            <span className={styles.inactiveBadge}>Inactive</span>
                           ) : null}
                         </div>
                       </div>
