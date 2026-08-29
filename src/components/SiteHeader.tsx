@@ -66,6 +66,14 @@ export async function SiteHeader() {
             <details className="mobile-nav">
               <summary aria-label="Menu"><span aria-hidden="true">☰</span></summary>
               <nav>
+                {(canOpenOffice || canOpenCaptain) ? (
+                  <div className="mobile-nav-group mobile-nav-tools">
+                    <span>Tools</span>
+                    {canOpenOffice ? <Link href="/admin">Create post</Link> : null}
+                    {canOpenOffice ? <Link href="/office">Office</Link> : null}
+                    {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
+                  </div>
+                ) : null}
                 <div className="mobile-nav-group">
                   <span>Season</span>
                   <Link href="/schedule">Schedule</Link>
@@ -84,14 +92,6 @@ export async function SiteHeader() {
                   <span>Community</span>
                   <div style={{padding: '10px 8px'}}><FacebookLink size={22} /></div>
                 </div>
-                {(canOpenOffice || canOpenCaptain) ? (
-                  <div className="mobile-nav-group mobile-nav-tools">
-                    <span>Tools</span>
-                    {canOpenOffice ? <Link href="/admin">Create post</Link> : null}
-                    {canOpenOffice ? <Link href="/office">Office</Link> : null}
-                    {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
-                  </div>
-                ) : null}
               </nav>
             </details>
           </div>
