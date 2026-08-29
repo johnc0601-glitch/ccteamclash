@@ -43,8 +43,9 @@ export function LaunchPlayerManagement({
 }: LaunchPlayerManagementProps) {
   const [search, setSearch] = useState('');
   const teamById = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams]);
-  const rosteredPlayerCount = Object.keys(activeSeasonTeamByPlayerId).length;
-  const memberPlayerCount = profiles.filter((profile) => Boolean(profile.playerId)).length;
+  const currentPlayers = players.filter((player) => player.active);
+  const rosteredPlayerCount = currentPlayers.filter((player) => Boolean(activeSeasonTeamByPlayerId[player.id])).length;
+  const unrosteredPlayerCount = currentPlayers.length - rosteredPlayerCount;
   const visiblePlayers = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return players;
@@ -69,9 +70,9 @@ export function LaunchPlayerManagement({
       {error ? <p className={styles.error}>{error}</p> : null}
 
       <div className={styles.summaryGrid}>
-        <SummaryCard label="Players" value={players.length} />
+        <SummaryCard label="Players" value={currentPlayers.length} />
         <SummaryCard label="Rostered" value={rosteredPlayerCount} />
-        <SummaryCard label="Members" value={memberPlayerCount} />
+        <SummaryCard label="Unrostered" value={unrosteredPlayerCount} />
       </div>
 
       <div className={styles.grid}>
@@ -113,15 +114,11 @@ export function LaunchPlayerManagement({
                           <strong>{player.name}</strong>
                           <span>{getPlayerMeta(player, currentTeamName)}</span>
                         </div>
-                        <div className={styles.badges}>
-                          <label className={styles.memberCheck}>
-                            <input checked={Boolean(profile)} disabled type="checkbox" />
-                            <span>Member</span>
-                          </label>
-                          {currentTeamName ? (
+                        {currentTeamName ? (
+                          <div className={styles.badges}>
                             <span className={styles.activeBadge}>{currentTeamName}</span>
-                          ) : null}
-                        </div>
+                          </div>
+                        ) : null}
                       </div>
                       <details className={styles.editBox}>
                         <summary>Edit player</summary>
