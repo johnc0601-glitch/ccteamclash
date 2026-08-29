@@ -42,22 +42,26 @@ export function LaunchPlayerManagement({
   teams = [],
 }: LaunchPlayerManagementProps) {
   const [search, setSearch] = useState('');
-  const activePlayers = players.filter((player) => player.active);
+  const teamById = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams]);
+  const rosteredPlayerCount = Object.keys(activeSeasonTeamByPlayerId).length;
+  const memberPlayerCount = profiles.filter((profile) => Boolean(profile.playerId)).length;
   const visiblePlayers = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return players;
     return players.filter((player) => {
+      const currentTeamName = teamById.get(activeSeasonTeamByPlayerId[player.id])?.name;
       const searchable = [
         player.name,
         player.pdgaNumber,
         player.pdgaRating,
         player.gender,
+        currentTeamName,
         getLinkedProfile(profiles, player.id)?.displayName,
         getLinkedProfile(profiles, player.id)?.status,
       ].join(' ').toLowerCase();
       return searchable.includes(query);
     });
-  }, [players, profiles, search]);
+  }, [activeSeasonTeamByPlayerId, players, profiles, search, teamById]);
 
   return (
     <section className={styles.management} aria-label="Player control">
@@ -66,8 +70,8 @@ export function LaunchPlayerManagement({
 
       <div className={styles.summaryGrid}>
         <SummaryCard label="Players" value={players.length} />
-        <SummaryCard label="Active" value={activePlayers.length} />
-        <SummaryCard label="Inactive" value={players.length - activePlayers.length} />
+        <SummaryCard label="Rostered" value={rosteredPlayerCount} />
+        <SummaryCard label="Members" value={memberPlayerCount} />
       </div>
 
       <div className={styles.grid}>
@@ -91,7 +95,7 @@ export function LaunchPlayerManagement({
             <input
               id="playerDirectorySearch"
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search name, PDGA, rating"
+              placeholder="Search name, team, PDGA, rating"
               type="search"
               value={search}
             />
@@ -101,21 +105,22 @@ export function LaunchPlayerManagement({
               <article className={styles.playerRow} key={player.id}>
                 {(() => {
                   const profile = getLinkedProfile(profiles, player.id);
+                  const currentTeamName = teamById.get(activeSeasonTeamByPlayerId[player.id])?.name;
                   return (
                     <>
                       <div className={styles.playerPrimary}>
                         <div>
                           <strong>{player.name}</strong>
-                          <span>{getPlayerMeta(player)}</span>
+                          <span>{getPlayerMeta(player, currentTeamName)}</span>
                         </div>
                         <div className={styles.badges}>
                           <label className={styles.memberCheck}>
                             <input checked={Boolean(profile)} disabled type="checkbox" />
                             <span>Member</span>
                           </label>
-                          <span className={player.active ? styles.activeBadge : styles.inactiveBadge}>
-                            {player.active ? 'Active' : 'Inactive'}
-                          </span>
+                          {currentTeamName ? (
+                            <span className={styles.activeBadge}>{currentTeamName}</span>
+                          ) : null}
                         </div>
                       </div>
                       <details className={styles.editBox}>
@@ -357,12 +362,13 @@ function SummaryCard({label, value}: {label: string; value: number}) {
   );
 }
 
-function getPlayerMeta(player: LaunchPlayer): string {
+function getPlayerMeta(player: LaunchPlayer, currentTeamName?: string): string {
   const pieces = [
     player.gender,
+    currentTeamName,
     player.pdgaNumber ? `PDGA ${player.pdgaNumber}` : 'No PDGA',
     player.pdgaRating ? `Rating ${player.pdgaRating}` : 'No rating',
-  ];
+  ].filter(Boolean);
   return pieces.join(' / ');
 }
 
