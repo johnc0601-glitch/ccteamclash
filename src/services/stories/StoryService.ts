@@ -1,38 +1,40 @@
-import {list, put} from '@vercel/blob';
 import type {Story, StoryLink} from '@/shared/types';
 import {seedStories} from '@/data/stories';
+import {createClient} from '@/lib/supabase/server';
 import {createSlug} from '@/shared/utils';
 
-const STORY_STORE_PATH = 'content/stories.json';
-const STORY_STORE_TIMEOUT_MS = 2500;
-
-type StoryPayload = {
-  stories: Story[];
+// Story records live in Supabase; story image files use Supabase Storage via /api/story-images.
+type StoryRow = {
+  slug: string;
+  title: string;
+  category: string;
+  display_date: string;
+  excerpt: string;
+  image: string;
+  body: unknown;
+  links: unknown;
+  featured: boolean;
+  sort_order: number;
 };
 
 export async function getStories(): Promise<Story[]> {
   try {
-    const result = await withTimeout(list({
-      prefix: STORY_STORE_PATH,
-      limit: 1,
-    }));
-    const storyBlob = result.blobs.find((blob) => blob.pathname === STORY_STORE_PATH);
+    const supabase = await createClient();
+    const db = supabase as any;
+    const {data, error} = await db
+      .from('launch_stories')
+      .select('slug,title,category,display_date,excerpt,image,body,links,featured,sort_order')
+      .order('sort_order', {ascending: true})
+      .order('updated_at', {ascending: false});
 
-    if (!storyBlob) {
-      return seedStories;
+    if (error) {
+      throw error;
     }
 
-    const response = await fetch(storyBlob.url, {
-      cache: 'no-store',
-      signal: AbortSignal.timeout(STORY_STORE_TIMEOUT_MS),
-    });
-    if (!response.ok) {
-      return seedStories;
-    }
-
-    const payload = await response.json() as Partial<StoryPayload>;
-    return normalizeStories(payload.stories);
-  } catch {
+    const stories = normalizeStories((data ?? []).map(rowToStory), false);
+    return stories.length ? stories : seedStories;
+  } catch (error) {
+    console.error('[stories] Supabase read failed; falling back to seed stories.', error);
     return seedStories;
   }
 }
@@ -43,27 +45,98 @@ export async function getStoryBySlug(slug: string): Promise<Story | undefined> {
 }
 
 export async function saveStories(stories: Story[]): Promise<Story[]> {
-  const normalizedStories = normalizeStories(stories);
-  await put(STORY_STORE_PATH, JSON.stringify({stories: normalizedStories}, null, 2), {
-    access: 'public',
-    allowOverwrite: true,
-    cacheControlMaxAge: 60,
-    contentType: 'application/json',
-  });
+  const normalizedStories = enforceSingleFeatured(normalizeStories(stories, false));
+  const supabase = await createClient();
+  const db = supabase as any;
+
+  const {error: clearFeaturedError} = await db
+    .from('launch_stories')
+    .update({featured: false, updated_at: new Date().toISOString()})
+    .eq('featured', true);
+
+  if (clearFeaturedError) {
+    throw new Error(clearFeaturedError.message || 'Existing homepage feature could not be cleared.');
+  }
+
+  if (normalizedStories.length) {
+    const now = new Date().toISOString();
+    const rows = normalizedStories.map((story, index) => storyToRow(story, index, now));
+    const {error: upsertError} = await db
+      .from('launch_stories')
+      .upsert(rows, {onConflict: 'slug'});
+
+    if (upsertError) {
+      throw new Error(upsertError.message || 'Stories could not be saved.');
+    }
+  }
+
+  const {data: existingRows, error: existingError} = await db
+    .from('launch_stories')
+    .select('slug');
+
+  if (existingError) {
+    throw new Error(existingError.message || 'Existing stories could not be checked.');
+  }
+
+  const keepSlugs = new Set(normalizedStories.map((story) => story.slug));
+  const staleSlugs = (existingRows ?? [])
+    .map((row: {slug?: unknown}) => cleanText(row.slug))
+    .filter((slug: string) => slug && !keepSlugs.has(slug));
+
+  if (staleSlugs.length) {
+    const {error: deleteError} = await db
+      .from('launch_stories')
+      .delete()
+      .in('slug', staleSlugs);
+
+    if (deleteError) {
+      throw new Error(deleteError.message || 'Removed stories could not be deleted.');
+    }
+  }
 
   return normalizedStories;
 }
 
-function normalizeStories(stories: unknown): Story[] {
+function rowToStory(row: StoryRow): Story {
+  return {
+    slug: row.slug,
+    title: row.title,
+    category: row.category,
+    date: row.display_date,
+    excerpt: row.excerpt,
+    image: row.image,
+    body: Array.isArray(row.body) ? row.body : [],
+    links: Array.isArray(row.links) ? row.links as StoryLink[] : undefined,
+    featured: row.featured === true,
+  };
+}
+
+function storyToRow(story: Story, sortOrder: number, updatedAt: string) {
+  return {
+    slug: story.slug,
+    title: story.title,
+    category: story.category,
+    display_date: story.date,
+    excerpt: story.excerpt,
+    image: story.image,
+    body: story.body,
+    links: story.links ?? null,
+    featured: story.featured === true,
+    sort_order: sortOrder,
+    updated_at: updatedAt,
+  };
+}
+
+function normalizeStories(stories: unknown, fallbackToSeed: boolean): Story[] {
   if (!Array.isArray(stories)) {
-    return seedStories;
+    return fallbackToSeed ? seedStories : [];
   }
 
   const normalized = stories
     .map(normalizeStory)
     .filter((story): story is Story => Boolean(story));
 
-  return normalized.length ? normalized : seedStories;
+  return normalized.length || !fallbackToSeed ? normalized : seedStories;
 }
 
 function normalizeStory(value: unknown): Story | null {
@@ -92,6 +165,18 @@ function normalizeStory(value: unknown): Story | null {
   };
 }
 
+function enforceSingleFeatured(stories: Story[]): Story[] {
+  const featuredIndex = stories.findIndex((story) => story.featured === true);
+  if (featuredIndex < 0) {
+    return stories;
+  }
+
+  return stories.map((story, index) => ({
+    ...story,
+    featured: index === featuredIndex,
+  }));
+}
+
 function normalizeLinks(links: unknown): StoryLink[] | undefined {
   if (!Array.isArray(links)) {
     return undefined;
@@ -116,19 +201,4 @@ function normalizeLinks(links: unknown): StoryLink[] | undefined {
 
 function cleanText(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
-}
-
-async function withTimeout<T>(promise: Promise<T>): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error('Story storage timed out.')), STORY_STORE_TIMEOUT_MS);
-  });
-
-  try {
-    return await Promise.race([promise, timeout]);
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  }
 }
