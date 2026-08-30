@@ -187,7 +187,7 @@ function TeamHeader({team, compact = false}: {team: OfficeTeamDashboard; compact
           <strong>{strength ? Math.round(strength.baseStrength) : '—'}</strong>
         </div>
         <div>
-          <span>Coming Strength</span>
+          <span>Confirmed Strength</span>
           <strong>{team.currentAttendanceStrength ? Math.round(team.currentAttendanceStrength.baseStrength) : '—'}</strong>
         </div>
       </div>
@@ -377,18 +377,18 @@ function MatchupPredictor({data}: {data: OfficeTeamCommandCenterData}) {
       <div className={styles.predictorControlGroup}>
         <span>Players used</span>
         <div className={styles.segmentedControls}>
-          <button type="button" className={effectivePool === 'active' ? styles.selectedSegment : ''} onClick={() => setPool('active')}>Full roster</button>
+          <button type="button" className={effectivePool === 'active' ? styles.selectedSegment : ''} onClick={() => setPool('active')}>Full Roster</button>
           <button
             type="button"
             disabled={!attendancePoolAvailable}
-            title={attendancePoolAvailable ? 'Use current Playing responses' : 'Available when both teams share the same upcoming match and have Playing responses'}
+            title={attendancePoolAvailable ? 'Use confirmed Playing responses' : 'Available when both teams share the same upcoming match and have Playing responses'}
             className={effectivePool === 'attendance' ? styles.selectedSegment : ''}
             onClick={() => setPool('attendance')}
           >
-            Current yes
+            Confirmed Players
           </button>
         </div>
-        {!attendancePoolAvailable ? <small>Current yes activates only for the same upcoming matchup after both teams have Playing responses.</small> : null}
+        {!attendancePoolAvailable ? <small>Confirmed Players is available only for the same upcoming matchup after both teams have Playing responses.</small> : null}
       </div>
 
       {teamAId === teamBId ? (
