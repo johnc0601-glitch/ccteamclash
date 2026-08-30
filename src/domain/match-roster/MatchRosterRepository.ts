@@ -9,7 +9,7 @@ import type {
 import type {OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
 
 export interface MatchRosterRepository {
-  getAttendanceActor(userId: string): Promise<AttendanceActor | undefined>;
+  getAttendanceActor(userId: string, matchId?: string): Promise<AttendanceActor | undefined>;
   getAttendanceMatch(matchId: string): Promise<AttendanceMatch | undefined>;
   getAttendance(matchId: string, playerId: string): Promise<MatchAttendance | undefined>;
   getTeamAttendance(matchId: string, teamId: string): Promise<TeamAttendanceMember[]>;
