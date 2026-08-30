@@ -76,7 +76,7 @@ export class PlayerAvailabilityService {
     matchId: string,
   ): Promise<{actor: AuthorizedPlayer; match: AttendanceMatch} | undefined> {
     const [actor, match] = await Promise.all([
-      this.repository.getAttendanceActor(userId),
+      this.repository.getAttendanceActor(userId, matchId),
       this.repository.getAttendanceMatch(matchId),
     ]);
     if (!actor || !match || !isAuthorizedPlayer(actor)) return undefined;
