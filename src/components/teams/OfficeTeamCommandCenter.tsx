@@ -15,7 +15,7 @@ import styles from './OfficeTeamCommandCenter.module.css';
 
 type TabId = 'rosters' | 'predictor' | 'setup';
 type TeamSort = 'strength' | 'name' | 'roster';
-type VenueSelection = 'teamA' | 'neutral' | 'teamB';
+type VenueSelection = 'neutral' | 'teamB';
 type PredictionPool = 'active' | 'attendance';
 
 type TeamRosterProps = {
@@ -279,7 +279,7 @@ function PlayerRow({player}: {player: OfficeRosterPlayer}) {
 function MatchupPredictor({data}: {data: OfficeTeamCommandCenterData}) {
   const [teamAId, setTeamAId] = useState(data.teams[0]?.id ?? '');
   const [teamBId, setTeamBId] = useState(data.teams.find((team) => team.id !== data.teams[0]?.id)?.id ?? '');
-  const [venue, setVenue] = useState<VenueSelection>('neutral');
+  const [venue, setVenue] = useState<VenueSelection>('teamB');
   const [pool, setPool] = useState<PredictionPool>('active');
   const [scheduledMatchId, setScheduledMatchId] = useState('');
 
@@ -356,7 +356,7 @@ function MatchupPredictor({data}: {data: OfficeTeamCommandCenterData}) {
             {data.teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
           </select>
         </label>
-        <span className={styles.versus}>vs</span>
+        <span className={styles.versus}>at</span>
         <label>
           <span>Team B</span>
           <select value={teamBId} onChange={(event) => setManualTeam('B', event.target.value)}>
@@ -366,11 +366,18 @@ function MatchupPredictor({data}: {data: OfficeTeamCommandCenterData}) {
       </div>
 
       <div className={styles.predictorControlGroup}>
-        <span>Venue</span>
+        <span>Site</span>
         <div className={styles.segmentedControls}>
-          <button type="button" className={venue === 'teamA' ? styles.selectedSegment : ''} onClick={() => { setScheduledMatchId(''); setVenue('teamA'); }}>Team A Home</button>
-          <button type="button" className={venue === 'neutral' ? styles.selectedSegment : ''} onClick={() => { setScheduledMatchId(''); setVenue('neutral'); }}>Neutral</button>
-          <button type="button" className={venue === 'teamB' ? styles.selectedSegment : ''} onClick={() => { setScheduledMatchId(''); setVenue('teamB'); }}>Team B Home</button>
+          <button
+            type="button"
+            className={venue === 'neutral' ? styles.selectedSegment : ''}
+            onClick={() => {
+              setScheduledMatchId('');
+              setVenue(venue === 'neutral' ? 'teamB' : 'neutral');
+            }}
+          >
+            Neutral Site
+          </button>
         </div>
       </div>
 
@@ -410,7 +417,7 @@ function MatchupPredictor({data}: {data: OfficeTeamCommandCenterData}) {
             <Comparison label="Next 6" left={teamAStrength.nextSixCi} right={teamBStrength.nextSixCi} />
             <Comparison label="Depth" left={teamAStrength.depthCi} right={teamBStrength.depthCi} />
           </div>
-          <p className={styles.venueNote}>{venueNote(venue, teamA.name, teamB.name)}</p>
+          <p className={styles.venueNote}>{venueNote(venue, teamB.name)}</p>
         </div>
       ) : (
         <div className={styles.emptyState}>Prediction unavailable until both selected player pools have usable Clash Index data.</div>
@@ -431,14 +438,12 @@ function Comparison({label, left, right}: {label: string; left: number; right: n
 
 function venueForSelection(selection: VenueSelection, side: 'A' | 'B'): TeamVenue {
   if (selection === 'neutral') return 'Neutral';
-  if (selection === 'teamA') return side === 'A' ? 'Home' : 'Away';
   return side === 'B' ? 'Home' : 'Away';
 }
 
-function venueNote(selection: VenueSelection, teamA: string, teamB: string): string {
+function venueNote(selection: VenueSelection, teamB: string): string {
   if (selection === 'neutral') return 'Neutral venue — no home adjustment.';
-  const homeTeam = selection === 'teamA' ? teamA : teamB;
-  return `${homeTeam} home-course adjustment included (+${TEAM_HOME_CI_BONUS} CI).`;
+  return `${teamB} home-course adjustment included (+${TEAM_HOME_CI_BONUS} CI).`;
 }
 
 function strengthLabel(team: OfficeTeamDashboard): string {
