@@ -329,7 +329,7 @@
 }
 
 .femaleRow {
-  background: color-mix(in srgb, var(--cc-bronze) 8%, var(--cc-surface));
+  background: color-mix(in srgb, var(--cc-steel) 18%, var(--cc-surface));
 }
 
 .playerIdentity {
