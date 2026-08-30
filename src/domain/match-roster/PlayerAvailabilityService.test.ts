@@ -29,8 +29,12 @@ const match: AttendanceMatch = {
 
 class FakeRepository {
   attendance: MatchAttendance | undefined;
+  actorMatchId: string | undefined;
 
-  async getAttendanceActor() { return actor; }
+  async getAttendanceActor(_userId: string, matchId?: string) {
+    this.actorMatchId = matchId;
+    return actor;
+  }
   async getAttendanceMatch() { return match; }
   async getAttendance() { return this.attendance; }
   async saveAttendance(input: {
@@ -56,6 +60,7 @@ test('unanswered player is Unconfirmed and may respond before Friday noon', asyn
   const result = await service.getPersonalAttendance('user-1', match.id);
   assert.equal(result?.status, 'Unconfirmed');
   assert.equal(result?.attendanceOpen, true);
+  assert.equal(repository.actorMatchId, match.id);
 });
 
 test('player may switch their answer before Friday noon', async () => {
@@ -69,6 +74,7 @@ test('player may switch their answer before Friday noon', async () => {
   const no = await service.setOwnAttendance('user-1', match.id, 'NotPlaying');
   assert.equal(no.ok, true);
   assert.equal(repository.attendance?.status, 'NotPlaying');
+  assert.equal(repository.actorMatchId, match.id);
 });
 
 test('player cannot change their answer at or after Friday noon', async () => {
