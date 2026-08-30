@@ -156,6 +156,11 @@ begin
   where season.id = new.season_id;
 
   if season_is_active then
+    -- Reuse the existing privileged internal-write gate while synchronizing
+    -- current_team_id. The gate still requires the SECURITY DEFINER owner to
+    -- be postgres/service_role, so callers cannot use it to bypass player guards.
+    perform pg_catalog.set_config('app.clash_rating_engine_write', 'on', true);
+
     if new.status = 'Active' then
       update public.launch_players player
       set current_team_id = new.team_id,
@@ -350,6 +355,8 @@ where not exists (
 
 -- Keep the legacy current_team_id cache synchronized with the active-season
 -- membership so current Stats cannot disagree with Matchday membership.
+select pg_catalog.set_config('app.clash_rating_engine_write', 'on', true);
+
 with active_season as (
   select season.id
   from public.launch_seasons season
