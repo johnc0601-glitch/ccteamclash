@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import {MobileAccountLink} from '@/components/MobileAccountLink';
+import {MobileNav} from '@/components/MobileNav';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
@@ -63,37 +64,7 @@ export async function SiteHeader() {
 
           <div className="mobile-header-actions">
             <MobileAccountLink />
-            <details className="mobile-nav">
-              <summary aria-label="Menu"><span aria-hidden="true">☰</span></summary>
-              <nav>
-                {(canOpenOffice || canOpenCaptain) ? (
-                  <div className="mobile-nav-group mobile-nav-tools">
-                    <span>Tools</span>
-                    {canOpenOffice ? <Link href="/admin">Create post</Link> : null}
-                    {canOpenOffice ? <Link href="/office">Office</Link> : null}
-                    {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
-                  </div>
-                ) : null}
-                <div className="mobile-nav-group">
-                  <span>Season</span>
-                  <Link href="/schedule">Schedule</Link>
-                  <Link href="/standings">Standings</Link>
-                  <Link href="/stats">Stats</Link>
-                </div>
-                <div className="mobile-nav-group">
-                  <span>League</span>
-                  <Link href="/teams">Teams</Link>
-                  <Link href="/players">Players</Link>
-                  <Link href="/stories">Stories</Link>
-                  <Link href="/courses">Courses</Link>
-                  <Link href="/history">History</Link>
-                </div>
-                <div className="mobile-nav-group">
-                  <span>Community</span>
-                  <div style={{padding: '10px 8px'}}><FacebookLink size={22} /></div>
-                </div>
-              </nav>
-            </details>
+            <MobileNav canOpenOffice={canOpenOffice} canOpenCaptain={canOpenCaptain} />
           </div>
         </div>
       </div>
