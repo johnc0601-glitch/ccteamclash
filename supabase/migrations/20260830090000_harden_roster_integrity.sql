@@ -79,7 +79,10 @@ begin
       );
   end if;
 
-  return coalesce(new, old);
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
+  return new;
 end;
 $function$;
 
@@ -104,13 +107,15 @@ begin
     or new.status is distinct from old.status
     or new.team_id is distinct from old.team_id;
 
-  if membership_changed and old_team_id is not null then
+  if membership_changed then
+    -- Any add/drop/transfer changes the roster state for both the old and new
+    -- teams. Do not mutate already-frozen official snapshots.
     update public.launch_match_rosters roster
     set status = 'Draft',
         confirmed_by = null,
         confirmed_at = null,
         updated_at = pg_catalog.now()
-    where roster.team_id = old_team_id
+    where roster.team_id in (new.team_id, old_team_id)
       and exists (
         select 1
         from public.launch_schedule_matches match
@@ -124,21 +129,25 @@ begin
           and snapshot.team_id = roster.team_id
       );
 
-    delete from public.launch_match_attendance attendance
-    where attendance.player_id = new.player_id
-      and attendance.team_id = old_team_id
-      and exists (
-        select 1
-        from public.launch_schedule_matches match
-        where match.id = attendance.match_id
-          and match.season_id = new.season_id
-      )
-      and not exists (
-        select 1
-        from public.launch_match_roster_snapshots snapshot
-        where snapshot.match_id = attendance.match_id
-          and snapshot.team_id = attendance.team_id
-      );
+    -- Availability belongs to a season-team membership. If that membership
+    -- changes, old-team availability must not survive into a future freeze.
+    if old_team_id is not null then
+      delete from public.launch_match_attendance attendance
+      where attendance.player_id = new.player_id
+        and attendance.team_id = old_team_id
+        and exists (
+          select 1
+          from public.launch_schedule_matches match
+          where match.id = attendance.match_id
+            and match.season_id = new.season_id
+        )
+        and not exists (
+          select 1
+          from public.launch_match_roster_snapshots snapshot
+          where snapshot.match_id = attendance.match_id
+            and snapshot.team_id = attendance.team_id
+        );
+    end if;
   end if;
 
   select coalesce(season.active, false)
@@ -339,6 +348,8 @@ where not exists (
     attendance.team_id
   );
 
+-- Keep the legacy current_team_id cache synchronized with the active-season
+-- membership so current Stats cannot disagree with Matchday membership.
 with active_season as (
   select season.id
   from public.launch_seasons season
