@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
-import {useEffect, useRef} from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 
 const FACEBOOK_GROUP_URL = 'https://facebook.com/groups/780013754161635/';
 
@@ -15,13 +15,13 @@ export function MobileNav({canOpenOffice, canOpenCaptain}: MobileNavProps) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
 
-  const closeMenu = () => {
+  const closeMenu = useCallback(() => {
     if (detailsRef.current) detailsRef.current.open = false;
-  };
+  }, []);
 
   useEffect(() => {
     closeMenu();
-  }, [pathname]);
+  }, [pathname, closeMenu]);
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
@@ -42,7 +42,7 @@ export function MobileNav({canOpenOffice, canOpenCaptain}: MobileNavProps) {
       document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [closeMenu]);
 
   return (
     <details ref={detailsRef} className="mobile-nav">
