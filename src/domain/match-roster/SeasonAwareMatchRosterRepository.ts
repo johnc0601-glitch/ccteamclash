@@ -12,25 +12,20 @@ export class SeasonAwareMatchRosterRepository extends SupabaseMatchRosterReposit
     super(seasonSupabase);
   }
 
-  override async getAttendanceActor(userId: string): Promise<AttendanceActor | undefined> {
+  override async getAttendanceActor(userId: string, matchId?: string): Promise<AttendanceActor | undefined> {
     const actor = await super.getAttendanceActor(userId);
     if (!actor?.playerId) return actor;
 
-    const {data: activeSeason, error: seasonError} = await this.seasonSupabase
-      .from('launch_seasons')
-      .select('id')
-      .eq('active', true)
-      .order('year', {ascending: false})
-      .limit(1)
-      .maybeSingle();
-    if (seasonError) throw seasonError;
-    if (!activeSeason) return {...actor, teamId: null};
+    const seasonId = matchId
+      ? await this.getMatchSeasonId(matchId)
+      : await this.getActiveSeasonId();
+    if (!seasonId) return {...actor, teamId: null};
 
     const launchSupabase = this.seasonSupabase as any;
     const {data: membership, error: membershipError} = await launchSupabase
       .from('launch_season_roster_memberships')
       .select('team_id')
-      .eq('season_id', activeSeason.id)
+      .eq('season_id', seasonId)
       .eq('player_id', actor.playerId)
       .eq('status', 'Active')
       .limit(1)
@@ -41,19 +36,14 @@ export class SeasonAwareMatchRosterRepository extends SupabaseMatchRosterReposit
   }
 
   override async getTeamAttendance(matchId: string, teamId: string): Promise<TeamAttendanceMember[]> {
-    const {data: match, error: matchError} = await this.seasonSupabase
-      .from('launch_schedule_matches')
-      .select('season_id')
-      .eq('id', matchId)
-      .maybeSingle();
-    if (matchError) throw matchError;
-    if (!match) return [];
+    const seasonId = await this.getMatchSeasonId(matchId);
+    if (!seasonId) return [];
 
     const launchSupabase = this.seasonSupabase as any;
     const {data: memberships, error: membershipError} = await launchSupabase
       .from('launch_season_roster_memberships')
       .select('player_id')
-      .eq('season_id', match.season_id)
+      .eq('season_id', seasonId)
       .eq('team_id', teamId)
       .eq('status', 'Active');
     if (membershipError) throw membershipError;
@@ -90,5 +80,27 @@ export class SeasonAwareMatchRosterRepository extends SupabaseMatchRosterReposit
       teamId,
       status: statuses.get(player.id) ?? 'Unconfirmed',
     }));
+  }
+
+  private async getMatchSeasonId(matchId: string): Promise<string | undefined> {
+    const {data: match, error} = await this.seasonSupabase
+      .from('launch_schedule_matches')
+      .select('season_id')
+      .eq('id', matchId)
+      .maybeSingle();
+    if (error) throw error;
+    return match?.season_id ?? undefined;
+  }
+
+  private async getActiveSeasonId(): Promise<string | undefined> {
+    const {data: activeSeason, error} = await this.seasonSupabase
+      .from('launch_seasons')
+      .select('id')
+      .eq('active', true)
+      .order('year', {ascending: false})
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return activeSeason?.id ?? undefined;
   }
 }
