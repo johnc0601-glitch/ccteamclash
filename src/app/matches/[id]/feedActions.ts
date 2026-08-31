@@ -7,6 +7,7 @@ import {processMatchdayImage} from '@/services/media/MediaImageProcessor';
 import {isMatchFeedOpen, matchFeedClosedMessage} from '@/services/matches/MatchFeedLifecycle';
 
 const REACTIONS = new Set(['like', 'love', 'laugh', 'fire']);
+const REPORT_REASONS = new Set(['Spam', 'Harassment', 'Inappropriate', 'Other']);
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const RATE_WINDOW_MS = 5 * 60 * 1000;
@@ -120,6 +121,54 @@ export async function editMatchFeedComment(formData: FormData) {
   if (error) redirect(feedUrl(matchId, 'feedError', 'Comment could not be edited.'));
   refresh(matchId);
   redirect(`/matches/${encodeURIComponent(matchId)}#post-${postId}`);
+}
+
+export async function reportMatchFeedContent(formData: FormData) {
+  const matchId = read(formData, 'matchId');
+  const postId = read(formData, 'postId');
+  const commentId = read(formData, 'commentId');
+  const reasonInput = read(formData, 'reason');
+  const note = read(formData, 'note').slice(0, 500);
+  const reason = REPORT_REASONS.has(reasonInput) ? reasonInput : 'Other';
+  if (!matchId || (!postId && !commentId) || (postId && commentId)) return;
+
+  const account = await requireAccount(matchId);
+  const db = account.supabase as any;
+  let targetProfileId: string | null = null;
+  let anchorPostId = postId;
+
+  if (postId) {
+    const {data: post} = await db.from('launch_match_feed_posts').select('id,profile_id,deleted_at').eq('id', postId).eq('match_id', matchId).maybeSingle();
+    if (!post || post.deleted_at) redirect(feedUrl(matchId, 'feedError', 'That post is no longer available to report.'));
+    targetProfileId = post.profile_id;
+  } else {
+    const {data: comment} = await db.from('launch_match_feed_comments').select('id,post_id,profile_id,deleted_at').eq('id', commentId).maybeSingle();
+    if (!comment || comment.deleted_at) redirect(feedUrl(matchId, 'feedError', 'That comment is no longer available to report.'));
+    const {data: parentPost} = await db.from('launch_match_feed_posts').select('id,match_id,deleted_at').eq('id', comment.post_id).maybeSingle();
+    if (!parentPost || parentPost.match_id !== matchId || parentPost.deleted_at) redirect(feedUrl(matchId, 'feedError', 'That comment is no longer available to report.'));
+    targetProfileId = comment.profile_id;
+    anchorPostId = comment.post_id;
+  }
+
+  if (targetProfileId === account.profile.id) redirect(feedUrl(matchId, 'feedError', 'You cannot report your own content.'));
+
+  const {error} = await db.from('launch_match_feed_reports').insert({
+    match_id: matchId,
+    post_id: postId || null,
+    comment_id: commentId || null,
+    reporter_profile_id: account.profile.id,
+    reason,
+    note,
+  });
+
+  if (error) {
+    if (error.code === '23505') redirect(feedUrl(matchId, 'feedNotice', 'You already reported this item.'));
+    console.error('Matchday report could not be saved.', {matchId, postId: postId || null, commentId: commentId || null, error: error.message});
+    redirect(feedUrl(matchId, 'feedError', 'Report could not be submitted.'));
+  }
+
+  revalidatePath('/office/media/moderation');
+  redirect(`/matches/${encodeURIComponent(matchId)}?feedNotice=${encodeURIComponent('Report submitted. A commissioner can review it.')}#post-${anchorPostId}`);
 }
 
 export async function setMatchFeedPostReaction(formData: FormData) {
