@@ -108,9 +108,35 @@ export function StoryManager() {
     setStatus('New draft ready.');
   }
 
-  function featureOnHomepage() {
-    setDraft((current) => ({...current, featured: true}));
-    setStatus('This story will become the homepage feature when saved as published.');
+  async function featureOnHomepage() {
+    if (!selectedId || selectedRevision === null || draft.status !== 'published' || draft.featured || loadError) return;
+
+    setSaving(true);
+    setStatus('Updating homepage story...');
+    try {
+      const response = await fetch(`/api/stories/${selectedId}/feature`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({revision: selectedRevision}),
+      });
+      const payload = await response.json() as {story?: Story; error?: string};
+      if (!response.ok || !payload.story) {
+        throw new Error(payload.error || 'Homepage story could not be updated.');
+      }
+
+      const featuredStory = payload.story;
+      setStories((current) => current.map((story) => {
+        if (story.id === featuredStory.id) return featuredStory;
+        return story.featured ? {...story, featured: false} : story;
+      }));
+      setSelectedRevision(featuredStory.revision);
+      setDraft((current) => ({...current, featured: true}));
+      setStatus('Homepage story updated.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Homepage story could not be updated.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function uploadPhoto(file?: File) {
@@ -344,7 +370,7 @@ export function StoryManager() {
               </button>
             ) : (
               <button className="secondary" type="button" disabled={saving || draft.featured || loadError} onClick={featureOnHomepage}>
-                {draft.featured ? 'Featured on homepage' : 'Feature on homepage'}
+                {draft.featured ? 'Homepage story' : 'Set as homepage story'}
               </button>
             )}
 
