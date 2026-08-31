@@ -1,4 +1,4 @@
-import type {Story, StoryLink, StoryStatus} from '@/shared/types';
+import type {Story, StoryLink, StorySourceFactSnapshot, StoryStatus} from '@/shared/types';
 import {createClient} from '@/lib/supabase/server';
 import {createSlug} from '@/shared/utils';
 
@@ -20,6 +20,7 @@ type StoryRow = {
   round_id: string | null;
   match_id: string | null;
   team_id: string | null;
+  source_fact_snapshot: unknown;
 };
 
 const STORY_COLUMNS = [
@@ -40,6 +41,7 @@ const STORY_COLUMNS = [
   'round_id',
   'match_id',
   'team_id',
+  'source_fact_snapshot',
 ].join(',');
 
 export class StoryConflictError extends Error {
@@ -109,7 +111,11 @@ export async function getStoryBySlug(slug: string): Promise<Story | undefined> {
   }
 }
 
-export async function createStory(value: unknown, actorProfileId: string): Promise<Story> {
+export async function createStory(
+  value: unknown,
+  actorProfileId: string,
+  sourceFactSnapshot: StorySourceFactSnapshot[] = [],
+): Promise<Story> {
   const story = normalizeStoryInput(value);
   const supabase = await createClient();
   const db = supabase as any;
@@ -134,6 +140,7 @@ export async function createStory(value: unknown, actorProfileId: string): Promi
       round_id: story.roundId ?? null,
       match_id: story.matchId ?? null,
       team_id: story.teamId ?? null,
+      source_fact_snapshot: sourceFactSnapshot,
       created_by_profile_id: actorProfileId,
       updated_by_profile_id: actorProfileId,
       updated_at: now,
@@ -300,6 +307,7 @@ function rowToStory(row: StoryRow): Story {
     roundId: row.round_id,
     matchId: row.match_id,
     teamId: row.team_id,
+    sourceFactSnapshot: normalizeSourceFactSnapshot(row.source_fact_snapshot),
   };
 }
 
@@ -351,6 +359,7 @@ function normalizeStoryInput(value: unknown, current?: Story): Story {
     roundId: cleanOptionalText(input.roundId ?? current?.roundId),
     matchId: cleanOptionalText(input.matchId ?? current?.matchId),
     teamId: cleanOptionalText(input.teamId ?? current?.teamId),
+    sourceFactSnapshot: current?.sourceFactSnapshot ?? [],
   };
 }
 
@@ -381,6 +390,11 @@ function normalizeLinks(links: unknown): StoryLink[] | undefined {
     .filter((link): link is StoryLink => Boolean(link));
 
   return normalized.length ? normalized : undefined;
+}
+
+function normalizeSourceFactSnapshot(value: unknown): StorySourceFactSnapshot[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is StorySourceFactSnapshot => Boolean(item && typeof item === 'object'));
 }
 
 function cleanText(value: unknown): string {

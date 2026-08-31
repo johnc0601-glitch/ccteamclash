@@ -1,1 +1,1 @@
-export type {Match, StandingEntry, Story, StoryLink, StoryStatus} from './league';
+export type {Match, StandingEntry, Story, StoryLink, StorySourceFactSnapshot, StoryStatus} from './league';

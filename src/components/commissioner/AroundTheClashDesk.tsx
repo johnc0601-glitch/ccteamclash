@@ -1,6 +1,8 @@
 'use client';
 
 import {useEffect, useMemo, useState} from 'react';
+import {useRouter} from 'next/navigation';
+import type {Story} from '@/shared/types';
 import type {AroundFact} from '@/services/media/AroundTheClashService';
 
 type Scope = 'Current Round' | 'Match' | 'Season' | 'All-Time';
@@ -25,11 +27,14 @@ const scopes: Scope[] = ['Current Round', 'Match', 'Season', 'All-Time'];
 const categories: Category[] = ['Upsets', 'CI Gaps', 'Above Expected', 'Road', 'Home', 'Singles', 'Doubles', 'CI +/-', 'Closest'];
 
 export function AroundTheClashDesk({facts, activeSeasonId, seasonNames}: AroundTheClashDeskProps) {
+  const router = useRouter();
   const [scope, setScope] = useState<Scope>('Current Round');
   const [category, setCategory] = useState<Category>('Upsets');
   const [seasonId, setSeasonId] = useState(activeSeasonId ?? facts[0]?.seasonId ?? '');
   const [matchId, setMatchId] = useState('');
   const [selected, setSelected] = useState<RankedItem[]>([]);
+  const [creatingDraft, setCreatingDraft] = useState(false);
+  const [draftStatus, setDraftStatus] = useState('');
 
   const seasonOptions = useMemo(() => {
     const ids = [...new Set(facts.map((fact) => fact.seasonId))];
@@ -93,6 +98,33 @@ export function AroundTheClashDesk({facts, activeSeasonId, seasonNames}: AroundT
     setSelected((current) => current.some((selectedItem) => selectedItem.key === item.key)
       ? current.filter((selectedItem) => selectedItem.key !== item.key)
       : [...current, item]);
+    setDraftStatus('');
+  }
+
+  async function createRecapDraft() {
+    const factIds = [...new Set(selected.map((item) => item.factId))];
+    if (factIds.length === 0) return;
+
+    setCreatingDraft(true);
+    setDraftStatus('Revalidating CI facts and creating draft...');
+    try {
+      const response = await fetch('/api/media/recap-drafts', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({factIds}),
+      });
+      const payload = await response.json() as {story?: Story; error?: string};
+      if (!response.ok || !payload.story) {
+        throw new Error(payload.error || 'Recap draft could not be created.');
+      }
+
+      setDraftStatus('Draft created. Opening Story Manager...');
+      router.push(`/office/media?story=${encodeURIComponent(payload.story.id)}`);
+    } catch (error) {
+      setDraftStatus(error instanceof Error ? error.message : 'Recap draft could not be created.');
+    } finally {
+      setCreatingDraft(false);
+    }
   }
 
   return (
@@ -168,19 +200,28 @@ export function AroundTheClashDesk({facts, activeSeasonId, seasonNames}: AroundT
       <aside style={{borderTop: '1px solid rgba(127,127,127,.35)', paddingTop: 14}}>
         <div style={{display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center'}}>
           <strong>Selected facts ({selected.length})</strong>
-          {selected.length > 0 && <button type="button" onClick={() => setSelected([])}>Clear</button>}
+          {selected.length > 0 && <button type="button" disabled={creatingDraft} onClick={() => {setSelected([]); setDraftStatus('');}}>Clear</button>}
         </div>
         {selected.length === 0 ? (
           <p style={{marginBottom: 0}}>Add noteworthy rated results while reviewing the round. These stay as factual source notes for recap writing.</p>
         ) : (
-          <div style={{display: 'grid', gap: 8, marginTop: 10}}>
-            {selected.map((item) => (
-              <div key={item.key} style={{display: 'flex', justifyContent: 'space-between', gap: 12, border: '1px solid rgba(127,127,127,.25)', borderRadius: 8, padding: 10}}>
-                <span><strong>{item.headline}</strong><br /><small>{item.category} · {item.value}</small></span>
-                <button type="button" onClick={() => toggleSelected(item)}>Remove</button>
-              </div>
-            ))}
-          </div>
+          <>
+            <div style={{display: 'grid', gap: 8, marginTop: 10}}>
+              {selected.map((item) => (
+                <div key={item.key} style={{display: 'flex', justifyContent: 'space-between', gap: 12, border: '1px solid rgba(127,127,127,.25)', borderRadius: 8, padding: 10}}>
+                  <span><strong>{item.headline}</strong><br /><small>{item.category} · {item.value}</small></span>
+                  <button type="button" disabled={creatingDraft} onClick={() => toggleSelected(item)}>Remove</button>
+                </div>
+              ))}
+            </div>
+            <div style={{display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginTop: 14}}>
+              <button type="button" disabled={creatingDraft} onClick={createRecapDraft} style={{fontWeight: 800}}>
+                {creatingDraft ? 'Creating draft...' : 'Create recap draft'}
+              </button>
+              <small style={{opacity: .72}}>The server rechecks these CI ledger rows before creating the story.</small>
+            </div>
+            {draftStatus ? <p role="status" style={{marginBottom: 0, fontSize: 13}}>{draftStatus}</p> : null}
+          </>
         )}
       </aside>
     </div>
