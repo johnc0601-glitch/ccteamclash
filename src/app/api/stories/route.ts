@@ -1,32 +1,38 @@
-import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
-import {createClient} from '@/lib/supabase/server';
-import {getStories, saveStories} from '@/services/stories/StoryService';
+import {StoryAccessError, requireStoryCommissioner} from '@/services/stories/StoryEditorAccess';
+import {StoryValidationError, createStory, getManagedStories} from '@/services/stories/StoryService';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const stories = await getStories();
-  return Response.json({stories});
-}
-
-export async function PUT(request: Request) {
   try {
-    const supabase = await createClient();
-    const {data: {user}} = await supabase.auth.getUser();
-    if (!user) return Response.json({error: 'Commissioner sign-in required.'}, {status: 401});
-
-    const repository = new SupabaseLaunchRepository(supabase);
-    const profile = await repository.getProfileByUserId(user.id);
-    if (profile?.role !== 'Commissioner' || profile.status !== 'Approved') {
-      return Response.json({error: 'Commissioner access required.'}, {status: 403});
-    }
-
-    const payload = await request.json() as {stories?: unknown};
-    const stories = await saveStories(Array.isArray(payload.stories) ? payload.stories : []);
+    await requireStoryCommissioner();
+    const stories = await getManagedStories();
     return Response.json({stories});
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Stories could not be saved.';
-    return Response.json({error: message}, {status: 400});
+    return storyErrorResponse(error, 'Stories could not be loaded.');
   }
+}
+
+export async function POST(request: Request) {
+  try {
+    const {profile} = await requireStoryCommissioner();
+    const payload = await request.json() as {story?: unknown};
+    const story = await createStory(payload.story, profile.id);
+    return Response.json({story}, {status: 201});
+  } catch (error) {
+    return storyErrorResponse(error, 'Story could not be created.');
+  }
+}
+
+function storyErrorResponse(error: unknown, fallback: string) {
+  if (error instanceof StoryAccessError) {
+    return Response.json({error: error.message}, {status: error.status});
+  }
+  if (error instanceof StoryValidationError) {
+    return Response.json({error: error.message}, {status: 400});
+  }
+
+  const message = error instanceof Error ? error.message : fallback;
+  return Response.json({error: message}, {status: 500});
 }

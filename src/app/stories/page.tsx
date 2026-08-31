@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type {ReactNode} from 'react';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {getStories} from '@/services/stories/StoryService';
+import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,12 +17,12 @@ export default async function Page() {
         <h1>League stories</h1>
         <div className="story-grid">
           {stories.map((story) => (
-            <article className="story-card" key={story.slug}>
-              <StoryPhoto className="story-image" image={story.image}><span>PHOTO</span></StoryPhoto>
+            <article className="story-card" key={story.id}>
+              <StoryPhoto className="story-image" image={story.image}><span>TEAM CLASH</span></StoryPhoto>
               <div className="story-body">
-                <small>{story.category} | {story.date}</small>
+                <small>{story.category} | {formatStoryDate(story.publishedAt)}</small>
                 <h3>{story.title}</h3>
-                <p>{story.excerpt}</p>
+                <p>{getStoryPreview(story)}</p>
                 <Link href={`/stories/${story.slug}`}>Read story -&gt;</Link>
               </div>
             </article>
@@ -41,7 +42,7 @@ function StoryPhoto({className, image, children}: {className: string; image: str
       className={isUrl ? className : `${className} ${image}`}
       style={isUrl ? {backgroundImage: `url(${image})`} : undefined}
     >
-      {children}
+      {isUrl ? null : children}
     </div>
   );
 }

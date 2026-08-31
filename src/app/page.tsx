@@ -11,6 +11,7 @@ import {createServerScheduleService} from '@/core/createServerScheduleService';
 import {createClient} from '@/lib/supabase/server';
 import {getStoredTeams} from '@/services/teams/TeamStore';
 import {getStories} from '@/services/stories/StoryService';
+import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,7 +38,7 @@ export default async function Home({searchParams}: HomeProps) {
           <div className="story-home-content">
             <span className="eyebrow">Featured story</span>
             <h1>{lead.title}</h1>
-            <p>{lead.excerpt}</p>
+            <p>{getStoryPreview(lead)}</p>
             <div className="home-actions">
               <Link href={`/stories/${lead.slug}`} className="button gold-button">Read story <span>-&gt;</span></Link>
             </div>
@@ -65,10 +66,10 @@ export default async function Home({searchParams}: HomeProps) {
           </div>
           <div className="compact-story-grid">
             {stories.slice(0, 2).map((story) => (
-              <article className="compact-story" key={story.slug}>
+              <article className="compact-story" key={story.id}>
                 <StoryPhoto className="compact-photo" image={story.image}><span>League story</span></StoryPhoto>
                 <div>
-                  <small>{story.date}</small>
+                  <small>{formatStoryDate(story.publishedAt)}</small>
                   <h3>{story.title}</h3>
                   <Link href={`/stories/${story.slug}`}>Read more -&gt;</Link>
                 </div>

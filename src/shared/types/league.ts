@@ -3,16 +3,26 @@ export type StoryLink = {
   url: string;
 };
 
+export type StoryStatus = 'draft' | 'published' | 'archived';
+
 export type Story = {
+  id: string;
   slug: string;
   title: string;
-  excerpt: string;
   category: string;
-  date: string;
+  publishedAt: string | null;
   image: string;
+  heroAssetId?: string | null;
   body: string[];
   links?: StoryLink[];
   featured?: boolean;
+  status: StoryStatus;
+  revision: number;
+  updatedAt?: string;
+  seasonId?: string | null;
+  roundId?: string | null;
+  matchId?: string | null;
+  teamId?: string | null;
 };
 
 export type StandingEntry = {

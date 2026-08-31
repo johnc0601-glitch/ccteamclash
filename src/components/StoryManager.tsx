@@ -1,31 +1,34 @@
 'use client';
 
 import {useEffect, useMemo, useRef, useState} from 'react';
-import type {Story, StoryLink} from '@/shared/types';
+import type {Story, StoryLink, StoryStatus} from '@/shared/types';
 import {createSlug} from '@/shared/utils';
+import {formatStoryDate, getStoryPreview, storyDateInputValue} from '@/services/stories/storyPresentation';
 
 type StoryDraft = {
   slug: string;
   title: string;
   category: string;
-  date: string;
-  excerpt: string;
+  publishedDate: string;
   body: string;
   links: string;
   image: string;
+  heroAssetId: string | null;
   featured: boolean;
+  status: StoryStatus;
 };
 
 const blankDraft: StoryDraft = {
   slug: '',
   title: '',
   category: 'Match Preview',
-  date: '',
-  excerpt: '',
+  publishedDate: '',
   body: '',
   links: '',
   image: 'hero',
+  heroAssetId: null,
   featured: false,
+  status: 'draft',
 };
 
 const storyCategories = [
@@ -40,9 +43,11 @@ const storyCategories = [
 export function StoryManager() {
   const [stories, setStories] = useState<Story[]>([]);
   const [draft, setDraft] = useState<StoryDraft>(blankDraft);
-  const [selectedSlug, setSelectedSlug] = useState('');
+  const [selectedId, setSelectedId] = useState('');
+  const [selectedRevision, setSelectedRevision] = useState<number | null>(null);
   const [status, setStatus] = useState('Loading stories...');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -50,42 +55,22 @@ export function StoryManager() {
   useEffect(() => {
     let cancelled = false;
 
-    async function loadStories() {
-      try {
-        const response = await fetch('/api/stories', {cache: 'no-store'});
-        const payload = await response.json() as {stories?: Story[]; error?: string};
-
-        if (!response.ok) {
-          throw new Error(payload.error || 'Stories could not load.');
-        }
-
-        const loadedStories = payload.stories ?? [];
-        const hasFeaturedStory = loadedStories.some((story) => story.featured === true);
-        const hydratedStories = loadedStories.map((story, index) => ({
-          ...story,
-          featured: hasFeaturedStory ? story.featured === true : index === 0,
-        }));
-        if (cancelled) {
-          return;
-        }
-
-        setStories(hydratedStories);
-        setStatus(hydratedStories.length ? 'Choose a story to edit.' : 'No stories have been posted yet.');
-        if (hydratedStories[0]) {
-          selectStory(hydratedStories[0]);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setStatus(error instanceof Error ? error.message : 'Stories could not load.');
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadStories();
+    fetchStoryList()
+      .then((loadedStories) => {
+        if (cancelled) return;
+        setStories(loadedStories);
+        setLoadError(false);
+        setStatus(loadedStories.length ? 'Choose a story to edit.' : 'No stories have been posted yet.');
+        if (loadedStories[0]) selectStory(loadedStories[0]);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setLoadError(true);
+        setStatus(error instanceof Error ? error.message : 'Stories could not load.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
     return () => {
       cancelled = true;
@@ -96,31 +81,40 @@ export function StoryManager() {
     createSlug(draft.slug || draft.title) || 'new-story'
   ), [draft.slug, draft.title]);
 
+  const previewStory = useMemo<Pick<Story, 'body'>>(() => ({
+    body: splitBody(draft.body),
+  }), [draft.body]);
+
   function selectStory(story: Story) {
-    setSelectedSlug(story.slug);
+    setSelectedId(story.id);
+    setSelectedRevision(story.revision);
     setDraft(storyToDraft(story));
+    setStatus(story.status === 'archived' ? 'Archived story selected.' : 'Story loaded.');
   }
 
-  function updateDraft(field: keyof StoryDraft, value: string | boolean) {
+  function updateDraft(field: keyof StoryDraft, value: string | boolean | null) {
     setDraft((current) => ({...current, [field]: value}));
     setStatus('Unsaved changes.');
   }
 
   function startNewStory() {
-    setSelectedSlug('');
+    if (loadError) {
+      setStatus('Stories are unavailable. Reload the page before creating or saving content.');
+      return;
+    }
+    setSelectedId('');
+    setSelectedRevision(null);
     setDraft(blankDraft);
-    setStatus('New story ready.');
+    setStatus('New draft ready.');
   }
 
   function featureOnHomepage() {
     setDraft((current) => ({...current, featured: true}));
-    setStatus('This story will become the homepage feature when saved.');
+    setStatus('This story will become the homepage feature when saved as published.');
   }
 
   async function uploadPhoto(file?: File) {
-    if (!file) {
-      return;
-    }
+    if (!file || loadError) return;
 
     setUploading(true);
     setStatus('Uploading story photo...');
@@ -128,52 +122,69 @@ export function StoryManager() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('title', draft.title || file.name);
+      if (selectedId) formData.append('storyId', selectedId);
 
       const response = await fetch('/api/story-images', {
         method: 'POST',
         body: formData,
       });
-      const payload = await response.json() as {url?: string; error?: string};
+      const payload = await response.json() as {assetId?: string; url?: string; error?: string};
 
-      if (!response.ok || !payload.url) {
+      if (!response.ok || !payload.url || !payload.assetId) {
         throw new Error(payload.error || 'Story photo could not upload.');
       }
 
-      updateDraft('image', payload.url);
-      setStatus('Photo uploaded. Save the story to publish it.');
+      setDraft((current) => ({...current, image: payload.url!, heroAssetId: payload.assetId!}));
+      setStatus('Photo uploaded. Save the story when the rest is ready.');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Story photo could not upload.');
     } finally {
       setUploading(false);
-      if (fileRef.current) {
-        fileRef.current.value = '';
-      }
+      if (fileRef.current) fileRef.current.value = '';
     }
   }
 
-  async function saveStory() {
-    const story = draftToStory(draft, draftSlug);
+  async function saveStory(targetStatus: StoryStatus = draft.status) {
+    if (loadError) {
+      setStatus('Stories are unavailable. Reload the page before saving.');
+      return;
+    }
+
+    const story = draftToPayload(draft, draftSlug, targetStatus);
     if (!story.title) {
       setStatus('Add a headline before saving.');
       return;
     }
+    if (targetStatus === 'published' && story.body.length === 0) {
+      setStatus('Add story text before publishing.');
+      return;
+    }
 
     setSaving(true);
-    setStatus('Saving story...');
+    setStatus(targetStatus === 'published' ? 'Publishing story...' : 'Saving story...');
 
     try {
-      const baseStories = selectedSlug
-        ? stories.map((item) => item.slug === selectedSlug ? story : item)
-        : [story, ...stories];
-      const nextStories = story.featured
-        ? baseStories.map((item) => ({...item, featured: item.slug === story.slug}))
-        : baseStories;
-      await saveStoryList(nextStories);
-      setStories(nextStories);
-      setSelectedSlug(story.slug);
-      setDraft(storyToDraft(story));
-      setStatus(story.featured ? 'Story saved and featured on the homepage.' : 'Story saved. Latest stories updated; homepage feature unchanged.');
+      const response = selectedId
+        ? await fetch(`/api/stories/${selectedId}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({story, revision: selectedRevision}),
+          })
+        : await fetch('/api/stories', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({story}),
+          });
+      const payload = await response.json() as {story?: Story; error?: string};
+
+      if (!response.ok || !payload.story) {
+        throw new Error(payload.error || 'Story could not save.');
+      }
+
+      await reloadAfterMutation(payload.story.id);
+      setStatus(payload.story.status === 'published'
+        ? (payload.story.featured ? 'Story published and featured on the homepage.' : 'Story published.')
+        : 'Draft saved.');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Story could not save.');
     } finally {
@@ -181,39 +192,52 @@ export function StoryManager() {
     }
   }
 
-  async function deleteStory() {
-    if (!selectedSlug) {
-      setStatus('Choose a posted story to delete.');
+  async function archiveSelectedStory() {
+    if (!selectedId || selectedRevision === null) {
+      setStatus('Choose a story to archive.');
       return;
     }
 
-    const selectedStory = stories.find((story) => story.slug === selectedSlug);
-    if (!selectedStory || !window.confirm(`Delete "${selectedStory.title}" from the website?`)) {
+    const selectedStory = stories.find((story) => story.id === selectedId);
+    if (!selectedStory || !window.confirm(`Archive "${selectedStory.title}"? It will disappear from public pages.`)) {
       return;
     }
 
     setSaving(true);
-    setStatus('Deleting story...');
-
+    setStatus('Archiving story...');
     try {
-      let nextStories = stories.filter((story) => story.slug !== selectedSlug);
-      if (selectedStory.featured && nextStories[0]) {
-        nextStories = nextStories.map((story, index) => ({...story, featured: index === 0}));
+      const response = await fetch(`/api/stories/${selectedId}`, {
+        method: 'DELETE',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({revision: selectedRevision}),
+      });
+      const payload = await response.json() as {story?: Story; error?: string};
+      if (!response.ok || !payload.story) {
+        throw new Error(payload.error || 'Story could not be archived.');
       }
-      await saveStoryList(nextStories);
-      setStories(nextStories);
-      if (nextStories[0]) {
-        selectStory(nextStories[0]);
-      } else {
-        startNewStory();
-      }
-      setStatus('Story deleted and public pages updated.');
+
+      await reloadAfterMutation(payload.story.id);
+      setStatus('Story archived.');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Story could not be deleted.');
+      setStatus(error instanceof Error ? error.message : 'Story could not be archived.');
     } finally {
       setSaving(false);
     }
   }
+
+  async function reloadAfterMutation(preferredId: string) {
+    const nextStories = await fetchStoryList();
+    setStories(nextStories);
+    setLoadError(false);
+    const preferred = nextStories.find((story) => story.id === preferredId) ?? nextStories[0];
+    if (preferred) selectStory(preferred);
+    else startNewStory();
+  }
+
+  const slugLocked = draft.status !== 'draft' && Boolean(selectedId);
+  const previewDate = draft.publishedDate
+    ? formatStoryDate(`${draft.publishedDate}T12:00:00.000Z`)
+    : (draft.status === 'published' ? 'Publishing today' : 'Draft');
 
   return (
     <section className="story-manager">
@@ -223,24 +247,24 @@ export function StoryManager() {
           <strong>Story manager</strong>
           <small>{status}</small>
         </div>
-        <button className="publish-action" type="button" onClick={startNewStory}>New story</button>
+        <button className="publish-action" type="button" disabled={loadError || saving} onClick={startNewStory}>New story</button>
       </div>
 
       <div className="story-manager-grid">
         <aside className="story-list-panel">
-          <h2>Posted stories</h2>
+          <h2>Stories</h2>
           {loading ? <p>Loading...</p> : null}
-          {!loading && stories.length === 0 ? <p>No posted stories yet.</p> : null}
+          {!loading && stories.length === 0 ? <p>No stories yet.</p> : null}
           <div className="story-list">
             {stories.map((story) => (
               <button
                 type="button"
-                className={story.slug === selectedSlug ? 'story-list-item active' : 'story-list-item'}
-                key={story.slug}
+                className={story.id === selectedId ? 'story-list-item active' : 'story-list-item'}
+                key={story.id}
                 onClick={() => selectStory(story)}
               >
                 <strong>{story.title}{story.featured ? ' · Featured' : ''}</strong>
-                <span>{story.category} | {story.date}</span>
+                <span>{story.status.toUpperCase()} · {story.category} · {formatStoryDate(story.publishedAt)}</span>
               </button>
             ))}
           </div>
@@ -255,8 +279,8 @@ export function StoryManager() {
               </select>
             </label>
             <label>
-              Date
-              <input value={draft.date} onChange={(event) => updateDraft('date', event.target.value)} placeholder="July 21, 2026" />
+              Publish date
+              <input type="date" value={draft.publishedDate} onChange={(event) => updateDraft('publishedDate', event.target.value)} />
             </label>
           </div>
 
@@ -266,8 +290,13 @@ export function StoryManager() {
           </label>
 
           <label>
-            Web address
-            <input value={draftSlug} onChange={(event) => updateDraft('slug', event.target.value)} placeholder="story-web-address" />
+            Web address {slugLocked ? <small>Locked after publication</small> : null}
+            <input
+              value={draftSlug}
+              disabled={slugLocked}
+              onChange={(event) => updateDraft('slug', event.target.value)}
+              placeholder="story-web-address"
+            />
           </label>
 
           <label>
@@ -278,27 +307,19 @@ export function StoryManager() {
               tabIndex={0}
               onClick={() => fileRef.current?.click()}
               onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  fileRef.current?.click();
-                }
+                if (event.key === 'Enter' || event.key === ' ') fileRef.current?.click();
               }}
             >
               {isImageUrl(draft.image)
                 ? <span className="story-photo-preview" style={{backgroundImage: `url(${draft.image})`}} />
-                : <><b>+</b><strong>{uploading ? 'Uploading...' : 'Choose a photo'}</strong><small>JPG, PNG, or WebP</small></>}
+                : <><b>+</b><strong>{uploading ? 'Uploading...' : 'Choose a photo'}</strong><small>JPG, PNG, or WebP · 10 MB max</small></>}
               <input ref={fileRef} hidden type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => uploadPhoto(event.target.files?.[0])} />
             </div>
           </label>
 
           <label>
-            Short summary
-            <button type="button" className="inline-tool" onClick={() => updateDraft('excerpt', createSummary(draft.body))}>Create from story</button>
-            <textarea rows={3} value={draft.excerpt} onChange={(event) => updateDraft('excerpt', event.target.value)} />
-          </label>
-
-          <label>
             Story
-            <textarea rows={10} value={draft.body} onChange={(event) => updateDraft('body', event.target.value)} placeholder="Use a blank line between paragraphs." />
+            <textarea rows={13} value={draft.body} onChange={(event) => updateDraft('body', event.target.value)} placeholder="Use a blank line between paragraphs." />
           </label>
 
           <label>
@@ -307,24 +328,40 @@ export function StoryManager() {
           </label>
 
           <div className="editor-actions">
-            <button className="publish-action" type="button" disabled={saving || uploading} onClick={saveStory}>
-              {saving ? 'Saving...' : 'Save story'}
-            </button>
-            <button className="secondary" type="button" disabled={saving || draft.featured} onClick={featureOnHomepage}>
-              {draft.featured ? 'Featured on homepage' : 'Feature on homepage'}
-            </button>
-            <button className="secondary" type="button" disabled={saving || !selectedSlug} onClick={deleteStory}>Delete story</button>
+            {draft.status === 'archived' ? (
+              <button className="publish-action" type="button" disabled={saving || uploading || loadError} onClick={() => saveStory('draft')}>
+                {saving ? 'Saving...' : 'Restore as draft'}
+              </button>
+            ) : (
+              <button className="publish-action" type="button" disabled={saving || uploading || loadError} onClick={() => saveStory(draft.status)}>
+                {saving ? 'Saving...' : draft.status === 'published' ? 'Save changes' : 'Save draft'}
+              </button>
+            )}
+
+            {draft.status !== 'published' ? (
+              <button className="secondary" type="button" disabled={saving || uploading || loadError} onClick={() => saveStory('published')}>
+                Publish
+              </button>
+            ) : (
+              <button className="secondary" type="button" disabled={saving || draft.featured || loadError} onClick={featureOnHomepage}>
+                {draft.featured ? 'Featured on homepage' : 'Feature on homepage'}
+              </button>
+            )}
+
+            {selectedId && draft.status !== 'archived' ? (
+              <button className="secondary" type="button" disabled={saving || loadError} onClick={archiveSelectedStory}>Archive story</button>
+            ) : null}
           </div>
         </form>
 
         <aside className="post-preview story-manager-preview">
-          <div className="preview-label">Public preview{draft.featured ? ' · Homepage feature' : ''}</div>
+          <div className="preview-label">Public preview · {draft.status}{draft.featured ? ' · Homepage feature' : ''}</div>
           {isImageUrl(draft.image)
             ? <span className="story-preview-image" style={{backgroundImage: `url(${draft.image})`}} />
-            : <div className={`preview-photo ${draft.image}`}>STORY PHOTO</div>}
-          <small>{draft.category}</small>
+            : <div className={`preview-photo ${draft.image}`}>TEAM CLASH</div>}
+          <small>{draft.category} · {previewDate}</small>
           <h2>{draft.title || 'Your headline appears here'}</h2>
-          <p>{draft.excerpt || createSummary(draft.body) || 'Your short story preview appears here.'}</p>
+          <p>{getStoryPreview(previewStory) || 'The opening of the story will automatically become the card preview.'}</p>
           <span className="preview-link">Read story -&gt;</span>
         </aside>
       </div>
@@ -332,17 +369,11 @@ export function StoryManager() {
   );
 }
 
-async function saveStoryList(stories: Story[]) {
-  const response = await fetch('/api/stories', {
-    method: 'PUT',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({stories}),
-  });
-  const payload = await response.json() as {error?: string};
-
-  if (!response.ok) {
-    throw new Error(payload.error || 'Stories could not save.');
-  }
+async function fetchStoryList(): Promise<Story[]> {
+  const response = await fetch('/api/stories', {cache: 'no-store'});
+  const payload = await response.json() as {stories?: Story[]; error?: string};
+  if (!response.ok) throw new Error(payload.error || 'Stories could not load.');
+  return payload.stories ?? [];
 }
 
 function storyToDraft(story: Story): StoryDraft {
@@ -350,27 +381,33 @@ function storyToDraft(story: Story): StoryDraft {
     slug: story.slug,
     title: story.title,
     category: story.category,
-    date: story.date,
-    excerpt: story.excerpt,
+    publishedDate: storyDateInputValue(story.publishedAt),
     body: story.body.join('\n\n'),
     links: (story.links ?? []).map((link) => `${link.label} | ${link.url}`).join('\n'),
     image: story.image,
+    heroAssetId: story.heroAssetId ?? null,
     featured: story.featured === true,
+    status: story.status,
   };
 }
 
-function draftToStory(draft: StoryDraft, slug: string): Story {
+function draftToPayload(draft: StoryDraft, slug: string, status: StoryStatus) {
   return {
     slug,
     title: draft.title.trim(),
     category: draft.category.trim() || 'Announcement',
-    date: draft.date.trim() || 'Date to be announced',
-    excerpt: draft.excerpt.trim() || createSummary(draft.body),
+    publishedAt: draft.publishedDate ? `${draft.publishedDate}T12:00:00.000Z` : null,
     image: draft.image.trim() || 'hero',
-    body: draft.body.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean),
+    heroAssetId: draft.heroAssetId,
+    body: splitBody(draft.body),
     links: parseLinks(draft.links),
     featured: draft.featured,
+    status,
   };
+}
+
+function splitBody(body: string): string[] {
+  return body.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean);
 }
 
 function parseLinks(rawLinks: string): StoryLink[] | undefined {
@@ -384,11 +421,6 @@ function parseLinks(rawLinks: string): StoryLink[] | undefined {
     .filter((link): link is StoryLink => Boolean(link));
 
   return links.length ? links : undefined;
-}
-
-function createSummary(body: string): string {
-  const clean = body.replace(/\s+/g, ' ').trim();
-  return clean.length > 155 ? `${clean.slice(0, 152)}...` : clean;
 }
 
 function isImageUrl(image: string): boolean {
