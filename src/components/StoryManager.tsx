@@ -1,7 +1,7 @@
 'use client';
 
 import {useEffect, useMemo, useRef, useState} from 'react';
-import type {Story, StoryLink, StoryStatus} from '@/shared/types';
+import type {Story, StoryLink, StorySourceFactSnapshot, StoryStatus} from '@/shared/types';
 import {createSlug} from '@/shared/utils';
 import {formatStoryDate, getStoryPreview, storyDateInputValue} from '@/services/stories/storyPresentation';
 
@@ -61,7 +61,11 @@ export function StoryManager() {
         setStories(loadedStories);
         setLoadError(false);
         setStatus(loadedStories.length ? 'Choose a story to edit.' : 'No stories have been posted yet.');
-        if (loadedStories[0]) selectStory(loadedStories[0]);
+
+        const requestedId = new URLSearchParams(window.location.search).get('story');
+        const requestedStory = requestedId ? loadedStories.find((story) => story.id === requestedId) : undefined;
+        const initialStory = requestedStory ?? loadedStories[0];
+        if (initialStory) selectStory(initialStory);
       })
       .catch((error) => {
         if (cancelled) return;
@@ -84,6 +88,12 @@ export function StoryManager() {
   const previewStory = useMemo<Pick<Story, 'body'>>(() => ({
     body: splitBody(draft.body),
   }), [draft.body]);
+
+  const selectedStory = useMemo(
+    () => stories.find((story) => story.id === selectedId),
+    [stories, selectedId],
+  );
+  const sourceFacts = selectedStory?.sourceFactSnapshot ?? [];
 
   function selectStory(story: Story) {
     setSelectedId(story.id);
@@ -224,8 +234,8 @@ export function StoryManager() {
       return;
     }
 
-    const selectedStory = stories.find((story) => story.id === selectedId);
-    if (!selectedStory || !window.confirm(`Archive "${selectedStory.title}"? It will disappear from public pages.`)) {
+    const selectedStoryForArchive = stories.find((story) => story.id === selectedId);
+    if (!selectedStoryForArchive || !window.confirm(`Archive "${selectedStoryForArchive.title}"? It will disappear from public pages.`)) {
       return;
     }
 
@@ -290,7 +300,10 @@ export function StoryManager() {
                 onClick={() => selectStory(story)}
               >
                 <strong>{story.title}{story.featured ? ' · Featured' : ''}</strong>
-                <span>{story.status.toUpperCase()} · {story.category} · {formatStoryDate(story.publishedAt)}</span>
+                <span>
+                  {story.status.toUpperCase()} · {story.category} · {formatStoryDate(story.publishedAt)}
+                  {(story.sourceFactSnapshot?.length ?? 0) > 0 ? ` · ${story.sourceFactSnapshot!.length} verified fact${story.sourceFactSnapshot!.length === 1 ? '' : 's'}` : ''}
+                </span>
               </button>
             ))}
           </div>
@@ -348,6 +361,8 @@ export function StoryManager() {
             <textarea rows={13} value={draft.body} onChange={(event) => updateDraft('body', event.target.value)} placeholder="Use a blank line between paragraphs." />
           </label>
 
+          {sourceFacts.length > 0 ? <VerifiedSourceFacts facts={sourceFacts} /> : null}
+
           <label>
             Related links <small>One per line: Label | URL</small>
             <textarea rows={3} value={draft.links} onChange={(event) => updateDraft('links', event.target.value)} placeholder={'Full schedule | /schedule\nFacebook post | https://...'} />
@@ -390,6 +405,30 @@ export function StoryManager() {
           <p>{getStoryPreview(previewStory) || 'The opening of the story will automatically become the card preview.'}</p>
           <span className="preview-link">Read story -&gt;</span>
         </aside>
+      </div>
+    </section>
+  );
+}
+
+function VerifiedSourceFacts({facts}: {facts: StorySourceFactSnapshot[]}) {
+  return (
+    <section style={{border: '1px solid rgba(127,127,127,.35)', borderRadius: 10, padding: 12, display: 'grid', gap: 10}} aria-label="Verified source facts">
+      <div>
+        <strong>Verified source facts · {facts.length}</strong>
+        <div style={{fontSize: 12, opacity: .72, marginTop: 3}}>Read-only snapshot from the canonical Clash Index ledger when this draft was created.</div>
+      </div>
+      <div style={{display: 'grid', gap: 8}}>
+        {facts.map((fact) => (
+          <article key={`${fact.ledgerId}:${fact.playerId}`} style={{borderTop: '1px solid rgba(127,127,127,.2)', paddingTop: 8}}>
+            <div style={{display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap'}}>
+              <strong>{factEntity(fact)}{factOpponent(fact) ? ` vs ${factOpponent(fact)}` : ''}</strong>
+              <span style={{fontWeight: 800}}>{Math.round(fact.expectedScore * 100)}% expected · {signed(fact.totalDelta)} CI</span>
+            </div>
+            <small style={{opacity: .72}}>
+              Fact #{fact.ledgerId} · {fact.eventLabel || `Event ${fact.eventOrder}`} · {formatFactFormat(fact.format)} · {formatFactSide(fact.side)} · {formatFactOutcome(fact.outcome)}
+            </small>
+          </article>
+        ))}
       </div>
     </section>
   );
@@ -447,6 +486,44 @@ function parseLinks(rawLinks: string): StoryLink[] | undefined {
     .filter((link): link is StoryLink => Boolean(link));
 
   return links.length ? links : undefined;
+}
+
+function factEntity(fact: StorySourceFactSnapshot): string {
+  if (!fact.partnerName) return fact.playerName;
+  return [fact.playerName, fact.partnerName].sort().join(' + ');
+}
+
+function factOpponent(fact: StorySourceFactSnapshot): string {
+  return [fact.opponentOneName, fact.opponentTwoName]
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .join(' + ');
+}
+
+function signed(value: number): string {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(1)}`;
+}
+
+function formatFactFormat(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (normalized.includes('double')) return 'Doubles';
+  if (normalized.includes('single')) return 'Singles';
+  return value;
+}
+
+function formatFactSide(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'away') return 'Road';
+  if (normalized === 'home') return 'Home';
+  return value;
+}
+
+function formatFactOutcome(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'w' || normalized === 'win') return 'Win';
+  if (normalized === 'l' || normalized === 'loss') return 'Loss';
+  if (normalized === 't' || normalized === 'tie') return 'Tie';
+  return value;
 }
 
 function isImageUrl(image: string): boolean {
