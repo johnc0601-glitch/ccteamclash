@@ -43,7 +43,7 @@ export function MediaLibraryManager() {
     let uploaded = 0;
     try {
       for (const file of files) {
-        setStatus(`Uploading ${uploaded + 1} of ${files.length}...`);
+        setStatus(`Optimizing and uploading ${uploaded + 1} of ${files.length}...`);
         const formData = new FormData();
         formData.append('file', file);
         formData.append('galleryVisible', publishUploads ? 'true' : 'false');
@@ -58,7 +58,7 @@ export function MediaLibraryManager() {
       setFiles([]);
       if (fileRef.current) fileRef.current.value = '';
       await reloadAssets();
-      setStatus(`${uploaded} photo${uploaded === 1 ? '' : 's'} uploaded${publishUploads ? ' and published to the gallery' : ''}.`);
+      setStatus(`${uploaded} photo${uploaded === 1 ? '' : 's'} optimized and uploaded${publishUploads ? ' to the public gallery' : ''}.`);
     } catch (error) {
       await reloadAssets().catch(() => undefined);
       setStatus(error instanceof Error ? error.message : 'Photo upload stopped.');
@@ -158,7 +158,9 @@ function MediaAssetCard({asset, onSaved}: {asset: MediaAsset; onSaved: (asset: M
 
   return (
     <article className={styles.card}>
-      <img className={styles.photo} src={asset.url} alt={altText || caption || 'CC Team Clash photo'} loading="lazy" />
+      <a href={asset.url} target="_blank" rel="noreferrer" aria-label="Open full-size photo">
+        <img className={styles.photo} src={asset.thumbnailUrl} alt={altText || caption || 'CC Team Clash photo'} loading="lazy" />
+      </a>
       <div className={styles.cardBody}>
         <label>
           Caption
@@ -178,6 +180,10 @@ function MediaAssetCard({asset, onSaved}: {asset: MediaAsset; onSaved: (asset: M
         </label>
         <button className={styles.secondaryButton} type="button" disabled={saving} onClick={save}>{saving ? 'Saving...' : 'Save photo'}</button>
         {message ? <div className={styles.cardMeta}>{message}</div> : null}
+        <div className={styles.cardMeta}>
+          {asset.width && asset.height ? `${asset.width}×${asset.height}` : 'Legacy size'}
+          {asset.byteSize !== null ? ` · ${formatBytes(asset.byteSize)}` : ''}
+        </div>
         <div className={styles.cardMeta}>{asset.originalFilename || asset.storagePath}</div>
       </div>
     </article>
@@ -189,4 +195,10 @@ function dateInputValue(value: string | null): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
   return date.toISOString().slice(0, 10);
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
