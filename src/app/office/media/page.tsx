@@ -25,6 +25,16 @@ export default function OfficeMediaPage() {
         <section style={mediaCardStyle}>
           <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap'}}>
             <div>
+              <strong>Matchday moderation</strong>
+              <p style={{margin: '6px 0 0'}}>Review member reports from Matchday posts and comments.</p>
+            </div>
+            <Link href="/office/media/moderation">Open moderation</Link>
+          </div>
+        </section>
+
+        <section style={mediaCardStyle}>
+          <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap'}}>
+            <div>
               <div style={{display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap'}}>
                 <strong>Around the Clash</strong>
                 <span style={{fontSize: 11, fontWeight: 800, letterSpacing: '.08em', border: '1px solid currentColor', borderRadius: 999, padding: '2px 7px'}}>PREVIEW</span>

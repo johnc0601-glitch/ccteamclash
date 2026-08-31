@@ -5,6 +5,7 @@ import {
   createMatchFeedPost,
   editMatchFeedComment,
   editMatchFeedPost,
+  reportMatchFeedContent,
   setMatchFeedCommentReaction,
   setMatchFeedPostReaction,
   softDeleteMatchFeedComment,
@@ -173,6 +174,7 @@ function PostCard({post, comments, postReactions, commentReactions, currentProfi
           {interactive && currentProfileId === post.profile_id ? (
             <details><summary className={styles.editSummary}>Edit</summary><form action={editMatchFeedPost} className={styles.editForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={post.id} /><textarea name="body" defaultValue={post.body} maxLength={3000} /><button type="submit">Save edit</button></form></details>
           ) : null}
+          {!post.deleted_at && currentProfileId && currentProfileId !== post.profile_id ? <ReportControl matchId={matchId} postId={post.id} /> : null}
           {commissioner && !post.deleted_at ? <form action={softDeleteMatchFeedPost}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={post.id} /><button type="submit">Remove</button></form> : null}
         </div>
       </header>
@@ -227,10 +229,32 @@ function CommentBubble({comment, reactions, currentProfileId, commissioner, open
     <div className={styles.commentTools}>
       {!comment.deleted_at && open && currentProfileId ? Object.entries(REACTION_LABELS).map(([key, label]) => <form action={setMatchFeedCommentReaction} key={key}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="commentId" value={comment.id} /><input type="hidden" name="reactionType" value={key} /><button type="submit" data-active={reactions.some((reaction) => reaction.profile_id === currentProfileId && reaction.reaction_type === key)}>{label}{counts[key] ? ` ${counts[key]}` : ''}</button></form>) : null}
       {!comment.deleted_at && open && currentProfileId === comment.profile_id ? <details><summary>Edit</summary><form action={editMatchFeedComment} className={styles.editForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="commentId" value={comment.id} /><textarea name="body" defaultValue={comment.body} maxLength={1500} /><button type="submit">Save edit</button></form></details> : null}
+      {!comment.deleted_at && currentProfileId && currentProfileId !== comment.profile_id ? <ReportControl matchId={matchId} commentId={comment.id} /> : null}
       {!comment.deleted_at && commissioner ? <form action={softDeleteMatchFeedComment}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="commentId" value={comment.id} /><button type="submit">Remove</button></form> : null}
       {!comment.deleted_at && canReply && open && currentProfileId ? <details><summary>Reply</summary><form action={addMatchFeedComment} className={styles.replyForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="parentCommentId" value={comment.id} /><input name="body" maxLength={1500} placeholder="Reply" /><button type="submit">Reply</button></form></details> : null}
     </div>
   </div>;
+}
+
+function ReportControl({matchId, postId, commentId}: {matchId: string; postId?: string; commentId?: string}) {
+  return (
+    <details>
+      <summary>Report</summary>
+      <form action={reportMatchFeedContent} className={styles.editForm}>
+        <input type="hidden" name="matchId" value={matchId} />
+        {postId ? <input type="hidden" name="postId" value={postId} /> : null}
+        {commentId ? <input type="hidden" name="commentId" value={commentId} /> : null}
+        <select name="reason" defaultValue="Inappropriate" aria-label="Report reason">
+          <option>Inappropriate</option>
+          <option>Spam</option>
+          <option>Harassment</option>
+          <option>Other</option>
+        </select>
+        <input name="note" maxLength={500} placeholder="Optional note" aria-label="Report note" />
+        <button type="submit">Send report</button>
+      </form>
+    </details>
+  );
 }
 
 function countReactions(reactions: Reaction[]) {
