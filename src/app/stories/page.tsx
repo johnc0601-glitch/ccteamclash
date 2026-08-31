@@ -24,7 +24,7 @@ export default async function Page({searchParams}: {searchParams: SearchParams})
         <h1>League stories</h1>
 
         <form method="get" action="/stories" style={{display: 'grid', gap: 10, margin: '18px 0 24px'}}>
-          <div style={{display: 'grid', gridTemplateColumns: 'minmax(180px,2fr) minmax(150px,1fr) minmax(150px,1fr) auto', gap: 10, alignItems: 'end'}}>
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10, alignItems: 'end'}}>
             <label style={{display: 'grid', gap: 5}}>
               <span style={{fontSize: 12, fontWeight: 800}}>Search stories</span>
               <input name="q" defaultValue={search} placeholder="Search headline" />
