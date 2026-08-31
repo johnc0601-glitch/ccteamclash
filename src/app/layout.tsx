@@ -8,6 +8,7 @@ import "./canonical-theme.css";
 import "./matchday-theme.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ccteamclash.com"),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
 };
