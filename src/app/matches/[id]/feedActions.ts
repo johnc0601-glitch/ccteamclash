@@ -3,18 +3,16 @@
 import {revalidatePath} from 'next/cache';
 import {redirect} from 'next/navigation';
 import {createClient} from '@/lib/supabase/server';
+import {processMatchdayImage} from '@/services/media/MediaImageProcessor';
 import {isMatchFeedOpen, matchFeedClosedMessage} from '@/services/matches/MatchFeedLifecycle';
 
 const REACTIONS = new Set(['like', 'love', 'laugh', 'fire']);
+const REPORT_REASONS = new Set(['Spam', 'Harassment', 'Inappropriate', 'Other']);
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
-const IMAGE_EXTENSIONS: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-  'image/heic': 'heic',
-  'image/heif': 'heif',
-};
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const RATE_WINDOW_MS = 5 * 60 * 1000;
+const POST_RATE_LIMIT = 8;
+const COMMENT_RATE_LIMIT = 30;
 
 export async function createMatchFeedPost(formData: FormData) {
   const matchId = read(formData, 'matchId');
@@ -22,6 +20,7 @@ export async function createMatchFeedPost(formData: FormData) {
   if (!matchId) return;
   const account = await requireAccount(matchId);
   await requireFeedOpen(account.supabase, matchId);
+  await requireRateLimit(account.supabase, 'launch_match_feed_posts', account.profile.id, POST_RATE_LIMIT, matchId, 'You are posting too quickly. Try again in a few minutes.');
   const photo = formData.get('photo');
   let imagePath: string | null = null;
 
@@ -29,9 +28,21 @@ export async function createMatchFeedPost(formData: FormData) {
     if (!IMAGE_TYPES.has(photo.type) || photo.size > MAX_IMAGE_BYTES) {
       redirect(feedUrl(matchId, 'feedError', 'Photo must be JPG, PNG, WebP, HEIC, or HEIF and 8 MB or smaller.'));
     }
-    const extension = IMAGE_EXTENSIONS[photo.type] || 'jpg';
-    imagePath = `${matchId}/${crypto.randomUUID()}.${extension}`;
-    const {error} = await account.supabase.storage.from('match-feed').upload(imagePath, photo, {contentType: photo.type, upsert: false});
+
+    let processed: Awaited<ReturnType<typeof processMatchdayImage>>;
+    try {
+      processed = await processMatchdayImage(photo);
+    } catch (error) {
+      console.error('Matchday photo could not be processed.', {matchId, type: photo.type, size: photo.size, error});
+      redirect(feedUrl(matchId, 'feedError', 'That photo could not be processed. Try JPG, PNG, WebP, or a different phone photo.'));
+    }
+
+    imagePath = `${matchId}/${crypto.randomUUID()}.webp`;
+    const {error} = await account.supabase.storage.from('match-feed').upload(imagePath, processed.image, {
+      contentType: processed.mimeType,
+      cacheControl: '31536000',
+      upsert: false,
+    });
     if (error) redirect(feedUrl(matchId, 'feedError', 'Photo upload failed.'));
   }
 
@@ -77,6 +88,7 @@ export async function addMatchFeedComment(formData: FormData) {
   if (!matchId || !postId || !body) return;
   const account = await requireAccount(matchId);
   await requireFeedOpen(account.supabase, matchId);
+  await requireRateLimit(account.supabase, 'launch_match_feed_comments', account.profile.id, COMMENT_RATE_LIMIT, matchId, 'You are commenting too quickly. Try again in a few minutes.');
   const db = account.supabase as any;
   if (parentCommentId) {
     const {data: parent} = await db.from('launch_match_feed_comments').select('id,parent_comment_id,post_id,deleted_at').eq('id', parentCommentId).eq('post_id', postId).maybeSingle();
@@ -109,6 +121,54 @@ export async function editMatchFeedComment(formData: FormData) {
   if (error) redirect(feedUrl(matchId, 'feedError', 'Comment could not be edited.'));
   refresh(matchId);
   redirect(`/matches/${encodeURIComponent(matchId)}#post-${postId}`);
+}
+
+export async function reportMatchFeedContent(formData: FormData) {
+  const matchId = read(formData, 'matchId');
+  const postId = read(formData, 'postId');
+  const commentId = read(formData, 'commentId');
+  const reasonInput = read(formData, 'reason');
+  const note = read(formData, 'note').slice(0, 500);
+  const reason = REPORT_REASONS.has(reasonInput) ? reasonInput : 'Other';
+  if (!matchId || (!postId && !commentId) || (postId && commentId)) return;
+
+  const account = await requireAccount(matchId);
+  const db = account.supabase as any;
+  let targetProfileId: string | null = null;
+  let anchorPostId = postId;
+
+  if (postId) {
+    const {data: post} = await db.from('launch_match_feed_posts').select('id,profile_id,deleted_at').eq('id', postId).eq('match_id', matchId).maybeSingle();
+    if (!post || post.deleted_at) redirect(feedUrl(matchId, 'feedError', 'That post is no longer available to report.'));
+    targetProfileId = post.profile_id;
+  } else {
+    const {data: comment} = await db.from('launch_match_feed_comments').select('id,post_id,profile_id,deleted_at').eq('id', commentId).maybeSingle();
+    if (!comment || comment.deleted_at) redirect(feedUrl(matchId, 'feedError', 'That comment is no longer available to report.'));
+    const {data: parentPost} = await db.from('launch_match_feed_posts').select('id,match_id,deleted_at').eq('id', comment.post_id).maybeSingle();
+    if (!parentPost || parentPost.match_id !== matchId || parentPost.deleted_at) redirect(feedUrl(matchId, 'feedError', 'That comment is no longer available to report.'));
+    targetProfileId = comment.profile_id;
+    anchorPostId = comment.post_id;
+  }
+
+  if (targetProfileId === account.profile.id) redirect(feedUrl(matchId, 'feedError', 'You cannot report your own content.'));
+
+  const {error} = await db.from('launch_match_feed_reports').insert({
+    match_id: matchId,
+    post_id: postId || null,
+    comment_id: commentId || null,
+    reporter_profile_id: account.profile.id,
+    reason,
+    note,
+  });
+
+  if (error) {
+    if (error.code === '23505') redirect(feedUrl(matchId, 'feedNotice', 'You already reported this item.'));
+    console.error('Matchday report could not be saved.', {matchId, postId: postId || null, commentId: commentId || null, error: error.message});
+    redirect(feedUrl(matchId, 'feedError', 'Report could not be submitted.'));
+  }
+
+  revalidatePath('/office/media/moderation');
+  redirect(`/matches/${encodeURIComponent(matchId)}?feedNotice=${encodeURIComponent('Report submitted. A commissioner can review it.')}#post-${anchorPostId}`);
 }
 
 export async function setMatchFeedPostReaction(formData: FormData) {
@@ -194,6 +254,29 @@ async function requireAccount(matchId: string) {
 async function requireFeedOpen(supabase: Awaited<ReturnType<typeof createClient>>, matchId: string) {
   const {data: match} = await supabase.from('launch_schedule_matches').select('date').eq('id', matchId).maybeSingle();
   if (!match?.date || !isMatchFeedOpen(match.date)) redirect(feedUrl(matchId, 'feedError', matchFeedClosedMessage()));
+}
+
+async function requireRateLimit(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  table: 'launch_match_feed_posts' | 'launch_match_feed_comments',
+  profileId: string,
+  limit: number,
+  matchId: string,
+  message: string,
+) {
+  const since = new Date(Date.now() - RATE_WINDOW_MS).toISOString();
+  const {count, error} = await (supabase as any)
+    .from(table)
+    .select('id', {count: 'exact', head: true})
+    .eq('profile_id', profileId)
+    .is('deleted_at', null)
+    .gte('created_at', since);
+
+  if (error) {
+    console.error('Matchday rate-limit check failed open.', {table, profileId, error: error.message});
+    return;
+  }
+  if ((count ?? 0) >= limit) redirect(feedUrl(matchId, 'feedError', message));
 }
 
 function refresh(matchId: string) {

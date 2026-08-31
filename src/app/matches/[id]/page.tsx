@@ -127,12 +127,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     }
   }
 
-  const attendanceRepository = new SupabaseMatchRosterRepository(supabase);
-  const actor = userResult.data.user ? await attendanceRepository.getAttendanceActor(userResult.data.user.id) : undefined;
-  const canViewMatchPrediction = actor?.profileStatus === 'Approved' && actor.profileRole === 'Commissioner';
-  const predictionSource = canViewMatchPrediction && match.date
-    ? resolvePublicPredictionSource(match.date, now)
-    : undefined;
+  const predictionSource = match.date ? resolvePublicPredictionSource(match.date, now) : undefined;
   const officialRosters = officialSnapshot?.status === 'complete' ? officialSnapshot.rosters : undefined;
   let homePredictionPlayers = matchday.homeTeam.roster;
   let awayPredictionPlayers = matchday.awayTeam.roster;
@@ -154,7 +149,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     }
   }
 
-  const matchPrediction = canViewMatchPrediction ? buildPublicMatchPrediction({
+  const matchPrediction = buildPublicMatchPrediction({
     matchDate: match.date,
     matchStatus: match.status,
     hasPublishedResult: Boolean(publishedResult),
@@ -167,8 +162,10 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     awayAttendance: availability?.get(match.awayTeamId),
     officialRosters,
     now,
-  }) : undefined;
+  });
 
+  const attendanceRepository = new SupabaseMatchRosterRepository(supabase);
+  const actor = userResult.data.user ? await attendanceRepository.getAttendanceActor(userResult.data.user.id) : undefined;
   const openUnlockTeamIds = locked ? await getOpenRosterUnlockTeamIds(supabase, matchId) : new Set<string>();
 
   const personalAttendance = !locked && userResult.data.user ? await matchRosterService.getPersonalAttendance(userResult.data.user.id, matchId) : undefined;
@@ -295,7 +292,26 @@ async function getPlayersByIds(supabase: Awaited<ReturnType<typeof createClient>
   if (!playerIds.length) return [];
   const {data, error} = await supabase.from('launch_players').select('*').in('id', playerIds).order('name');
   if (error) throw error;
-  return (data ?? []).map((row) => ({id: row.id, name: row.name, gender: row.gender as LaunchPlayer['gender'], pdgaNumber: row.pdga_number, pdgaRating: row.pdga_rating, clashIndex: (row as typeof row & {clash_index: number | null}).clash_index, currentTeamId: row.current_team_id, homeArea: row.home_area, active: row.active, createdAt: row.created_at, updatedAt: row.updated_at}));
+  return (data ?? []).map((row) => {
+    const rating = row as typeof row & {
+      clash_index?: number | null;
+      clash_index_provisional?: boolean | null;
+    };
+    return {
+      id: row.id,
+      name: row.name,
+      gender: row.gender as LaunchPlayer['gender'],
+      pdgaNumber: row.pdga_number,
+      pdgaRating: row.pdga_rating,
+      clashIndex: rating.clash_index ?? null,
+      clashIndexProvisional: rating.clash_index_provisional ?? false,
+      currentTeamId: row.current_team_id,
+      homeArea: row.home_area,
+      active: row.active,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  });
 }
 
 async function getSeasonRosterPlayerIdsByTeam(supabase: Awaited<ReturnType<typeof createClient>>, seasonId: string, teamIds: string[]): Promise<Map<string, Set<string>> | null> {

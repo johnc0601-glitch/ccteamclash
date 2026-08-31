@@ -5,6 +5,7 @@ import {
   createMatchFeedPost,
   editMatchFeedComment,
   editMatchFeedPost,
+  reportMatchFeedContent,
   setMatchFeedCommentReaction,
   setMatchFeedPostReaction,
   softDeleteMatchFeedComment,
@@ -14,6 +15,7 @@ import {isMatchFeedOpen} from '@/services/matches/MatchFeedLifecycle';
 import styles from './MatchFeed.module.css';
 
 const REACTION_LABELS: Record<string, string> = {like: 'Like', love: 'Love', laugh: 'Laugh', fire: 'Fire'};
+const FEED_PAGE_SIZE = 10;
 
 type FeedPost = {
   id: string;
@@ -47,21 +49,37 @@ type MatchFeedProps = {
   matchDate: string | null;
   notice?: string;
   error?: string;
+  before?: string;
 };
 
-export async function MatchFeed({matchId, matchDate, notice, error}: MatchFeedProps) {
+type FeedCursor = {
+  createdAt: string;
+  id: string;
+};
+
+export async function MatchFeed({matchId, matchDate, notice, error, before}: MatchFeedProps) {
   const supabase = await createClient();
   const db = supabase as any;
+  const cursor = parseFeedCursor(before);
   const [{data: {user}}, postsResult] = await Promise.all([
     supabase.auth.getUser(),
-    db.from('launch_match_feed_posts')
-      .select('id,match_id,profile_id,author_name_snapshot,body,image_path,created_at,updated_at,edited_at,deleted_at')
-      .eq('match_id', matchId)
-      .order('created_at', {ascending: false})
-      .limit(10),
+    db.rpc('get_match_feed_post_page', {
+      p_match_id: matchId,
+      p_before_created_at: cursor?.createdAt ?? null,
+      p_before_id: cursor?.id ?? null,
+      p_limit: FEED_PAGE_SIZE + 1,
+    }),
   ]);
 
-  const posts = (postsResult.data ?? []) as FeedPost[];
+  if (postsResult.error) {
+    console.error('Match feed posts are unavailable.', {matchId, error: postsResult.error.message});
+  }
+
+  const pageRows = (postsResult.data ?? []) as FeedPost[];
+  const hasOlderPosts = pageRows.length > FEED_PAGE_SIZE;
+  const posts = pageRows.slice(0, FEED_PAGE_SIZE);
+  const lastPost = posts.at(-1);
+  const nextCursor = hasOlderPosts && lastPost ? createFeedCursor(lastPost) : null;
   const postIds = posts.map((post) => post.id);
   const [{data: commentsData}, {data: postReactionsData}, profileResult] = await Promise.all([
     postIds.length
@@ -106,19 +124,26 @@ export async function MatchFeed({matchId, matchDate, notice, error}: MatchFeedPr
         <div className={styles.signIn}><Link href="/account">Sign in</Link> to post, reply or react.</div>
       )}
 
-      {!posts.length ? <div className={styles.empty}>No match posts yet. Start the conversation.</div> : null}
+      {!posts.length ? <div className={styles.empty}>{cursor ? 'No older match posts.' : 'No match posts yet. Start the conversation.'}</div> : null}
       {posts.slice(0, 3).map((post) => (
         <PostCard key={post.id} post={post} comments={comments.filter((comment) => comment.post_id === post.id)} postReactions={postReactions.filter((reaction) => reaction.post_id === post.id)} commentReactions={commentReactions} currentProfileId={profile?.id ?? null} commissioner={Boolean(commissioner)} open={open} matchId={matchId} imageUrl={post.image_path ? publicUrl(post.image_path) : null} />
       ))}
       {posts.length > 3 ? (
         <details className={styles.loadMore}>
-          <summary>Load more posts · {posts.length - 3}</summary>
+          <summary>Show more on this page · {posts.length - 3}</summary>
           <div className={styles.morePosts}>
             {posts.slice(3).map((post) => (
               <PostCard key={post.id} post={post} comments={comments.filter((comment) => comment.post_id === post.id)} postReactions={postReactions.filter((reaction) => reaction.post_id === post.id)} commentReactions={commentReactions} currentProfileId={profile?.id ?? null} commissioner={Boolean(commissioner)} open={open} matchId={matchId} imageUrl={post.image_path ? publicUrl(post.image_path) : null} />
             ))}
           </div>
         </details>
+      ) : null}
+
+      {(cursor || nextCursor) ? (
+        <nav aria-label="Match feed pages" style={{display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginTop: 14}}>
+          {cursor ? <Link href={`/matches/${encodeURIComponent(matchId)}#match-feed`}>Latest posts</Link> : <span />}
+          {nextCursor ? <Link href={olderFeedHref(matchId, nextCursor)}>Older posts -&gt;</Link> : <span />}
+        </nav>
       ) : null}
     </section>
   );
@@ -149,6 +174,7 @@ function PostCard({post, comments, postReactions, commentReactions, currentProfi
           {interactive && currentProfileId === post.profile_id ? (
             <details><summary className={styles.editSummary}>Edit</summary><form action={editMatchFeedPost} className={styles.editForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={post.id} /><textarea name="body" defaultValue={post.body} maxLength={3000} /><button type="submit">Save edit</button></form></details>
           ) : null}
+          {!post.deleted_at && currentProfileId && currentProfileId !== post.profile_id ? <ReportControl matchId={matchId} postId={post.id} /> : null}
           {commissioner && !post.deleted_at ? <form action={softDeleteMatchFeedPost}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={post.id} /><button type="submit">Remove</button></form> : null}
         </div>
       </header>
@@ -203,10 +229,32 @@ function CommentBubble({comment, reactions, currentProfileId, commissioner, open
     <div className={styles.commentTools}>
       {!comment.deleted_at && open && currentProfileId ? Object.entries(REACTION_LABELS).map(([key, label]) => <form action={setMatchFeedCommentReaction} key={key}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="commentId" value={comment.id} /><input type="hidden" name="reactionType" value={key} /><button type="submit" data-active={reactions.some((reaction) => reaction.profile_id === currentProfileId && reaction.reaction_type === key)}>{label}{counts[key] ? ` ${counts[key]}` : ''}</button></form>) : null}
       {!comment.deleted_at && open && currentProfileId === comment.profile_id ? <details><summary>Edit</summary><form action={editMatchFeedComment} className={styles.editForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="commentId" value={comment.id} /><textarea name="body" defaultValue={comment.body} maxLength={1500} /><button type="submit">Save edit</button></form></details> : null}
+      {!comment.deleted_at && currentProfileId && currentProfileId !== comment.profile_id ? <ReportControl matchId={matchId} commentId={comment.id} /> : null}
       {!comment.deleted_at && commissioner ? <form action={softDeleteMatchFeedComment}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="commentId" value={comment.id} /><button type="submit">Remove</button></form> : null}
       {!comment.deleted_at && canReply && open && currentProfileId ? <details><summary>Reply</summary><form action={addMatchFeedComment} className={styles.replyForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="parentCommentId" value={comment.id} /><input name="body" maxLength={1500} placeholder="Reply" /><button type="submit">Reply</button></form></details> : null}
     </div>
   </div>;
+}
+
+function ReportControl({matchId, postId, commentId}: {matchId: string; postId?: string; commentId?: string}) {
+  return (
+    <details>
+      <summary>Report</summary>
+      <form action={reportMatchFeedContent} className={styles.editForm}>
+        <input type="hidden" name="matchId" value={matchId} />
+        {postId ? <input type="hidden" name="postId" value={postId} /> : null}
+        {commentId ? <input type="hidden" name="commentId" value={commentId} /> : null}
+        <select name="reason" defaultValue="Inappropriate" aria-label="Report reason">
+          <option>Inappropriate</option>
+          <option>Spam</option>
+          <option>Harassment</option>
+          <option>Other</option>
+        </select>
+        <input name="note" maxLength={500} placeholder="Optional note" aria-label="Report note" />
+        <button type="submit">Send report</button>
+      </form>
+    </details>
+  );
 }
 
 function countReactions(reactions: Reaction[]) {
@@ -214,6 +262,26 @@ function countReactions(reactions: Reaction[]) {
     counts[reaction.reaction_type] = (counts[reaction.reaction_type] ?? 0) + 1;
     return counts;
   }, {});
+}
+
+function createFeedCursor(post: FeedPost): string {
+  return `${post.created_at}|${post.id}`;
+}
+
+function parseFeedCursor(value: string | undefined): FeedCursor | null {
+  if (!value) return null;
+  const separator = value.lastIndexOf('|');
+  if (separator <= 0) return null;
+  const createdAt = value.slice(0, separator);
+  const id = value.slice(separator + 1);
+  if (Number.isNaN(new Date(createdAt).getTime())) return null;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) return null;
+  return {createdAt: new Date(createdAt).toISOString(), id};
+}
+
+function olderFeedHref(matchId: string, cursor: string): string {
+  const params = new URLSearchParams({feedBefore: cursor});
+  return `/matches/${encodeURIComponent(matchId)}?${params.toString()}#match-feed`;
 }
 
 function formatDate(value: string) {
