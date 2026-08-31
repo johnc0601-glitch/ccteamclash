@@ -65,6 +65,24 @@ export async function getManagedMediaAssets(limit = 120): Promise<MediaAsset[]> 
   return (data ?? []).map((row: MediaAssetRow) => rowToAsset(supabase, row));
 }
 
+export async function getMediaAssetById(id: string): Promise<MediaAsset | null> {
+  if (!id) return null;
+  const supabase = await createClient();
+  const db = supabase as any;
+  const {data, error} = await db
+    .from('media_assets')
+    .select(MEDIA_COLUMNS)
+    .eq('id', id)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[media] Media asset could not be loaded.', {id, error: error.message});
+    return null;
+  }
+  return data ? rowToAsset(supabase, data as MediaAssetRow) : null;
+}
+
 export async function getPublicGalleryAssets(limit = 72): Promise<MediaAsset[]> {
   const supabase = await createClient();
   const db = supabase as any;

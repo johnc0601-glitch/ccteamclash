@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import {notFound} from 'next/navigation';
 import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
+import {getMediaAssetById} from '@/services/media/MediaLibraryService';
 import {getStoryBySlug} from '@/services/stories/StoryService';
 import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
 
@@ -16,6 +17,8 @@ export async function generateMetadata({params}: StoryPageProps): Promise<Metada
 
   const description = getStoryPreview(story);
   const image = isImageUrl(story.image) ? story.image : undefined;
+  const asset = story.heroAssetId ? await getMediaAssetById(story.heroAssetId) : null;
+  const imageAlt = asset?.altText || story.title;
 
   return {
     title: `${story.title} | CC Team Clash`,
@@ -26,7 +29,7 @@ export async function generateMetadata({params}: StoryPageProps): Promise<Metada
       title: story.title,
       description,
       publishedTime: story.publishedAt ?? undefined,
-      images: image ? [image] : undefined,
+      images: image ? [{url: image, alt: imageAlt}] : undefined,
     },
   };
 }
@@ -37,6 +40,9 @@ export default async function Page({params}: StoryPageProps) {
 
   if (!story) notFound();
 
+  const asset = story.heroAssetId ? await getMediaAssetById(story.heroAssetId) : null;
+  const heroAlt = asset?.altText || story.title;
+
   return (
     <>
       <SiteHeader />
@@ -44,7 +50,7 @@ export default async function Page({params}: StoryPageProps) {
         <Link href="/stories" className="back">&lt;- All stories</Link>
         <span className="eyebrow">{story.category} | {formatStoryDate(story.publishedAt)}</span>
         <h1>{story.title}</h1>
-        <StoryPhoto className="article-image" image={story.image} />
+        <StoryPhoto className="article-image" image={story.image} alt={heroAlt} />
         <div className="article-copy">
           {story.body.map((paragraph, index) => <p key={`${index}-${paragraph.slice(0, 40)}`}>{paragraph}</p>)}
           {story.links?.map((link) => (
@@ -57,14 +63,14 @@ export default async function Page({params}: StoryPageProps) {
   );
 }
 
-function StoryPhoto({className, image}: {className: string; image: string}) {
+function StoryPhoto({className, image, alt}: {className: string; image: string; alt: string}) {
   const isUrl = isImageUrl(image);
 
   return (
     <div
       className={isUrl ? className : `${className} ${image}`}
       style={isUrl ? {backgroundImage: `url(${image})`} : undefined}
-      aria-label={isUrl ? 'Story photo' : 'CC Team Clash story artwork'}
+      aria-label={isUrl ? alt : 'CC Team Clash story artwork'}
       role="img"
     >
       {isUrl ? null : <span>TEAM CLASH</span>}
