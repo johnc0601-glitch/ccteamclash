@@ -20,11 +20,14 @@ type HomeProps = {
 };
 
 export default async function Home({searchParams}: HomeProps) {
-  const [cookieStore, query] = await Promise.all([cookies(), searchParams]);
-  const scheduleService = await createServerScheduleService();
-  const storyData = await getHomepageStories();
+  const [cookieStore, query, scheduleService, storyData, teamLogos] = await Promise.all([
+    cookies(),
+    searchParams,
+    createServerScheduleService(),
+    getHomepageStories(),
+    getStoredTeams(),
+  ]);
   const lead = storyData.lead;
-  const teamLogos = await getStoredTeams();
   const homeEvents = (await scheduleService.getHomePageEvents()).slice(0, 4);
   const feedPreviews = await getHomepageMatchFeedPreviews(homeEvents.map((match) => match.id));
 
