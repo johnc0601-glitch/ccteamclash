@@ -101,14 +101,16 @@ async function loadFacets(db: any): Promise<{categories: string[]; seasons: Arra
     .eq('status', 'published');
   if (facetError) throw facetError;
 
-  const categories = [...new Set((storyFacets ?? [])
+  const categoryValues: string[] = (storyFacets ?? [])
     .map((row: any) => clean(row.category))
-    .filter(Boolean))]
+    .filter((value: string) => Boolean(value));
+  const categories: string[] = [...new Set<string>(categoryValues)]
     .sort((a, b) => a.localeCompare(b));
 
-  const seasonIds = [...new Set((storyFacets ?? [])
+  const seasonValues: string[] = (storyFacets ?? [])
     .map((row: any) => clean(row.season_id))
-    .filter(Boolean))];
+    .filter((value: string) => Boolean(value));
+  const seasonIds: string[] = [...new Set<string>(seasonValues)];
 
   if (seasonIds.length === 0) return {categories, seasons: []};
 
