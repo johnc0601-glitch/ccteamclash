@@ -10,7 +10,7 @@ import {MatchCard, type MatchFeedPreview} from '@/components/MatchCard';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
 import {createClient} from '@/lib/supabase/server';
 import {getStoredTeams} from '@/services/teams/TeamStore';
-import {getStories} from '@/services/stories/StoryService';
+import {getHomepageStories} from '@/services/stories/HomepageStoryService';
 import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
 
 export const dynamic = 'force-dynamic';
@@ -22,8 +22,8 @@ type HomeProps = {
 export default async function Home({searchParams}: HomeProps) {
   const [cookieStore, query] = await Promise.all([cookies(), searchParams]);
   const scheduleService = await createServerScheduleService();
-  const stories = await getStories();
-  const lead = stories.find((story) => story.featured) ?? stories[0];
+  const storyData = await getHomepageStories();
+  const lead = storyData.lead;
   const teamLogos = await getStoredTeams();
   const homeEvents = (await scheduleService.getHomePageEvents()).slice(0, 4);
   const feedPreviews = await getMatchFeedPreviews(homeEvents.map((match) => match.id));
@@ -65,7 +65,7 @@ export default async function Home({searchParams}: HomeProps) {
             <Link href="/stories">View all -&gt;</Link>
           </div>
           <div className="compact-story-grid">
-            {stories.slice(0, 2).map((story) => (
+            {storyData.latest.map((story) => (
               <article className="compact-story" key={story.id}>
                 <StoryPhoto className="compact-photo" image={story.image}><span>League story</span></StoryPhoto>
                 <div>
