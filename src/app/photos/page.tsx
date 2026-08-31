@@ -27,12 +27,16 @@ export default async function PhotosPage() {
           <section className={styles.grid} aria-label="CC Team Clash photo gallery">
             {assets.map((asset) => (
               <figure className={styles.card} key={asset.id}>
-                <img
-                  className={styles.photo}
-                  src={asset.url}
-                  alt={asset.altText || asset.caption || 'CC Team Clash photo'}
-                  loading="lazy"
-                />
+                <a href={asset.url} target="_blank" rel="noreferrer" aria-label="Open full-size photo">
+                  <img
+                    className={styles.photo}
+                    src={asset.thumbnailUrl}
+                    alt={asset.altText || asset.caption || 'CC Team Clash photo'}
+                    loading="lazy"
+                    width={asset.width ?? undefined}
+                    height={asset.height ?? undefined}
+                  />
+                </a>
                 {asset.caption || asset.takenAt ? (
                   <figcaption className={styles.caption}>
                     {asset.caption ? <strong>{asset.caption}</strong> : null}

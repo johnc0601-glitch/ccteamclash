@@ -43,7 +43,7 @@ export function MediaLibraryManager() {
     let uploaded = 0;
     try {
       for (const file of files) {
-        setStatus(`Uploading ${uploaded + 1} of ${files.length}...`);
+        setStatus(`Optimizing and uploading ${uploaded + 1} of ${files.length}...`);
         const formData = new FormData();
         formData.append('file', file);
         formData.append('galleryVisible', publishUploads ? 'true' : 'false');
@@ -58,7 +58,7 @@ export function MediaLibraryManager() {
       setFiles([]);
       if (fileRef.current) fileRef.current.value = '';
       await reloadAssets();
-      setStatus(`${uploaded} photo${uploaded === 1 ? '' : 's'} uploaded${publishUploads ? ' and published to the gallery' : ''}.`);
+      setStatus(`${uploaded} photo${uploaded === 1 ? '' : 's'} optimized and uploaded${publishUploads ? ' to the public gallery' : ''}.`);
     } catch (error) {
       await reloadAssets().catch(() => undefined);
       setStatus(error instanceof Error ? error.message : 'Photo upload stopped.');
@@ -69,6 +69,11 @@ export function MediaLibraryManager() {
 
   function updateAssetInList(asset: MediaAsset) {
     setAssets((current) => current.map((item) => item.id === asset.id ? asset : item));
+  }
+
+  function removeAssetFromList(id: string) {
+    setAssets((current) => current.filter((item) => item.id !== id));
+    setStatus('Unused photo removed from the library.');
   }
 
   return (
@@ -114,14 +119,18 @@ export function MediaLibraryManager() {
 
       <div className={styles.grid}>
         {filteredAssets.map((asset) => (
-          <MediaAssetCard key={asset.id} asset={asset} onSaved={updateAssetInList} />
+          <MediaAssetCard key={asset.id} asset={asset} onSaved={updateAssetInList} onRemoved={removeAssetFromList} />
         ))}
       </div>
     </section>
   );
 }
 
-function MediaAssetCard({asset, onSaved}: {asset: MediaAsset; onSaved: (asset: MediaAsset) => void}) {
+function MediaAssetCard({asset, onSaved, onRemoved}: {
+  asset: MediaAsset;
+  onSaved: (asset: MediaAsset) => void;
+  onRemoved: (id: string) => void;
+}) {
   const [caption, setCaption] = useState(asset.caption);
   const [altText, setAltText] = useState(asset.altText);
   const [galleryVisible, setGalleryVisible] = useState(asset.galleryVisible);
@@ -156,9 +165,27 @@ function MediaAssetCard({asset, onSaved}: {asset: MediaAsset; onSaved: (asset: M
     }
   }
 
+  async function remove() {
+    if (!window.confirm('Remove this unused photo from the library? This cannot be undone.')) return;
+    setSaving(true);
+    setMessage('Checking references...');
+    try {
+      const response = await fetch(`/api/media-assets/${asset.id}`, {method: 'DELETE'});
+      const payload = await response.json() as {ok?: boolean; error?: string};
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Photo could not be removed.');
+      onRemoved(asset.id);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Photo could not be removed.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <article className={styles.card}>
-      <img className={styles.photo} src={asset.url} alt={altText || caption || 'CC Team Clash photo'} loading="lazy" />
+      <a href={asset.url} target="_blank" rel="noreferrer" aria-label="Open full-size photo">
+        <img className={styles.photo} src={asset.thumbnailUrl} alt={altText || caption || 'CC Team Clash photo'} loading="lazy" />
+      </a>
       <div className={styles.cardBody}>
         <label>
           Caption
@@ -177,7 +204,12 @@ function MediaAssetCard({asset, onSaved}: {asset: MediaAsset; onSaved: (asset: M
           Show in public gallery
         </label>
         <button className={styles.secondaryButton} type="button" disabled={saving} onClick={save}>{saving ? 'Saving...' : 'Save photo'}</button>
+        <button className={styles.secondaryButton} type="button" disabled={saving} onClick={remove}>Remove unused photo</button>
         {message ? <div className={styles.cardMeta}>{message}</div> : null}
+        <div className={styles.cardMeta}>
+          {asset.width && asset.height ? `${asset.width}×${asset.height}` : 'Legacy size'}
+          {asset.byteSize !== null ? ` · ${formatBytes(asset.byteSize)}` : ''}
+        </div>
         <div className={styles.cardMeta}>{asset.originalFilename || asset.storagePath}</div>
       </div>
     </article>
@@ -189,4 +221,10 @@ function dateInputValue(value: string | null): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
   return date.toISOString().slice(0, 10);
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

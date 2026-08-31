@@ -1,3 +1,4 @@
+import {processMediaImage} from '@/services/media/MediaImageProcessor';
 import {requireStoryCommissioner, StoryAccessError} from '@/services/stories/StoryEditorAccess';
 
 const MAX_STORY_IMAGE_SIZE_BYTES = 10_000_000;
@@ -17,20 +18,32 @@ export async function POST(request: Request) {
     if (!ALLOWED_STORY_IMAGE_TYPES.has(file.type)) return Response.json({error: 'Choose a PNG, JPG, or WebP image.'}, {status: 400});
     if (file.size > MAX_STORY_IMAGE_SIZE_BYTES) return Response.json({error: 'Story photo is too large. Maximum size is 10 MB.'}, {status: 400});
 
+    const processed = await processMediaImage(file);
     const storyId = typeof requestedStoryId === 'string' && UUID_PATTERN.test(requestedStoryId)
       ? requestedStoryId
       : 'unassigned';
-    const extension = file.type === 'image/png' ? 'png' : file.type === 'image/jpeg' ? 'jpg' : 'webp';
-    const path = `stories/${storyId}/${crypto.randomUUID()}.${extension}`;
+    const assetUuid = crypto.randomUUID();
+    const path = `stories/${storyId}/${assetUuid}.webp`;
+    const thumbnailPath = `stories/${storyId}/${assetUuid}-thumb.webp`;
     const bucket = 'league-media';
-    const {error: uploadError} = await supabase.storage.from(bucket).upload(path, file, {
+
+    const {error: uploadError} = await supabase.storage.from(bucket).upload(path, processed.image, {
       upsert: false,
-      contentType: file.type,
+      contentType: processed.mimeType,
       cacheControl: '31536000',
     });
-
     if (uploadError) {
       return Response.json({error: uploadError.message || 'Story photo storage could not save this file.'}, {status: 403});
+    }
+
+    const {error: thumbnailError} = await supabase.storage.from(bucket).upload(thumbnailPath, processed.thumbnail, {
+      upsert: false,
+      contentType: processed.mimeType,
+      cacheControl: '31536000',
+    });
+    if (thumbnailError) {
+      await supabase.storage.from(bucket).remove([path]);
+      return Response.json({error: thumbnailError.message || 'Story photo thumbnail could not be saved.'}, {status: 500});
     }
 
     const db = supabase as any;
@@ -39,24 +52,34 @@ export async function POST(request: Request) {
       .insert({
         bucket,
         storage_path: path,
+        thumbnail_path: thumbnailPath,
         original_filename: file.name || null,
-        mime_type: file.type,
+        mime_type: processed.mimeType,
+        width: processed.width,
+        height: processed.height,
+        byte_size: processed.byteSize,
         uploaded_by_profile_id: profile.id,
       })
-      .select('id,bucket,storage_path,mime_type,alt_text,caption')
+      .select('id,bucket,storage_path,thumbnail_path,mime_type,width,height,byte_size,alt_text,caption')
       .single();
 
     if (assetError || !asset) {
-      await supabase.storage.from(bucket).remove([path]);
+      await supabase.storage.from(bucket).remove([path, thumbnailPath]);
       return Response.json({error: assetError?.message || 'Photo metadata could not be saved.'}, {status: 500});
     }
 
     const {data} = supabase.storage.from(bucket).getPublicUrl(path);
+    const {data: thumbnailData} = supabase.storage.from(bucket).getPublicUrl(thumbnailPath);
     return Response.json({
       assetId: asset.id,
       url: data.publicUrl,
+      thumbnailUrl: thumbnailData.publicUrl,
       path,
+      thumbnailPath,
       bucket,
+      width: processed.width,
+      height: processed.height,
+      byteSize: processed.byteSize,
     });
   } catch (error) {
     if (error instanceof StoryAccessError) {

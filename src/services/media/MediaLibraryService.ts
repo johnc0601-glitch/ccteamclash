@@ -3,12 +3,15 @@ import {createClient} from '@/lib/supabase/server';
 export type MediaAsset = {
   id: string;
   url: string;
+  thumbnailUrl: string;
   bucket: string;
   storagePath: string;
+  thumbnailPath: string | null;
   originalFilename: string | null;
   mimeType: string;
   width: number | null;
   height: number | null;
+  byteSize: number | null;
   altText: string;
   caption: string;
   seasonId: string | null;
@@ -24,10 +27,12 @@ type MediaAssetRow = {
   id: string;
   bucket: string;
   storage_path: string;
+  thumbnail_path: string | null;
   original_filename: string | null;
   mime_type: string;
   width: number | null;
   height: number | null;
+  byte_size: number | null;
   alt_text: string;
   caption: string;
   season_id: string | null;
@@ -40,8 +45,8 @@ type MediaAssetRow = {
 };
 
 const MEDIA_COLUMNS = [
-  'id', 'bucket', 'storage_path', 'original_filename', 'mime_type',
-  'width', 'height', 'alt_text', 'caption', 'season_id', 'round_id',
+  'id', 'bucket', 'storage_path', 'thumbnail_path', 'original_filename', 'mime_type',
+  'width', 'height', 'byte_size', 'alt_text', 'caption', 'season_id', 'round_id',
   'match_id', 'team_id', 'gallery_visible', 'taken_at', 'created_at',
 ].join(',');
 
@@ -110,15 +115,21 @@ export async function updateMediaAsset(
 
 export function rowToAsset(supabase: any, row: MediaAssetRow): MediaAsset {
   const {data} = supabase.storage.from(row.bucket).getPublicUrl(row.storage_path);
+  const thumbnailUrl = row.thumbnail_path
+    ? supabase.storage.from(row.bucket).getPublicUrl(row.thumbnail_path).data.publicUrl
+    : data.publicUrl;
   return {
     id: row.id,
     url: data.publicUrl,
+    thumbnailUrl,
     bucket: row.bucket,
     storagePath: row.storage_path,
+    thumbnailPath: row.thumbnail_path,
     originalFilename: row.original_filename,
     mimeType: row.mime_type,
     width: row.width,
     height: row.height,
+    byteSize: row.byte_size,
     altText: row.alt_text ?? '',
     caption: row.caption ?? '',
     seasonId: row.season_id,
