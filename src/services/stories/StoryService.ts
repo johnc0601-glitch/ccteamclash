@@ -44,6 +44,8 @@ const STORY_COLUMNS = [
   'source_fact_snapshot',
 ].join(',');
 
+const INTENTIONAL_STORY_FALLBACKS = new Set(['hero', 'purple', 'orange']);
+
 export class StoryConflictError extends Error {
   constructor() {
     super('This story changed since you opened it. Reload it before saving again.');
@@ -331,24 +333,23 @@ function normalizeStoryInput(value: unknown, current?: Story): Story {
   const body = Array.isArray(input.body)
     ? input.body.map(cleanText).filter(Boolean)
     : current?.body ?? [];
+  const category = cleanText(input.category ?? current?.category);
+  const publishedAt = normalizeDate(input.publishedAt ?? current?.publishedAt ?? null);
+  const image = cleanText(input.image ?? current?.image);
+  const heroAssetId = cleanOptionalText(input.heroAssetId ?? current?.heroAssetId);
 
-  if (status === 'published' && body.length === 0) {
-    throw new StoryValidationError('Add story text before publishing.');
-  }
-
-  let publishedAt = normalizeDate(input.publishedAt ?? current?.publishedAt ?? null);
-  if (status === 'published' && !publishedAt) {
-    publishedAt = new Date().toISOString();
+  if (status === 'published') {
+    validatePublishedStory({title, body, category, publishedAt, image, heroAssetId});
   }
 
   return {
     id: current?.id ?? '',
     slug,
     title,
-    category: cleanText(input.category ?? current?.category) || 'Announcement',
+    category: category || 'Announcement',
     publishedAt,
-    image: cleanText(input.image ?? current?.image) || 'hero',
-    heroAssetId: cleanOptionalText(input.heroAssetId ?? current?.heroAssetId),
+    image: image || 'hero',
+    heroAssetId,
     body,
     links: normalizeLinks(input.links ?? current?.links),
     featured: input.featured === true,
@@ -361,6 +362,33 @@ function normalizeStoryInput(value: unknown, current?: Story): Story {
     teamId: cleanOptionalText(input.teamId ?? current?.teamId),
     sourceFactSnapshot: current?.sourceFactSnapshot ?? [],
   };
+}
+
+function validatePublishedStory({
+  title,
+  body,
+  category,
+  publishedAt,
+  image,
+  heroAssetId,
+}: {
+  title: string;
+  body: string[];
+  category: string;
+  publishedAt: string | null;
+  image: string;
+  heroAssetId: string | null;
+}) {
+  if (!title) throw new StoryValidationError('Add a headline before publishing.');
+  if (body.length === 0) throw new StoryValidationError('Add story text before publishing.');
+  if (!category) throw new StoryValidationError('Choose a story category before publishing.');
+  if (!publishedAt) throw new StoryValidationError('Choose a publish date before publishing.');
+
+  const intentionalFallback = INTENTIONAL_STORY_FALLBACKS.has(image);
+  const externalOrStoredImage = image.startsWith('https://') || image.startsWith('http://') || image.startsWith('/');
+  if (!heroAssetId && !intentionalFallback && !externalOrStoredImage) {
+    throw new StoryValidationError('Choose a feature photo or the intentional Team Clash fallback before publishing.');
+  }
 }
 
 function normalizeStatus(value: unknown): StoryStatus {
