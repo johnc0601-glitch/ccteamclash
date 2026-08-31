@@ -3,17 +3,11 @@
 import {revalidatePath} from 'next/cache';
 import {redirect} from 'next/navigation';
 import {createClient} from '@/lib/supabase/server';
+import {processMatchdayImage} from '@/services/media/MediaImageProcessor';
 import {isMatchFeedOpen, matchFeedClosedMessage} from '@/services/matches/MatchFeedLifecycle';
 
 const REACTIONS = new Set(['like', 'love', 'laugh', 'fire']);
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
-const IMAGE_EXTENSIONS: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-  'image/heic': 'heic',
-  'image/heif': 'heif',
-};
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 export async function createMatchFeedPost(formData: FormData) {
@@ -29,9 +23,21 @@ export async function createMatchFeedPost(formData: FormData) {
     if (!IMAGE_TYPES.has(photo.type) || photo.size > MAX_IMAGE_BYTES) {
       redirect(feedUrl(matchId, 'feedError', 'Photo must be JPG, PNG, WebP, HEIC, or HEIF and 8 MB or smaller.'));
     }
-    const extension = IMAGE_EXTENSIONS[photo.type] || 'jpg';
-    imagePath = `${matchId}/${crypto.randomUUID()}.${extension}`;
-    const {error} = await account.supabase.storage.from('match-feed').upload(imagePath, photo, {contentType: photo.type, upsert: false});
+
+    let processed: Awaited<ReturnType<typeof processMatchdayImage>>;
+    try {
+      processed = await processMatchdayImage(photo);
+    } catch (error) {
+      console.error('Matchday photo could not be processed.', {matchId, type: photo.type, size: photo.size, error});
+      redirect(feedUrl(matchId, 'feedError', 'That photo could not be processed. Try JPG, PNG, WebP, or a different phone photo.'));
+    }
+
+    imagePath = `${matchId}/${crypto.randomUUID()}.webp`;
+    const {error} = await account.supabase.storage.from('match-feed').upload(imagePath, processed.image, {
+      contentType: processed.mimeType,
+      cacheControl: '31536000',
+      upsert: false,
+    });
     if (error) redirect(feedUrl(matchId, 'feedError', 'Photo upload failed.'));
   }
 
