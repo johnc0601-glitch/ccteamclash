@@ -10,9 +10,27 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    await requireStoryCommissioner();
-    const assets = await getManagedMediaAssets();
-    return Response.json({assets});
+    const {supabase} = await requireStoryCommissioner();
+    const db = supabase as any;
+    const [assets, seasonsResult, teamsResult, matchesResult] = await Promise.all([
+      getManagedMediaAssets(),
+      db.from('launch_seasons').select('id,name,year,active,published').order('year', {ascending: false}),
+      db.from('launch_teams').select('id,name,active').order('name', {ascending: true}),
+      db.from('launch_schedule_matches').select('id,season_id,home_team_id,away_team_id,date,status').order('date', {ascending: false}).limit(200),
+    ]);
+
+    if (seasonsResult.error) throw new Error(seasonsResult.error.message || 'Season tags could not be loaded.');
+    if (teamsResult.error) throw new Error(teamsResult.error.message || 'Team tags could not be loaded.');
+    if (matchesResult.error) throw new Error(matchesResult.error.message || 'Match tags could not be loaded.');
+
+    return Response.json({
+      assets,
+      context: {
+        seasons: seasonsResult.data ?? [],
+        teams: teamsResult.data ?? [],
+        matches: matchesResult.data ?? [],
+      },
+    });
   } catch (error) {
     return mediaErrorResponse(error, 'Photo library could not be loaded.');
   }
