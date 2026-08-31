@@ -319,8 +319,9 @@ function normalize(value: string): string {
 }
 
 function labelFormat(value: string): string {
-  if (isDoubles({format: value} as AroundFact)) return 'Doubles';
-  if (isSingles({format: value} as AroundFact)) return 'Singles';
+  const format = normalize(value);
+  if (format.includes('double')) return 'Doubles';
+  if (format.includes('single')) return 'Singles';
   return value;
 }
 
@@ -343,6 +344,6 @@ function describeScope(
 ): string {
   if (scope === 'Current Round') return currentRoundOrder === null ? 'Current round' : `Current round · Event ${currentRoundOrder}`;
   if (scope === 'Match') return matches.find((match) => match.id === matchId)?.label ?? 'Match';
-  if (scope === 'Season') return seasonNames[seasonId] ?? seasonId || 'Season';
+  if (scope === 'Season') return (seasonNames[seasonId] ?? seasonId) || 'Season';
   return 'All rated history';
 }
