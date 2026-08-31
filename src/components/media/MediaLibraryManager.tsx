@@ -71,6 +71,11 @@ export function MediaLibraryManager() {
     setAssets((current) => current.map((item) => item.id === asset.id ? asset : item));
   }
 
+  function removeAssetFromList(id: string) {
+    setAssets((current) => current.filter((item) => item.id !== id));
+    setStatus('Unused photo removed from the library.');
+  }
+
   return (
     <section className={styles.library}>
       <div className={styles.toolbar}>
@@ -114,14 +119,18 @@ export function MediaLibraryManager() {
 
       <div className={styles.grid}>
         {filteredAssets.map((asset) => (
-          <MediaAssetCard key={asset.id} asset={asset} onSaved={updateAssetInList} />
+          <MediaAssetCard key={asset.id} asset={asset} onSaved={updateAssetInList} onRemoved={removeAssetFromList} />
         ))}
       </div>
     </section>
   );
 }
 
-function MediaAssetCard({asset, onSaved}: {asset: MediaAsset; onSaved: (asset: MediaAsset) => void}) {
+function MediaAssetCard({asset, onSaved, onRemoved}: {
+  asset: MediaAsset;
+  onSaved: (asset: MediaAsset) => void;
+  onRemoved: (id: string) => void;
+}) {
   const [caption, setCaption] = useState(asset.caption);
   const [altText, setAltText] = useState(asset.altText);
   const [galleryVisible, setGalleryVisible] = useState(asset.galleryVisible);
@@ -156,6 +165,22 @@ function MediaAssetCard({asset, onSaved}: {asset: MediaAsset; onSaved: (asset: M
     }
   }
 
+  async function remove() {
+    if (!window.confirm('Remove this unused photo from the library? This cannot be undone.')) return;
+    setSaving(true);
+    setMessage('Checking references...');
+    try {
+      const response = await fetch(`/api/media-assets/${asset.id}`, {method: 'DELETE'});
+      const payload = await response.json() as {ok?: boolean; error?: string};
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Photo could not be removed.');
+      onRemoved(asset.id);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Photo could not be removed.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <article className={styles.card}>
       <a href={asset.url} target="_blank" rel="noreferrer" aria-label="Open full-size photo">
@@ -179,6 +204,7 @@ function MediaAssetCard({asset, onSaved}: {asset: MediaAsset; onSaved: (asset: M
           Show in public gallery
         </label>
         <button className={styles.secondaryButton} type="button" disabled={saving} onClick={save}>{saving ? 'Saving...' : 'Save photo'}</button>
+        <button className={styles.secondaryButton} type="button" disabled={saving} onClick={remove}>Remove unused photo</button>
         {message ? <div className={styles.cardMeta}>{message}</div> : null}
         <div className={styles.cardMeta}>
           {asset.width && asset.height ? `${asset.width}×${asset.height}` : 'Legacy size'}
