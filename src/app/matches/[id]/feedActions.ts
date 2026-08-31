@@ -9,6 +9,9 @@ import {isMatchFeedOpen, matchFeedClosedMessage} from '@/services/matches/MatchF
 const REACTIONS = new Set(['like', 'love', 'laugh', 'fire']);
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const RATE_WINDOW_MS = 5 * 60 * 1000;
+const POST_RATE_LIMIT = 8;
+const COMMENT_RATE_LIMIT = 30;
 
 export async function createMatchFeedPost(formData: FormData) {
   const matchId = read(formData, 'matchId');
@@ -16,6 +19,7 @@ export async function createMatchFeedPost(formData: FormData) {
   if (!matchId) return;
   const account = await requireAccount(matchId);
   await requireFeedOpen(account.supabase, matchId);
+  await requireRateLimit(account.supabase, 'launch_match_feed_posts', account.profile.id, POST_RATE_LIMIT, matchId, 'You are posting too quickly. Try again in a few minutes.');
   const photo = formData.get('photo');
   let imagePath: string | null = null;
 
@@ -83,6 +87,7 @@ export async function addMatchFeedComment(formData: FormData) {
   if (!matchId || !postId || !body) return;
   const account = await requireAccount(matchId);
   await requireFeedOpen(account.supabase, matchId);
+  await requireRateLimit(account.supabase, 'launch_match_feed_comments', account.profile.id, COMMENT_RATE_LIMIT, matchId, 'You are commenting too quickly. Try again in a few minutes.');
   const db = account.supabase as any;
   if (parentCommentId) {
     const {data: parent} = await db.from('launch_match_feed_comments').select('id,parent_comment_id,post_id,deleted_at').eq('id', parentCommentId).eq('post_id', postId).maybeSingle();
@@ -200,6 +205,29 @@ async function requireAccount(matchId: string) {
 async function requireFeedOpen(supabase: Awaited<ReturnType<typeof createClient>>, matchId: string) {
   const {data: match} = await supabase.from('launch_schedule_matches').select('date').eq('id', matchId).maybeSingle();
   if (!match?.date || !isMatchFeedOpen(match.date)) redirect(feedUrl(matchId, 'feedError', matchFeedClosedMessage()));
+}
+
+async function requireRateLimit(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  table: 'launch_match_feed_posts' | 'launch_match_feed_comments',
+  profileId: string,
+  limit: number,
+  matchId: string,
+  message: string,
+) {
+  const since = new Date(Date.now() - RATE_WINDOW_MS).toISOString();
+  const {count, error} = await (supabase as any)
+    .from(table)
+    .select('id', {count: 'exact', head: true})
+    .eq('profile_id', profileId)
+    .is('deleted_at', null)
+    .gte('created_at', since);
+
+  if (error) {
+    console.error('Matchday rate-limit check failed open.', {table, profileId, error: error.message});
+    return;
+  }
+  if ((count ?? 0) >= limit) redirect(feedUrl(matchId, 'feedError', message));
 }
 
 function refresh(matchId: string) {
