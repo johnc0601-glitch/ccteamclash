@@ -37,6 +37,32 @@ export type HistoricalEventMetadataRow = {
   event_order: number;
 };
 
+export type HistoricalRatedResultDiagnosticReason =
+  | 'unexpected-team-count'
+  | 'unexpected-player-count'
+  | 'inconsistent-contest-facts'
+  | 'inconsistent-opponent-team'
+  | 'missing-event-metadata'
+  | 'inconsistent-event-metadata'
+  | 'invalid-side-or-venue'
+  | 'unresolved-chronology';
+
+export type HistoricalRatedResultDiagnostic = {
+  contestId: string;
+  historicalMatchKey: string | null;
+  reason: HistoricalRatedResultDiagnosticReason;
+  detail: string;
+};
+
+export type HistoricalRatedResultBuildReport = {
+  results: RatedResult[];
+  diagnostics: HistoricalRatedResultDiagnostic[];
+  sourceFactRows: number;
+  sourceContests: number;
+  emittedContests: number;
+  quarantinedContests: number;
+};
+
 function validFormat(value: string): value is RatedResult['format'] {
   return value === 'Singles' || value === 'Doubles';
 }
@@ -60,19 +86,58 @@ function historicalPlayedAt(seasonName: string, seasonId: string, eventOrder: nu
   if (!match || eventOrder < 1) return null;
   const startYear = Number(match[0]);
   if (!Number.isFinite(startYear)) return null;
-  // A synthetic chronology key only: one month apart from an October season start.
-  // Human-facing copy uses seasonName/eventLabel, never this generated date.
-  return new Date(Date.UTC(startYear, 9 + (eventOrder - 1), 1)).toISOString();
+  // Synthetic chronology only. Event order advances by one day from an October
+  // anchor so skipped/extra historical event numbers cannot imply a fake month.
+  // Human-facing copy must use seasonName/eventLabel instead.
+  return new Date(Date.UTC(startYear, 9, eventOrder)).toISOString();
+}
+
+function diagnostic(
+  contestId: string,
+  contestFacts: StoredHistoricalRatingFact[],
+  reason: HistoricalRatedResultDiagnosticReason,
+  detail: string,
+): HistoricalRatedResultDiagnostic {
+  return {
+    contestId,
+    historicalMatchKey: contestFacts[0]?.historical_match_key ?? null,
+    reason,
+    detail,
+  };
+}
+
+function contestEvent(
+  contestId: string,
+  contestFacts: StoredHistoricalRatingFact[],
+  metadata: ReadonlyMap<string, HistoricalEventMetadataRow>,
+): {event: HistoricalEventMetadataRow | null; issue: HistoricalRatedResultDiagnostic | null} {
+  const eventRows = contestFacts
+    .map((fact) => metadata.get(fact.matchup_deduplication_key))
+    .filter((row): row is HistoricalEventMetadataRow => Boolean(row));
+  if (eventRows.length !== contestFacts.length) {
+    return {event: null, issue: diagnostic(contestId, contestFacts, 'missing-event-metadata', `${contestFacts.length - eventRows.length} fact rows lack source event metadata`)};
+  }
+  const event = eventRows[0];
+  const inconsistent = eventRows.some((row) =>
+    row.season_id !== event.season_id
+    || row.season_name !== event.season_name
+    || row.event_order !== event.event_order
+    || row.event_label !== event.event_label,
+  );
+  return inconsistent
+    ? {event: null, issue: diagnostic(contestId, contestFacts, 'inconsistent-event-metadata', 'contest rows resolve to different historical events')}
+    : {event, issue: null};
 }
 
 /**
  * Converts the immutable historical CI ledger plus source event metadata into
- * normalized story results. No historical row is written into live Matchday.
+ * normalized story results. A malformed contest is quarantined as a whole so
+ * a backtest never uses one side of a contest while silently dropping the other.
  */
-export function buildHistoricalRatedResults(
+export function buildHistoricalRatedResultReport(
   facts: StoredHistoricalRatingFact[],
   metadataRows: HistoricalEventMetadataRow[],
-): RatedResult[] {
+): HistoricalRatedResultBuildReport {
   const metadata = new Map(metadataRows.map((row) => [row.deduplication_key, row]));
   const byContest = new Map<string, StoredHistoricalRatingFact[]>();
   for (const fact of facts) {
@@ -82,55 +147,102 @@ export function buildHistoricalRatedResults(
   }
 
   const results: RatedResult[] = [];
+  const diagnostics: HistoricalRatedResultDiagnostic[] = [];
+  let emittedContests = 0;
+
   for (const [contestId, contestFacts] of byContest) {
+    const representative = contestFacts[0];
     const teams = new Map<string, StoredHistoricalRatingFact[]>();
     for (const fact of contestFacts) {
       const rows = teams.get(fact.team_id) ?? [];
       rows.push(fact);
       teams.set(fact.team_id, rows);
     }
-    if (teams.size !== 2) continue;
-    const teamIds = [...teams.keys()].sort();
 
+    if (teams.size !== 2) {
+      diagnostics.push(diagnostic(contestId, contestFacts, 'unexpected-team-count', `expected 2 teams but found ${teams.size}: ${[...teams.keys()].join(', ')}`));
+      continue;
+    }
+    if (!representative || !validFormat(representative.format) || !validVenue(representative.venue)) {
+      diagnostics.push(diagnostic(contestId, contestFacts, 'inconsistent-contest-facts', 'contest has an invalid format or venue'));
+      continue;
+    }
+
+    const expectedSidePlayers = representative.format === 'Singles' ? 1 : 2;
+    const expectedRows = expectedSidePlayers * 2;
+    if (contestFacts.length !== expectedRows || [...teams.values()].some((rows) => rows.length !== expectedSidePlayers)) {
+      diagnostics.push(diagnostic(contestId, contestFacts, 'unexpected-player-count', `expected ${expectedRows} player facts split ${expectedSidePlayers}/${expectedSidePlayers}`));
+      continue;
+    }
+
+    if (contestFacts.some((fact) =>
+      fact.format !== representative.format
+      || fact.venue !== representative.venue
+      || fact.historical_match_key !== representative.historical_match_key
+      || fact.season_id !== representative.season_id
+      || fact.algorithm_version !== representative.algorithm_version
+      || !validOutcome(fact.outcome),
+    )) {
+      diagnostics.push(diagnostic(contestId, contestFacts, 'inconsistent-contest-facts', 'contest rows disagree on format, venue, match, season, model, or outcome validity'));
+      continue;
+    }
+
+    const teamIds = [...teams.keys()].sort();
+    const badOpponent = contestFacts.some((fact) => {
+      const expectedOpponent = teamIds.find((teamId) => teamId !== fact.team_id);
+      return !expectedOpponent || fact.opponent_team_id !== expectedOpponent;
+    });
+    if (badOpponent) {
+      diagnostics.push(diagnostic(contestId, contestFacts, 'inconsistent-opponent-team', 'one or more player facts point outside the two contest teams'));
+      continue;
+    }
+
+    if (representative.venue === 'Home') {
+      const sideByTeam = new Map<string, string | null>();
+      let invalid = false;
+      for (const [teamId, teamFacts] of teams) {
+        const sides = new Set(teamFacts.map((fact) => fact.side));
+        if (sides.size !== 1 || (teamFacts[0].side !== 'Home' && teamFacts[0].side !== 'Away')) invalid = true;
+        sideByTeam.set(teamId, teamFacts[0].side);
+      }
+      if (invalid || new Set(sideByTeam.values()).size !== 2) {
+        diagnostics.push(diagnostic(contestId, contestFacts, 'invalid-side-or-venue', 'home-site contest does not resolve to one Home team and one Away team'));
+        continue;
+      }
+    } else if (contestFacts.some((fact) => fact.side !== null)) {
+      diagnostics.push(diagnostic(contestId, contestFacts, 'invalid-side-or-venue', 'neutral contest contains a persisted Home/Away side'));
+      continue;
+    }
+
+    const {event, issue} = contestEvent(contestId, contestFacts, metadata);
+    if (issue || !event) {
+      diagnostics.push(issue ?? diagnostic(contestId, contestFacts, 'missing-event-metadata', 'event metadata unavailable'));
+      continue;
+    }
+    const playedAt = historicalPlayedAt(event.season_name, event.season_id, event.event_order);
+    if (!playedAt) {
+      diagnostics.push(diagnostic(contestId, contestFacts, 'unresolved-chronology', 'season/event order could not produce a stable chronology key'));
+      continue;
+    }
+
+    const contestResults: RatedResult[] = [];
+    let invalidSide = false;
     for (const teamId of teamIds) {
       const sideFacts = (teams.get(teamId) ?? []).sort((a, b) => a.player_id.localeCompare(b.player_id));
-      const representative = sideFacts[0];
-      if (!representative || !validFormat(representative.format) || !validOutcome(representative.outcome) || !validVenue(representative.venue)) continue;
-      if (sideFacts.some((fact) =>
-        fact.format !== representative.format
-        || fact.outcome !== representative.outcome
-        || fact.venue !== representative.venue
-        || fact.historical_match_key !== representative.historical_match_key
-        || fact.season_id !== representative.season_id
-        || fact.algorithm_version !== representative.algorithm_version
-      )) continue;
-
-      const eventRows = sideFacts
-        .map((fact) => metadata.get(fact.matchup_deduplication_key))
-        .filter((row): row is HistoricalEventMetadataRow => Boolean(row));
-      if (eventRows.length !== sideFacts.length) continue;
-      const event = eventRows[0];
-      if (eventRows.some((row) => row.season_id !== event.season_id || row.event_order !== event.event_order || row.event_label !== event.event_label)) continue;
-
-      const opponentTeamId = teamIds.find((candidate) => candidate !== teamId);
-      const opponentFacts = opponentTeamId ? teams.get(opponentTeamId) ?? [] : [];
-      if (!opponentTeamId || opponentFacts.length === 0) continue;
-
+      const sideRepresentative = sideFacts[0];
+      const opponentTeamId = teamIds.find((candidate) => candidate !== teamId)!;
+      const opponentFacts = teams.get(opponentTeamId) ?? [];
       const subjectEffectiveCi = effectiveCi(sideFacts, representative.format);
-      const playedAt = historicalPlayedAt(event.season_name, event.season_id, event.event_order);
-      if (subjectEffectiveCi === null || !playedAt) continue;
-
-      let side: RatedResult['side'];
-      if (representative.venue === 'Home') {
-        if (representative.side !== 'Home' && representative.side !== 'Away') continue;
-        side = representative.side;
-      } else {
-        // Neutral historical facts intentionally have no real side. Assign a
-        // deterministic internal side while preserving venue=Neutral.
-        side = teamId === teamIds[0] ? 'Home' : 'Away';
+      if (!sideRepresentative || subjectEffectiveCi === null || opponentFacts.length !== expectedSidePlayers) {
+        invalidSide = true;
+        break;
       }
 
-      results.push({
+      const side: RatedResult['side'] = representative.venue === 'Home'
+        ? sideRepresentative.side as RatedResult['side']
+        : teamId === teamIds[0] ? 'Home' : 'Away';
+
+      contestResults.push({
         id: `historical:${contestId}:${teamId}`,
         contestId,
         matchId: representative.historical_match_key,
@@ -147,34 +259,59 @@ export function buildHistoricalRatedResults(
         subjectCiBefore: sideFacts.map((fact) => fact.clash_index_before),
         subjectCiAfter: sideFacts.map((fact) => fact.clash_index_before + fact.ci_delta),
         subjectCiDeltas: sideFacts.map((fact) => fact.ci_delta),
-        teamId: representative.team_id,
-        teamName: representative.team_name,
-        opponentTeamId: representative.opponent_team_id,
-        opponentTeamName: representative.opponent_team_name,
-        outcome: representative.outcome,
-        won: representative.outcome === 'W',
-        actualPoints: Number(representative.actual_points),
-        expectedPoints: Number(representative.expected_points),
-        winProbability: Number(representative.win_probability),
+        teamId: sideRepresentative.team_id,
+        teamName: sideRepresentative.team_name,
+        opponentTeamId,
+        opponentTeamName: opponentFacts[0].team_name,
+        outcome: sideRepresentative.outcome as RatedResult['outcome'],
+        won: sideRepresentative.outcome === 'W',
+        actualPoints: Number(sideRepresentative.actual_points),
+        expectedPoints: Number(sideRepresentative.expected_points),
+        winProbability: Number(sideRepresentative.win_probability),
         subjectEffectiveCi,
-        opponentEffectiveCi: Number(representative.opponent_effective_ci),
-        ciDeficit: Number(representative.opponent_effective_ci) - subjectEffectiveCi,
+        opponentEffectiveCi: Number(sideRepresentative.opponent_effective_ci),
+        ciDeficit: Number(sideRepresentative.opponent_effective_ci) - subjectEffectiveCi,
         ciDelta: sideFacts.reduce((sum, fact) => sum + Number(fact.ci_delta), 0),
-        modelVersion: representative.algorithm_version,
+        modelVersion: sideRepresentative.algorithm_version,
         playedAt,
       });
     }
+
+    if (invalidSide || contestResults.length !== 2) {
+      diagnostics.push(diagnostic(contestId, contestFacts, 'unexpected-player-count', 'one or both contest sides could not be normalized safely'));
+      continue;
+    }
+    results.push(...contestResults);
+    emittedContests += 1;
   }
 
-  return results.sort((a, b) => a.playedAt.localeCompare(b.playedAt) || a.id.localeCompare(b.id));
+  return {
+    results: results.sort((a, b) => a.playedAt.localeCompare(b.playedAt) || a.id.localeCompare(b.id)),
+    diagnostics,
+    sourceFactRows: facts.length,
+    sourceContests: byContest.size,
+    emittedContests,
+    quarantinedContests: diagnostics.length,
+  };
+}
+
+export function buildHistoricalRatedResults(
+  facts: StoredHistoricalRatingFact[],
+  metadataRows: HistoricalEventMetadataRow[],
+): RatedResult[] {
+  return buildHistoricalRatedResultReport(facts, metadataRows).results;
 }
 
 export class SupabaseHistoricalRatedResultRepository implements RatedResultRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  async getRatedResults(): Promise<RatedResult[]> {
+  async getBuildReport(): Promise<HistoricalRatedResultBuildReport> {
     const [facts, metadata] = await Promise.all([this.loadFacts(), this.loadMetadata()]);
-    return buildHistoricalRatedResults(facts, metadata);
+    return buildHistoricalRatedResultReport(facts, metadata);
+  }
+
+  async getRatedResults(): Promise<RatedResult[]> {
+    return (await this.getBuildReport()).results;
   }
 
   private async loadFacts(): Promise<StoredHistoricalRatingFact[]> {
