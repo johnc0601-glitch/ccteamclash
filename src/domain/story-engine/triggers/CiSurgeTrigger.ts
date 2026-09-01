@@ -2,8 +2,8 @@ import type {RatedResult} from '../RatedResult';
 import {StoryHistoryIndex, type PlayerCiWindow} from '../StoryHistoryIndex';
 import type {StoryCandidateDraft} from '../StoryCandidate';
 
-export const CI_SURGE_3_CONTEST_MIN_GAIN = 20;
-export const CI_SURGE_5_CONTEST_MIN_GAIN = 30;
+export const CI_SURGE_3_MATCHDAY_MIN_GAIN = 20;
+export const CI_SURGE_5_MATCHDAY_MIN_GAIN = 30;
 
 type PlayerSeason = {
   playerId: string;
@@ -24,21 +24,21 @@ function qualifiedWindow(index: StoryHistoryIndex, playerId: string, seasonId: s
   const three = index.playerCiWindow(playerId, 3, {seasonId});
   const five = index.playerCiWindow(playerId, 5, {seasonId});
   const qualified = [
-    three && three.totalDelta >= CI_SURGE_3_CONTEST_MIN_GAIN
-      ? {window: three, threshold: CI_SURGE_3_CONTEST_MIN_GAIN}
+    three && three.totalDelta >= CI_SURGE_3_MATCHDAY_MIN_GAIN
+      ? {window: three, threshold: CI_SURGE_3_MATCHDAY_MIN_GAIN}
       : null,
-    five && five.totalDelta >= CI_SURGE_5_CONTEST_MIN_GAIN
-      ? {window: five, threshold: CI_SURGE_5_CONTEST_MIN_GAIN}
+    five && five.totalDelta >= CI_SURGE_5_MATCHDAY_MIN_GAIN
+      ? {window: five, threshold: CI_SURGE_5_MATCHDAY_MIN_GAIN}
       : null,
   ].filter((value): value is QualifiedWindow => value !== null);
 
   return qualified.sort((a, b) =>
     (b.window.totalDelta / b.threshold) - (a.window.totalDelta / a.threshold)
-    || b.window.contests - a.window.contests,
+    || b.window.matchdays - a.window.matchdays,
   )[0] ?? null;
 }
 
-/** Detects substantial positive CI movement over a player's last 3 or 5 rated contests. */
+/** Detects substantial positive CI movement over a player's last 3 or 5 rated Matchdays. */
 export function detectCiSurges(results: RatedResult[]): StoryCandidateDraft[] {
   const history = new StoryHistoryIndex(results);
   const playerSeasons = new Map<string, PlayerSeason>();
@@ -65,17 +65,17 @@ export function detectCiSurges(results: RatedResult[]): StoryCandidateDraft[] {
     if (!latestResult) continue;
 
     candidates.push({
-      id: `ci-surge:${subject.seasonId}:${subject.playerId}:${latestObservation.resultId}`,
+      id: `ci-surge:${subject.seasonId}:${subject.playerId}:${latestObservation.matchId}`,
       triggerType: 'CI_SURGE',
       seasonId: subject.seasonId,
       eventId: latestObservation.eventId,
-      matchId: latestResult.matchId,
+      matchId: latestObservation.matchId,
       playerIds: [subject.playerId],
       teamIds: [latestResult.teamId],
       headlineFacts: {
         resultId: latestObservation.resultId,
         player: subject.playerName,
-        contests: selected.window.contests,
+        matchdays: selected.window.matchdays,
         ciGain: selected.window.totalDelta,
         startCi: selected.window.startCi,
         currentCi: selected.window.currentCi,
