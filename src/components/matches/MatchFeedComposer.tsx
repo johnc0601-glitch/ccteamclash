@@ -3,7 +3,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {useFormStatus} from 'react-dom';
 import {createMatchFeedPost} from '@/app/matches/[id]/feedActions';
-import styles from './MatchFeed.module.css';
+import styles from './MatchFeedComposer.module.css';
 
 type MatchFeedComposerProps = {
   matchId: string;
