@@ -21,6 +21,7 @@ export type MediaAsset = {
   galleryVisible: boolean;
   takenAt: string | null;
   createdAt: string;
+  storyReferenceCount?: number;
 };
 
 type MediaAssetRow = {
@@ -62,7 +63,26 @@ export async function getManagedMediaAssets(limit = 120): Promise<MediaAsset[]> 
     .limit(limit);
 
   if (error) throw new Error(error.message || 'Photo library could not be loaded.');
-  return (data ?? []).map((row: MediaAssetRow) => rowToAsset(supabase, row));
+  const rows = (data ?? []) as MediaAssetRow[];
+  const counts = new Map<string, number>();
+  const ids = rows.map((row) => row.id);
+
+  if (ids.length) {
+    const {data: references, error: referenceError} = await db
+      .from('launch_stories')
+      .select('hero_asset_id')
+      .in('hero_asset_id', ids);
+    if (referenceError) throw new Error(referenceError.message || 'Photo usage could not be checked.');
+    for (const reference of references ?? []) {
+      const id = typeof reference.hero_asset_id === 'string' ? reference.hero_asset_id : '';
+      if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+  }
+
+  return rows.map((row) => ({
+    ...rowToAsset(supabase, row),
+    storyReferenceCount: counts.get(row.id) ?? 0,
+  }));
 }
 
 export async function getMediaAssetById(id: string): Promise<MediaAsset | null> {

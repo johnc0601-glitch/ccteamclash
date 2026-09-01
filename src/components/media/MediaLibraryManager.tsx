@@ -4,7 +4,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import type {MediaAsset} from '@/services/media/MediaLibraryService';
 import styles from './MediaLibraryManager.module.css';
 
-type Filter = 'all' | 'public' | 'library';
+type Filter = 'all' | 'public' | 'library' | 'unattached';
 
 export function MediaLibraryManager() {
   const [assets, setAssets] = useState<MediaAsset[]>([]);
@@ -23,9 +23,15 @@ export function MediaLibraryManager() {
       .finally(() => setLoading(false));
   }, []);
 
+  const unattachedCount = useMemo(
+    () => assets.filter(isUnattachedStoryUpload).length,
+    [assets],
+  );
+
   const filteredAssets = useMemo(() => assets.filter((asset) => {
     if (filter === 'public') return asset.galleryVisible;
     if (filter === 'library') return !asset.galleryVisible;
+    if (filter === 'unattached') return isUnattachedStoryUpload(asset);
     return true;
   }), [assets, filter]);
 
@@ -107,11 +113,15 @@ export function MediaLibraryManager() {
       </div>
 
       <p className={styles.status}>{status}</p>
+      {unattachedCount > 0 ? (
+        <p className={styles.status}>{unattachedCount} unattached story upload{unattachedCount === 1 ? '' : 's'} ready for review. Nothing is removed automatically.</p>
+      ) : null}
 
       <div className={styles.filters} aria-label="Photo library filters">
         <button type="button" data-active={filter === 'all'} onClick={() => setFilter('all')}>All ({assets.length})</button>
         <button type="button" data-active={filter === 'public'} onClick={() => setFilter('public')}>Public ({assets.filter((asset) => asset.galleryVisible).length})</button>
         <button type="button" data-active={filter === 'library'} onClick={() => setFilter('library')}>Library only ({assets.filter((asset) => !asset.galleryVisible).length})</button>
+        <button type="button" data-active={filter === 'unattached'} onClick={() => setFilter('unattached')}>Unattached story uploads ({unattachedCount})</button>
       </div>
 
       {loading ? <div className={styles.empty}>Loading photos...</div> : null}
@@ -156,7 +166,8 @@ function MediaAssetCard({asset, onSaved, onRemoved}: {
       });
       const payload = await response.json() as {asset?: MediaAsset; error?: string};
       if (!response.ok || !payload.asset) throw new Error(payload.error || 'Photo details could not save.');
-      onSaved(payload.asset);
+      const savedAsset = {...payload.asset, storyReferenceCount: asset.storyReferenceCount};
+      onSaved(savedAsset);
       setMessage(payload.asset.galleryVisible ? 'Saved · Public gallery' : 'Saved · Library only');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Photo details could not save.');
@@ -180,6 +191,9 @@ function MediaAssetCard({asset, onSaved, onRemoved}: {
       setSaving(false);
     }
   }
+
+  const referenceCount = asset.storyReferenceCount ?? 0;
+  const unattachedStoryUpload = isUnattachedStoryUpload(asset);
 
   return (
     <article className={styles.card}>
@@ -206,6 +220,8 @@ function MediaAssetCard({asset, onSaved, onRemoved}: {
         <button className={styles.secondaryButton} type="button" disabled={saving} onClick={save}>{saving ? 'Saving...' : 'Save photo'}</button>
         <button className={styles.secondaryButton} type="button" disabled={saving} onClick={remove}>Remove unused photo</button>
         {message ? <div className={styles.cardMeta}>{message}</div> : null}
+        {referenceCount > 0 ? <div className={styles.cardMeta}>Used in {referenceCount} stor{referenceCount === 1 ? 'y' : 'ies'}</div> : null}
+        {unattachedStoryUpload ? <div className={styles.cardMeta}>Unattached story upload · review before removal</div> : null}
         <div className={styles.cardMeta}>
           {asset.width && asset.height ? `${asset.width}×${asset.height}` : 'Legacy size'}
           {asset.byteSize !== null ? ` · ${formatBytes(asset.byteSize)}` : ''}
@@ -214,6 +230,10 @@ function MediaAssetCard({asset, onSaved, onRemoved}: {
       </div>
     </article>
   );
+}
+
+function isUnattachedStoryUpload(asset: MediaAsset): boolean {
+  return (asset.storyReferenceCount ?? 0) === 0 && asset.storagePath.startsWith('stories/unassigned/');
 }
 
 function dateInputValue(value: string | null): string {
