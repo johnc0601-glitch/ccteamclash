@@ -33,7 +33,6 @@ export type RankedOccurrence = {
   total: number;
 };
 
-/** One player's published CI movement from one complete team match. */
 export type PlayerCiObservation = {
   resultId: string;
   resultIds: string[];
@@ -79,12 +78,24 @@ function finite(value: number | undefined): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
+function longestWinStreak(rows: RatedResult[]): number {
+  let longest = 0;
+  let current = 0;
+  for (const result of [...rows].sort(chronological)) {
+    if (result.won) {
+      current += 1;
+      longest = Math.max(longest, current);
+    } else {
+      current = 0;
+    }
+  }
+  return longest;
+}
+
 function ciContribution(result: RatedResult, playerId: string): PlayerCiContribution | null {
   const index = result.subjectPlayerIds.indexOf(playerId);
   if (index < 0) return null;
 
-  // Singles can safely fall back to aggregate side fields because the side has
-  // one player. Doubles requires the explicit player-level contribution.
   const before = result.subjectCiBefore?.[index]
     ?? (result.format === 'Singles' ? result.subjectEffectiveCi : undefined);
   const delta = result.subjectCiDeltas?.[index]
@@ -93,11 +104,6 @@ function ciContribution(result: RatedResult, playerId: string): PlayerCiContribu
   return {result, before, delta};
 }
 
-/**
- * Read-only historical index for Clash Pulse. It joins normalized contest sides
- * once, then exposes reusable player/team/opponent context without allowing a
- * trigger to know anything about persistence.
- */
 export class StoryHistoryIndex {
   private readonly results: RatedResult[];
   private readonly byContestId = new Map<string, RatedResult[]>();
@@ -184,12 +190,30 @@ export class StoryHistoryIndex {
     };
   }
 
-  /**
-   * Builds one CI observation per player/team match. All contest contributions
-   * from that match share the same frozen CI and are summed before computing the
-   * published post-match CI. A partially safe Matchday is omitted rather than
-   * understating movement by using only one of singles/doubles.
-   */
+  playerLongestWinStreak(
+    playerId: string,
+    format: RatedResult['format'],
+    scope: Omit<StoryResultScope, 'format'> = {},
+  ): number {
+    return longestWinStreak(this.playerResults(playerId, {...scope, format}));
+  }
+
+  winStreakRank(
+    streakLength: number,
+    format: RatedResult['format'],
+    scope: Omit<StoryResultScope, 'format'> = {},
+  ): RankedOccurrence | null {
+    if (streakLength <= 0) return null;
+    const longestByPlayer = [...this.byPlayerId.keys()]
+      .map((playerId) => this.playerLongestWinStreak(playerId, format, scope))
+      .filter((length) => length > 0);
+    if (longestByPlayer.length === 0) return null;
+    return {
+      rank: 1 + longestByPlayer.filter((length) => length > streakLength).length,
+      total: longestByPlayer.length,
+    };
+  }
+
   playerCiObservations(
     playerId: string,
     scope: Omit<StoryResultScope, 'format'> = {},
