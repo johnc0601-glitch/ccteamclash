@@ -41,6 +41,31 @@ function enrichUpset(draft: StoryCandidateDraft, history: StoryHistoryIndex): St
   };
 }
 
+function enrichCiSurge(draft: StoryCandidateDraft, history: StoryHistoryIndex): StoryCandidateDraft {
+  const playerId = draft.playerIds[0];
+  const contests = draft.headlineFacts.contests;
+  if (!playerId || typeof contests !== 'number') return draft;
+
+  const seasonRank = history.ciWindowRank(playerId, contests, {seasonId: draft.seasonId});
+  if (!seasonRank) return draft;
+
+  return {
+    ...draft,
+    contextFacts: {
+      ...draft.contextFacts,
+      seasonCiGainRank: seasonRank.rank,
+      seasonCiGainComparisonPlayers: seasonRank.total,
+    },
+    scores: {
+      ...draft.scores,
+      rarity: rarityFromRank(seasonRank),
+      historicalSignificance: seasonRank.rank === 1
+        ? 80
+        : seasonRank.rank <= 3 ? 65 : draft.scores.historicalSignificance,
+    },
+  };
+}
+
 /**
  * Adds historical context after a trigger fires. Detectors stay simple and the
  * same history index can enrich many trigger types without repeating scans.
@@ -48,6 +73,7 @@ function enrichUpset(draft: StoryCandidateDraft, history: StoryHistoryIndex): St
 export function enrichStoryContext(draft: StoryCandidateDraft, history: StoryHistoryIndex): StoryCandidateDraft {
   switch (draft.triggerType) {
     case 'UPSET': return enrichUpset(draft, history);
+    case 'CI_SURGE': return enrichCiSurge(draft, history);
     default: return draft;
   }
 }
