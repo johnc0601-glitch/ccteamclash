@@ -23,13 +23,19 @@ export type RatedResult = {
   subjectPlayerIds: string[];
   subjectNames: string[];
   /**
-   * Optional per-player rating snapshots aligned by index with subjectPlayerIds.
-   * They are additive so legacy/historical adapters can continue supplying only
-   * aggregate side fields until their source data can provide player-level CI.
+   * Optional per-player frozen CI and contest contributions aligned by index
+   * with subjectPlayerIds. subjectCiAfter is contribution-level convenience,
+   * not the authoritative published post-Matchday CI when a player has multiple
+   * contests; StoryHistoryIndex aggregates all Matchday deltas before using CI.
    */
   subjectCiBefore?: number[];
   subjectCiAfter?: number[];
   subjectCiDeltas?: number[];
+  /**
+   * False means this normalized contest is safe for non-CI stories, but at least
+   * one subject player's complete Matchday CI chain is known to be incomplete.
+   */
+  ciHistoryReliable?: boolean;
   teamId: string;
   teamName: string;
   opponentTeamId: string;
