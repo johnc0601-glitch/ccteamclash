@@ -22,11 +22,18 @@ describe('StoryBacktest', () => {
       result(3, {winProbability: 0.20, expectedPoints: 0.20, ciDeficit: 85, ciDelta: 13}),
     ], '2026-27');
 
-    expect(backtest.rounds.map((round) => round.candidates.length)).toEqual([0, 1, 2]);
-    expect(backtest.countsByTrigger).toEqual({UPSET: 2, WIN_STREAK: 1});
-    const roundTwoUpset = backtest.rounds[1].candidates[0];
+    expect(backtest.rounds.map((round) => round.candidates.length)).toEqual([0, 2, 3]);
+    expect(backtest.countsByTrigger).toEqual({
+      UPSET: 2,
+      PERSONAL_BEST: 1,
+      CI_SURGE: 1,
+      WIN_STREAK: 1,
+    });
+    const roundTwoUpset = backtest.rounds[1].candidates.find((candidate) => candidate.triggerType === 'UPSET');
     const roundThreeUpset = backtest.rounds[2].candidates.find((candidate) => candidate.triggerType === 'UPSET');
-    expect(roundTwoUpset.contextFacts).toMatchObject({allTimeUpsetRank: 1, allTimeUpsetTotal: 1});
+    expect(roundTwoUpset?.contextFacts).toMatchObject({allTimeUpsetRank: 1, allTimeUpsetTotal: 1});
     expect(roundThreeUpset?.contextFacts).toMatchObject({allTimeUpsetRank: 2, allTimeUpsetTotal: 2});
+    expect(backtest.rounds[2].candidates.map((candidate) => candidate.triggerType).sort())
+      .toEqual(['CI_SURGE', 'UPSET', 'WIN_STREAK']);
   });
 });
