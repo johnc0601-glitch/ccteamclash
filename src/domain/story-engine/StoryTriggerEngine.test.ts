@@ -23,11 +23,12 @@ describe('StoryTriggerEngine', () => {
     ];
     const candidates = buildStoryCandidates(results, {kind: 'Round', eventId: 'round-3'});
 
-    expect(candidates).toHaveLength(2);
-    expect(candidates.map((candidate) => candidate.triggerType)).toEqual(['UPSET', 'WIN_STREAK']);
+    expect(candidates).toHaveLength(3);
+    expect(candidates.map((candidate) => candidate.triggerType).sort()).toEqual(['CI_SURGE', 'UPSET', 'WIN_STREAK']);
     expect(candidates.every((candidate) => candidate.eventId === 'round-3')).toBe(true);
     expect(candidates.every((candidate) => candidate.confidence === 'verified')).toBe(true);
-    expect(candidates[0].contextFacts).toMatchObject({
+    const upset = candidates.find((candidate) => candidate.triggerType === 'UPSET');
+    expect(upset?.contextFacts).toMatchObject({
       seasonUpsetRank: 2,
       seasonUpsetTotal: 2,
       allTimeUpsetRank: 2,
