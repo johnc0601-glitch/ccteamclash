@@ -59,6 +59,40 @@ describe('StoryHistoryIndex', () => {
     assert.equal(record.performanceVsExpected, 0);
   });
 
+  it('ranks win streaks against each players longest streak and keeps formats separate', () => {
+    const results: RatedResult[] = [];
+    const singlesWins = (playerId: string, playerName: string, length: number, startDay: number) => {
+      for (let index = 0; index < length; index += 1) {
+        const day = startDay + index;
+        results.push(row({
+          id: `${playerId}-s-${index}`,
+          contestId: `${playerId}-s-${index}`,
+          side: 'Home',
+          subjectPlayerIds: [playerId],
+          subjectNames: [playerName],
+          outcome: 'W', won: true, winProbability: .5,
+          playedAt: `2026-10-${String(day).padStart(2, '0')}T12:00:00Z`,
+        }));
+      }
+    };
+    singlesWins('p1', 'One', 4, 1);
+    singlesWins('p2', 'Two', 3, 1);
+    singlesWins('p3', 'Three', 4, 1);
+    results.push(row({
+      id: 'p4-d-1', contestId: 'p4-d-1', side: 'Home', format: 'Doubles',
+      subjectPlayerIds: ['p4', 'p5'], subjectNames: ['Four', 'Five'],
+      outcome: 'W', won: true, winProbability: .5,
+      playedAt: '2026-10-01T12:00:00Z',
+    }));
+
+    const index = new StoryHistoryIndex(results);
+    assert.equal(index.playerLongestWinStreak('p1', 'Singles'), 4);
+    assert.equal(index.playerLongestWinStreak('p4', 'Singles'), 0);
+    assert.deepEqual(index.winStreakRank(4, 'Singles'), {rank: 1, total: 3});
+    assert.deepEqual(index.winStreakRank(3, 'Singles'), {rank: 3, total: 3});
+    assert.deepEqual(index.winStreakRank(1, 'Doubles'), {rank: 1, total: 2});
+  });
+
   it('sums singles and doubles contributions from one Matchday before computing post-match CI', () => {
     const index = new StoryHistoryIndex([
       row({
