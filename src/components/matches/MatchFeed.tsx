@@ -2,7 +2,6 @@ import Link from 'next/link';
 import {createClient} from '@/lib/supabase/server';
 import {
   addMatchFeedComment,
-  createMatchFeedPost,
   editMatchFeedComment,
   editMatchFeedPost,
   reportMatchFeedContent,
@@ -12,6 +11,7 @@ import {
   softDeleteMatchFeedPost,
 } from '@/app/matches/[id]/feedActions';
 import {isMatchFeedOpen} from '@/services/matches/MatchFeedLifecycle';
+import {MatchFeedComposer} from './MatchFeedComposer';
 import styles from './MatchFeed.module.css';
 
 const REACTION_LABELS = {
@@ -117,14 +117,7 @@ export async function MatchFeed({matchId, matchDate, notice, error, before}: Mat
       {error ? <p className={styles.error}>{error}</p> : null}
 
       {user && profile && open ? (
-        <form action={createMatchFeedPost} className={styles.composer}>
-          <input type="hidden" name="matchId" value={matchId} />
-          <textarea name="body" maxLength={3000} placeholder="What’s happening at this match?" aria-label="New match post" />
-          <div className={styles.composerActions}>
-            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" />
-            <button type="submit">Post</button>
-          </div>
-        </form>
+        <MatchFeedComposer matchId={matchId} />
       ) : user && profile ? null : (
         <div className={styles.signIn}><Link href="/account">Sign in</Link> to post, reply or react.</div>
       )}
