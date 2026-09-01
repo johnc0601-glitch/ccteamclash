@@ -24,6 +24,19 @@ export type MediaAsset = {
   storyReferenceCount?: number;
 };
 
+export type PublicGalleryFilters = {
+  seasonId?: string;
+  teamId?: string;
+  matchId?: string;
+};
+
+export type PublicGalleryFacet = {id: string; label: string};
+export type PublicGalleryFacets = {
+  seasons: PublicGalleryFacet[];
+  teams: PublicGalleryFacet[];
+  matches: PublicGalleryFacet[];
+};
+
 type MediaAssetRow = {
   id: string;
   bucket: string;
@@ -103,14 +116,20 @@ export async function getMediaAssetById(id: string): Promise<MediaAsset | null> 
   return data ? rowToAsset(supabase, data as MediaAssetRow) : null;
 }
 
-export async function getPublicGalleryAssets(limit = 72): Promise<MediaAsset[]> {
+export async function getPublicGalleryAssets(limit = 72, filters: PublicGalleryFilters = {}): Promise<MediaAsset[]> {
   const supabase = await createClient();
   const db = supabase as any;
-  const {data, error} = await db
+  let query = db
     .from('media_assets')
     .select(MEDIA_COLUMNS)
     .eq('gallery_visible', true)
-    .is('deleted_at', null)
+    .is('deleted_at', null);
+
+  if (filters.seasonId) query = query.eq('season_id', filters.seasonId);
+  if (filters.teamId) query = query.eq('team_id', filters.teamId);
+  if (filters.matchId) query = query.eq('match_id', filters.matchId);
+
+  const {data, error} = await query
     .order('taken_at', {ascending: false, nullsFirst: false})
     .order('created_at', {ascending: false})
     .limit(limit);
@@ -120,6 +139,61 @@ export async function getPublicGalleryAssets(limit = 72): Promise<MediaAsset[]> 
     return [];
   }
   return (data ?? []).map((row: MediaAssetRow) => rowToAsset(supabase, row));
+}
+
+export async function getPublicGalleryFacets(): Promise<PublicGalleryFacets> {
+  const supabase = await createClient();
+  const db = supabase as any;
+  const {data, error} = await db
+    .from('media_assets')
+    .select('season_id,team_id,match_id')
+    .eq('gallery_visible', true)
+    .is('deleted_at', null)
+    .limit(1000);
+
+  if (error) {
+    console.error('[media] Public gallery filters could not be loaded.', error);
+    return {seasons: [], teams: [], matches: []};
+  }
+
+  const seasonIds = uniqueIds(data, 'season_id');
+  const directTeamIds = uniqueIds(data, 'team_id');
+  const matchIds = uniqueIds(data, 'match_id');
+
+  const matchesResult = matchIds.length
+    ? await db.from('launch_schedule_matches').select('id,home_team_id,away_team_id,date').in('id', matchIds)
+    : {data: [], error: null};
+  if (matchesResult.error) console.error('[media] Gallery match filter labels could not be loaded.', matchesResult.error);
+
+  const matchRows = (matchesResult.data ?? []) as Array<{id: string; home_team_id: string | null; away_team_id: string | null; date: string | null}>;
+  const teamIds = Array.from(new Set([
+    ...directTeamIds,
+    ...matchRows.flatMap((match) => [match.home_team_id, match.away_team_id].filter((value): value is string => Boolean(value))),
+  ]));
+
+  const [seasonsResult, teamsResult] = await Promise.all([
+    seasonIds.length ? db.from('launch_seasons').select('id,name,year').in('id', seasonIds) : Promise.resolve({data: [], error: null}),
+    teamIds.length ? db.from('launch_teams').select('id,name').in('id', teamIds) : Promise.resolve({data: [], error: null}),
+  ]);
+
+  if (seasonsResult.error) console.error('[media] Gallery season filter labels could not be loaded.', seasonsResult.error);
+  if (teamsResult.error) console.error('[media] Gallery team filter labels could not be loaded.', teamsResult.error);
+
+  const seasons = ((seasonsResult.data ?? []) as Array<{id: string; name: string | null; year: number | null}>)
+    .map((season) => ({id: season.id, label: season.name || String(season.year ?? season.id)}))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  const teamNameById = new Map(((teamsResult.data ?? []) as Array<{id: string; name: string}>).map((team) => [team.id, team.name]));
+  const teams = directTeamIds
+    .map((id) => ({id, label: teamNameById.get(id) ?? id}))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  const matches = matchRows
+    .map((match) => ({
+      id: match.id,
+      label: formatMatchFacet(match, teamNameById),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  return {seasons, teams, matches};
 }
 
 export async function updateMediaAsset(
@@ -194,6 +268,29 @@ export function rowToAsset(supabase: any, row: MediaAssetRow): MediaAsset {
     takenAt: row.taken_at,
     createdAt: row.created_at,
   };
+}
+
+function uniqueIds(rows: unknown[] | null, key: 'season_id' | 'team_id' | 'match_id'): string[] {
+  const values = new Set<string>();
+  for (const row of rows ?? []) {
+    if (!row || typeof row !== 'object') continue;
+    const value = (row as Record<string, unknown>)[key];
+    if (typeof value === 'string' && value) values.add(value);
+  }
+  return Array.from(values);
+}
+
+function formatMatchFacet(
+  match: {id: string; home_team_id: string | null; away_team_id: string | null; date: string | null},
+  teamNames: Map<string, string>,
+): string {
+  const away = match.away_team_id ? teamNames.get(match.away_team_id) ?? match.away_team_id : 'TBD';
+  const home = match.home_team_id ? teamNames.get(match.home_team_id) ?? match.home_team_id : 'TBD';
+  const date = match.date ? new Date(`${match.date}T12:00:00Z`) : null;
+  const dateLabel = date && !Number.isNaN(date.getTime())
+    ? new Intl.DateTimeFormat('en-US', {month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC'}).format(date)
+    : 'Match';
+  return `${dateLabel} · ${away} @ ${home}`;
 }
 
 function cleanText(value: unknown): string {
