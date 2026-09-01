@@ -1,5 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {
+  buildHistoricalRatedResultReport,
   buildHistoricalRatedResults,
   type HistoricalEventMetadataRow,
   type StoredHistoricalRatingFact,
@@ -30,10 +31,11 @@ describe('buildHistoricalRatedResults', () => {
       fact({matchup_deduplication_key: 'k1', player_id: 'p1', player_name: 'One', team_id: 't1', team_name: 'Team One', opponent_team_id: 't2', opponent_team_name: 'Team Two', side: 'Home', venue: 'Home', format: 'Singles', outcome: 'W', clash_index_before: 920, ci_delta: 8, win_probability: .35, opponent_effective_ci: 980, actual_points: 1, expected_points: .35}),
       fact({matchup_deduplication_key: 'k2', player_id: 'p2', player_name: 'Two', team_id: 't2', team_name: 'Team Two', opponent_team_id: 't1', opponent_team_name: 'Team One', side: 'Away', venue: 'Home', format: 'Singles', outcome: 'L', clash_index_before: 980, ci_delta: -8, win_probability: .65, opponent_effective_ci: 935, actual_points: 0, expected_points: .65}),
     ];
-    const rows = buildHistoricalRatedResults(facts, [meta('k1'), meta('k2')]);
+    const report = buildHistoricalRatedResultReport(facts, [meta('k1'), meta('k2')]);
 
-    expect(rows).toHaveLength(2);
-    expect(rows[0]).toMatchObject({
+    expect(report).toMatchObject({sourceFactRows: 2, sourceContests: 1, emittedContests: 1, quarantinedContests: 0});
+    expect(report.results).toHaveLength(2);
+    expect(report.results[0]).toMatchObject({
       seasonId: 'coastal-clash-2025-2026', seasonName: '2025-2026',
       eventId: 'historical:coastal-clash-2025-2026:event-2', eventLabel: 'November', eventOrder: 2,
       venue: 'Home', subjectCiBefore: [920], subjectCiAfter: [928], subjectCiDeltas: [8],
@@ -50,13 +52,26 @@ describe('buildHistoricalRatedResults', () => {
     expect(new Set(rows.map((row) => row.side))).toEqual(new Set(['Home', 'Away']));
   });
 
-  it('rejects a partial doubles contest side', () => {
+  it('quarantines an entire partial doubles contest instead of using only one side', () => {
     const facts = [
       fact({matchup_deduplication_key: 'k1', player_id: 'p1', player_name: 'One', team_id: 't1', team_name: 'Team One', opponent_team_id: 't2', opponent_team_name: 'Team Two', side: 'Home', venue: 'Home', format: 'Doubles', outcome: 'W', clash_index_before: 1000, ci_delta: 5}),
       fact({matchup_deduplication_key: 'k2', player_id: 'p2', player_name: 'Two', team_id: 't2', team_name: 'Team Two', opponent_team_id: 't1', opponent_team_name: 'Team One', side: 'Away', venue: 'Home', format: 'Doubles', outcome: 'L', clash_index_before: 950, ci_delta: -2}),
       fact({matchup_deduplication_key: 'k3', player_id: 'p3', player_name: 'Three', team_id: 't2', team_name: 'Team Two', opponent_team_id: 't1', opponent_team_name: 'Team One', side: 'Away', venue: 'Home', format: 'Doubles', outcome: 'L', clash_index_before: 940, ci_delta: -3}),
     ];
-    const rows = buildHistoricalRatedResults(facts, [meta('k1'), meta('k2'), meta('k3')]);
-    expect(rows.map((row) => row.teamId)).toEqual(['t2']);
+    const report = buildHistoricalRatedResultReport(facts, [meta('k1'), meta('k2'), meta('k3')]);
+    expect(report.results).toEqual([]);
+    expect(report.diagnostics).toEqual([expect.objectContaining({reason: 'unexpected-player-count'})]);
+  });
+
+  it('quarantines a contest containing three team ids and reports the defect', () => {
+    const facts = [
+      fact({matchup_deduplication_key: 'k1', player_id: 'p1', player_name: 'One', team_id: 't1', team_name: 'Team One', opponent_team_id: 't3', opponent_team_name: 'Team Three', side: 'Away', venue: 'Home', format: 'Doubles', outcome: 'L', clash_index_before: 900, ci_delta: -5}),
+      fact({matchup_deduplication_key: 'k2', player_id: 'p2', player_name: 'Two', team_id: 't2', team_name: 'Team Two', opponent_team_id: 't3', opponent_team_name: 'Team Three', side: 'Away', venue: 'Home', format: 'Doubles', outcome: 'L', clash_index_before: 910, ci_delta: -5}),
+      fact({matchup_deduplication_key: 'k3', player_id: 'p3', player_name: 'Three', team_id: 't3', team_name: 'Team Three', opponent_team_id: 't2', opponent_team_name: 'Team Two', side: 'Home', venue: 'Home', format: 'Doubles', outcome: 'W', clash_index_before: 920, ci_delta: 5}),
+      fact({matchup_deduplication_key: 'k4', player_id: 'p4', player_name: 'Four', team_id: 't3', team_name: 'Team Three', opponent_team_id: 't2', opponent_team_name: 'Team Two', side: 'Home', venue: 'Home', format: 'Doubles', outcome: 'W', clash_index_before: 930, ci_delta: 5}),
+    ];
+    const report = buildHistoricalRatedResultReport(facts, [meta('k1'), meta('k2'), meta('k3'), meta('k4')]);
+    expect(report).toMatchObject({emittedContests: 0, quarantinedContests: 1});
+    expect(report.diagnostics[0]).toMatchObject({reason: 'unexpected-team-count'});
   });
 });
