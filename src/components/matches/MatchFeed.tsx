@@ -116,7 +116,7 @@ export async function MatchFeed({matchId, matchDate, notice, error, before}: Mat
           <input type="hidden" name="matchId" value={matchId} />
           <textarea name="body" maxLength={3000} placeholder="What’s happening at this match?" aria-label="New match post" />
           <div className={styles.composerActions}>
-            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" />
+            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" />
             <button type="submit">Post</button>
           </div>
         </form>
