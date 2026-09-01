@@ -39,6 +39,24 @@ describe('buildRatedResults', () => {
     expect(rows[1].won).toBe(false);
   });
 
+  it('preserves player-aligned CI snapshots instead of relying on aggregate side movement', () => {
+    const rows = buildRatedResults(contest, [fact('h1', 'Home', .35, 1, 1000), fact('a1', 'Away', .65, 0, 915)], context);
+    expect(rows[0]).toMatchObject({
+      subjectPlayerIds: ['h1'],
+      subjectCiBefore: [900],
+      subjectCiAfter: [910],
+      subjectCiDeltas: [10],
+      ciDelta: 10,
+    });
+    expect(rows[1]).toMatchObject({
+      subjectPlayerIds: ['a1'],
+      subjectCiBefore: [1000],
+      subjectCiAfter: [990],
+      subjectCiDeltas: [-10],
+      ciDelta: -10,
+    });
+  });
+
   it('omits a side when its frozen rating fact is missing', () => {
     const rows = buildRatedResults(contest, [fact('h1', 'Home', .35, 1, 1000)], context);
     expect(rows.map((row) => row.side)).toEqual(['Home']);
