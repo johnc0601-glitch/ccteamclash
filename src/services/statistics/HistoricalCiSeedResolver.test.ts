@@ -122,6 +122,23 @@ test('legacy ghost rating is ignored so finalized provisional baseline owns the 
   assert.equal(seeds[0].source, 'Provisional');
 });
 
+test('Christopher King 2025-26 ghost seed stays provisional instead of using a manual 963 override', () => {
+  const seeds = resolveHistoricalCiSeeds(
+    'coastal-clash-2025-2026',
+    [{playerId: 'christopher-king-jr', playerName: 'Christopher King Jr', gender: 'Male'}],
+    [{
+      seasonId: 'coastal-clash-2025-2026',
+      playerName: 'Christopher King Jr',
+      rating: 835,
+      source: 'GHOST',
+    }],
+  );
+
+  assert.equal(seeds[0].pdgaRating, null);
+  assert.equal(seeds[0].division, 'Open');
+  assert.equal(seeds[0].source, 'Provisional');
+});
+
 test('missing historical seed remains provisional when no verified PDGA seed exists', () => {
   const seeds = resolveHistoricalCiSeeds(
     's1',
