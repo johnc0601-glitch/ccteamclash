@@ -35,6 +35,14 @@ export type HistoricalEventMetadataRow = {
   season_name: string;
   event_label: string;
   event_order: number;
+  historical_team_match_id: number | null;
+};
+
+export type HistoricalTeamMatchMetadataRow = {
+  id: number;
+  away_team_name: string;
+  home_team_name: string;
+  ci_venue: string;
 };
 
 export type HistoricalRatedResultDiagnosticReason =
@@ -44,6 +52,8 @@ export type HistoricalRatedResultDiagnosticReason =
   | 'inconsistent-opponent-team'
   | 'missing-event-metadata'
   | 'inconsistent-event-metadata'
+  | 'missing-team-match-metadata'
+  | 'inconsistent-team-match-identity'
   | 'invalid-side-or-venue'
   | 'unresolved-chronology';
 
@@ -86,9 +96,6 @@ function historicalPlayedAt(seasonName: string, seasonId: string, eventOrder: nu
   if (!match || eventOrder < 1) return null;
   const startYear = Number(match[0]);
   if (!Number.isFinite(startYear)) return null;
-  // Synthetic chronology only. Event order advances by one day from an October
-  // anchor so skipped/extra historical event numbers cannot imply a fake month.
-  // Human-facing copy must use seasonName/eventLabel instead.
   return new Date(Date.UTC(startYear, 9, eventOrder)).toISOString();
 }
 
@@ -122,23 +129,65 @@ function contestEvent(
     row.season_id !== event.season_id
     || row.season_name !== event.season_name
     || row.event_order !== event.event_order
-    || row.event_label !== event.event_label,
+    || row.event_label !== event.event_label
+    || row.historical_team_match_id !== event.historical_team_match_id,
   );
   return inconsistent
-    ? {event: null, issue: diagnostic(contestId, contestFacts, 'inconsistent-event-metadata', 'contest rows resolve to different historical events')}
+    ? {event: null, issue: diagnostic(contestId, contestFacts, 'inconsistent-event-metadata', 'contest rows resolve to different historical events or team matches')}
     : {event, issue: null};
 }
 
-/**
- * Converts the immutable historical CI ledger plus source event metadata into
- * normalized story results. A malformed contest is quarantined as a whole so
- * a backtest never uses one side of a contest while silently dropping the other.
- */
+function validateOfficialTeamMatch(
+  contestId: string,
+  contestFacts: StoredHistoricalRatingFact[],
+  event: HistoricalEventMetadataRow,
+  teamMatches: ReadonlyMap<number, HistoricalTeamMatchMetadataRow>,
+): HistoricalRatedResultDiagnostic | null {
+  if (event.historical_team_match_id === null) return null;
+  const official = teamMatches.get(event.historical_team_match_id);
+  if (!official) {
+    return diagnostic(contestId, contestFacts, 'missing-team-match-metadata', `historical team match ${event.historical_team_match_id} is unavailable`);
+  }
+
+  const expectedTeams = new Set([official.away_team_name, official.home_team_name]);
+  const actualTeams = new Set(contestFacts.map((fact) => fact.team_name));
+  if (actualTeams.size !== 2 || [...actualTeams].some((name) => !expectedTeams.has(name))) {
+    return diagnostic(
+      contestId,
+      contestFacts,
+      'inconsistent-team-match-identity',
+      `contest teams ${[...actualTeams].join(' / ')} do not match official ${official.away_team_name} at ${official.home_team_name}`,
+    );
+  }
+
+  if (official.ci_venue !== contestFacts[0].venue) {
+    return diagnostic(contestId, contestFacts, 'invalid-side-or-venue', `contest venue ${contestFacts[0].venue} does not match official ${official.ci_venue}`);
+  }
+
+  for (const fact of contestFacts) {
+    const expectedOpponentName = fact.team_name === official.home_team_name
+      ? official.away_team_name
+      : official.home_team_name;
+    if (fact.opponent_team_name !== expectedOpponentName) {
+      return diagnostic(contestId, contestFacts, 'inconsistent-team-match-identity', `${fact.player_name} points to opponent ${fact.opponent_team_name}; expected ${expectedOpponentName}`);
+    }
+    if (official.ci_venue === 'Home') {
+      const expectedSide = fact.team_name === official.home_team_name ? 'Home' : 'Away';
+      if (fact.side !== expectedSide) {
+        return diagnostic(contestId, contestFacts, 'invalid-side-or-venue', `${fact.team_name} is ${fact.side ?? 'unassigned'} but official team match requires ${expectedSide}`);
+      }
+    }
+  }
+  return null;
+}
+
 export function buildHistoricalRatedResultReport(
   facts: StoredHistoricalRatingFact[],
   metadataRows: HistoricalEventMetadataRow[],
+  teamMatchRows: HistoricalTeamMatchMetadataRow[] = [],
 ): HistoricalRatedResultBuildReport {
   const metadata = new Map(metadataRows.map((row) => [row.deduplication_key, row]));
+  const teamMatches = new Map(teamMatchRows.map((row) => [row.id, row]));
   const byContest = new Map<string, StoredHistoricalRatingFact[]>();
   for (const fact of facts) {
     const rows = byContest.get(fact.contest_id) ?? [];
@@ -219,6 +268,13 @@ export function buildHistoricalRatedResultReport(
       diagnostics.push(issue ?? diagnostic(contestId, contestFacts, 'missing-event-metadata', 'event metadata unavailable'));
       continue;
     }
+
+    const officialIssue = validateOfficialTeamMatch(contestId, contestFacts, event, teamMatches);
+    if (officialIssue) {
+      diagnostics.push(officialIssue);
+      continue;
+    }
+
     const playedAt = historicalPlayedAt(event.season_name, event.season_id, event.event_order);
     if (!playedAt) {
       diagnostics.push(diagnostic(contestId, contestFacts, 'unresolved-chronology', 'season/event order could not produce a stable chronology key'));
@@ -285,10 +341,6 @@ export function buildHistoricalRatedResultReport(
     emittedContests += 1;
   }
 
-  // A quarantined contest can remove only one of a player's several contest
-  // contributions from an otherwise valid team match. Keep the other results
-  // available for non-CI stories, but explicitly block that player's Matchday
-  // from CI surge/personal-best/record calculations.
   const unreliableCiPlayerMatchdays = new Set<string>();
   for (const issue of diagnostics) {
     for (const fact of byContest.get(issue.contestId) ?? []) {
@@ -315,16 +367,21 @@ export function buildHistoricalRatedResultReport(
 export function buildHistoricalRatedResults(
   facts: StoredHistoricalRatingFact[],
   metadataRows: HistoricalEventMetadataRow[],
+  teamMatchRows: HistoricalTeamMatchMetadataRow[] = [],
 ): RatedResult[] {
-  return buildHistoricalRatedResultReport(facts, metadataRows).results;
+  return buildHistoricalRatedResultReport(facts, metadataRows, teamMatchRows).results;
 }
 
 export class SupabaseHistoricalRatedResultRepository implements RatedResultRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
   async getBuildReport(): Promise<HistoricalRatedResultBuildReport> {
-    const [facts, metadata] = await Promise.all([this.loadFacts(), this.loadMetadata()]);
-    return buildHistoricalRatedResultReport(facts, metadata);
+    const [facts, metadata, teamMatches] = await Promise.all([
+      this.loadFacts(),
+      this.loadMetadata(),
+      this.loadTeamMatches(),
+    ]);
+    return buildHistoricalRatedResultReport(facts, metadata, teamMatches);
   }
 
   async getRatedResults(): Promise<RatedResult[]> {
@@ -352,11 +409,27 @@ export class SupabaseHistoricalRatedResultRepository implements RatedResultRepos
     for (let from = 0; ; from += PAGE_SIZE) {
       const {data, error} = await this.supabase
         .from('historical_player_matchups')
-        .select('deduplication_key,season_id,season_name,event_label,event_order')
+        .select('deduplication_key,season_id,season_name,event_label,event_order,historical_team_match_id')
         .order('deduplication_key', {ascending: true})
         .range(from, from + PAGE_SIZE - 1);
       if (error) throw error;
       const page = (data ?? []) as HistoricalEventMetadataRow[];
+      rows.push(...page);
+      if (page.length < PAGE_SIZE) break;
+    }
+    return rows;
+  }
+
+  private async loadTeamMatches(): Promise<HistoricalTeamMatchMetadataRow[]> {
+    const rows: HistoricalTeamMatchMetadataRow[] = [];
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const {data, error} = await this.supabase
+        .from('historical_team_matches')
+        .select('id,away_team_name,home_team_name,ci_venue')
+        .order('id', {ascending: true})
+        .range(from, from + PAGE_SIZE - 1);
+      if (error) throw error;
+      const page = (data ?? []) as HistoricalTeamMatchMetadataRow[];
       rows.push(...page);
       if (page.length < PAGE_SIZE) break;
     }
