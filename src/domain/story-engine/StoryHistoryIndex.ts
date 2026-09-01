@@ -205,6 +205,7 @@ export class StoryHistoryIndex {
     const observations: PlayerCiObservation[] = [];
     for (const rows of groups.values()) {
       rows.sort(chronological);
+      if (rows.some((result) => result.ciHistoryReliable === false)) continue;
       const contributions = rows
         .map((result) => ciContribution(result, playerId))
         .filter((value): value is PlayerCiContribution => value !== null);
