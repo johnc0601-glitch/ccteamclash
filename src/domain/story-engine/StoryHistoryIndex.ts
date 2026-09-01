@@ -33,6 +33,28 @@ export type RankedOccurrence = {
   total: number;
 };
 
+export type PlayerCiObservation = {
+  resultId: string;
+  contestId: string;
+  eventId: string;
+  seasonId: string;
+  format: RatedResult['format'];
+  teamId: string;
+  playedAt: string;
+  before: number;
+  after: number;
+  delta: number;
+};
+
+export type PlayerCiWindow = {
+  playerId: string;
+  contests: number;
+  totalDelta: number;
+  startCi: number;
+  currentCi: number;
+  observations: PlayerCiObservation[];
+};
+
 function chronological(a: RatedResult, b: RatedResult): number {
   return a.playedAt.localeCompare(b.playedAt) || a.id.localeCompare(b.id);
 }
@@ -44,6 +66,38 @@ function inScope(result: RatedResult, scope: StoryResultScope): boolean {
 
 function pairKey(playerAId: string, playerBId: string): [string, string] {
   return playerAId < playerBId ? [playerAId, playerBId] : [playerBId, playerAId];
+}
+
+function finite(value: number | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function ciObservation(result: RatedResult, playerId: string): PlayerCiObservation | null {
+  const index = result.subjectPlayerIds.indexOf(playerId);
+  if (index < 0) return null;
+
+  // Singles can safely fall back to the aggregate fields because a singles side
+  // contains exactly one player. Doubles requires explicit player-level data.
+  const before = result.subjectCiBefore?.[index]
+    ?? (result.format === 'Singles' ? result.subjectEffectiveCi : undefined);
+  const delta = result.subjectCiDeltas?.[index]
+    ?? (result.format === 'Singles' ? result.ciDelta : undefined);
+  const after = result.subjectCiAfter?.[index]
+    ?? (finite(before) && finite(delta) ? before + delta : undefined);
+
+  if (!finite(before) || !finite(after) || !finite(delta)) return null;
+  return {
+    resultId: result.id,
+    contestId: result.contestId,
+    eventId: result.eventId,
+    seasonId: result.seasonId,
+    format: result.format,
+    teamId: result.teamId,
+    playedAt: result.playedAt,
+    before,
+    after,
+    delta,
+  };
 }
 
 /**
@@ -134,6 +188,26 @@ export class StoryHistoryIndex {
       actualPoints,
       performanceVsExpected: actualPoints - expectedPoints,
       lastPlayedAt: rows.at(-1)?.playedAt ?? null,
+    };
+  }
+
+  playerCiObservations(playerId: string, scope: StoryResultScope = {}): PlayerCiObservation[] {
+    return this.playerResults(playerId, scope)
+      .map((result) => ciObservation(result, playerId))
+      .filter((observation): observation is PlayerCiObservation => observation !== null);
+  }
+
+  playerCiWindow(playerId: string, contests: number, scope: StoryResultScope = {}): PlayerCiWindow | null {
+    if (contests <= 0) return null;
+    const observations = this.playerCiObservations(playerId, scope).slice(-contests);
+    if (observations.length !== contests) return null;
+    return {
+      playerId,
+      contests,
+      totalDelta: observations.reduce((sum, observation) => sum + observation.delta, 0),
+      startCi: observations[0].before,
+      currentCi: observations.at(-1)!.after,
+      observations,
     };
   }
 
