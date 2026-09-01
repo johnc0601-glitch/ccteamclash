@@ -1,4 +1,5 @@
-import {describe, expect, it} from 'vitest';
+import assert from 'node:assert/strict';
+import {describe, it} from 'node:test';
 import type {RatedResult} from '../RatedResult';
 import {detectCiSurges} from './CiSurgeTrigger';
 
@@ -34,17 +35,22 @@ function sequentialRows(deltas: number[]): RatedResult[] {
 describe('detectCiSurges', () => {
   it('detects a 20-point gain across the latest three rated contests', () => {
     const candidates = detectCiSurges(sequentialRows([2, 4, 7, 7, 6]));
-    expect(candidates).toHaveLength(1);
-    expect(candidates[0]).toMatchObject({
-      triggerType: 'CI_SURGE',
-      eventId: 'round-5',
-      headlineFacts: {player: 'Player One', contests: 3, ciGain: 20, startCi: 906, currentCi: 926},
-    });
+    assert.equal(candidates.length, 1);
+    assert.equal(candidates[0].triggerType, 'CI_SURGE');
+    assert.equal(candidates[0].eventId, 'round-5');
+    assert.equal(candidates[0].headlineFacts.player, 'Player One');
+    assert.equal(candidates[0].headlineFacts.contests, 3);
+    assert.equal(candidates[0].headlineFacts.ciGain, 20);
+    assert.equal(candidates[0].headlineFacts.startCi, 906);
+    assert.equal(candidates[0].headlineFacts.currentCi, 926);
   });
 
   it('can select the five-contest window when it is the stronger qualifying story', () => {
     const candidates = detectCiSurges(sequentialRows([7, 7, 7, 7, 7]));
-    expect(candidates[0]?.headlineFacts).toMatchObject({contests: 5, ciGain: 35, startCi: 900, currentCi: 935});
+    assert.equal(candidates[0]?.headlineFacts.contests, 5);
+    assert.equal(candidates[0]?.headlineFacts.ciGain, 35);
+    assert.equal(candidates[0]?.headlineFacts.startCi, 900);
+    assert.equal(candidates[0]?.headlineFacts.currentCi, 935);
   });
 
   it('does not create a surge from aggregate doubles movement without player snapshots', () => {
@@ -57,6 +63,6 @@ describe('detectCiSurges', () => {
       subjectCiAfter: undefined,
       subjectCiDeltas: undefined,
     }));
-    expect(detectCiSurges(rows)).toEqual([]);
+    assert.deepEqual(detectCiSurges(rows), []);
   });
 });
