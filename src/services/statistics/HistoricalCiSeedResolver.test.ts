@@ -122,6 +122,35 @@ test('legacy ghost rating is ignored so finalized provisional baseline owns the 
   assert.equal(seeds[0].source, 'Provisional');
 });
 
+test('Christopher King 2025-26 uses the confirmed archived PDGA 835 seed', () => {
+  const seeds = resolveHistoricalCiSeeds(
+    'coastal-clash-2025-2026',
+    [{playerId: 'christopher-king-jr', playerName: 'Christopher King Jr', gender: 'Male'}],
+    [{
+      seasonId: 'coastal-clash-2025-2026',
+      playerName: 'Christopher King Jr',
+      rating: 835,
+      source: 'PDGA',
+    }],
+  );
+
+  assert.equal(seeds[0].pdgaRating, 835);
+  assert.equal(seeds[0].division, 'Open');
+  assert.equal(seeds[0].source, 'HistoricalPDGA');
+});
+
+test('Mizz is hard-locked to the commissioner historical override of 600', () => {
+  const seeds = resolveHistoricalCiSeeds(
+    'coastal-clash-2024-2025',
+    [{playerId: 'mizz', playerName: 'Mizz', gender: 'Male'}],
+    [{seasonId: 'coastal-clash-2024-2025', playerName: 'Mizz', rating: 825, source: 'GHOST'}],
+  );
+
+  assert.equal(seeds[0].pdgaRating, 600);
+  assert.equal(seeds[0].division, 'Open');
+  assert.equal(seeds[0].source, 'HistoricalOverride');
+});
+
 test('missing historical seed remains provisional when no verified PDGA seed exists', () => {
   const seeds = resolveHistoricalCiSeeds(
     's1',
