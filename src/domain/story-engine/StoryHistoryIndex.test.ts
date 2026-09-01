@@ -36,6 +36,16 @@ describe('StoryHistoryIndex', () => {
     });
   });
 
+  it('keeps singles as the default head-to-head format when a season scope is supplied', () => {
+    const index = new StoryHistoryIndex([
+      row({id: 's1:home', contestId: 's1', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: 0.45}),
+      row({id: 's1:away', contestId: 's1', side: 'Away', subjectPlayerIds: ['p2'], subjectNames: ['Two'], outcome: 'L', won: false, winProbability: 0.55}),
+      row({id: 'd1:home', contestId: 'd1', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p1', 'p3'], subjectNames: ['One', 'Three'], outcome: 'W', won: true, winProbability: 0.45}),
+      row({id: 'd1:away', contestId: 'd1', side: 'Away', format: 'Doubles', subjectPlayerIds: ['p2', 'p4'], subjectNames: ['Two', 'Four'], outcome: 'L', won: false, winProbability: 0.55}),
+    ]);
+    expect(index.playerHeadToHead('p1', 'p2', {seasonId: '2026-27'}).meetings).toBe(1);
+  });
+
   it('aggregates order-independent doubles chemistry and performance versus expectation', () => {
     const results: RatedResult[] = [
       row({id: 'd1:home', contestId: 'd1', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p3', 'p1'], subjectNames: ['Three', 'One'], outcome: 'W', won: true, winProbability: 0.40, expectedPoints: 0.40}),
@@ -48,13 +58,14 @@ describe('StoryHistoryIndex', () => {
     expect(record.performanceVsExpected).toBe(0);
   });
 
-  it('ranks upset wins by lowest pre-match win probability', () => {
+  it('ranks only qualifying upset wins by lowest pre-match win probability', () => {
     const index = new StoryHistoryIndex([
       row({id: 'u1', contestId: 'u1', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: 0.22}),
       row({id: 'u2', contestId: 'u2', side: 'Home', subjectPlayerIds: ['p2'], subjectNames: ['Two'], outcome: 'W', won: true, winProbability: 0.09}),
       row({id: 'f1', contestId: 'f1', side: 'Home', subjectPlayerIds: ['p3'], subjectNames: ['Three'], outcome: 'W', won: true, winProbability: 0.70}),
     ]);
-    expect(index.upsetRank('u2', {seasonId: '2026-27'})).toEqual({rank: 1, total: 3});
-    expect(index.upsetRank('u1', {seasonId: '2026-27'})).toEqual({rank: 2, total: 3});
+    expect(index.upsetRank('u2', {seasonId: '2026-27'})).toEqual({rank: 1, total: 2});
+    expect(index.upsetRank('u1', {seasonId: '2026-27'})).toEqual({rank: 2, total: 2});
+    expect(index.upsetRank('f1', {seasonId: '2026-27'})).toBeNull();
   });
 });
