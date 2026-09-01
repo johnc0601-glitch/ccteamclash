@@ -43,10 +43,10 @@ function enrichUpset(draft: StoryCandidateDraft, history: StoryHistoryIndex): St
 
 function enrichCiSurge(draft: StoryCandidateDraft, history: StoryHistoryIndex): StoryCandidateDraft {
   const playerId = draft.playerIds[0];
-  const contests = draft.headlineFacts.contests;
-  if (!playerId || typeof contests !== 'number') return draft;
+  const matchdays = draft.headlineFacts.matchdays;
+  if (!playerId || typeof matchdays !== 'number') return draft;
 
-  const seasonRank = history.ciWindowRank(playerId, contests, {seasonId: draft.seasonId});
+  const seasonRank = history.ciWindowRank(playerId, matchdays, {seasonId: draft.seasonId});
   if (!seasonRank) return draft;
 
   return {
