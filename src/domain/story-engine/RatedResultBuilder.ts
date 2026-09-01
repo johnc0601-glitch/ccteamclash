@@ -58,7 +58,7 @@ export function buildRatedResults(
       subjectPlayerIds: players.map((player) => player.playerId),
       subjectNames: players.map((player) => player.playerName),
       subjectCiBefore: sideFacts.map((fact) => fact.clashIndexBefore),
-      subjectCiAfter: sideFacts.map((fact) => fact.clashIndexAfter),
+      subjectCiAfter: sideFacts.map((fact) => fact.clashIndexBefore + fact.ciDelta),
       subjectCiDeltas: sideFacts.map((fact) => fact.ciDelta),
       teamId: team.id,
       teamName: team.name,
