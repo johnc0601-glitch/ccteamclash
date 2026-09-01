@@ -15,6 +15,14 @@ export type RatedResult = {
   side: ResultContestSide;
   subjectPlayerIds: string[];
   subjectNames: string[];
+  /**
+   * Optional per-player rating snapshots aligned by index with subjectPlayerIds.
+   * They are additive so legacy/historical adapters can continue supplying only
+   * aggregate side fields until their source data can provide player-level CI.
+   */
+  subjectCiBefore?: number[];
+  subjectCiAfter?: number[];
+  subjectCiDeltas?: number[];
   teamId: string;
   teamName: string;
   opponentTeamId: string;
@@ -27,6 +35,7 @@ export type RatedResult = {
   subjectEffectiveCi: number;
   opponentEffectiveCi: number;
   ciDeficit: number;
+  /** Aggregate side movement retained for existing Around the Clash rankings. */
   ciDelta: number;
   modelVersion: string;
   playedAt: string;
