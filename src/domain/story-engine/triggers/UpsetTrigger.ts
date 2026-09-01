@@ -5,6 +5,8 @@ export const UPSET_WIN_PROBABILITY_THRESHOLD = 0.40;
 export const ESTABLISHED_RATING_PRIOR_RESULTS = 3;
 
 export type RatingEvidence = 'Established' | 'TrustedSeed' | 'Provisional';
+export type UpsetStatusConfidence = 'ConfirmedByRatings' | 'Likely' | 'NeedsReview';
+export type ProbabilityConfidence = 'High' | 'Medium' | 'Low';
 
 export type UpsetRatingEvidence = {
   classification: RatingEvidence;
@@ -63,10 +65,10 @@ function sideEvidence(
 }
 
 /**
- * Rates whether a model upset is trustworthy enough for public storytelling.
- * Three prior rated contests establish CI regardless of seed source. Before
- * that point a PDGA-backed seed is trusted but immature, while ghost/manual/
- * unknown seeds are provisional and cannot produce a public upset story.
+ * Rates how trustworthy the exact pre-match probability is. Three prior rated
+ * contests establish CI regardless of seed source. Before that point a
+ * PDGA-backed seed is trusted but immature, while ghost/manual/unknown seeds
+ * require editorial review.
  */
 export function upsetRatingEvidence(results: RatedResult[], target: RatedResult): UpsetRatingEvidence {
   const opponent = results.find((result) => result.contestId === target.contestId && result.id !== target.id);
@@ -84,6 +86,18 @@ export function upsetRatingEvidence(results: RatedResult[], target: RatedResult)
   };
 }
 
+function statusConfidence(evidence: RatingEvidence): UpsetStatusConfidence {
+  if (evidence === 'Established') return 'ConfirmedByRatings';
+  if (evidence === 'TrustedSeed') return 'Likely';
+  return 'NeedsReview';
+}
+
+function probabilityConfidence(evidence: RatingEvidence): ProbabilityConfidence {
+  if (evidence === 'Established') return 'High';
+  if (evidence === 'TrustedSeed') return 'Medium';
+  return 'Low';
+}
+
 /**
  * Converts model surprise into a 0-100 editorial magnitude score.
  * A 40% win chance barely qualifies; a 10% chance or lower is maximum magnitude.
@@ -93,21 +107,27 @@ export function upsetMagnitude(winProbability: number): number {
 }
 
 /**
- * Detect upset wins from authoritative rated results. A computed probability is
- * not sufficient by itself: both sides need at least a PDGA-backed seed or an
- * established Clash history. Trusted-but-immature seeds are capped so they can
- * be reviewed without outranking upsets between established CI players.
+ * Detect model-indicated underdog wins from authoritative rated results.
+ *
+ * Crucially, upset status and exact probability confidence are separate. An
+ * immature/ghost-seeded matchup can still be retained for commissioner review
+ * as an upset candidate, but Pulse must not present its computed percentage as
+ * a verified headline statistic. Only established CI may use the exact model
+ * probability as a public headline fact.
  */
 export function detectUpsets(results: RatedResult[]): StoryCandidateDraft[] {
   return results
     .filter((result) => result.won && result.winProbability < UPSET_WIN_PROBABILITY_THRESHOLD)
     .map((result) => ({result, evidence: upsetRatingEvidence(results, result)}))
-    .filter(({evidence}) => evidence.classification !== 'Provisional')
     .map(({result, evidence}) => {
       const rawMagnitude = upsetMagnitude(result.winProbability);
-      const magnitude = evidence.classification === 'TrustedSeed'
-        ? Math.min(60, rawMagnitude)
-        : rawMagnitude;
+      const magnitude = evidence.classification === 'Established'
+        ? rawMagnitude
+        : evidence.classification === 'TrustedSeed'
+          ? Math.min(60, rawMagnitude)
+          : Math.min(35, rawMagnitude);
+      const upsetConfidence = statusConfidence(evidence.classification);
+      const exactProbabilityConfidence = probabilityConfidence(evidence.classification);
       return {
         id: `upset:${result.id}`,
         triggerType: 'UPSET' as const,
@@ -122,19 +142,28 @@ export function detectUpsets(results: RatedResult[]): StoryCandidateDraft[] {
           winner: result.subjectNames.join(' & '),
           team: result.teamName,
           opponentTeam: result.opponentTeamName,
-          winProbability: result.winProbability,
+          // Exact percentages are headline-safe only when both ratings are established.
+          winProbability: exactProbabilityConfidence === 'High' ? result.winProbability : null,
           ciDeficit: result.ciDeficit,
           ciDelta: result.ciDelta,
-          ratingEvidence: evidence.classification,
+          upsetConfidence,
+          probabilityConfidence: exactProbabilityConfidence,
         },
         contextFacts: {
           modelVersion: result.modelVersion,
           playedAt: result.playedAt,
+          modelWinProbability: result.winProbability,
+          ratingEvidence: evidence.classification,
           subjectRatingEvidence: evidence.subjectEvidence,
           opponentRatingEvidence: evidence.opponentEvidence,
           subjectPriorRatedResults: evidence.subjectPriorRatedResults,
           opponentPriorRatedResults: evidence.opponentPriorRatedResults,
-          editorialConfidenceCap: evidence.classification === 'TrustedSeed' ? 'not-major-until-established' : null,
+          editorialReviewRequired: evidence.classification === 'Provisional',
+          editorialConfidenceCap: evidence.classification === 'Established'
+            ? null
+            : evidence.classification === 'TrustedSeed'
+              ? 'avoid-exact-probability-until-established'
+              : 'review-upset-status-and-avoid-exact-probability',
         },
         scores: {
           magnitude,
