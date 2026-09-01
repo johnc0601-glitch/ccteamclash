@@ -1,4 +1,5 @@
-import {describe, expect, it} from 'vitest';
+import assert from 'node:assert/strict';
+import {describe, it} from 'node:test';
 import type {RatedResult} from './RatedResult';
 import {CompositeRatedResultRepository} from './CompositeRatedResultRepository';
 import {InMemoryRatedResultRepository} from './RatedResultRepository';
@@ -20,7 +21,7 @@ describe('CompositeRatedResultRepository', () => {
       new InMemoryRatedResultRepository([row('new', '2026-10-01T12:00:00Z')]),
       new InMemoryRatedResultRepository([row('old', '2025-10-01T12:00:00Z')]),
     ]);
-    expect((await repository.getRatedResults()).map((result) => result.id)).toEqual(['old', 'new']);
+    assert.deepEqual((await repository.getRatedResults()).map((result) => result.id), ['old', 'new']);
   });
 
   it('rejects duplicate normalized ids across sources', async () => {
@@ -28,6 +29,6 @@ describe('CompositeRatedResultRepository', () => {
       new InMemoryRatedResultRepository([row('same', '2025-10-01T12:00:00Z')]),
       new InMemoryRatedResultRepository([row('same', '2026-10-01T12:00:00Z')]),
     ]);
-    await expect(repository.getRatedResults()).rejects.toThrow(/Duplicate RatedResult id/);
+    await assert.rejects(repository.getRatedResults(), /Duplicate RatedResult id/);
   });
 });
