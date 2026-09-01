@@ -10,6 +10,7 @@ import {detectHeadToHead} from './triggers/HeadToHeadTrigger';
 import {detectPersonalBests} from './triggers/PersonalBestTrigger';
 import {detectRecords} from './triggers/RecordTrigger';
 import {detectStreaksSnapped} from './triggers/StreakSnappedTrigger';
+import {detectTeamSeries} from './triggers/TeamSeriesTrigger';
 import {detectUpsets} from './triggers/UpsetTrigger';
 import {detectWinStreaks} from './triggers/WinStreakTrigger';
 
@@ -24,6 +25,7 @@ const V1_DETECTORS: StoryTriggerDetector[] = [
   detectRecords,
   detectDoublesChemistry,
   detectHeadToHead,
+  detectTeamSeries,
 ];
 
 function resultsForScope(results: RatedResult[], scope: StoryScope): RatedResult[] {
