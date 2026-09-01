@@ -34,7 +34,7 @@ describe('UpsetTrigger', () => {
 
   it('scales surprise from barely qualifying to maximum at a 10% chance', () => {
     assert.ok(Math.abs(upsetMagnitude(0.39) - 3.333) < 0.01);
-    assert.equal(upsetMagnitude(0.25), 50);
+    assert.ok(Math.abs(upsetMagnitude(0.25) - 50) < 1e-9);
     assert.equal(upsetMagnitude(0.10), 100);
     assert.equal(upsetMagnitude(0.05), 100);
   });
