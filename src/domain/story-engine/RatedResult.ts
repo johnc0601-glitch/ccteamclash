@@ -36,6 +36,11 @@ export type RatedResult = {
    * one subject player's complete Matchday CI chain is known to be incomplete.
    */
   ciHistoryReliable?: boolean;
+  /**
+   * False means at least one contest from this team match was quarantined, so
+   * surviving contest facts must not be summed into a team-match score/series.
+   */
+  matchAggregateReliable?: boolean;
   teamId: string;
   teamName: string;
   opponentTeamId: string;
