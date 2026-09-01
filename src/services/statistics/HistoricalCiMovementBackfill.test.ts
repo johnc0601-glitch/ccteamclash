@@ -165,6 +165,17 @@ test('contest validation rejects non-zero-sum facts', () => {
   assert.throws(() => assertCompleteHistoricalContests(altered), /not zero-sum/);
 });
 
+test('contest validation rejects team/opponent assignments that do not describe one contest', () => {
+  const dryRun = dryRunHistoricalCiMovementBackfill(
+    mirroredRegularRows(),
+    new Map([['home', 900], ['away', 900]]),
+  );
+  const altered = dryRun.facts.map((fact, index) => index === 1
+    ? {...fact, teamId: 'team-third', teamName: 'Third Team'}
+    : fact);
+  assert.throws(() => assertCompleteHistoricalContests(altered), /inconsistent opponent teams/);
+});
+
 test('same input produces the same backfill facts', () => {
   const rows = mirroredRegularRows();
   const ratings = new Map([['home', 900], ['away', 900]]);
