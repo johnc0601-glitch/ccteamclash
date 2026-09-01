@@ -26,21 +26,22 @@ describe('buildRatedResultsFromStoredFacts', () => {
     ], rounds, seasons);
 
     assert.equal(rows.length, 2);
-    const row = rows[0];
-    assert.equal(row.eventId, 'round-1');
-    assert.equal(row.seasonId, '2026-27');
-    assert.equal(row.seasonName, '2026-2027');
-    assert.equal(row.eventLabel, 'October');
-    assert.equal(row.eventOrder, 1);
-    assert.equal(row.playedAt, '2026-10-03');
-    assert.equal(row.venue, 'Home');
-    assert.deepEqual(row.subjectPlayerIds, ['p1']);
-    assert.deepEqual(row.subjectCiBefore, [910]);
-    assert.deepEqual(row.subjectCiAfter, [918]);
-    assert.deepEqual(row.subjectCiDeltas, [8]);
-    assert.equal(row.winProbability, .37);
-    assert.equal(row.opponentTeamName, 'Away Team');
-    assert.equal(row.modelVersion, 'test-v1');
+    const home = rows.find((row) => row.side === 'Home');
+    assert.ok(home);
+    assert.equal(home.eventId, 'round-1');
+    assert.equal(home.seasonId, '2026-27');
+    assert.equal(home.seasonName, '2026-2027');
+    assert.equal(home.eventLabel, 'October');
+    assert.equal(home.eventOrder, 1);
+    assert.equal(home.playedAt, '2026-10-03');
+    assert.equal(home.venue, 'Home');
+    assert.deepEqual(home.subjectPlayerIds, ['p1']);
+    assert.deepEqual(home.subjectCiBefore, [910]);
+    assert.deepEqual(home.subjectCiAfter, [918]);
+    assert.deepEqual(home.subjectCiDeltas, [8]);
+    assert.equal(home.winProbability, .37);
+    assert.equal(home.opponentTeamName, 'Away Team');
+    assert.equal(home.modelVersion, 'test-v1');
   });
 
   it('creates player-aligned doubles snapshots and one aggregate side delta', () => {
