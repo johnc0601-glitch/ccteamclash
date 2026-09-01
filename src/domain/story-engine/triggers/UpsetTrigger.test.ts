@@ -48,7 +48,7 @@ function prior(playerId: string, index: number): RatedResult {
 }
 
 describe('UpsetTrigger', () => {
-  it('creates a candidate for a PDGA-backed upset below the threshold', () => {
+  it('retains a PDGA-backed upset but withholds an exact percentage until CI is established', () => {
     const candidates = detectUpsets([
       result(), opponent(),
       result({id: 'r2', contestId: 'c2', winProbability: 0.40}),
@@ -60,17 +60,28 @@ describe('UpsetTrigger', () => {
     assert.equal(candidates[0].triggerType, 'UPSET');
     assert.deepEqual(candidates[0].playerIds, ['p1']);
     assert.equal(candidates[0].headlineFacts.winner, 'Player One');
-    assert.equal(candidates[0].headlineFacts.winProbability, 0.24);
+    assert.equal(candidates[0].headlineFacts.winProbability, null);
     assert.equal(candidates[0].headlineFacts.ciDeficit, 70);
-    assert.equal(candidates[0].headlineFacts.ratingEvidence, 'TrustedSeed');
+    assert.equal(candidates[0].headlineFacts.upsetConfidence, 'Likely');
+    assert.equal(candidates[0].headlineFacts.probabilityConfidence, 'Medium');
+    assert.equal(candidates[0].contextFacts.modelWinProbability, 0.24);
+    assert.equal(candidates[0].contextFacts.ratingEvidence, 'TrustedSeed');
     assert.equal(candidates[0].scores.magnitude, 53.33333333333334);
   });
 
-  it('suppresses a computed upset when either side is only ghost/provisional', () => {
+  it('retains ghost/provisional model upsets for editorial review without a headline probability', () => {
     const winner = result({subjectRatingSeedSources: ['PDGA']});
     const ghostOpponent = opponent({subjectRatingSeedSources: ['GHOST']});
     assert.equal(upsetRatingEvidence([winner, ghostOpponent], winner).classification, 'Provisional');
-    assert.deepEqual(detectUpsets([winner, ghostOpponent]), []);
+
+    const candidate = detectUpsets([winner, ghostOpponent])[0];
+    assert.ok(candidate);
+    assert.equal(candidate.headlineFacts.upsetConfidence, 'NeedsReview');
+    assert.equal(candidate.headlineFacts.probabilityConfidence, 'Low');
+    assert.equal(candidate.headlineFacts.winProbability, null);
+    assert.equal(candidate.contextFacts.modelWinProbability, 0.24);
+    assert.equal(candidate.contextFacts.editorialReviewRequired, true);
+    assert.ok(candidate.scores.magnitude <= 35);
   });
 
   it('treats a player as established after three prior rated contests even from a ghost seed', () => {
@@ -87,7 +98,11 @@ describe('UpsetTrigger', () => {
     assert.equal(evidence.classification, 'Established');
     assert.equal(evidence.subjectPriorRatedResults, 3);
     assert.equal(evidence.opponentPriorRatedResults, 3);
-    assert.equal(detectUpsets(history).length, 1);
+    const candidate = detectUpsets(history)[0];
+    assert.ok(candidate);
+    assert.equal(candidate.headlineFacts.upsetConfidence, 'ConfirmedByRatings');
+    assert.equal(candidate.headlineFacts.probabilityConfidence, 'High');
+    assert.equal(candidate.headlineFacts.winProbability, 0.24);
   });
 
   it('caps extreme probability magnitude while ratings are only trusted seeds', () => {
@@ -95,7 +110,8 @@ describe('UpsetTrigger', () => {
     const losingSide = opponent({winProbability: 0.95, expectedPoints: 0.95});
     const candidate = detectUpsets([winner, losingSide])[0];
     assert.ok(candidate);
-    assert.equal(candidate.headlineFacts.ratingEvidence, 'TrustedSeed');
+    assert.equal(candidate.contextFacts.ratingEvidence, 'TrustedSeed');
+    assert.equal(candidate.headlineFacts.winProbability, null);
     assert.equal(candidate.scores.magnitude, 60);
   });
 
