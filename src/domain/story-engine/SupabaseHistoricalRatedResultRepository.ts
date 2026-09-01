@@ -342,7 +342,9 @@ export function buildHistoricalRatedResultReport(
   }
 
   const unreliableCiPlayerMatchdays = new Set<string>();
+  const unreliableMatchAggregates = new Set<string>();
   for (const issue of diagnostics) {
+    if (issue.historicalMatchKey) unreliableMatchAggregates.add(issue.historicalMatchKey);
     for (const fact of byContest.get(issue.contestId) ?? []) {
       unreliableCiPlayerMatchdays.add(`${fact.historical_match_key}\u0000${fact.player_id}`);
     }
@@ -351,7 +353,13 @@ export function buildHistoricalRatedResultReport(
     const ciHistoryReliable = !result.subjectPlayerIds.some((playerId) =>
       unreliableCiPlayerMatchdays.has(`${result.matchId}\u0000${playerId}`),
     );
-    return ciHistoryReliable ? result : {...result, ciHistoryReliable: false};
+    const matchAggregateReliable = !unreliableMatchAggregates.has(result.matchId);
+    if (ciHistoryReliable && matchAggregateReliable) return result;
+    return {
+      ...result,
+      ...(ciHistoryReliable ? {} : {ciHistoryReliable: false}),
+      ...(matchAggregateReliable ? {} : {matchAggregateReliable: false}),
+    };
   });
 
   return {
