@@ -28,6 +28,70 @@
   opacity: .76;
 }
 
+.filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr)) minmax(240px, 2fr) auto;
+  gap: 10px;
+  align-items: end;
+  margin: 0 0 24px;
+  padding: 14px;
+  border: 1px solid rgba(127,127,127,.24);
+  border-radius: 14px;
+  background: rgba(127,127,127,.05);
+}
+
+.filters label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.filters label span {
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: .7;
+}
+
+.filters select,
+.filters button {
+  min-height: 42px;
+}
+
+.filters select {
+  width: 100%;
+  min-width: 0;
+  padding: 0 10px;
+  border: 1px solid rgba(127,127,127,.32);
+  border-radius: 9px;
+  background: inherit;
+  color: inherit;
+}
+
+.filterActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.filterActions button,
+.filterActions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.filterActions a {
+  border: 1px solid rgba(127,127,127,.32);
+  text-decoration: none;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -74,9 +138,38 @@
   opacity: .72;
 }
 
+@media (max-width: 900px) {
+  .filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .matchFilter,
+  .filterActions {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 600px) {
   .hero {
     padding-top: 36px;
+  }
+
+  .filters {
+    grid-template-columns: 1fr;
+    padding: 10px;
+  }
+
+  .matchFilter,
+  .filterActions {
+    grid-column: auto;
+  }
+
+  .filterActions {
+    width: 100%;
+  }
+
+  .filterActions button {
+    flex: 1;
   }
 
   .grid {
