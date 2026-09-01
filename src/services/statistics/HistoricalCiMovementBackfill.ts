@@ -58,11 +58,6 @@ export type HistoricalCiLedgerInsert = {
   algorithm_version: string;
 };
 
-/**
- * Produces the deterministic payload that a historical CI backfill would write,
- * without performing any persistence. Rows that cannot be replayed safely stay
- * visible in quarantine so the caller never has to guess historical venue/side.
- */
 export function dryRunHistoricalCiMovementBackfill(
   rows: HistoricalPlayerMatchup[],
   startingRatings: ReadonlyMap<string, number>,
@@ -90,11 +85,6 @@ export function dryRunHistoricalCiMovementBackfill(
   };
 }
 
-/**
- * Converts a reconciled dry run into the exact immutable ledger payload.
- * Persistence must never proceed while any row is quarantined, unaccounted, or
- * part of an incomplete/non-zero-sum contest.
- */
 export function prepareHistoricalCiLedgerInserts(
   dryRun: HistoricalCiBackfillDryRun,
 ): HistoricalCiLedgerInsert[] {
@@ -193,6 +183,42 @@ export function assertCompleteHistoricalContests(facts: HistoricalReplayFact[]):
     const netMovement = contestFacts.reduce((sum, fact) => sum + fact.ciDelta, 0);
     if (netMovement !== 0) {
       throw new Error(`Historical CI contest ${contestId} is not zero-sum (${netMovement})`);
+    }
+  }
+
+  const factsByMatch = new Map<string, HistoricalReplayFact[]>();
+  for (const fact of facts) {
+    const rows = factsByMatch.get(fact.historicalMatchKey) ?? [];
+    rows.push(fact);
+    factsByMatch.set(fact.historicalMatchKey, rows);
+  }
+
+  for (const [historicalMatchKey, matchFacts] of factsByMatch) {
+    const teamIds = new Set(matchFacts.map((fact) => fact.teamId));
+    if (teamIds.size !== 2) {
+      throw new Error(`Historical CI team match ${historicalMatchKey} has ${teamIds.size} teams across contests; expected 2`);
+    }
+
+    const persistedTeamMatchIds = new Set(
+      matchFacts
+        .map((fact) => fact.historicalTeamMatchId)
+        .filter((id): id is number => id !== null),
+    );
+    if (persistedTeamMatchIds.size > 1) {
+      throw new Error(`Historical CI team match ${historicalMatchKey} points to multiple historical team-match ids`);
+    }
+
+    const venues = new Set(matchFacts.map((fact) => fact.venue));
+    if (venues.size !== 1) {
+      throw new Error(`Historical CI team match ${historicalMatchKey} mixes venues across contests`);
+    }
+    if (matchFacts[0]?.venue === 'Home') {
+      for (const teamId of teamIds) {
+        const sides = new Set(matchFacts.filter((fact) => fact.teamId === teamId).map((fact) => fact.side));
+        if (sides.size !== 1) {
+          throw new Error(`Historical CI team match ${historicalMatchKey} changes a team's Home/Away identity across contests`);
+        }
+      }
     }
   }
 }
