@@ -14,7 +14,12 @@ import {
 import {isMatchFeedOpen} from '@/services/matches/MatchFeedLifecycle';
 import styles from './MatchFeed.module.css';
 
-const REACTION_LABELS: Record<string, string> = {like: 'Like', love: 'Love', laugh: 'Laugh', fire: 'Fire'};
+const REACTION_LABELS = {
+  like: {label: 'Like', icon: '👍'},
+  love: {label: 'Love', icon: '❤️'},
+  laugh: {label: 'Laugh', icon: '😂'},
+  fire: {label: 'Fire', icon: '🔥'},
+} as const;
 const FEED_PAGE_SIZE = 10;
 
 type FeedPost = {
@@ -116,7 +121,7 @@ export async function MatchFeed({matchId, matchDate, notice, error, before}: Mat
           <input type="hidden" name="matchId" value={matchId} />
           <textarea name="body" maxLength={3000} placeholder="What’s happening at this match?" aria-label="New match post" />
           <div className={styles.composerActions}>
-            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" />
+            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" />
             <button type="submit">Post</button>
           </div>
         </form>
@@ -183,9 +188,8 @@ function PostCard({post, comments, postReactions, commentReactions, currentProfi
         {imageUrl ? <a href={imageUrl} target="_blank" rel="noreferrer"><img className={styles.photo} src={imageUrl} alt="Match feed upload" loading="lazy" /></a> : null}
       </>}
       <div className={styles.reactionBar}>
-        {Object.entries(REACTION_LABELS).map(([key, label]) => (
-          interactive ? <form action={setMatchFeedPostReaction} key={key}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={post.id} /><input type="hidden" name="reactionType" value={key} /><button type="submit" data-active={postReactions.some((reaction) => reaction.profile_id === currentProfileId && reaction.reaction_type === key)}>{label}{counts[key] ? ` ${counts[key]}` : ''}</button></form> : counts[key] ? <span className={styles.stats} key={key}>{label} {counts[key]}</span> : null
-        ))}
+        {interactive ? <ReactionPicker reactions={postReactions} currentProfileId={currentProfileId} matchId={matchId} postId={post.id} /> : null}
+        <ReactionSummary counts={counts} />
         <span className={styles.stats}>{comments.filter((comment) => !comment.deleted_at).length} comments</span>
       </div>
       <div className={styles.commentArea}>
@@ -227,13 +231,61 @@ function CommentBubble({comment, reactions, currentProfileId, commissioner, open
     <div className={styles.commentTop}><strong>{comment.author_name_snapshot || 'Member'}</strong><span>{formatDate(comment.created_at)}{comment.edited_at ? ' · Edited' : ''}</span></div>
     <p>{comment.deleted_at ? 'Comment removed' : comment.body}</p>
     <div className={styles.commentTools}>
-      {!comment.deleted_at && open && currentProfileId ? Object.entries(REACTION_LABELS).map(([key, label]) => <form action={setMatchFeedCommentReaction} key={key}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="commentId" value={comment.id} /><input type="hidden" name="reactionType" value={key} /><button type="submit" data-active={reactions.some((reaction) => reaction.profile_id === currentProfileId && reaction.reaction_type === key)}>{label}{counts[key] ? ` ${counts[key]}` : ''}</button></form>) : null}
+      {!comment.deleted_at && open && currentProfileId ? <ReactionPicker reactions={reactions} currentProfileId={currentProfileId} matchId={matchId} postId={postId} commentId={comment.id} compact /> : null}
+      <ReactionSummary counts={counts} compact />
       {!comment.deleted_at && open && currentProfileId === comment.profile_id ? <details><summary>Edit</summary><form action={editMatchFeedComment} className={styles.editForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="commentId" value={comment.id} /><textarea name="body" defaultValue={comment.body} maxLength={1500} /><button type="submit">Save edit</button></form></details> : null}
       {!comment.deleted_at && currentProfileId && currentProfileId !== comment.profile_id ? <ReportControl matchId={matchId} commentId={comment.id} /> : null}
       {!comment.deleted_at && commissioner ? <form action={softDeleteMatchFeedComment}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="commentId" value={comment.id} /><button type="submit">Remove</button></form> : null}
       {!comment.deleted_at && canReply && open && currentProfileId ? <details><summary>Reply</summary><form action={addMatchFeedComment} className={styles.replyForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="parentCommentId" value={comment.id} /><input name="body" maxLength={1500} placeholder="Reply" /><button type="submit">Reply</button></form></details> : null}
     </div>
   </div>;
+}
+
+function ReactionPicker({reactions, currentProfileId, matchId, postId, commentId, compact = false}: {
+  reactions: Reaction[];
+  currentProfileId: string | null;
+  matchId: string;
+  postId: string;
+  commentId?: string;
+  compact?: boolean;
+}) {
+  const selectedKey = reactions.find((reaction) => reaction.profile_id === currentProfileId)?.reaction_type;
+  const selected = selectedKey && selectedKey in REACTION_LABELS
+    ? REACTION_LABELS[selectedKey as keyof typeof REACTION_LABELS]
+    : null;
+  const action = commentId ? setMatchFeedCommentReaction : setMatchFeedPostReaction;
+
+  return (
+    <details className={compact ? `${styles.reactionPicker} ${styles.reactionPickerCompact}` : styles.reactionPicker}>
+      <summary data-active={Boolean(selected)}>{selected ? <><span>{selected.icon}</span> {selected.label}</> : 'React'}</summary>
+      <div className={styles.reactionMenu}>
+        {Object.entries(REACTION_LABELS).map(([key, reaction]) => (
+          <form action={action} key={key}>
+            <input type="hidden" name="matchId" value={matchId} />
+            <input type="hidden" name="postId" value={postId} />
+            {commentId ? <input type="hidden" name="commentId" value={commentId} /> : null}
+            <input type="hidden" name="reactionType" value={key} />
+            <button type="submit" data-active={selectedKey === key} title={reaction.label} aria-label={reaction.label}>
+              <span>{reaction.icon}</span>
+              <small>{reaction.label}</small>
+            </button>
+          </form>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function ReactionSummary({counts, compact = false}: {counts: Record<string, number>; compact?: boolean}) {
+  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  if (!total) return null;
+  const active = Object.entries(REACTION_LABELS).filter(([key]) => (counts[key] ?? 0) > 0);
+  return (
+    <span className={compact ? `${styles.reactionSummary} ${styles.reactionSummaryCompact}` : styles.reactionSummary} aria-label={`${total} reaction${total === 1 ? '' : 's'}`}>
+      <span className={styles.reactionIcons}>{active.map(([key, reaction]) => <span key={key}>{reaction.icon}</span>)}</span>
+      <span>{total}</span>
+    </span>
+  );
 }
 
 function ReportControl({matchId, postId, commentId}: {matchId: string; postId?: string; commentId?: string}) {
