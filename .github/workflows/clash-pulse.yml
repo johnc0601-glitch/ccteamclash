@@ -37,7 +37,7 @@ jobs:
           node-version: 22
           cache: npm
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm install --no-audit --no-fund
       - name: Run Clash Pulse tests
         run: npm run test:pulse
       - name: Type check
