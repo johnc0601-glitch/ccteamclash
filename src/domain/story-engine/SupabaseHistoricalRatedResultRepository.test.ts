@@ -4,6 +4,7 @@ import {
   buildHistoricalRatedResultReport,
   buildHistoricalRatedResults,
   type HistoricalEventMetadataRow,
+  type HistoricalTeamMatchMetadataRow,
   type StoredHistoricalRatingFact,
 } from './SupabaseHistoricalRatedResultRepository';
 
@@ -16,13 +17,29 @@ function fact(overrides: Partial<StoredHistoricalRatingFact> & Pick<StoredHistor
   };
 }
 
-function meta(key: string, eventOrder = 2, eventLabel = 'November'): HistoricalEventMetadataRow {
+function meta(
+  key: string,
+  eventOrder = 2,
+  eventLabel = 'November',
+  historicalTeamMatchId: number | null = 10,
+): HistoricalEventMetadataRow {
   return {
     deduplication_key: key,
     season_id: 'coastal-clash-2025-2026',
     season_name: '2025-2026',
     event_label: eventLabel,
     event_order: eventOrder,
+    historical_team_match_id: historicalTeamMatchId,
+  };
+}
+
+function official(overrides: Partial<HistoricalTeamMatchMetadataRow> = {}): HistoricalTeamMatchMetadataRow {
+  return {
+    id: 10,
+    away_team_name: 'Team Two',
+    home_team_name: 'Team One',
+    ci_venue: 'Home',
+    ...overrides,
   };
 }
 
@@ -32,7 +49,7 @@ describe('buildHistoricalRatedResults', () => {
       fact({matchup_deduplication_key: 'k1', player_id: 'p1', player_name: 'One', team_id: 't1', team_name: 'Team One', opponent_team_id: 't2', opponent_team_name: 'Team Two', side: 'Home', venue: 'Home', format: 'Singles', outcome: 'W', clash_index_before: 920, ci_delta: 8, win_probability: .35, opponent_effective_ci: 980, actual_points: 1, expected_points: .35}),
       fact({matchup_deduplication_key: 'k2', player_id: 'p2', player_name: 'Two', team_id: 't2', team_name: 'Team Two', opponent_team_id: 't1', opponent_team_name: 'Team One', side: 'Away', venue: 'Home', format: 'Singles', outcome: 'L', clash_index_before: 980, ci_delta: -8, win_probability: .65, opponent_effective_ci: 935, actual_points: 0, expected_points: .65}),
     ];
-    const report = buildHistoricalRatedResultReport(facts, [meta('k1'), meta('k2')]);
+    const report = buildHistoricalRatedResultReport(facts, [meta('k1'), meta('k2')], [official()]);
 
     assert.equal(report.sourceFactRows, 2);
     assert.equal(report.sourceContests, 1);
@@ -56,7 +73,10 @@ describe('buildHistoricalRatedResults', () => {
       fact({matchup_deduplication_key: 'k1', player_id: 'p1', player_name: 'One', team_id: 't1', team_name: 'Team One', opponent_team_id: 't2', opponent_team_name: 'Team Two', side: null, venue: 'Neutral', format: 'Singles', outcome: 'W', clash_index_before: 960, ci_delta: 6}),
       fact({matchup_deduplication_key: 'k2', player_id: 'p2', player_name: 'Two', team_id: 't2', team_name: 'Team Two', opponent_team_id: 't1', opponent_team_name: 'Team One', side: null, venue: 'Neutral', format: 'Singles', outcome: 'L', clash_index_before: 955, ci_delta: -6}),
     ];
-    const rows = buildHistoricalRatedResults(facts, [meta('k1', 7, 'March Championship'), meta('k2', 7, 'March Championship')]);
+    const rows = buildHistoricalRatedResults(
+      facts,
+      [meta('k1', 7, 'March Championship', null), meta('k2', 7, 'March Championship', null)],
+    );
     assert.deepEqual(rows.map((row) => row.venue), ['Neutral', 'Neutral']);
     assert.deepEqual(new Set(rows.map((row) => row.side)), new Set(['Home', 'Away']));
   });
@@ -67,7 +87,7 @@ describe('buildHistoricalRatedResults', () => {
       fact({matchup_deduplication_key: 'k2', player_id: 'p2', player_name: 'Two', team_id: 't2', team_name: 'Team Two', opponent_team_id: 't1', opponent_team_name: 'Team One', side: 'Away', venue: 'Home', format: 'Doubles', outcome: 'L', clash_index_before: 950, ci_delta: -2}),
       fact({matchup_deduplication_key: 'k3', player_id: 'p3', player_name: 'Three', team_id: 't2', team_name: 'Team Two', opponent_team_id: 't1', opponent_team_name: 'Team One', side: 'Away', venue: 'Home', format: 'Doubles', outcome: 'L', clash_index_before: 940, ci_delta: -3}),
     ];
-    const report = buildHistoricalRatedResultReport(facts, [meta('k1'), meta('k2'), meta('k3')]);
+    const report = buildHistoricalRatedResultReport(facts, [meta('k1'), meta('k2'), meta('k3')], [official()]);
     assert.deepEqual(report.results, []);
     assert.equal(report.diagnostics.length, 1);
     assert.equal(report.diagnostics[0].reason, 'unexpected-player-count');
@@ -80,10 +100,21 @@ describe('buildHistoricalRatedResults', () => {
       fact({matchup_deduplication_key: 'k3', player_id: 'p3', player_name: 'Three', team_id: 't3', team_name: 'Team Three', opponent_team_id: 't2', opponent_team_name: 'Team Two', side: 'Home', venue: 'Home', format: 'Doubles', outcome: 'W', clash_index_before: 920, ci_delta: 5}),
       fact({matchup_deduplication_key: 'k4', player_id: 'p4', player_name: 'Four', team_id: 't3', team_name: 'Team Three', opponent_team_id: 't2', opponent_team_name: 'Team Two', side: 'Home', venue: 'Home', format: 'Doubles', outcome: 'W', clash_index_before: 930, ci_delta: 5}),
     ];
-    const report = buildHistoricalRatedResultReport(facts, [meta('k1'), meta('k2'), meta('k3'), meta('k4')]);
+    const report = buildHistoricalRatedResultReport(facts, [meta('k1'), meta('k2'), meta('k3'), meta('k4')], [official()]);
     assert.equal(report.emittedContests, 0);
     assert.equal(report.quarantinedContests, 1);
     assert.equal(report.diagnostics[0].reason, 'unexpected-team-count');
+  });
+
+  it('rejects a two-team contest whose team identity disagrees with the official team match', () => {
+    const facts = [
+      fact({matchup_deduplication_key: 'k1', player_id: 'p1', player_name: 'One', team_id: 'wrong-team', team_name: "Hayneous OG's", opponent_team_id: 't2', opponent_team_name: 'Team Two', side: 'Home', venue: 'Home', format: 'Singles', outcome: 'W', clash_index_before: 920, ci_delta: 8}),
+      fact({matchup_deduplication_key: 'k2', player_id: 'p2', player_name: 'Two', team_id: 't2', team_name: 'Team Two', opponent_team_id: 'wrong-team', opponent_team_name: "Hayneous OG's", side: 'Away', venue: 'Home', format: 'Singles', outcome: 'L', clash_index_before: 980, ci_delta: -8}),
+    ];
+    const report = buildHistoricalRatedResultReport(facts, [meta('k1'), meta('k2')], [official()]);
+    assert.equal(report.emittedContests, 0);
+    assert.equal(report.quarantinedContests, 1);
+    assert.equal(report.diagnostics[0].reason, 'inconsistent-team-match-identity');
   });
 
   it('marks the affected player Matchday CI unreliable while retaining other valid contest stories', () => {
@@ -96,7 +127,7 @@ describe('buildHistoricalRatedResults', () => {
       fact({contest_id: 'doubles-bad', matchup_deduplication_key: 'd4', player_id: 'p5', player_name: 'Five', team_id: 't3', team_name: 'Team Three', opponent_team_id: 't2', opponent_team_name: 'Team Two', side: 'Home', venue: 'Home', format: 'Doubles', outcome: 'W', clash_index_before: 950, ci_delta: 4}),
     ];
     const metadata = ['s1', 's2', 'd1', 'd2', 'd3', 'd4'].map((key) => meta(key));
-    const report = buildHistoricalRatedResultReport(facts, metadata);
+    const report = buildHistoricalRatedResultReport(facts, metadata, [official()]);
 
     assert.equal(report.emittedContests, 1);
     assert.equal(report.quarantinedContests, 1);
