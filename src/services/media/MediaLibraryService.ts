@@ -136,7 +136,23 @@ export async function updateMediaAsset(
     alt_text: cleanText(input.altText),
     gallery_visible: input.galleryVisible === true,
     taken_at: normalizeDate(input.takenAt),
+    season_id: cleanOptionalText(input.seasonId),
+    team_id: cleanOptionalText(input.teamId),
+    match_id: cleanOptionalText(input.matchId),
   };
+
+  if (updates.match_id) {
+    const {data: match, error: matchError} = await db
+      .from('launch_schedule_matches')
+      .select('id,season_id')
+      .eq('id', updates.match_id)
+      .maybeSingle();
+    if (matchError || !match) throw new Error(matchError?.message || 'Selected match was not found.');
+    if (updates.season_id && updates.season_id !== match.season_id) {
+      throw new Error('Selected match does not belong to the selected season.');
+    }
+    updates.season_id = match.season_id;
+  }
 
   const {data, error} = await db
     .from('media_assets')
@@ -182,6 +198,11 @@ export function rowToAsset(supabase: any, row: MediaAssetRow): MediaAsset {
 
 function cleanText(value: unknown): string {
   return typeof value === 'string' ? value.trim().slice(0, 1000) : '';
+}
+
+function cleanOptionalText(value: unknown): string | null {
+  const cleaned = cleanText(value);
+  return cleaned || null;
 }
 
 function normalizeDate(value: unknown): string | null {
