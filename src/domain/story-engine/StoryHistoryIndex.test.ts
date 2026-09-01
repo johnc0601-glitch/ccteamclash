@@ -1,4 +1,5 @@
-import {describe, expect, it} from 'vitest';
+import assert from 'node:assert/strict';
+import {describe, it} from 'node:test';
 import type {RatedResult} from './RatedResult';
 import {StoryHistoryIndex} from './StoryHistoryIndex';
 
@@ -30,7 +31,7 @@ describe('StoryHistoryIndex', () => {
       row({id: 'c2:away', contestId: 'c2', side: 'Away', subjectPlayerIds: ['p2'], subjectNames: ['Two'], outcome: 'T', won: false, winProbability: 0.50, playedAt: '2026-11-03T12:00:00Z'}),
     ]);
 
-    expect(index.playerHeadToHead('p1', 'p2')).toEqual({
+    assert.deepEqual(index.playerHeadToHead('p1', 'p2'), {
       playerAId: 'p1', playerBId: 'p2', meetings: 2, playerAWins: 1, playerBWins: 0, ties: 1,
       lastMeetingAt: '2026-11-03T12:00:00Z',
     });
@@ -43,7 +44,7 @@ describe('StoryHistoryIndex', () => {
       row({id: 'd1:home', contestId: 'd1', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p1', 'p3'], subjectNames: ['One', 'Three'], outcome: 'W', won: true, winProbability: 0.45}),
       row({id: 'd1:away', contestId: 'd1', side: 'Away', format: 'Doubles', subjectPlayerIds: ['p2', 'p4'], subjectNames: ['Two', 'Four'], outcome: 'L', won: false, winProbability: 0.55}),
     ]);
-    expect(index.playerHeadToHead('p1', 'p2', {seasonId: '2026-27'}).meetings).toBe(1);
+    assert.equal(index.playerHeadToHead('p1', 'p2', {seasonId: '2026-27'}).meetings, 1);
   });
 
   it('aggregates order-independent doubles chemistry and performance versus expectation', () => {
@@ -52,10 +53,10 @@ describe('StoryHistoryIndex', () => {
       row({id: 'd2:home', contestId: 'd2', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p1', 'p3'], subjectNames: ['One', 'Three'], outcome: 'L', won: false, winProbability: 0.60, expectedPoints: 0.60}),
     ];
     const record = new StoryHistoryIndex(results).doublesPairRecord('p3', 'p1');
-    expect(record).toMatchObject({playerIds: ['p1', 'p3'], contests: 2, wins: 1, losses: 1, ties: 0});
-    expect(record.expectedPoints).toBe(1);
-    expect(record.actualPoints).toBe(1);
-    expect(record.performanceVsExpected).toBe(0);
+    assert.deepEqual({playerIds: record.playerIds, contests: record.contests, wins: record.wins, losses: record.losses, ties: record.ties}, {playerIds: ['p1', 'p3'], contests: 2, wins: 1, losses: 1, ties: 0});
+    assert.equal(record.expectedPoints, 1);
+    assert.equal(record.actualPoints, 1);
+    assert.equal(record.performanceVsExpected, 0);
   });
 
   it('builds player CI windows from singles aggregate fallback and explicit doubles snapshots', () => {
@@ -65,19 +66,19 @@ describe('StoryHistoryIndex', () => {
       row({id: 's2', contestId: 's2', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: .5, subjectEffectiveCi: 914, ciDelta: 7, playedAt: '2026-10-03T12:00:00Z'}),
     ]);
 
-    expect(index.playerCiWindow('p1', 3)).toMatchObject({
-      contests: 3,
-      totalDelta: 21,
-      startCi: 900,
-      currentCi: 921,
-    });
+    const window = index.playerCiWindow('p1', 3);
+    assert.ok(window);
+    assert.equal(window.contests, 3);
+    assert.equal(window.totalDelta, 21);
+    assert.equal(window.startCi, 900);
+    assert.equal(window.currentCi, 921);
   });
 
   it('does not misread an aggregate doubles delta as one player movement when snapshots are missing', () => {
     const index = new StoryHistoryIndex([
       row({id: 'd1', contestId: 'd1', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p1', 'p2'], subjectNames: ['One', 'Two'], outcome: 'W', won: true, winProbability: .5, ciDelta: 20}),
     ]);
-    expect(index.playerCiObservations('p1')).toEqual([]);
+    assert.deepEqual(index.playerCiObservations('p1'), []);
   });
 
   it('ranks only qualifying upset wins by lowest pre-match win probability', () => {
@@ -86,8 +87,8 @@ describe('StoryHistoryIndex', () => {
       row({id: 'u2', contestId: 'u2', side: 'Home', subjectPlayerIds: ['p2'], subjectNames: ['Two'], outcome: 'W', won: true, winProbability: 0.09}),
       row({id: 'f1', contestId: 'f1', side: 'Home', subjectPlayerIds: ['p3'], subjectNames: ['Three'], outcome: 'W', won: true, winProbability: 0.70}),
     ]);
-    expect(index.upsetRank('u2', {seasonId: '2026-27'})).toEqual({rank: 1, total: 2});
-    expect(index.upsetRank('u1', {seasonId: '2026-27'})).toEqual({rank: 2, total: 2});
-    expect(index.upsetRank('f1', {seasonId: '2026-27'})).toBeNull();
+    assert.deepEqual(index.upsetRank('u2', {seasonId: '2026-27'}), {rank: 1, total: 2});
+    assert.deepEqual(index.upsetRank('u1', {seasonId: '2026-27'}), {rank: 2, total: 2});
+    assert.equal(index.upsetRank('f1', {seasonId: '2026-27'}), null);
   });
 });
