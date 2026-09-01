@@ -24,7 +24,10 @@ describe('ClashPulseService', () => {
       row(1), row(2), row(3, {winProbability: .20, expectedPoints: .20, ciDeficit: 90}),
     ]));
     const candidates = await service.getCandidates({kind: 'Round', eventId: 'round-3'});
-    assert.deepEqual(candidates.map((candidate) => candidate.triggerType).sort(), ['CI_SURGE', 'UPSET', 'WIN_STREAK']);
+    assert.deepEqual(
+      candidates.map((candidate) => candidate.triggerType).sort(),
+      ['CI_SURGE', 'PERSONAL_BEST', 'UPSET', 'WIN_STREAK'],
+    );
   });
 
   it('summarizes available seasons and events without mutating data', async () => {
