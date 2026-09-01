@@ -1,4 +1,5 @@
-import {describe, expect, it} from 'vitest';
+import assert from 'node:assert/strict';
+import {describe, it} from 'node:test';
 import type {RatedResult} from '../RatedResult';
 import {detectWinStreaks} from './WinStreakTrigger';
 
@@ -22,12 +23,12 @@ describe('WinStreakTrigger', () => {
       result(2), result(3), result(4),
     ]);
 
-    expect(candidates).toHaveLength(1);
-    expect(candidates[0]).toMatchObject({
-      triggerType: 'WIN_STREAK',
-      playerIds: ['p1'],
-      headlineFacts: {player: 'Player One', format: 'Singles', streakLength: 3},
-    });
+    assert.equal(candidates.length, 1);
+    assert.equal(candidates[0].triggerType, 'WIN_STREAK');
+    assert.deepEqual(candidates[0].playerIds, ['p1']);
+    assert.equal(candidates[0].headlineFacts.player, 'Player One');
+    assert.equal(candidates[0].headlineFacts.format, 'Singles');
+    assert.equal(candidates[0].headlineFacts.streakLength, 3);
   });
 
   it('does not publish a streak candidate after the latest contest breaks it', () => {
@@ -35,7 +36,7 @@ describe('WinStreakTrigger', () => {
       result(1), result(2), result(3),
       result(4, {won: false, outcome: 'L', actualPoints: 0}),
     ]);
-    expect(candidates).toEqual([]);
+    assert.deepEqual(candidates, []);
   });
 
   it('keeps singles and doubles streaks separate', () => {
@@ -48,7 +49,7 @@ describe('WinStreakTrigger', () => {
         subjectNames: ['Player One', 'Player Two'],
       }),
     ]);
-    expect(candidates).toEqual([]);
+    assert.deepEqual(candidates, []);
   });
 
   it('creates separate player candidates for a doubles streak', () => {
@@ -58,7 +59,7 @@ describe('WinStreakTrigger', () => {
       subjectNames: ['Player One', 'Player Two'],
     }));
     const candidates = detectWinStreaks(doubles);
-    expect(candidates.map((candidate) => candidate.playerIds[0])).toEqual(['p1', 'p2']);
-    expect(candidates.every((candidate) => candidate.headlineFacts.streakLength === 3)).toBe(true);
+    assert.deepEqual(candidates.map((candidate) => candidate.playerIds[0]), ['p1', 'p2']);
+    assert.ok(candidates.every((candidate) => candidate.headlineFacts.streakLength === 3));
   });
 });
