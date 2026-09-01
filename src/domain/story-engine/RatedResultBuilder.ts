@@ -54,6 +54,7 @@ export function buildRatedResults(
       seasonId: context.seasonId,
       format: contest.format,
       side,
+      venue: representative.venue,
       subjectPlayerIds: players.map((player) => player.playerId),
       subjectNames: players.map((player) => player.playerName),
       subjectCiBefore: sideFacts.map((fact) => fact.clashIndexBefore),
