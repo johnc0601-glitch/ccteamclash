@@ -18,6 +18,8 @@ type StoryDraft = {
   status: StoryStatus;
 };
 
+type StoryFilter = 'all' | StoryStatus;
+
 const blankDraft: StoryDraft = {
   slug: '',
   title: '',
@@ -45,6 +47,7 @@ export function StoryManager() {
   const [draft, setDraft] = useState<StoryDraft>(blankDraft);
   const [selectedId, setSelectedId] = useState('');
   const [selectedRevision, setSelectedRevision] = useState<number | null>(null);
+  const [storyFilter, setStoryFilter] = useState<StoryFilter>('all');
   const [status, setStatus] = useState('Loading stories...');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -94,6 +97,18 @@ export function StoryManager() {
     [stories, selectedId],
   );
   const sourceFacts = selectedStory?.sourceFactSnapshot ?? [];
+
+  const storyCounts = useMemo(() => ({
+    all: stories.length,
+    draft: stories.filter((story) => story.status === 'draft').length,
+    published: stories.filter((story) => story.status === 'published').length,
+    archived: stories.filter((story) => story.status === 'archived').length,
+  }), [stories]);
+
+  const visibleStories = useMemo(
+    () => storyFilter === 'all' ? stories : stories.filter((story) => story.status === storyFilter),
+    [stories, storyFilter],
+  );
 
   function selectStory(story: Story) {
     setSelectedId(story.id);
@@ -235,7 +250,7 @@ export function StoryManager() {
     }
 
     const selectedStoryForArchive = stories.find((story) => story.id === selectedId);
-    if (!selectedStoryForArchive || !window.confirm(`Archive "${selectedStoryForArchive.title}"? It will disappear from public pages.`)) {
+    if (!selectedStoryForArchive || !window.confirm(`Archive \"${selectedStoryForArchive.title}\"? It will disappear from public pages.`)) {
       return;
     }
 
@@ -274,6 +289,7 @@ export function StoryManager() {
   const previewDate = draft.publishedDate
     ? formatStoryDate(`${draft.publishedDate}T12:00:00.000Z`)
     : (draft.status === 'published' ? 'Publishing today' : 'Draft');
+  const selectedHiddenByFilter = Boolean(selectedStory && storyFilter !== 'all' && selectedStory.status !== storyFilter);
 
   return (
     <section className="story-manager">
@@ -289,10 +305,43 @@ export function StoryManager() {
       <div className="story-manager-grid">
         <aside className="story-list-panel">
           <h2>Stories</h2>
+          <div
+            aria-label="Story lifecycle filters"
+            style={{display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10}}
+          >
+            {([
+              ['all', 'All', storyCounts.all],
+              ['draft', 'Draft', storyCounts.draft],
+              ['published', 'Published', storyCounts.published],
+              ['archived', 'Archived', storyCounts.archived],
+            ] as Array<[StoryFilter, string, number]>).map(([value, label, count]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={storyFilter === value}
+                onClick={() => setStoryFilter(value)}
+                style={{
+                  border: '1px solid rgba(127,127,127,.3)',
+                  borderRadius: 999,
+                  padding: '6px 9px',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  opacity: storyFilter === value ? 1 : .72,
+                  background: storyFilter === value ? 'rgba(127,127,127,.18)' : 'transparent',
+                  color: 'inherit',
+                  cursor: 'pointer',
+                }}
+              >
+                {label} ({count})
+              </button>
+            ))}
+          </div>
+          {selectedHiddenByFilter ? <p style={{fontSize: 12, opacity: .7}}>The selected story stays open while this filter is active.</p> : null}
           {loading ? <p>Loading...</p> : null}
           {!loading && stories.length === 0 ? <p>No stories yet.</p> : null}
+          {!loading && stories.length > 0 && visibleStories.length === 0 ? <p>No {storyFilter} stories.</p> : null}
           <div className="story-list">
-            {stories.map((story) => (
+            {visibleStories.map((story) => (
               <button
                 type="button"
                 className={story.id === selectedId ? 'story-list-item active' : 'story-list-item'}
