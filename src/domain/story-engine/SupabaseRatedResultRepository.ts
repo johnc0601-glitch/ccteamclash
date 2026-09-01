@@ -1,5 +1,5 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
-import {doublesPairCi} from './ClashPrediction';
+import {doublesPairCi, type ClashVenue} from './ClashPrediction';
 import type {RatedResult} from './RatedResult';
 import type {RatedResultRepository} from './RatedResultRepository';
 
@@ -20,6 +20,19 @@ type ScheduleRow = {
   away_team_id: string | null;
 };
 
+type RoundRow = {
+  id: string;
+  season_id: string;
+  number: number;
+  name: string;
+  date: string;
+};
+
+type SeasonRow = {
+  id: string;
+  name: string;
+};
+
 export type StoredContestRatingFact = {
   contest_id: string;
   match_id: string;
@@ -28,6 +41,7 @@ export type StoredContestRatingFact = {
   player_name: string;
   team_name: string;
   side: string;
+  venue: string;
   format: string;
   outcome: string;
   clash_index_before: number;
@@ -47,6 +61,10 @@ function chunks<T>(values: T[], size: number): T[][] {
 
 function validSide(value: string): value is RatedResult['side'] {
   return value === 'Home' || value === 'Away';
+}
+
+function validVenue(value: string): value is ClashVenue {
+  return value === 'Home' || value === 'Neutral';
 }
 
 function validFormat(value: string): value is RatedResult['format'] {
@@ -72,14 +90,18 @@ export function buildRatedResultsFromStoredFacts(
   publishedMatches: PublishedMatchRow[],
   schedules: ScheduleRow[],
   facts: StoredContestRatingFact[],
+  rounds: RoundRow[] = [],
+  seasons: SeasonRow[] = [],
 ): RatedResult[] {
   const publishedByMatchId = new Map(publishedMatches.map((row) => [row.match_id, row]));
   const scheduleByMatchId = new Map(schedules.map((row) => [row.id, row]));
+  const roundById = new Map(rounds.map((row) => [row.id, row]));
+  const seasonById = new Map(seasons.map((row) => [row.id, row]));
   const factsByContest = new Map<string, StoredContestRatingFact[]>();
   for (const fact of facts) {
-    const rows = factsByContest.get(fact.contest_id) ?? [];
-    rows.push(fact);
-    factsByContest.set(fact.contest_id, rows);
+    const rowsForContest = factsByContest.get(fact.contest_id) ?? [];
+    rowsForContest.push(fact);
+    factsByContest.set(fact.contest_id, rowsForContest);
   }
 
   const results: RatedResult[] = [];
@@ -88,6 +110,8 @@ export function buildRatedResultsFromStoredFacts(
     if (!matchId || !publishedByMatchId.has(matchId)) continue;
     const schedule = scheduleByMatchId.get(matchId);
     if (!schedule?.round_id || !schedule.season_id || !schedule.date) continue;
+    const round = roundById.get(schedule.round_id);
+    const season = seasonById.get(schedule.season_id);
 
     for (const side of ['Home', 'Away'] as const) {
       const sideFacts = contestFacts
@@ -97,12 +121,16 @@ export function buildRatedResultsFromStoredFacts(
       if (sideFacts.length === 0 || opponentFacts.length === 0) continue;
 
       const representative = sideFacts[0];
-      if (!validSide(representative.side) || !validFormat(representative.format) || !validOutcome(representative.outcome)) continue;
+      if (!validSide(representative.side)
+        || !validVenue(representative.venue)
+        || !validFormat(representative.format)
+        || !validOutcome(representative.outcome)) continue;
       if (sideFacts.some((fact) =>
         fact.match_id !== matchId
         || fact.format !== representative.format
         || fact.outcome !== representative.outcome
         || fact.team_id !== representative.team_id
+        || fact.venue !== representative.venue
         || fact.algorithm_version !== representative.algorithm_version
       )) continue;
 
@@ -116,8 +144,12 @@ export function buildRatedResultsFromStoredFacts(
         matchId,
         eventId: schedule.round_id,
         seasonId: schedule.season_id,
+        seasonName: season?.name,
+        eventLabel: round?.name,
+        eventOrder: round?.number,
         format: representative.format,
         side: representative.side,
+        venue: representative.venue,
         subjectPlayerIds: sideFacts.map((fact) => fact.player_id),
         subjectNames: sideFacts.map((fact) => fact.player_name),
         subjectCiBefore: sideFacts.map((fact) => fact.clash_index_before),
@@ -153,11 +185,15 @@ export class SupabaseRatedResultRepository implements RatedResultRepository {
     const publishedMatches = await this.loadPublishedMatches();
     if (publishedMatches.length === 0) return [];
     const matchIds = publishedMatches.map((row) => row.match_id);
-    const [schedules, facts] = await Promise.all([
-      this.loadSchedules(matchIds),
+    const schedules = await this.loadSchedules(matchIds);
+    const roundIds = [...new Set(schedules.map((row) => row.round_id).filter(Boolean))];
+    const seasonIds = [...new Set(schedules.map((row) => row.season_id).filter(Boolean))];
+    const [facts, rounds, seasons] = await Promise.all([
       this.loadFacts(matchIds),
+      this.loadRounds(roundIds),
+      this.loadSeasons(seasonIds),
     ]);
-    return buildRatedResultsFromStoredFacts(publishedMatches, schedules, facts);
+    return buildRatedResultsFromStoredFacts(publishedMatches, schedules, facts, rounds, seasons);
   }
 
   private async loadPublishedMatches(): Promise<PublishedMatchRow[]> {
@@ -190,13 +226,41 @@ export class SupabaseRatedResultRepository implements RatedResultRepository {
     return rows;
   }
 
+  private async loadRounds(roundIds: string[]): Promise<RoundRow[]> {
+    if (roundIds.length === 0) return [];
+    const rows: RoundRow[] = [];
+    for (const ids of chunks(roundIds, MATCH_ID_CHUNK_SIZE)) {
+      const {data, error} = await this.supabase
+        .from('launch_rounds')
+        .select('id,season_id,number,name,date')
+        .in('id', ids);
+      if (error) throw error;
+      rows.push(...((data ?? []) as RoundRow[]));
+    }
+    return rows;
+  }
+
+  private async loadSeasons(seasonIds: string[]): Promise<SeasonRow[]> {
+    if (seasonIds.length === 0) return [];
+    const rows: SeasonRow[] = [];
+    for (const ids of chunks(seasonIds, MATCH_ID_CHUNK_SIZE)) {
+      const {data, error} = await this.supabase
+        .from('launch_seasons')
+        .select('id,name')
+        .in('id', ids);
+      if (error) throw error;
+      rows.push(...((data ?? []) as SeasonRow[]));
+    }
+    return rows;
+  }
+
   private async loadFacts(matchIds: string[]): Promise<StoredContestRatingFact[]> {
     const rows: StoredContestRatingFact[] = [];
     for (const ids of chunks(matchIds, MATCH_ID_CHUNK_SIZE)) {
       for (let from = 0; ; from += PAGE_SIZE) {
         const {data, error} = await this.supabase
           .from('clash_contest_rating_facts')
-          .select('contest_id,match_id,player_id,team_id,player_name,team_name,side,format,outcome,clash_index_before,opponent_effective_ci,win_probability,actual_points,expected_points,ci_delta,algorithm_version')
+          .select('contest_id,match_id,player_id,team_id,player_name,team_name,side,venue,format,outcome,clash_index_before,opponent_effective_ci,win_probability,actual_points,expected_points,ci_delta,algorithm_version')
           .in('match_id', ids)
           .order('contest_id', {ascending: true})
           .order('player_id', {ascending: true})
