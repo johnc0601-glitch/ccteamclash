@@ -58,6 +58,28 @@ describe('StoryHistoryIndex', () => {
     expect(record.performanceVsExpected).toBe(0);
   });
 
+  it('builds player CI windows from singles aggregate fallback and explicit doubles snapshots', () => {
+    const index = new StoryHistoryIndex([
+      row({id: 's1', contestId: 's1', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: .5, subjectEffectiveCi: 900, ciDelta: 8, playedAt: '2026-10-01T12:00:00Z'}),
+      row({id: 'd1', contestId: 'd1', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p1', 'p2'], subjectNames: ['One', 'Two'], outcome: 'W', won: true, winProbability: .5, ciDelta: 14, subjectCiBefore: [908, 940], subjectCiAfter: [914, 948], subjectCiDeltas: [6, 8], playedAt: '2026-10-02T12:00:00Z'}),
+      row({id: 's2', contestId: 's2', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: .5, subjectEffectiveCi: 914, ciDelta: 7, playedAt: '2026-10-03T12:00:00Z'}),
+    ]);
+
+    expect(index.playerCiWindow('p1', 3)).toMatchObject({
+      contests: 3,
+      totalDelta: 21,
+      startCi: 900,
+      currentCi: 921,
+    });
+  });
+
+  it('does not misread an aggregate doubles delta as one player movement when snapshots are missing', () => {
+    const index = new StoryHistoryIndex([
+      row({id: 'd1', contestId: 'd1', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p1', 'p2'], subjectNames: ['One', 'Two'], outcome: 'W', won: true, winProbability: .5, ciDelta: 20}),
+    ]);
+    expect(index.playerCiObservations('p1')).toEqual([]);
+  });
+
   it('ranks only qualifying upset wins by lowest pre-match win probability', () => {
     const index = new StoryHistoryIndex([
       row({id: 'u1', contestId: 'u1', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: 0.22}),
