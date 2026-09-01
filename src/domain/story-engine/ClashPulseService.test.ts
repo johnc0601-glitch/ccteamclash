@@ -1,4 +1,5 @@
-import {describe, expect, it} from 'vitest';
+import assert from 'node:assert/strict';
+import {describe, it} from 'node:test';
 import type {RatedResult} from './RatedResult';
 import {InMemoryRatedResultRepository} from './RatedResultRepository';
 import {ClashPulseService} from './ClashPulseService';
@@ -23,7 +24,7 @@ describe('ClashPulseService', () => {
       row(1), row(2), row(3, {winProbability: .20, expectedPoints: .20, ciDeficit: 90}),
     ]));
     const candidates = await service.getCandidates({kind: 'Round', eventId: 'round-3'});
-    expect(candidates.map((candidate) => candidate.triggerType).sort()).toEqual(['CI_SURGE', 'UPSET', 'WIN_STREAK']);
+    assert.deepEqual(candidates.map((candidate) => candidate.triggerType).sort(), ['CI_SURGE', 'UPSET', 'WIN_STREAK']);
   });
 
   it('summarizes available seasons and events without mutating data', async () => {
@@ -31,7 +32,7 @@ describe('ClashPulseService', () => {
       row(1), row(2), row(3),
       row(4, {seasonId: 'season-2', seasonName: 'Season Two', eventId: 's2-round-1', eventLabel: 'Round 1'}),
     ]));
-    expect(await service.getSeasonSummaries()).toEqual([
+    assert.deepEqual(await service.getSeasonSummaries(), [
       {seasonId: 'season-1', seasonName: 'Season One', resultRows: 3, events: 3},
       {seasonId: 'season-2', seasonName: 'Season Two', resultRows: 1, events: 1},
     ]);
