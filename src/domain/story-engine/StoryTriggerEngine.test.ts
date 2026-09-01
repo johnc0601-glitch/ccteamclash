@@ -43,10 +43,11 @@ describe('StoryTriggerEngine', () => {
     ];
     const candidates = buildStoryCandidates(results, {kind: 'Round', eventId: 'round-2'});
 
-    assert.equal(candidates.length, 1);
-    assert.equal(candidates[0].triggerType, 'UPSET');
-    assert.equal(candidates[0].eventId, 'round-2');
-    assert.equal(candidates[0].contextFacts.allTimeUpsetRank, 1);
-    assert.equal(candidates[0].contextFacts.allTimeUpsetTotal, 1);
+    assert.equal(candidates.length, 2);
+    assert.deepEqual(candidates.map((candidate) => candidate.triggerType).sort(), ['PERSONAL_BEST', 'UPSET']);
+    const upset = candidates.find((candidate) => candidate.triggerType === 'UPSET');
+    assert.equal(upset?.eventId, 'round-2');
+    assert.equal(upset?.contextFacts.allTimeUpsetRank, 1);
+    assert.equal(upset?.contextFacts.allTimeUpsetTotal, 1);
   });
 });
