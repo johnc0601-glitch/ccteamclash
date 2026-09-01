@@ -209,7 +209,7 @@ set season_id = excluded.season_id,
     deleted_at = null;
 
 insert into public.media_asset_team_links (media_asset_id, team_id, source)
-select asset.id, team_id, 'match'
+select asset.id, team.team_id, 'match'
 from public.media_assets asset
 join public.launch_schedule_matches match on match.id = asset.match_id
 cross join lateral (
@@ -217,5 +217,5 @@ cross join lateral (
 ) team(team_id)
 where asset.bucket = 'match-feed'
   and asset.deleted_at is null
-  and team_id is not null
+  and team.team_id is not null
 on conflict (media_asset_id, team_id) do update set source = 'match';
