@@ -5,6 +5,7 @@ import {StoryHistoryIndex} from './StoryHistoryIndex';
 import {finalizeStoryCandidate} from './StoryScoring';
 import type {StoryScope} from './StoryScope';
 import {detectCiSurges} from './triggers/CiSurgeTrigger';
+import {detectDoublesChemistry} from './triggers/DoublesChemistryTrigger';
 import {detectPersonalBests} from './triggers/PersonalBestTrigger';
 import {detectRecords} from './triggers/RecordTrigger';
 import {detectStreaksSnapped} from './triggers/StreakSnappedTrigger';
@@ -20,6 +21,7 @@ const V1_DETECTORS: StoryTriggerDetector[] = [
   detectCiSurges,
   detectPersonalBests,
   detectRecords,
+  detectDoublesChemistry,
 ];
 
 function resultsForScope(results: RatedResult[], scope: StoryScope): RatedResult[] {
