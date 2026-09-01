@@ -48,6 +48,7 @@ describe('buildHistoricalRatedResults', () => {
     assert.deepEqual(report.results[0].subjectCiBefore, [920]);
     assert.deepEqual(report.results[0].subjectCiAfter, [928]);
     assert.deepEqual(report.results[0].subjectCiDeltas, [8]);
+    assert.notEqual(report.results[0].ciHistoryReliable, false);
   });
 
   it('keeps neutral playoffs neutral while assigning only a deterministic internal side', () => {
@@ -83,5 +84,27 @@ describe('buildHistoricalRatedResults', () => {
     assert.equal(report.emittedContests, 0);
     assert.equal(report.quarantinedContests, 1);
     assert.equal(report.diagnostics[0].reason, 'unexpected-team-count');
+  });
+
+  it('marks the affected player Matchday CI unreliable while retaining other valid contest stories', () => {
+    const facts = [
+      fact({contest_id: 'singles-good', matchup_deduplication_key: 's1', player_id: 'p1', player_name: 'One', team_id: 't1', team_name: 'Team One', opponent_team_id: 't2', opponent_team_name: 'Team Two', side: 'Home', venue: 'Home', format: 'Singles', outcome: 'W', clash_index_before: 920, ci_delta: 8}),
+      fact({contest_id: 'singles-good', matchup_deduplication_key: 's2', player_id: 'p2', player_name: 'Two', team_id: 't2', team_name: 'Team Two', opponent_team_id: 't1', opponent_team_name: 'Team One', side: 'Away', venue: 'Home', format: 'Singles', outcome: 'L', clash_index_before: 980, ci_delta: -8}),
+      fact({contest_id: 'doubles-bad', matchup_deduplication_key: 'd1', player_id: 'p1', player_name: 'One', team_id: 't1', team_name: 'Team One', opponent_team_id: 't3', opponent_team_name: 'Team Three', side: 'Away', venue: 'Home', format: 'Doubles', outcome: 'L', clash_index_before: 920, ci_delta: -4}),
+      fact({contest_id: 'doubles-bad', matchup_deduplication_key: 'd2', player_id: 'p3', player_name: 'Three', team_id: 't2', team_name: 'Team Two', opponent_team_id: 't3', opponent_team_name: 'Team Three', side: 'Away', venue: 'Home', format: 'Doubles', outcome: 'L', clash_index_before: 930, ci_delta: -4}),
+      fact({contest_id: 'doubles-bad', matchup_deduplication_key: 'd3', player_id: 'p4', player_name: 'Four', team_id: 't3', team_name: 'Team Three', opponent_team_id: 't2', opponent_team_name: 'Team Two', side: 'Home', venue: 'Home', format: 'Doubles', outcome: 'W', clash_index_before: 940, ci_delta: 4}),
+      fact({contest_id: 'doubles-bad', matchup_deduplication_key: 'd4', player_id: 'p5', player_name: 'Five', team_id: 't3', team_name: 'Team Three', opponent_team_id: 't2', opponent_team_name: 'Team Two', side: 'Home', venue: 'Home', format: 'Doubles', outcome: 'W', clash_index_before: 950, ci_delta: 4}),
+    ];
+    const metadata = ['s1', 's2', 'd1', 'd2', 'd3', 'd4'].map((key) => meta(key));
+    const report = buildHistoricalRatedResultReport(facts, metadata);
+
+    assert.equal(report.emittedContests, 1);
+    assert.equal(report.quarantinedContests, 1);
+    const p1 = report.results.find((row) => row.subjectPlayerIds.includes('p1'));
+    const p2 = report.results.find((row) => row.subjectPlayerIds.includes('p2'));
+    assert.ok(p1);
+    assert.ok(p2);
+    assert.equal(p1.ciHistoryReliable, false);
+    assert.notEqual(p2.ciHistoryReliable, false);
   });
 });
