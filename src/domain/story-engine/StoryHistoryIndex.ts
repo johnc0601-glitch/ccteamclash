@@ -33,12 +33,13 @@ export type RankedOccurrence = {
   total: number;
 };
 
+/** One player's published CI movement from one complete team match. */
 export type PlayerCiObservation = {
   resultId: string;
-  contestId: string;
+  resultIds: string[];
+  matchId: string;
   eventId: string;
   seasonId: string;
-  format: RatedResult['format'];
   teamId: string;
   playedAt: string;
   before: number;
@@ -48,11 +49,17 @@ export type PlayerCiObservation = {
 
 export type PlayerCiWindow = {
   playerId: string;
-  contests: number;
+  matchdays: number;
   totalDelta: number;
   startCi: number;
   currentCi: number;
   observations: PlayerCiObservation[];
+};
+
+type PlayerCiContribution = {
+  result: RatedResult;
+  before: number;
+  delta: number;
 };
 
 function chronological(a: RatedResult, b: RatedResult): number {
@@ -72,38 +79,24 @@ function finite(value: number | undefined): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
-function ciObservation(result: RatedResult, playerId: string): PlayerCiObservation | null {
+function ciContribution(result: RatedResult, playerId: string): PlayerCiContribution | null {
   const index = result.subjectPlayerIds.indexOf(playerId);
   if (index < 0) return null;
 
-  // Singles can safely fall back to the aggregate fields because a singles side
-  // contains exactly one player. Doubles requires explicit player-level data.
+  // Singles can safely fall back to aggregate side fields because the side has
+  // one player. Doubles requires the explicit player-level contribution.
   const before = result.subjectCiBefore?.[index]
     ?? (result.format === 'Singles' ? result.subjectEffectiveCi : undefined);
   const delta = result.subjectCiDeltas?.[index]
     ?? (result.format === 'Singles' ? result.ciDelta : undefined);
-  const after = result.subjectCiAfter?.[index]
-    ?? (finite(before) && finite(delta) ? before + delta : undefined);
-
-  if (!finite(before) || !finite(after) || !finite(delta)) return null;
-  return {
-    resultId: result.id,
-    contestId: result.contestId,
-    eventId: result.eventId,
-    seasonId: result.seasonId,
-    format: result.format,
-    teamId: result.teamId,
-    playedAt: result.playedAt,
-    before,
-    after,
-    delta,
-  };
+  if (!finite(before) || !finite(delta)) return null;
+  return {result, before, delta};
 }
 
 /**
- * Read-only historical index for Clash Pulse. It joins the two normalized sides
- * of a contest once, then exposes reusable player/team/opponent context without
- * letting individual triggers know anything about persistence.
+ * Read-only historical index for Clash Pulse. It joins normalized contest sides
+ * once, then exposes reusable player/team/opponent context without allowing a
+ * trigger to know anything about persistence.
  */
 export class StoryHistoryIndex {
   private readonly results: RatedResult[];
@@ -191,19 +184,71 @@ export class StoryHistoryIndex {
     };
   }
 
-  playerCiObservations(playerId: string, scope: StoryResultScope = {}): PlayerCiObservation[] {
-    return this.playerResults(playerId, scope)
-      .map((result) => ciObservation(result, playerId))
-      .filter((observation): observation is PlayerCiObservation => observation !== null);
+  /**
+   * Builds one CI observation per player/team match. All contest contributions
+   * from that match share the same frozen CI and are summed before computing the
+   * published post-match CI. A partially safe Matchday is omitted rather than
+   * understating movement by using only one of singles/doubles.
+   */
+  playerCiObservations(
+    playerId: string,
+    scope: Omit<StoryResultScope, 'format'> = {},
+  ): PlayerCiObservation[] {
+    const groups = new Map<string, RatedResult[]>();
+    for (const result of this.playerResults(playerId, scope)) {
+      const key = `${result.seasonId}\u0000${result.matchId}`;
+      const rows = groups.get(key) ?? [];
+      rows.push(result);
+      groups.set(key, rows);
+    }
+
+    const observations: PlayerCiObservation[] = [];
+    for (const rows of groups.values()) {
+      rows.sort(chronological);
+      const contributions = rows
+        .map((result) => ciContribution(result, playerId))
+        .filter((value): value is PlayerCiContribution => value !== null);
+      if (contributions.length !== rows.length || contributions.length === 0) continue;
+
+      const first = contributions[0];
+      if (contributions.some(({result, before}) =>
+        before !== first.before
+        || result.seasonId !== first.result.seasonId
+        || result.eventId !== first.result.eventId
+        || result.teamId !== first.result.teamId
+        || result.playedAt !== first.result.playedAt,
+      )) continue;
+
+      const delta = contributions.reduce((sum, contribution) => sum + contribution.delta, 0);
+      const representative = rows.at(-1)!;
+      observations.push({
+        resultId: representative.id,
+        resultIds: rows.map((result) => result.id),
+        matchId: representative.matchId,
+        eventId: representative.eventId,
+        seasonId: representative.seasonId,
+        teamId: representative.teamId,
+        playedAt: representative.playedAt,
+        before: first.before,
+        after: first.before + delta,
+        delta,
+      });
+    }
+
+    return observations.sort((a, b) => a.playedAt.localeCompare(b.playedAt) || a.matchId.localeCompare(b.matchId));
   }
 
-  playerCiWindow(playerId: string, contests: number, scope: StoryResultScope = {}): PlayerCiWindow | null {
-    if (contests <= 0) return null;
-    const observations = this.playerCiObservations(playerId, scope).slice(-contests);
-    if (observations.length !== contests) return null;
+  playerCiWindow(
+    playerId: string,
+    matchdays: number,
+    scope: Omit<StoryResultScope, 'format'> = {},
+  ): PlayerCiWindow | null {
+    if (matchdays <= 0) return null;
+    const observations = this.playerCiObservations(playerId, scope).slice(-matchdays);
+    if (observations.length !== matchdays) return null;
     return {
       playerId,
-      contests,
+      matchdays,
       totalDelta: observations.reduce((sum, observation) => sum + observation.delta, 0),
       startCi: observations[0].before,
       currentCi: observations.at(-1)!.after,
@@ -211,11 +256,15 @@ export class StoryHistoryIndex {
     };
   }
 
-  ciWindowRank(playerId: string, contests: number, scope: StoryResultScope = {}): RankedOccurrence | null {
-    const target = this.playerCiWindow(playerId, contests, scope);
+  ciWindowRank(
+    playerId: string,
+    matchdays: number,
+    scope: Omit<StoryResultScope, 'format'> = {},
+  ): RankedOccurrence | null {
+    const target = this.playerCiWindow(playerId, matchdays, scope);
     if (!target) return null;
     const windows = [...this.byPlayerId.keys()]
-      .map((candidatePlayerId) => this.playerCiWindow(candidatePlayerId, contests, scope))
+      .map((candidatePlayerId) => this.playerCiWindow(candidatePlayerId, matchdays, scope))
       .filter((window): window is PlayerCiWindow => window !== null)
       .sort((a, b) => b.totalDelta - a.totalDelta || b.currentCi - a.currentCi || a.playerId.localeCompare(b.playerId));
     const index = windows.findIndex((window) => window.playerId === playerId);
