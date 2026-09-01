@@ -1,4 +1,5 @@
-import {describe, expect, it} from 'vitest';
+import assert from 'node:assert/strict';
+import {describe, it} from 'node:test';
 import {
   buildHistoricalRatedResultReport,
   buildHistoricalRatedResults,
@@ -33,13 +34,20 @@ describe('buildHistoricalRatedResults', () => {
     ];
     const report = buildHistoricalRatedResultReport(facts, [meta('k1'), meta('k2')]);
 
-    expect(report).toMatchObject({sourceFactRows: 2, sourceContests: 1, emittedContests: 1, quarantinedContests: 0});
-    expect(report.results).toHaveLength(2);
-    expect(report.results[0]).toMatchObject({
-      seasonId: 'coastal-clash-2025-2026', seasonName: '2025-2026',
-      eventId: 'historical:coastal-clash-2025-2026:event-2', eventLabel: 'November', eventOrder: 2,
-      venue: 'Home', subjectCiBefore: [920], subjectCiAfter: [928], subjectCiDeltas: [8],
-    });
+    assert.equal(report.sourceFactRows, 2);
+    assert.equal(report.sourceContests, 1);
+    assert.equal(report.emittedContests, 1);
+    assert.equal(report.quarantinedContests, 0);
+    assert.equal(report.results.length, 2);
+    assert.equal(report.results[0].seasonId, 'coastal-clash-2025-2026');
+    assert.equal(report.results[0].seasonName, '2025-2026');
+    assert.equal(report.results[0].eventId, 'historical:coastal-clash-2025-2026:event-2');
+    assert.equal(report.results[0].eventLabel, 'November');
+    assert.equal(report.results[0].eventOrder, 2);
+    assert.equal(report.results[0].venue, 'Home');
+    assert.deepEqual(report.results[0].subjectCiBefore, [920]);
+    assert.deepEqual(report.results[0].subjectCiAfter, [928]);
+    assert.deepEqual(report.results[0].subjectCiDeltas, [8]);
   });
 
   it('keeps neutral playoffs neutral while assigning only a deterministic internal side', () => {
@@ -48,8 +56,8 @@ describe('buildHistoricalRatedResults', () => {
       fact({matchup_deduplication_key: 'k2', player_id: 'p2', player_name: 'Two', team_id: 't2', team_name: 'Team Two', opponent_team_id: 't1', opponent_team_name: 'Team One', side: null, venue: 'Neutral', format: 'Singles', outcome: 'L', clash_index_before: 955, ci_delta: -6}),
     ];
     const rows = buildHistoricalRatedResults(facts, [meta('k1', 7, 'March Championship'), meta('k2', 7, 'March Championship')]);
-    expect(rows.map((row) => row.venue)).toEqual(['Neutral', 'Neutral']);
-    expect(new Set(rows.map((row) => row.side))).toEqual(new Set(['Home', 'Away']));
+    assert.deepEqual(rows.map((row) => row.venue), ['Neutral', 'Neutral']);
+    assert.deepEqual(new Set(rows.map((row) => row.side)), new Set(['Home', 'Away']));
   });
 
   it('quarantines an entire partial doubles contest instead of using only one side', () => {
@@ -59,8 +67,9 @@ describe('buildHistoricalRatedResults', () => {
       fact({matchup_deduplication_key: 'k3', player_id: 'p3', player_name: 'Three', team_id: 't2', team_name: 'Team Two', opponent_team_id: 't1', opponent_team_name: 'Team One', side: 'Away', venue: 'Home', format: 'Doubles', outcome: 'L', clash_index_before: 940, ci_delta: -3}),
     ];
     const report = buildHistoricalRatedResultReport(facts, [meta('k1'), meta('k2'), meta('k3')]);
-    expect(report.results).toEqual([]);
-    expect(report.diagnostics).toEqual([expect.objectContaining({reason: 'unexpected-player-count'})]);
+    assert.deepEqual(report.results, []);
+    assert.equal(report.diagnostics.length, 1);
+    assert.equal(report.diagnostics[0].reason, 'unexpected-player-count');
   });
 
   it('quarantines a contest containing three team ids and reports the defect', () => {
@@ -71,7 +80,8 @@ describe('buildHistoricalRatedResults', () => {
       fact({matchup_deduplication_key: 'k4', player_id: 'p4', player_name: 'Four', team_id: 't3', team_name: 'Team Three', opponent_team_id: 't2', opponent_team_name: 'Team Two', side: 'Home', venue: 'Home', format: 'Doubles', outcome: 'W', clash_index_before: 930, ci_delta: 5}),
     ];
     const report = buildHistoricalRatedResultReport(facts, [meta('k1'), meta('k2'), meta('k3'), meta('k4')]);
-    expect(report).toMatchObject({emittedContests: 0, quarantinedContests: 1});
-    expect(report.diagnostics[0]).toMatchObject({reason: 'unexpected-team-count'});
+    assert.equal(report.emittedContests, 0);
+    assert.equal(report.quarantinedContests, 1);
+    assert.equal(report.diagnostics[0].reason, 'unexpected-team-count');
   });
 });
