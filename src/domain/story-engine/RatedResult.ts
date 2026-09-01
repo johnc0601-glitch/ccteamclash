@@ -12,6 +12,10 @@ export type RatedResult = {
   matchId: string;
   eventId: string;
   seasonId: string;
+  /** Human-facing context for story copy; canonical filtering still uses IDs. */
+  seasonName?: string;
+  eventLabel?: string;
+  eventOrder?: number;
   format: ResultContestFormat;
   side: ResultContestSide;
   /** Frozen CI venue. Neutral rows must never be interpreted as home/road facts. */
