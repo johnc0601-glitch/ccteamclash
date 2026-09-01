@@ -1,3 +1,4 @@
+import type {RatedResult} from './RatedResult';
 import type {StoryCandidateDraft} from './StoryCandidate';
 import type {RankedOccurrence} from './StoryHistoryIndex';
 import {StoryHistoryIndex} from './StoryHistoryIndex';
@@ -66,14 +67,42 @@ function enrichCiSurge(draft: StoryCandidateDraft, history: StoryHistoryIndex): 
   };
 }
 
-/**
- * Adds historical context after a trigger fires. Detectors stay simple and the
- * same history index can enrich many trigger types without repeating scans.
- */
+function enrichStreak(draft: StoryCandidateDraft, history: StoryHistoryIndex): StoryCandidateDraft {
+  const format = draft.headlineFacts.format;
+  const length = draft.triggerType === 'WIN_STREAK'
+    ? draft.headlineFacts.streakLength
+    : draft.headlineFacts.snappedStreak;
+  if ((format !== 'Singles' && format !== 'Doubles') || typeof length !== 'number') return draft;
+
+  const seasonRank = history.winStreakRank(length, format as RatedResult['format'], {seasonId: draft.seasonId});
+  const allTimeRank = history.winStreakRank(length, format as RatedResult['format']);
+  if (!seasonRank && !allTimeRank) return draft;
+
+  return {
+    ...draft,
+    contextFacts: {
+      ...draft.contextFacts,
+      seasonStreakRank: seasonRank?.rank ?? null,
+      seasonStreakComparisonPlayers: seasonRank?.total ?? null,
+      allTimeStreakRank: allTimeRank?.rank ?? null,
+      allTimeStreakComparisonPlayers: allTimeRank?.total ?? null,
+    },
+    scores: {
+      ...draft.scores,
+      rarity: allTimeRank ? rarityFromRank(allTimeRank) : draft.scores.rarity,
+      historicalSignificance: allTimeRank
+        ? historicalSignificanceFromRank(allTimeRank)
+        : draft.scores.historicalSignificance,
+    },
+  };
+}
+
 export function enrichStoryContext(draft: StoryCandidateDraft, history: StoryHistoryIndex): StoryCandidateDraft {
   switch (draft.triggerType) {
     case 'UPSET': return enrichUpset(draft, history);
     case 'CI_SURGE': return enrichCiSurge(draft, history);
+    case 'WIN_STREAK': return enrichStreak(draft, history);
+    case 'STREAK_SNAPPED': return enrichStreak(draft, history);
     default: return draft;
   }
 }
