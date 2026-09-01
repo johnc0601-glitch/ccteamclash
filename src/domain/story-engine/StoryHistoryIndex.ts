@@ -211,6 +211,17 @@ export class StoryHistoryIndex {
     };
   }
 
+  ciWindowRank(playerId: string, contests: number, scope: StoryResultScope = {}): RankedOccurrence | null {
+    const target = this.playerCiWindow(playerId, contests, scope);
+    if (!target) return null;
+    const windows = [...this.byPlayerId.keys()]
+      .map((candidatePlayerId) => this.playerCiWindow(candidatePlayerId, contests, scope))
+      .filter((window): window is PlayerCiWindow => window !== null)
+      .sort((a, b) => b.totalDelta - a.totalDelta || b.currentCi - a.currentCi || a.playerId.localeCompare(b.playerId));
+    const index = windows.findIndex((window) => window.playerId === playerId);
+    return index < 0 ? null : {rank: index + 1, total: windows.length};
+  }
+
   upsetRank(resultId: string, scope: StoryResultScope = {}): RankedOccurrence | null {
     const target = this.results.find((result) => result.id === resultId);
     if (!target?.won || target.winProbability >= UPSET_WIN_PROBABILITY_THRESHOLD) return null;
