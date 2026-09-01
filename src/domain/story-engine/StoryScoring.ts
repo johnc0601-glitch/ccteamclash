@@ -68,6 +68,14 @@ const TRIGGER_WEIGHTS: Partial<Record<StoryTriggerType, StoryScoreWeights>> = {
     standingsSignificance: 0.05,
     opponentQuality: 0.05,
   },
+  TEAM_SERIES: {
+    magnitude: 0.30,
+    rarity: 0.25,
+    historicalSignificance: 0.30,
+    recency: 0.05,
+    standingsSignificance: 0.05,
+    opponentQuality: 0.05,
+  },
   RECORD: {
     magnitude: 0.20,
     rarity: 0.25,
