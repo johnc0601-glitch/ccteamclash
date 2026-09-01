@@ -49,7 +49,7 @@ export function MatchFeedComposer({matchId}: MatchFeedComposerProps) {
           ) : (
             <div className={styles.previewFallback}>Photo selected · preview unavailable on this device</div>
           )}
-          <div className={styles.previewMeta}>
+          <div className={styles.previewMeta} aria-live="polite">
             <span title={fileName}>{fileName}</span>
             <button type="button" onClick={clearPhoto}>Remove photo</button>
           </div>
