@@ -1,3 +1,4 @@
+import heicConvert from 'heic-convert';
 import sharp from 'sharp';
 
 const MAX_EDGE = 2400;
@@ -6,6 +7,7 @@ const WEBP_QUALITY = 82;
 const THUMB_QUALITY = 76;
 const MATCHDAY_MAX_EDGE = 1800;
 const MATCHDAY_QUALITY = 80;
+const HEIC_JPEG_QUALITY = 0.94;
 
 export type ProcessedMediaImage = {
   image: Buffer;
@@ -59,7 +61,11 @@ export async function processMediaImage(file: File): Promise<ProcessedMediaImage
 }
 
 export async function processMatchdayImage(file: File): Promise<ProcessedMatchdayImage> {
-  const input = Buffer.from(await file.arrayBuffer());
+  const original = Buffer.from(await file.arrayBuffer());
+  const input = isHeicFile(file)
+    ? Buffer.from(await heicConvert({buffer: original, format: 'JPEG', quality: HEIC_JPEG_QUALITY}))
+    : original;
+
   const processed = await sharp(input, {failOn: 'warning'})
     .rotate()
     .resize({width: MATCHDAY_MAX_EDGE, height: MATCHDAY_MAX_EDGE, fit: 'inside', withoutEnlargement: true})
@@ -77,4 +83,10 @@ export async function processMatchdayImage(file: File): Promise<ProcessedMatchda
     height: processed.info.height,
     byteSize: processed.data.byteLength,
   };
+}
+
+function isHeicFile(file: File): boolean {
+  const type = file.type.toLowerCase();
+  if (type === 'image/heic' || type === 'image/heif') return true;
+  return /\.(heic|heif)$/i.test(file.name);
 }
