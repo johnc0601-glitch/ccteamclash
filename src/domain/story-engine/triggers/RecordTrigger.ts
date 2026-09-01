@@ -11,8 +11,8 @@ type ObservationWithPlayer = PlayerCiObservation & {
 
 /**
  * Detects a new all-time league CI high from reliable player snapshots only.
- * A minimum comparison field prevents tiny/partial data sets from making broad
- * "league record" claims.
+ * Record comparisons are made against the pre-round record so arbitrary result
+ * id ordering inside one matchday cannot manufacture a "new record" sequence.
  */
 export function detectRecords(results: RatedResult[]): StoryCandidateDraft[] {
   const history = new StoryHistoryIndex(results);
@@ -37,18 +37,29 @@ export function detectRecords(results: RatedResult[]): StoryCandidateDraft[] {
 
   const candidates: StoryCandidateDraft[] = [];
   for (const latest of latestByPlayer.values()) {
-    const prior = all.filter((observation) =>
-      observation.playedAt < latest.playedAt
-      || (observation.playedAt === latest.playedAt && observation.resultId < latest.resultId)
-      || (observation.playedAt === latest.playedAt && observation.resultId === latest.resultId && observation.playerId < latest.playerId),
+    const priorRounds = all.filter((observation) =>
+      observation.seasonId !== latest.seasonId || observation.eventId !== latest.eventId,
     );
-    if (prior.length === 0) continue;
+    if (priorRounds.length === 0) continue;
 
+    const currentRoundStartingCi = all
+      .filter((observation) => observation.seasonId === latest.seasonId && observation.eventId === latest.eventId)
+      .map((observation) => observation.before);
     const previousRecordCi = Math.max(
-      latest.before,
-      ...prior.flatMap((observation) => [observation.before, observation.after]),
+      ...priorRounds.flatMap((observation) => [observation.before, observation.after]),
+      ...currentRoundStartingCi,
     );
+
     if (latest.after <= previousRecordCi) continue;
+
+    // If multiple players exceed the old record in one round, only players tied
+    // for the highest end-of-round CI receive the league-record candidate.
+    const roundHigh = Math.max(
+      ...all
+        .filter((observation) => observation.seasonId === latest.seasonId && observation.eventId === latest.eventId)
+        .map((observation) => observation.after),
+    );
+    if (latest.after < roundHigh) continue;
 
     const latestResult = history.playerResults(latest.playerId).find((result) => result.id === latest.resultId);
     if (!latestResult) continue;
