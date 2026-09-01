@@ -7,10 +7,7 @@ import {INTRO_COOKIE_NAME} from '@/components/intro/intro.config';
 import {parseIntroQuery} from '@/components/intro/introDecision';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchCard} from '@/components/MatchCard';
-import {createServerScheduleService} from '@/core/createServerScheduleService';
-import {getHomepageMatchFeedPreviews} from '@/services/media/HomepageMatchFeedService';
-import {getStoredTeams} from '@/services/teams/TeamStore';
-import {getHomepageStories} from '@/services/stories/HomepageStoryService';
+import {getHomepageData} from '@/services/home/HomepageDataService';
 import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
 
 export const dynamic = 'force-dynamic';
@@ -20,16 +17,13 @@ type HomeProps = {
 };
 
 export default async function Home({searchParams}: HomeProps) {
-  const [cookieStore, query, scheduleService, storyData, teamLogos] = await Promise.all([
+  const [cookieStore, query, homepageData] = await Promise.all([
     cookies(),
     searchParams,
-    createServerScheduleService(),
-    getHomepageStories(),
-    getStoredTeams(),
+    getHomepageData(),
   ]);
+  const {storyData, teams: teamLogos, homeEvents, feedPreviews} = homepageData;
   const lead = storyData.lead;
-  const homeEvents = (await scheduleService.getHomePageEvents()).slice(0, 4);
-  const feedPreviews = await getHomepageMatchFeedPreviews(homeEvents.map((match) => match.id));
 
   return (
     <main className="home-page">
