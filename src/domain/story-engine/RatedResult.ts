@@ -1,4 +1,5 @@
 import type {ResultContestFormat, ResultContestOutcome, ResultContestSide} from '@/domain/results/MatchResult';
+import type {ClashVenue} from './ClashPrediction';
 
 /**
  * One normalized player/pair result consumed by every Around the Clash ranking.
@@ -13,6 +14,8 @@ export type RatedResult = {
   seasonId: string;
   format: ResultContestFormat;
   side: ResultContestSide;
+  /** Frozen CI venue. Neutral rows must never be interpreted as home/road facts. */
+  venue?: ClashVenue;
   subjectPlayerIds: string[];
   subjectNames: string[];
   /**
