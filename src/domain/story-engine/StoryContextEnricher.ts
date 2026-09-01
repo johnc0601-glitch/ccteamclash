@@ -2,6 +2,7 @@ import type {RatedResult} from './RatedResult';
 import type {StoryCandidateDraft} from './StoryCandidate';
 import type {RankedOccurrence} from './StoryHistoryIndex';
 import {StoryHistoryIndex} from './StoryHistoryIndex';
+import {eligibleUpsetRank} from './UpsetRanking';
 
 function rarityFromRank(rank: RankedOccurrence): number {
   if (rank.total <= 1) return 100;
@@ -15,12 +16,12 @@ function historicalSignificanceFromRank(rank: RankedOccurrence): number {
   return 50;
 }
 
-function enrichUpset(draft: StoryCandidateDraft, history: StoryHistoryIndex): StoryCandidateDraft {
+function enrichUpset(draft: StoryCandidateDraft, results: RatedResult[]): StoryCandidateDraft {
   const resultId = draft.headlineFacts.resultId;
   if (typeof resultId !== 'string') return draft;
 
-  const seasonRank = history.upsetRank(resultId, {seasonId: draft.seasonId});
-  const allTimeRank = history.upsetRank(resultId);
+  const seasonRank = eligibleUpsetRank(results, resultId, draft.seasonId);
+  const allTimeRank = eligibleUpsetRank(results, resultId);
   if (!seasonRank && !allTimeRank) return draft;
 
   return {
@@ -97,9 +98,13 @@ function enrichStreak(draft: StoryCandidateDraft, history: StoryHistoryIndex): S
   };
 }
 
-export function enrichStoryContext(draft: StoryCandidateDraft, history: StoryHistoryIndex): StoryCandidateDraft {
+export function enrichStoryContext(
+  draft: StoryCandidateDraft,
+  history: StoryHistoryIndex,
+  results: RatedResult[],
+): StoryCandidateDraft {
   switch (draft.triggerType) {
-    case 'UPSET': return enrichUpset(draft, history);
+    case 'UPSET': return enrichUpset(draft, results);
     case 'CI_SURGE': return enrichCiSurge(draft, history);
     case 'WIN_STREAK': return enrichStreak(draft, history);
     case 'STREAK_SNAPPED': return enrichStreak(draft, history);
