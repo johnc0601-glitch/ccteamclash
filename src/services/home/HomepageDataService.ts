@@ -85,7 +85,7 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
 
   const teams: Team[] = (teamsResult.data ?? []).map((row: any) => mapTeam(row));
   const teamNames = new Map(teams.map((team: Team) => [team.id, team.name]));
-  const courses = new Map(
+  const courses = new Map<string, {name: string; mapUrl: string}>(
     (coursesResult.data ?? []).map((row: any) => [
       clean(row.id),
       {name: clean(row.name), mapUrl: clean(row.map_url)},
