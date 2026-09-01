@@ -76,42 +76,42 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
   logHomepageReadError('matches', matchesResult.error);
   logHomepageReadError('Matchday previews', previewsResult.error);
 
-  const latest = (latestResult.data ?? []).map(mapHomepageStory);
+  const latest: HomepageStory[] = (latestResult.data ?? []).map((row: any) => mapHomepageStory(row));
   const featured = featuredResult.data?.[0] ? mapHomepageStory(featuredResult.data[0]) : null;
   const storyData: HomepageStoryData = {
     lead: featured ?? latest[0] ?? null,
     latest,
   };
 
-  const teams = (teamsResult.data ?? []).map(mapTeam);
-  const teamNames = new Map(teams.map((team) => [team.id, team.name]));
+  const teams: Team[] = (teamsResult.data ?? []).map((row: any) => mapTeam(row));
+  const teamNames = new Map(teams.map((team: Team) => [team.id, team.name]));
   const courses = new Map(
     (coursesResult.data ?? []).map((row: any) => [
       clean(row.id),
       {name: clean(row.name), mapUrl: clean(row.map_url)},
     ]),
   );
-  const publishedScheduleIds = new Set(
+  const publishedScheduleIds = new Set<string>(
     (schedulesResult.data ?? []).filter((row: any) => row.published === true).map((row: any) => clean(row.id)),
   );
-  const publishedRoundIds = new Set(
+  const publishedRoundIds = new Set<string>(
     (roundsResult.data ?? [])
       .filter((row: any) => row.published === true && publishedScheduleIds.has(clean(row.schedule_id)))
       .map((row: any) => clean(row.id)),
   );
 
-  const events = (matchesResult.data ?? [])
+  const events: PublicScheduleEvent[] = (matchesResult.data ?? [])
     .filter((row: any) => publishedRoundIds.has(clean(row.round_id)))
     .map((row: any) => mapPublicEvent(row, teamNames, courses, referenceDate))
     .filter((event: PublicScheduleEvent | null): event is PublicScheduleEvent => Boolean(event))
     .sort((left: PublicScheduleEvent, right: PublicScheduleEvent) => left.dateTime.getTime() - right.dateTime.getTime());
 
-  const upcoming = events.filter((event: PublicScheduleEvent) => event.bucket === 'upcoming');
-  const homeEvents = (upcoming.length > 0
-    ? upcoming.filter((event: PublicScheduleEvent) => dateKey(event.dateTime) === dateKey(upcoming[0].dateTime))
+  const upcoming: PublicScheduleEvent[] = events.filter((event) => event.bucket === 'upcoming');
+  const homeEvents: PublicScheduleEvent[] = (upcoming.length > 0
+    ? upcoming.filter((event) => dateKey(event.dateTime) === dateKey(upcoming[0].dateTime))
     : events
-      .filter((event: PublicScheduleEvent) => event.bucket === 'recent')
-      .sort((left: PublicScheduleEvent, right: PublicScheduleEvent) => right.dateTime.getTime() - left.dateTime.getTime()))
+      .filter((event) => event.bucket === 'recent')
+      .sort((left, right) => right.dateTime.getTime() - left.dateTime.getTime()))
     .slice(0, 4);
 
   const homeMatchIds = new Set(homeEvents.map((event) => event.id));
