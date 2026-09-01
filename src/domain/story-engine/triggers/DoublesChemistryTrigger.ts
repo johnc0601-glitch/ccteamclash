@@ -21,6 +21,12 @@ type PairStats = {
   performanceVsExpected: number;
 };
 
+type ChemistryFieldEntry = {
+  key: string;
+  stats: PairStats;
+  strength: number;
+};
+
 function pairKey(ids: string[]): string | null {
   if (ids.length !== 2 || ids[0] === ids[1]) return null;
   return [...ids].sort().join('\u0000');
@@ -51,11 +57,23 @@ function qualifies(value: PairStats): boolean {
       || value.performanceVsExpected >= DOUBLES_CHEMISTRY_MIN_ABOVE_EXPECTED);
 }
 
+function chemistryStrength(value: PairStats): number {
+  return Math.max(
+    value.winRate / DOUBLES_CHEMISTRY_MIN_WIN_RATE,
+    value.performanceVsExpected / DOUBLES_CHEMISTRY_MIN_ABOVE_EXPECTED,
+  );
+}
+
 function magnitude(value: PairStats): number {
   const winRateBonus = Math.max(0, value.winRate - DOUBLES_CHEMISTRY_MIN_WIN_RATE) * 100;
   const expectationBonus = Math.max(0, value.performanceVsExpected - DOUBLES_CHEMISTRY_MIN_ABOVE_EXPECTED) * 15;
   const sampleBonus = Math.max(0, Math.min(15, (value.contests - DOUBLES_CHEMISTRY_MIN_CONTESTS) * 5));
   return Math.max(0, Math.min(100, 55 + winRateBonus + expectationBonus + sampleBonus));
+}
+
+function rarityFromField(eligiblePairs: number, qualifyingPairs: number): number {
+  if (eligiblePairs <= 1) return 100;
+  return Math.max(0, Math.min(100, 100 - ((Math.max(1, qualifyingPairs) - 1) / eligiblePairs) * 100));
 }
 
 /**
@@ -77,9 +95,23 @@ export function detectDoublesChemistry(results: RatedResult[]): StoryCandidateDr
     groups.set(groupKey, group);
   }
 
-  const candidates: StoryCandidateDraft[] = [];
   for (const group of groups.values()) {
     group.rows.sort((a, b) => a.playedAt.localeCompare(b.playedAt) || a.id.localeCompare(b.id));
+  }
+
+  const fieldBySeason = new Map<string, ChemistryFieldEntry[]>();
+  for (const [key, group] of groups) {
+    const latest = group.rows.at(-1);
+    if (!latest) continue;
+    const current = stats(group.rows);
+    if (current.contests < DOUBLES_CHEMISTRY_MIN_CONTESTS) continue;
+    const entries = fieldBySeason.get(latest.seasonId) ?? [];
+    entries.push({key, stats: current, strength: chemistryStrength(current)});
+    fieldBySeason.set(latest.seasonId, entries);
+  }
+
+  const candidates: StoryCandidateDraft[] = [];
+  for (const [groupKey, group] of groups) {
     const latest = group.rows.at(-1);
     if (!latest) continue;
 
@@ -87,6 +119,12 @@ export function detectDoublesChemistry(results: RatedResult[]): StoryCandidateDr
     if (!qualifies(current)) continue;
     const prior = stats(group.rows.slice(0, -1));
     if (qualifies(prior)) continue;
+
+    const field = fieldBySeason.get(latest.seasonId) ?? [];
+    const qualifyingField = field.filter((entry) => qualifies(entry.stats));
+    const targetStrength = chemistryStrength(current);
+    const seasonRank = 1 + qualifyingField.filter((entry) => entry.key !== groupKey && entry.strength > targetStrength).length;
+    const rarity = rarityFromField(field.length, qualifyingField.length);
 
     const namesById = new Map(latest.subjectPlayerIds.map((id, index) => [id, latest.subjectNames[index] ?? id]));
     const pairNames = group.playerIds.map((id) => namesById.get(id) ?? id);
@@ -120,11 +158,14 @@ export function detectDoublesChemistry(results: RatedResult[]): StoryCandidateDr
         expectedPoints: Math.round(current.expectedPoints * 100) / 100,
         actualPoints: Math.round(current.actualPoints * 100) / 100,
         qualifiedAt: latest.playedAt,
+        seasonChemistryRank: seasonRank,
+        seasonEligiblePairs: field.length,
+        seasonQualifyingPairs: qualifyingField.length,
       },
       scores: {
         magnitude: magnitude(current),
-        rarity: 0,
-        historicalSignificance: 40,
+        rarity,
+        historicalSignificance: seasonRank === 1 ? 80 : seasonRank <= 3 ? 65 : 50,
         recency: 100,
         standingsSignificance: 0,
         opponentQuality: 0,
@@ -133,7 +174,8 @@ export function detectDoublesChemistry(results: RatedResult[]): StoryCandidateDr
   }
 
   return candidates.sort((a, b) =>
-    Number(b.headlineFacts.performanceVsExpected) - Number(a.headlineFacts.performanceVsExpected)
+    Number(a.contextFacts.seasonChemistryRank) - Number(b.contextFacts.seasonChemistryRank)
+    || Number(b.headlineFacts.performanceVsExpected) - Number(a.headlineFacts.performanceVsExpected)
     || Number(b.headlineFacts.winRatePct) - Number(a.headlineFacts.winRatePct)
     || a.id.localeCompare(b.id),
   );
