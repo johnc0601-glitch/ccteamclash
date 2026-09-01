@@ -1,4 +1,5 @@
-import {describe, expect, it} from 'vitest';
+import assert from 'node:assert/strict';
+import {describe, it} from 'node:test';
 import type {RatedResult} from '../RatedResult';
 import {detectPersonalBests} from './PersonalBestTrigger';
 
@@ -22,19 +23,20 @@ describe('detectPersonalBests', () => {
       row(2, 928, 925),
       row(3, 925, 936),
     ]);
-    expect(candidates).toHaveLength(1);
-    expect(candidates[0]).toMatchObject({
-      triggerType: 'PERSONAL_BEST',
-      eventId: 'round-3',
-      headlineFacts: {bestType: 'CAREER_HIGH_CI', previousBestCi: 928, newCi: 936, improvement: 8},
-    });
+    assert.equal(candidates.length, 1);
+    assert.equal(candidates[0].triggerType, 'PERSONAL_BEST');
+    assert.equal(candidates[0].eventId, 'round-3');
+    assert.equal(candidates[0].headlineFacts.bestType, 'CAREER_HIGH_CI');
+    assert.equal(candidates[0].headlineFacts.previousBestCi, 928);
+    assert.equal(candidates[0].headlineFacts.newCi, 936);
+    assert.equal(candidates[0].headlineFacts.improvement, 8);
   });
 
   it('does not call a small incremental high a story candidate', () => {
-    expect(detectPersonalBests([row(1, 920, 928), row(2, 928, 931)])).toEqual([]);
+    assert.deepEqual(detectPersonalBests([row(1, 920, 928), row(2, 928, 931)]), []);
   });
 
   it('does not claim a career high from a first observed result', () => {
-    expect(detectPersonalBests([row(1, 920, 935)])).toEqual([]);
+    assert.deepEqual(detectPersonalBests([row(1, 920, 935)]), []);
   });
 });
