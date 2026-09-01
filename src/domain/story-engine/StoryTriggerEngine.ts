@@ -4,6 +4,10 @@ import {enrichStoryContext} from './StoryContextEnricher';
 import {StoryHistoryIndex} from './StoryHistoryIndex';
 import {finalizeStoryCandidate} from './StoryScoring';
 import type {StoryScope} from './StoryScope';
+import {detectCiSurges} from './triggers/CiSurgeTrigger';
+import {detectPersonalBests} from './triggers/PersonalBestTrigger';
+import {detectRecords} from './triggers/RecordTrigger';
+import {detectStreaksSnapped} from './triggers/StreakSnappedTrigger';
 import {detectUpsets} from './triggers/UpsetTrigger';
 import {detectWinStreaks} from './triggers/WinStreakTrigger';
 
@@ -12,6 +16,10 @@ export type StoryTriggerDetector = (results: RatedResult[]) => StoryCandidateDra
 const V1_DETECTORS: StoryTriggerDetector[] = [
   detectUpsets,
   detectWinStreaks,
+  detectStreaksSnapped,
+  detectCiSurges,
+  detectPersonalBests,
+  detectRecords,
 ];
 
 function resultsForScope(results: RatedResult[], scope: StoryScope): RatedResult[] {
