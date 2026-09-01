@@ -1,4 +1,5 @@
 import type {RatedResult} from './RatedResult';
+import {UPSET_WIN_PROBABILITY_THRESHOLD} from './triggers/UpsetTrigger';
 
 export type StoryResultScope = {
   seasonId?: string;
@@ -84,14 +85,15 @@ export class StoryHistoryIndex {
   playerHeadToHead(
     playerAId: string,
     playerBId: string,
-    scope: StoryResultScope = {format: 'Singles'},
+    scope: StoryResultScope = {},
   ): PlayerHeadToHeadRecord {
     let playerAWins = 0;
     let playerBWins = 0;
     let ties = 0;
     let lastMeetingAt: string | null = null;
+    const effectiveScope: StoryResultScope = {format: 'Singles', ...scope};
 
-    const meetings = this.playerResults(playerAId, scope).filter((result) => {
+    const meetings = this.playerResults(playerAId, effectiveScope).filter((result) => {
       const opponent = this.opponentSide(result);
       if (!opponent?.subjectPlayerIds.includes(playerBId)) return false;
       lastMeetingAt = result.playedAt;
@@ -137,12 +139,12 @@ export class StoryHistoryIndex {
 
   upsetRank(resultId: string, scope: StoryResultScope = {}): RankedOccurrence | null {
     const target = this.results.find((result) => result.id === resultId);
-    if (!target?.won) return null;
-    const winners = this.results
-      .filter((result) => result.won && inScope(result, scope))
+    if (!target?.won || target.winProbability >= UPSET_WIN_PROBABILITY_THRESHOLD) return null;
+    const upsets = this.results
+      .filter((result) => result.won && result.winProbability < UPSET_WIN_PROBABILITY_THRESHOLD && inScope(result, scope))
       .sort((a, b) => a.winProbability - b.winProbability || b.ciDeficit - a.ciDeficit || a.id.localeCompare(b.id));
-    const index = winners.findIndex((result) => result.id === resultId);
-    return index < 0 ? null : {rank: index + 1, total: winners.length};
+    const index = upsets.findIndex((result) => result.id === resultId);
+    return index < 0 ? null : {rank: index + 1, total: upsets.length};
   }
 
   private push(map: Map<string, RatedResult[]>, key: string, result: RatedResult): void {
