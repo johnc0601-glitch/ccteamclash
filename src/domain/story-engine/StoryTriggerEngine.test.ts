@@ -33,6 +33,13 @@ describe('StoryTriggerEngine', () => {
     assert.equal(upset?.contextFacts.seasonUpsetTotal, 2);
     assert.equal(upset?.contextFacts.allTimeUpsetRank, 2);
     assert.equal(upset?.contextFacts.allTimeUpsetTotal, 2);
+
+    const streak = candidates.find((candidate) => candidate.triggerType === 'WIN_STREAK');
+    assert.equal(streak?.contextFacts.seasonStreakRank, 1);
+    assert.equal(streak?.contextFacts.allTimeStreakRank, 1);
+    assert.equal(streak?.scores.rarity, 100);
+    assert.equal(streak?.scores.historicalSignificance, 100);
+    assert.ok((streak?.storyScore ?? 0) >= 55);
   });
 
   it('cuts history off at a past round so future results cannot leak into a backtest', () => {
