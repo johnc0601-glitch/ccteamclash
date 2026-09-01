@@ -9,7 +9,7 @@ function magnitude(newCi: number, improvement: number): number {
   return Math.max(0, Math.min(100, 45 + improvement * 2 + levelBonus));
 }
 
-/** Detects a player's latest reliable CI snapshot establishing a meaningful career high. */
+/** Detects a player's latest reliable post-Matchday CI establishing a meaningful career high. */
 export function detectPersonalBests(results: RatedResult[]): StoryCandidateDraft[] {
   const history = new StoryHistoryIndex(results);
   const players = new Map<string, {name: string; latestTeamName: string}>();
@@ -40,11 +40,11 @@ export function detectPersonalBests(results: RatedResult[]): StoryCandidateDraft
     if (!latestResult) continue;
 
     candidates.push({
-      id: `personal-best:ci:${playerId}:${latest.resultId}`,
+      id: `personal-best:ci:${playerId}:${latest.matchId}`,
       triggerType: 'PERSONAL_BEST',
       seasonId: latest.seasonId,
       eventId: latest.eventId,
-      matchId: latestResult.matchId,
+      matchId: latest.matchId,
       playerIds: [playerId],
       teamIds: [latestResult.teamId],
       headlineFacts: {
@@ -58,7 +58,7 @@ export function detectPersonalBests(results: RatedResult[]): StoryCandidateDraft
       },
       contextFacts: {
         establishedAt: latest.playedAt,
-        ratedContestsInHistory: observations.length,
+        ratedMatchdaysInHistory: observations.length,
       },
       scores: {
         magnitude: magnitude(latest.after, improvement),
