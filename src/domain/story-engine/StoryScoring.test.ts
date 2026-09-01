@@ -1,4 +1,5 @@
-import {describe, expect, it} from 'vitest';
+import assert from 'node:assert/strict';
+import {describe, it} from 'node:test';
 import type {StoryCandidateDraft} from './StoryCandidate';
 import {calculateStoryScore, finalizeStoryCandidate, storyImportance} from './StoryScoring';
 
@@ -25,9 +26,9 @@ const draft: StoryCandidateDraft = {
 describe('StoryScoring', () => {
   it('scores a candidate with trigger-specific weights and marks facts verified', () => {
     const candidate = finalizeStoryCandidate(draft);
-    expect(candidate.confidence).toBe('verified');
-    expect(candidate.storyScore).toBe(80);
-    expect(storyImportance(candidate.storyScore)).toBe('strong');
+    assert.equal(candidate.confidence, 'verified');
+    assert.equal(candidate.storyScore, 80);
+    assert.equal(storyImportance(candidate.storyScore), 'strong');
   });
 
   it('clamps invalid score components before publishing a final candidate', () => {
@@ -35,8 +36,8 @@ describe('StoryScoring', () => {
       ...draft,
       scores: {...draft.scores, magnitude: 140, rarity: -25},
     });
-    expect(candidate.scores.magnitude).toBe(100);
-    expect(candidate.scores.rarity).toBe(0);
+    assert.equal(candidate.scores.magnitude, 100);
+    assert.equal(candidate.scores.rarity, 0);
   });
 
   it('normalizes custom weights instead of assuming they sum to one', () => {
@@ -44,6 +45,6 @@ describe('StoryScoring', () => {
       {...draft.scores, magnitude: 100, rarity: 0},
       {magnitude: 2, rarity: 2, historicalSignificance: 0, recency: 0, standingsSignificance: 0, opponentQuality: 0},
     );
-    expect(score).toBe(50);
+    assert.equal(score, 50);
   });
 });
