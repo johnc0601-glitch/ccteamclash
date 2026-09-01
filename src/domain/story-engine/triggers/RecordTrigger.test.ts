@@ -1,4 +1,5 @@
-import {describe, expect, it} from 'vitest';
+import assert from 'node:assert/strict';
+import {describe, it} from 'node:test';
 import type {RatedResult} from '../RatedResult';
 import {detectRecords} from './RecordTrigger';
 
@@ -37,16 +38,17 @@ describe('detectRecords', () => {
       ...openingField,
       row('p1', 'One', 'round-2', 985, 992, 6),
     ]);
-    expect(candidates).toHaveLength(1);
-    expect(candidates[0]).toMatchObject({
-      triggerType: 'RECORD',
-      eventId: 'round-2',
-      headlineFacts: {recordType: 'ALL_TIME_CI_HIGH', previousRecordCi: 985, newRecordCi: 992, recordImprovement: 7},
-    });
+    assert.equal(candidates.length, 1);
+    assert.equal(candidates[0].triggerType, 'RECORD');
+    assert.equal(candidates[0].eventId, 'round-2');
+    assert.equal(candidates[0].headlineFacts.recordType, 'ALL_TIME_CI_HIGH');
+    assert.equal(candidates[0].headlineFacts.previousRecordCi, 985);
+    assert.equal(candidates[0].headlineFacts.newRecordCi, 992);
+    assert.equal(candidates[0].headlineFacts.recordImprovement, 7);
   });
 
   it('does not declare records from the first observed round', () => {
-    expect(detectRecords(openingField)).toEqual([]);
+    assert.deepEqual(detectRecords(openingField), []);
   });
 
   it('uses the highest end-of-round CI when more than one player clears the old record', () => {
@@ -55,15 +57,15 @@ describe('detectRecords', () => {
       row('p1', 'One', 'round-2', 985, 991, 6),
       row('p2', 'Two', 'round-2', 974, 994, 7),
     ]);
-    expect(candidates).toHaveLength(1);
-    expect(candidates[0].playerIds).toEqual(['p2']);
-    expect(candidates[0].headlineFacts.newRecordCi).toBe(994);
+    assert.equal(candidates.length, 1);
+    assert.deepEqual(candidates[0].playerIds, ['p2']);
+    assert.equal(candidates[0].headlineFacts.newRecordCi, 994);
   });
 
   it('requires a meaningful comparison field before making a league-wide claim', () => {
-    expect(detectRecords([
+    assert.deepEqual(detectRecords([
       row('p1', 'One', 'round-1', 980, 985, 1),
       row('p1', 'One', 'round-2', 985, 992, 2),
-    ])).toEqual([]);
+    ]), []);
   });
 });
