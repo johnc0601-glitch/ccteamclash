@@ -1,4 +1,5 @@
-import {describe, expect, it} from 'vitest';
+import assert from 'node:assert/strict';
+import {describe, it} from 'node:test';
 import {buildRatedResultsFromStoredFacts, type StoredContestRatingFact} from './SupabaseRatedResultRepository';
 
 const published = [{match_id: 'm1', published_at: '2026-10-03T18:00:00Z'}];
@@ -24,13 +25,22 @@ describe('buildRatedResultsFromStoredFacts', () => {
       fact({player_id: 'p2', player_name: 'Two', team_id: 'away', team_name: 'Away Team', side: 'Away', outcome: 'L', clash_index_before: 980, ci_delta: -8, win_probability: .63, opponent_effective_ci: 910, actual_points: 0, expected_points: .63}),
     ], rounds, seasons);
 
-    expect(rows).toHaveLength(2);
-    expect(rows[0]).toMatchObject({
-      eventId: 'round-1', seasonId: '2026-27', seasonName: '2026-2027',
-      eventLabel: 'October', eventOrder: 1, playedAt: '2026-10-03', venue: 'Home',
-      subjectPlayerIds: ['p1'], subjectCiBefore: [910], subjectCiAfter: [918], subjectCiDeltas: [8],
-      winProbability: .37, opponentTeamName: 'Away Team', modelVersion: 'test-v1',
-    });
+    assert.equal(rows.length, 2);
+    const row = rows[0];
+    assert.equal(row.eventId, 'round-1');
+    assert.equal(row.seasonId, '2026-27');
+    assert.equal(row.seasonName, '2026-2027');
+    assert.equal(row.eventLabel, 'October');
+    assert.equal(row.eventOrder, 1);
+    assert.equal(row.playedAt, '2026-10-03');
+    assert.equal(row.venue, 'Home');
+    assert.deepEqual(row.subjectPlayerIds, ['p1']);
+    assert.deepEqual(row.subjectCiBefore, [910]);
+    assert.deepEqual(row.subjectCiAfter, [918]);
+    assert.deepEqual(row.subjectCiDeltas, [8]);
+    assert.equal(row.winProbability, .37);
+    assert.equal(row.opponentTeamName, 'Away Team');
+    assert.equal(row.modelVersion, 'test-v1');
   });
 
   it('creates player-aligned doubles snapshots and one aggregate side delta', () => {
@@ -41,15 +51,14 @@ describe('buildRatedResultsFromStoredFacts', () => {
       fact({player_id: 'p4', player_name: 'Four', team_id: 'away', team_name: 'Away Team', side: 'Away', format: 'Doubles', outcome: 'L', clash_index_before: 940, ci_delta: -7}),
     ]);
     const home = rows.find((row) => row.side === 'Home');
-    expect(home).toMatchObject({
-      subjectPlayerIds: ['p1', 'p2'],
-      subjectCiBefore: [1000, 900],
-      subjectCiAfter: [1005, 907],
-      subjectCiDeltas: [5, 7],
-      subjectEffectiveCi: 980,
-      ciDelta: 12,
-      venue: 'Home',
-    });
+    assert.ok(home);
+    assert.deepEqual(home.subjectPlayerIds, ['p1', 'p2']);
+    assert.deepEqual(home.subjectCiBefore, [1000, 900]);
+    assert.deepEqual(home.subjectCiAfter, [1005, 907]);
+    assert.deepEqual(home.subjectCiDeltas, [5, 7]);
+    assert.equal(home.subjectEffectiveCi, 980);
+    assert.equal(home.ciDelta, 12);
+    assert.equal(home.venue, 'Home');
   });
 
   it('preserves neutral venue so later home/road triggers can exclude it', () => {
@@ -57,7 +66,7 @@ describe('buildRatedResultsFromStoredFacts', () => {
       fact({player_id: 'p1', player_name: 'One', team_id: 'home', team_name: 'Home Team', side: 'Home', venue: 'Neutral', outcome: 'W', clash_index_before: 910, ci_delta: 8}),
       fact({player_id: 'p2', player_name: 'Two', team_id: 'away', team_name: 'Away Team', side: 'Away', venue: 'Neutral', outcome: 'L', clash_index_before: 980, ci_delta: -8}),
     ]);
-    expect(rows.map((row) => row.venue)).toEqual(['Neutral', 'Neutral']);
+    assert.deepEqual(rows.map((row) => row.venue), ['Neutral', 'Neutral']);
   });
 
   it('omits a partial doubles side instead of inventing a missing partner', () => {
@@ -66,6 +75,6 @@ describe('buildRatedResultsFromStoredFacts', () => {
       fact({player_id: 'p3', player_name: 'Three', team_id: 'away', team_name: 'Away Team', side: 'Away', format: 'Doubles', outcome: 'L', clash_index_before: 950, ci_delta: -5}),
       fact({player_id: 'p4', player_name: 'Four', team_id: 'away', team_name: 'Away Team', side: 'Away', format: 'Doubles', outcome: 'L', clash_index_before: 940, ci_delta: -7}),
     ]);
-    expect(rows.map((row) => row.side)).toEqual(['Away']);
+    assert.deepEqual(rows.map((row) => row.side), ['Away']);
   });
 });
