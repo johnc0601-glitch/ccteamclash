@@ -59,24 +59,55 @@ describe('StoryHistoryIndex', () => {
     assert.equal(record.performanceVsExpected, 0);
   });
 
-  it('builds player CI windows from singles aggregate fallback and explicit doubles snapshots', () => {
+  it('sums singles and doubles contributions from one Matchday before computing post-match CI', () => {
     const index = new StoryHistoryIndex([
-      row({id: 's1', contestId: 's1', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: .5, subjectEffectiveCi: 900, ciDelta: 8, playedAt: '2026-10-01T12:00:00Z'}),
-      row({id: 'd1', contestId: 'd1', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p1', 'p2'], subjectNames: ['One', 'Two'], outcome: 'W', won: true, winProbability: .5, ciDelta: 14, subjectCiBefore: [908, 940], subjectCiAfter: [914, 948], subjectCiDeltas: [6, 8], playedAt: '2026-10-02T12:00:00Z'}),
-      row({id: 's2', contestId: 's2', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: .5, subjectEffectiveCi: 914, ciDelta: 7, playedAt: '2026-10-03T12:00:00Z'}),
+      row({
+        id: 'match-1:singles', contestId: 's1', matchId: 'match-1', eventId: 'round-1', side: 'Home',
+        subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: .5,
+        subjectEffectiveCi: 900, subjectCiBefore: [900], subjectCiDeltas: [8], ciDelta: 8,
+        playedAt: '2026-10-01T12:00:00Z',
+      }),
+      row({
+        id: 'match-1:doubles', contestId: 'd1', matchId: 'match-1', eventId: 'round-1', side: 'Home', format: 'Doubles',
+        subjectPlayerIds: ['p1', 'p2'], subjectNames: ['One', 'Two'], outcome: 'W', won: true, winProbability: .5,
+        subjectCiBefore: [900, 940], subjectCiDeltas: [6, 8], ciDelta: 14,
+        playedAt: '2026-10-01T12:00:00Z',
+      }),
+    ]);
+
+    assert.deepEqual(index.playerCiObservations('p1'), [{
+      resultId: 'match-1:singles',
+      resultIds: ['match-1:doubles', 'match-1:singles'],
+      matchId: 'match-1',
+      eventId: 'round-1',
+      seasonId: '2026-27',
+      teamId: 'home-team',
+      playedAt: '2026-10-01T12:00:00Z',
+      before: 900,
+      after: 914,
+      delta: 14,
+    }]);
+  });
+
+  it('builds player CI windows from published Matchday movement', () => {
+    const index = new StoryHistoryIndex([
+      row({id: 'm1', contestId: 's1', matchId: 'match-1', eventId: 'round-1', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: .5, subjectEffectiveCi: 900, ciDelta: 8, playedAt: '2026-10-01T12:00:00Z'}),
+      row({id: 'm2', contestId: 'd1', matchId: 'match-2', eventId: 'round-2', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p1', 'p2'], subjectNames: ['One', 'Two'], outcome: 'W', won: true, winProbability: .5, ciDelta: 14, subjectCiBefore: [908, 940], subjectCiDeltas: [6, 8], playedAt: '2026-10-02T12:00:00Z'}),
+      row({id: 'm3', contestId: 's2', matchId: 'match-3', eventId: 'round-3', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: .5, subjectEffectiveCi: 914, ciDelta: 7, playedAt: '2026-10-03T12:00:00Z'}),
     ]);
 
     const window = index.playerCiWindow('p1', 3);
     assert.ok(window);
-    assert.equal(window.contests, 3);
+    assert.equal(window.matchdays, 3);
     assert.equal(window.totalDelta, 21);
     assert.equal(window.startCi, 900);
     assert.equal(window.currentCi, 921);
   });
 
-  it('does not misread an aggregate doubles delta as one player movement when snapshots are missing', () => {
+  it('drops an entire Matchday CI observation if any participating doubles contribution is unsafe', () => {
     const index = new StoryHistoryIndex([
-      row({id: 'd1', contestId: 'd1', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p1', 'p2'], subjectNames: ['One', 'Two'], outcome: 'W', won: true, winProbability: .5, ciDelta: 20}),
+      row({id: 'safe-singles', contestId: 's1', matchId: 'match-1', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: .5, subjectEffectiveCi: 900, ciDelta: 8}),
+      row({id: 'unsafe-doubles', contestId: 'd1', matchId: 'match-1', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p1', 'p2'], subjectNames: ['One', 'Two'], outcome: 'W', won: true, winProbability: .5, ciDelta: 20}),
     ]);
     assert.deepEqual(index.playerCiObservations('p1'), []);
   });
