@@ -1,6 +1,7 @@
 'use server';
 
 import {revalidatePath} from 'next/cache';
+import {headers} from 'next/headers';
 import {redirect} from 'next/navigation';
 import {createClient} from '@/lib/supabase/server';
 import {processMatchdayImage} from '@/services/media/MediaImageProcessor';
@@ -13,6 +14,7 @@ const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const RATE_WINDOW_MS = 5 * 60 * 1000;
 const POST_RATE_LIMIT = 8;
 const COMMENT_RATE_LIMIT = 30;
+const FEED_CURSOR_PATTERN = /^\d{4}-\d{2}-\d{2}T[^|]+\|[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function createMatchFeedPost(formData: FormData) {
   const matchId = read(formData, 'matchId');
@@ -68,6 +70,7 @@ export async function editMatchFeedPost(formData: FormData) {
   const postId = read(formData, 'postId');
   const body = read(formData, 'body').slice(0, 3000);
   if (!matchId || !postId) return;
+  const feedBefore = await currentFeedBefore(matchId);
   const account = await requireAccount(matchId);
   await requireFeedOpen(account.supabase, matchId);
   const db = account.supabase as any;
@@ -77,7 +80,7 @@ export async function editMatchFeedPost(formData: FormData) {
   const {error} = await db.from('launch_match_feed_posts').update({body, edited_at: new Date().toISOString(), updated_at: new Date().toISOString()}).eq('id', postId);
   if (error) redirect(feedUrl(matchId, 'feedError', 'Post could not be edited.'));
   refresh(matchId);
-  redirect(`/matches/${encodeURIComponent(matchId)}#post-${postId}`);
+  redirect(feedAnchorUrl(matchId, postId, feedBefore));
 }
 
 export async function addMatchFeedComment(formData: FormData) {
@@ -86,6 +89,7 @@ export async function addMatchFeedComment(formData: FormData) {
   const parentCommentId = read(formData, 'parentCommentId') || null;
   const body = read(formData, 'body').slice(0, 1500);
   if (!matchId || !postId || !body) return;
+  const feedBefore = await currentFeedBefore(matchId);
   const account = await requireAccount(matchId);
   await requireFeedOpen(account.supabase, matchId);
   await requireRateLimit(account.supabase, 'launch_match_feed_comments', account.profile.id, COMMENT_RATE_LIMIT, matchId, 'You are commenting too quickly. Try again in a few minutes.');
@@ -103,7 +107,7 @@ export async function addMatchFeedComment(formData: FormData) {
   });
   if (error) redirect(feedUrl(matchId, 'feedError', 'Comment could not be saved.'));
   refresh(matchId);
-  redirect(`/matches/${encodeURIComponent(matchId)}#post-${postId}`);
+  redirect(feedAnchorUrl(matchId, postId, feedBefore));
 }
 
 export async function editMatchFeedComment(formData: FormData) {
@@ -112,6 +116,7 @@ export async function editMatchFeedComment(formData: FormData) {
   const postId = read(formData, 'postId');
   const body = read(formData, 'body').slice(0, 1500);
   if (!matchId || !commentId || !postId || !body) return;
+  const feedBefore = await currentFeedBefore(matchId);
   const account = await requireAccount(matchId);
   await requireFeedOpen(account.supabase, matchId);
   const db = account.supabase as any;
@@ -120,7 +125,7 @@ export async function editMatchFeedComment(formData: FormData) {
   const {error} = await db.from('launch_match_feed_comments').update({body, edited_at: new Date().toISOString(), updated_at: new Date().toISOString()}).eq('id', commentId);
   if (error) redirect(feedUrl(matchId, 'feedError', 'Comment could not be edited.'));
   refresh(matchId);
-  redirect(`/matches/${encodeURIComponent(matchId)}#post-${postId}`);
+  redirect(feedAnchorUrl(matchId, postId, feedBefore));
 }
 
 export async function reportMatchFeedContent(formData: FormData) {
@@ -132,6 +137,7 @@ export async function reportMatchFeedContent(formData: FormData) {
   const reason = REPORT_REASONS.has(reasonInput) ? reasonInput : 'Other';
   if (!matchId || (!postId && !commentId) || (postId && commentId)) return;
 
+  const feedBefore = await currentFeedBefore(matchId);
   const account = await requireAccount(matchId);
   const db = account.supabase as any;
   let targetProfileId: string | null = null;
@@ -168,7 +174,7 @@ export async function reportMatchFeedContent(formData: FormData) {
   }
 
   revalidatePath('/office/media/moderation');
-  redirect(`/matches/${encodeURIComponent(matchId)}?feedNotice=${encodeURIComponent('Report submitted. A commissioner can review it.')}#post-${anchorPostId}`);
+  redirect(feedAnchorUrl(matchId, anchorPostId, feedBefore, 'feedNotice', 'Report submitted. A commissioner can review it.'));
 }
 
 export async function setMatchFeedPostReaction(formData: FormData) {
@@ -176,6 +182,7 @@ export async function setMatchFeedPostReaction(formData: FormData) {
   const postId = read(formData, 'postId');
   const reactionType = read(formData, 'reactionType');
   if (!matchId || !postId || !REACTIONS.has(reactionType)) return;
+  const feedBefore = await currentFeedBefore(matchId);
   const account = await requireAccount(matchId);
   await requireFeedOpen(account.supabase, matchId);
   const db = account.supabase as any;
@@ -187,7 +194,7 @@ export async function setMatchFeedPostReaction(formData: FormData) {
   const {error} = await mutation;
   if (error) redirect(feedUrl(matchId, 'feedError', 'Reaction could not be updated.'));
   refresh(matchId);
-  redirect(`/matches/${encodeURIComponent(matchId)}#post-${postId}`);
+  redirect(feedAnchorUrl(matchId, postId, feedBefore));
 }
 
 export async function setMatchFeedCommentReaction(formData: FormData) {
@@ -196,6 +203,7 @@ export async function setMatchFeedCommentReaction(formData: FormData) {
   const postId = read(formData, 'postId');
   const reactionType = read(formData, 'reactionType');
   if (!matchId || !commentId || !REACTIONS.has(reactionType)) return;
+  const feedBefore = await currentFeedBefore(matchId);
   const account = await requireAccount(matchId);
   await requireFeedOpen(account.supabase, matchId);
   const db = account.supabase as any;
@@ -207,13 +215,14 @@ export async function setMatchFeedCommentReaction(formData: FormData) {
   const {error} = await mutation;
   if (error) redirect(feedUrl(matchId, 'feedError', 'Reaction could not be updated.'));
   refresh(matchId);
-  redirect(postId ? `/matches/${encodeURIComponent(matchId)}#post-${postId}` : `/matches/${encodeURIComponent(matchId)}#match-feed`);
+  redirect(postId ? feedAnchorUrl(matchId, postId, feedBefore) : feedSectionUrl(matchId, feedBefore));
 }
 
 export async function softDeleteMatchFeedPost(formData: FormData) {
   const matchId = read(formData, 'matchId');
   const postId = read(formData, 'postId');
   if (!matchId || !postId) return;
+  const feedBefore = await currentFeedBefore(matchId);
   const account = await requireAccount(matchId);
   if (account.profile.role !== 'Commissioner' || account.profile.status !== 'Approved') redirect(feedUrl(matchId, 'feedError', 'Commissioner access is required.'));
   const db = account.supabase as any;
@@ -225,7 +234,7 @@ export async function softDeleteMatchFeedPost(formData: FormData) {
     if (storageError) console.error('Removed Matchday post left an orphaned image.', {matchId, postId});
   }
   refresh(matchId);
-  redirect(`/matches/${encodeURIComponent(matchId)}#post-${postId}`);
+  redirect(feedAnchorUrl(matchId, postId, feedBefore));
 }
 
 export async function softDeleteMatchFeedComment(formData: FormData) {
@@ -233,13 +242,14 @@ export async function softDeleteMatchFeedComment(formData: FormData) {
   const commentId = read(formData, 'commentId');
   const postId = read(formData, 'postId');
   if (!matchId || !commentId) return;
+  const feedBefore = await currentFeedBefore(matchId);
   const account = await requireAccount(matchId);
   if (account.profile.role !== 'Commissioner' || account.profile.status !== 'Approved') redirect(feedUrl(matchId, 'feedError', 'Commissioner access is required.'));
   const db = account.supabase as any;
   const {error} = await db.from('launch_match_feed_comments').update({deleted_at: new Date().toISOString(), deleted_by: account.profile.id}).eq('id', commentId);
   if (error) redirect(feedUrl(matchId, 'feedError', 'Comment could not be removed.'));
   refresh(matchId);
-  redirect(postId ? `/matches/${encodeURIComponent(matchId)}#post-${postId}` : `/matches/${encodeURIComponent(matchId)}#match-feed`);
+  redirect(postId ? feedAnchorUrl(matchId, postId, feedBefore) : feedSectionUrl(matchId, feedBefore));
 }
 
 async function requireAccount(matchId: string) {
@@ -279,6 +289,21 @@ async function requireRateLimit(
   if ((count ?? 0) >= limit) redirect(feedUrl(matchId, 'feedError', message));
 }
 
+async function currentFeedBefore(matchId: string): Promise<string | null> {
+  const requestHeaders = await headers();
+  const referrer = requestHeaders.get('referer');
+  if (!referrer) return null;
+
+  try {
+    const url = new URL(referrer);
+    if (url.pathname !== `/matches/${encodeURIComponent(matchId)}` && url.pathname !== `/matches/${matchId}`) return null;
+    const cursor = url.searchParams.get('feedBefore');
+    return cursor && FEED_CURSOR_PATTERN.test(cursor) ? cursor : null;
+  } catch {
+    return null;
+  }
+}
+
 function refresh(matchId: string) {
   revalidatePath(`/matches/${matchId}`);
   revalidatePath('/');
@@ -287,6 +312,21 @@ function refresh(matchId: string) {
 function read(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function feedAnchorUrl(matchId: string, postId: string, feedBefore: string | null, key?: string, message?: string) {
+  const params = new URLSearchParams();
+  if (feedBefore) params.set('feedBefore', feedBefore);
+  if (key && message) params.set(key, message);
+  const query = params.toString();
+  return `/matches/${encodeURIComponent(matchId)}${query ? `?${query}` : ''}#post-${postId}`;
+}
+
+function feedSectionUrl(matchId: string, feedBefore: string | null) {
+  const params = new URLSearchParams();
+  if (feedBefore) params.set('feedBefore', feedBefore);
+  const query = params.toString();
+  return `/matches/${encodeURIComponent(matchId)}${query ? `?${query}` : ''}#match-feed`;
 }
 
 function feedUrl(matchId: string, key: string, message: string) {
