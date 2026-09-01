@@ -55,14 +55,14 @@ execute function private.sync_media_asset_team_links();
 -- Normalize all existing assets once so older manually tagged photos and the
 -- Matchday backfill use the same team-context model.
 insert into public.media_asset_team_links (media_asset_id, team_id, source)
-select id, team_id, 'manual'
-from public.media_assets
-where team_id is not null
-  and deleted_at is null
+select asset.id, asset.team_id, 'manual'
+from public.media_assets asset
+where asset.team_id is not null
+  and asset.deleted_at is null
 on conflict (media_asset_id, team_id) do nothing;
 
 insert into public.media_asset_team_links (media_asset_id, team_id, source)
-select asset.id, team_id, 'match'
+select asset.id, team.team_id, 'match'
 from public.media_assets asset
 join public.launch_schedule_matches match on match.id = asset.match_id
 cross join lateral (
@@ -70,5 +70,5 @@ cross join lateral (
 ) team(team_id)
 where asset.match_id is not null
   and asset.deleted_at is null
-  and team_id is not null
+  and team.team_id is not null
 on conflict (media_asset_id, team_id) do nothing;
