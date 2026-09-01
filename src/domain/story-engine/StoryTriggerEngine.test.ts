@@ -15,7 +15,7 @@ function result(index: number, overrides: Partial<RatedResult> = {}): RatedResul
 }
 
 describe('StoryTriggerEngine', () => {
-  it('combines independent trigger detectors into one stable ranked candidate feed', () => {
+  it('combines detectors, historical context, and scoring into one stable candidate feed', () => {
     const candidates = buildStoryCandidates([
       result(1),
       result(2, {winProbability: 0.20, expectedPoints: 0.20, ciDeficit: 85, ciDelta: 13}),
@@ -25,5 +25,13 @@ describe('StoryTriggerEngine', () => {
     expect(candidates).toHaveLength(2);
     expect(candidates.map((candidate) => candidate.triggerType)).toEqual(['UPSET', 'WIN_STREAK']);
     expect(candidates.every((candidate) => candidate.confidence === 'verified')).toBe(true);
+    expect(candidates[0].contextFacts).toMatchObject({
+      seasonUpsetRank: 1,
+      seasonUpsetTotal: 1,
+      allTimeUpsetRank: 1,
+      allTimeUpsetTotal: 1,
+    });
+    expect(candidates[0].scores.rarity).toBe(100);
+    expect(candidates[0].scores.historicalSignificance).toBe(100);
   });
 });
