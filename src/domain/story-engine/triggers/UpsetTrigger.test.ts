@@ -1,4 +1,5 @@
-import {describe, expect, it} from 'vitest';
+import assert from 'node:assert/strict';
+import {describe, it} from 'node:test';
 import type {RatedResult} from '../RatedResult';
 import {detectUpsets, upsetMagnitude} from './UpsetTrigger';
 
@@ -22,19 +23,19 @@ describe('UpsetTrigger', () => {
       result({id: 'r3', winProbability: 0.15, won: false, outcome: 'L', actualPoints: 0}),
     ]);
 
-    expect(candidates).toHaveLength(1);
-    expect(candidates[0]).toMatchObject({
-      id: 'upset:r1',
-      triggerType: 'UPSET',
-      playerIds: ['p1'],
-      headlineFacts: {winner: 'Player One', winProbability: 0.24, ciDeficit: 70},
-    });
+    assert.equal(candidates.length, 1);
+    assert.equal(candidates[0].id, 'upset:r1');
+    assert.equal(candidates[0].triggerType, 'UPSET');
+    assert.deepEqual(candidates[0].playerIds, ['p1']);
+    assert.equal(candidates[0].headlineFacts.winner, 'Player One');
+    assert.equal(candidates[0].headlineFacts.winProbability, 0.24);
+    assert.equal(candidates[0].headlineFacts.ciDeficit, 70);
   });
 
   it('scales surprise from barely qualifying to maximum at a 10% chance', () => {
-    expect(upsetMagnitude(0.39)).toBeCloseTo(3.333, 2);
-    expect(upsetMagnitude(0.25)).toBe(50);
-    expect(upsetMagnitude(0.10)).toBe(100);
-    expect(upsetMagnitude(0.05)).toBe(100);
+    assert.ok(Math.abs(upsetMagnitude(0.39) - 3.333) < 0.01);
+    assert.equal(upsetMagnitude(0.25), 50);
+    assert.equal(upsetMagnitude(0.10), 100);
+    assert.equal(upsetMagnitude(0.05), 100);
   });
 });
