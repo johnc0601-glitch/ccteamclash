@@ -1,4 +1,5 @@
-import {describe, expect, it} from 'vitest';
+import assert from 'node:assert/strict';
+import {describe, it} from 'node:test';
 import type {RatedResult} from './RatedResult';
 import {buildStoryCandidates} from './StoryTriggerEngine';
 
@@ -23,17 +24,15 @@ describe('StoryTriggerEngine', () => {
     ];
     const candidates = buildStoryCandidates(results, {kind: 'Round', eventId: 'round-3'});
 
-    expect(candidates).toHaveLength(3);
-    expect(candidates.map((candidate) => candidate.triggerType).sort()).toEqual(['CI_SURGE', 'UPSET', 'WIN_STREAK']);
-    expect(candidates.every((candidate) => candidate.eventId === 'round-3')).toBe(true);
-    expect(candidates.every((candidate) => candidate.confidence === 'verified')).toBe(true);
+    assert.equal(candidates.length, 3);
+    assert.deepEqual(candidates.map((candidate) => candidate.triggerType).sort(), ['CI_SURGE', 'UPSET', 'WIN_STREAK']);
+    assert.ok(candidates.every((candidate) => candidate.eventId === 'round-3'));
+    assert.ok(candidates.every((candidate) => candidate.confidence === 'verified'));
     const upset = candidates.find((candidate) => candidate.triggerType === 'UPSET');
-    expect(upset?.contextFacts).toMatchObject({
-      seasonUpsetRank: 2,
-      seasonUpsetTotal: 2,
-      allTimeUpsetRank: 2,
-      allTimeUpsetTotal: 2,
-    });
+    assert.equal(upset?.contextFacts.seasonUpsetRank, 2);
+    assert.equal(upset?.contextFacts.seasonUpsetTotal, 2);
+    assert.equal(upset?.contextFacts.allTimeUpsetRank, 2);
+    assert.equal(upset?.contextFacts.allTimeUpsetTotal, 2);
   });
 
   it('cuts history off at a past round so future results cannot leak into a backtest', () => {
@@ -44,8 +43,10 @@ describe('StoryTriggerEngine', () => {
     ];
     const candidates = buildStoryCandidates(results, {kind: 'Round', eventId: 'round-2'});
 
-    expect(candidates).toHaveLength(1);
-    expect(candidates[0]).toMatchObject({triggerType: 'UPSET', eventId: 'round-2'});
-    expect(candidates[0].contextFacts).toMatchObject({allTimeUpsetRank: 1, allTimeUpsetTotal: 1});
+    assert.equal(candidates.length, 1);
+    assert.equal(candidates[0].triggerType, 'UPSET');
+    assert.equal(candidates[0].eventId, 'round-2');
+    assert.equal(candidates[0].contextFacts.allTimeUpsetRank, 1);
+    assert.equal(candidates[0].contextFacts.allTimeUpsetTotal, 1);
   });
 });
