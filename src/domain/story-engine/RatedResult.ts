@@ -32,6 +32,12 @@ export type RatedResult = {
   subjectCiAfter?: number[];
   subjectCiDeltas?: number[];
   /**
+   * Optional per-player source used to seed the rating entering this season.
+   * Historical adapters currently expose PDGA/GHOST/UNKNOWN. Pulse uses this
+   * only as confidence metadata; it never changes the authoritative CI itself.
+   */
+  subjectRatingSeedSources?: string[];
+  /**
    * False means this normalized contest is safe for non-CI stories, but at least
    * one subject player's complete Matchday CI chain is known to be incomplete.
    */
