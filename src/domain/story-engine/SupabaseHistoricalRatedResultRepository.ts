@@ -285,8 +285,25 @@ export function buildHistoricalRatedResultReport(
     emittedContests += 1;
   }
 
+  // A quarantined contest can remove only one of a player's several contest
+  // contributions from an otherwise valid team match. Keep the other results
+  // available for non-CI stories, but explicitly block that player's Matchday
+  // from CI surge/personal-best/record calculations.
+  const unreliableCiPlayerMatchdays = new Set<string>();
+  for (const issue of diagnostics) {
+    for (const fact of byContest.get(issue.contestId) ?? []) {
+      unreliableCiPlayerMatchdays.add(`${fact.historical_match_key}\u0000${fact.player_id}`);
+    }
+  }
+  const markedResults = results.map((result) => {
+    const ciHistoryReliable = !result.subjectPlayerIds.some((playerId) =>
+      unreliableCiPlayerMatchdays.has(`${result.matchId}\u0000${playerId}`),
+    );
+    return ciHistoryReliable ? result : {...result, ciHistoryReliable: false};
+  });
+
   return {
-    results: results.sort((a, b) => a.playedAt.localeCompare(b.playedAt) || a.id.localeCompare(b.id)),
+    results: markedResults.sort((a, b) => a.playedAt.localeCompare(b.playedAt) || a.id.localeCompare(b.id)),
     diagnostics,
     sourceFactRows: facts.length,
     sourceContests: byContest.size,
