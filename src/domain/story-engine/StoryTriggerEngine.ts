@@ -75,7 +75,7 @@ export function buildStoryCandidates(
       seen.add(candidate.id);
       return true;
     })
-    .map((candidate) => enrichStoryContext(candidate, history))
+    .map((candidate) => enrichStoryContext(candidate, history, availableHistory))
     .map(finalizeStoryCandidate)
     .sort((a, b) => b.storyScore - a.storyScore || a.id.localeCompare(b.id));
 }
