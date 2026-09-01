@@ -159,6 +159,37 @@ export function assertCompleteHistoricalContests(facts: HistoricalReplayFact[]):
     if (new Set(contestFacts.map((fact) => fact.playerId)).size !== expectedRows) {
       throw new Error(`Historical CI contest ${contestId} contains duplicate player facts`);
     }
+
+    const teamIds = new Set(contestFacts.map((fact) => fact.teamId));
+    if (teamIds.size !== 2) {
+      throw new Error(`Historical CI contest ${contestId} has ${teamIds.size} teams; expected 2`);
+    }
+    if (contestFacts.some((fact) => fact.opponentTeamId === fact.teamId || !teamIds.has(fact.opponentTeamId))) {
+      throw new Error(`Historical CI contest ${contestId} has inconsistent opponent teams`);
+    }
+
+    const venues = new Set(contestFacts.map((fact) => fact.venue));
+    if (venues.size !== 1) {
+      throw new Error(`Historical CI contest ${contestId} mixes venues`);
+    }
+    const venue = contestFacts[0].venue;
+    if (venue === 'Neutral') {
+      if (contestFacts.some((fact) => fact.side !== null)) {
+        throw new Error(`Historical CI contest ${contestId} is neutral but contains Home/Away sides`);
+      }
+    } else {
+      const sides = new Set(contestFacts.map((fact) => fact.side));
+      if (sides.size !== 2 || !sides.has('Home') || !sides.has('Away')) {
+        throw new Error(`Historical CI contest ${contestId} does not contain one Home side and one Away side`);
+      }
+      for (const teamId of teamIds) {
+        const teamSides = new Set(contestFacts.filter((fact) => fact.teamId === teamId).map((fact) => fact.side));
+        if (teamSides.size !== 1) {
+          throw new Error(`Historical CI contest ${contestId} assigns one team to multiple sides`);
+        }
+      }
+    }
+
     const netMovement = contestFacts.reduce((sum, fact) => sum + fact.ciDelta, 0);
     if (netMovement !== 0) {
       throw new Error(`Historical CI contest ${contestId} is not zero-sum (${netMovement})`);
