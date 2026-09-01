@@ -1,0 +1,153 @@
+import type {RatedResult} from './RatedResult';
+
+export type StoryResultScope = {
+  seasonId?: string;
+  format?: RatedResult['format'];
+};
+
+export type PlayerHeadToHeadRecord = {
+  playerAId: string;
+  playerBId: string;
+  meetings: number;
+  playerAWins: number;
+  playerBWins: number;
+  ties: number;
+  lastMeetingAt: string | null;
+};
+
+export type DoublesPairRecord = {
+  playerIds: [string, string];
+  contests: number;
+  wins: number;
+  losses: number;
+  ties: number;
+  expectedPoints: number;
+  actualPoints: number;
+  performanceVsExpected: number;
+  lastPlayedAt: string | null;
+};
+
+export type RankedOccurrence = {
+  rank: number;
+  total: number;
+};
+
+function chronological(a: RatedResult, b: RatedResult): number {
+  return a.playedAt.localeCompare(b.playedAt) || a.id.localeCompare(b.id);
+}
+
+function inScope(result: RatedResult, scope: StoryResultScope): boolean {
+  return (!scope.seasonId || result.seasonId === scope.seasonId)
+    && (!scope.format || result.format === scope.format);
+}
+
+function pairKey(playerAId: string, playerBId: string): [string, string] {
+  return playerAId < playerBId ? [playerAId, playerBId] : [playerBId, playerAId];
+}
+
+/**
+ * Read-only historical index for Clash Pulse. It joins the two normalized sides
+ * of a contest once, then exposes reusable player/team/opponent context without
+ * letting individual triggers know anything about persistence.
+ */
+export class StoryHistoryIndex {
+  private readonly results: RatedResult[];
+  private readonly byContestId = new Map<string, RatedResult[]>();
+  private readonly byPlayerId = new Map<string, RatedResult[]>();
+  private readonly byTeamId = new Map<string, RatedResult[]>();
+
+  constructor(results: RatedResult[]) {
+    this.results = [...results].sort(chronological);
+    for (const result of this.results) {
+      this.push(this.byContestId, result.contestId, result);
+      this.push(this.byTeamId, result.teamId, result);
+      for (const playerId of result.subjectPlayerIds) this.push(this.byPlayerId, playerId, result);
+    }
+  }
+
+  playerResults(playerId: string, scope: StoryResultScope = {}): RatedResult[] {
+    return (this.byPlayerId.get(playerId) ?? []).filter((result) => inScope(result, scope));
+  }
+
+  teamResults(teamId: string, scope: StoryResultScope = {}): RatedResult[] {
+    return (this.byTeamId.get(teamId) ?? []).filter((result) => inScope(result, scope));
+  }
+
+  contestSides(contestId: string): RatedResult[] {
+    return [...(this.byContestId.get(contestId) ?? [])];
+  }
+
+  opponentSide(result: RatedResult): RatedResult | null {
+    return (this.byContestId.get(result.contestId) ?? []).find((candidate) => candidate.side !== result.side) ?? null;
+  }
+
+  playerHeadToHead(
+    playerAId: string,
+    playerBId: string,
+    scope: StoryResultScope = {format: 'Singles'},
+  ): PlayerHeadToHeadRecord {
+    let playerAWins = 0;
+    let playerBWins = 0;
+    let ties = 0;
+    let lastMeetingAt: string | null = null;
+
+    const meetings = this.playerResults(playerAId, scope).filter((result) => {
+      const opponent = this.opponentSide(result);
+      if (!opponent?.subjectPlayerIds.includes(playerBId)) return false;
+      lastMeetingAt = result.playedAt;
+      if (result.outcome === 'W') playerAWins += 1;
+      else if (result.outcome === 'L') playerBWins += 1;
+      else ties += 1;
+      return true;
+    }).length;
+
+    return {playerAId, playerBId, meetings, playerAWins, playerBWins, ties, lastMeetingAt};
+  }
+
+  doublesPairRecord(playerAId: string, playerBId: string, scope: Omit<StoryResultScope, 'format'> = {}): DoublesPairRecord {
+    const playerIds = pairKey(playerAId, playerBId);
+    const rows = this.playerResults(playerIds[0], {...scope, format: 'Doubles'})
+      .filter((result) => result.subjectPlayerIds.includes(playerIds[1]));
+
+    let wins = 0;
+    let losses = 0;
+    let ties = 0;
+    let expectedPoints = 0;
+    let actualPoints = 0;
+    for (const result of rows) {
+      if (result.outcome === 'W') wins += 1;
+      else if (result.outcome === 'L') losses += 1;
+      else ties += 1;
+      expectedPoints += result.expectedPoints;
+      actualPoints += result.actualPoints;
+    }
+
+    return {
+      playerIds,
+      contests: rows.length,
+      wins,
+      losses,
+      ties,
+      expectedPoints,
+      actualPoints,
+      performanceVsExpected: actualPoints - expectedPoints,
+      lastPlayedAt: rows.at(-1)?.playedAt ?? null,
+    };
+  }
+
+  upsetRank(resultId: string, scope: StoryResultScope = {}): RankedOccurrence | null {
+    const target = this.results.find((result) => result.id === resultId);
+    if (!target?.won) return null;
+    const winners = this.results
+      .filter((result) => result.won && inScope(result, scope))
+      .sort((a, b) => a.winProbability - b.winProbability || b.ciDeficit - a.ciDeficit || a.id.localeCompare(b.id));
+    const index = winners.findIndex((result) => result.id === resultId);
+    return index < 0 ? null : {rank: index + 1, total: winners.length};
+  }
+
+  private push(map: Map<string, RatedResult[]>, key: string, result: RatedResult): void {
+    const rows = map.get(key) ?? [];
+    rows.push(result);
+    map.set(key, rows);
+  }
+}
