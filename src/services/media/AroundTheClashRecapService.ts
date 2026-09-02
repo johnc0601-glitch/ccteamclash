@@ -2,16 +2,16 @@ import {randomUUID} from 'node:crypto';
 import type {Story, StorySourceFactSnapshot} from '@/shared/types';
 import {createStory, StoryValidationError} from '@/services/stories/StoryService';
 import {getAroundTheClashData, type AroundFact} from '@/services/media/AroundTheClashService';
+import {normalizeAroundFactIds} from '@/services/media/AroundTheClashFacts';
 import {createSlug} from '@/shared/utils';
 
 const MAX_RECAP_FACTS = 20;
-const MAX_FACT_ID_LENGTH = 500;
 
 export async function createAroundTheClashRecapDraft(
   factIds: unknown,
   actorProfileId: string,
 ): Promise<Story> {
-  const requestedIds = normalizeFactIds(factIds);
+  const requestedIds = normalizeAroundFactIds(factIds);
   if (requestedIds.length === 0) {
     throw new StoryValidationError('Select at least one Around the Clash fact first.');
   }
@@ -67,13 +67,6 @@ export async function createAroundTheClashRecapDraft(
     }
     throw error;
   }
-}
-
-export function normalizeFactIds(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return unique(value
-    .map((item) => typeof item === 'string' || typeof item === 'number' ? String(item).trim() : '')
-    .filter((id) => id.length > 0 && id.length <= MAX_FACT_ID_LENGTH && !/\s/.test(id)));
 }
 
 function snapshotFact(fact: AroundFact, capturedAt: string): StorySourceFactSnapshot {
