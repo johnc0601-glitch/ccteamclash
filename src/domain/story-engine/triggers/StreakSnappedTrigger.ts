@@ -20,10 +20,20 @@ function snappedMagnitude(length: number): number {
   return Math.max(0, Math.min(100, 25 + (length - MIN_WIN_STREAK) * 15));
 }
 
+function breakerFor(result: RatedResult, results: RatedResult[]): RatedResult | null {
+  return results.find((candidate) =>
+    candidate.contestId === result.contestId
+    && candidate.teamId === result.opponentTeamId
+    && candidate.opponentTeamId === result.teamId
+    && candidate.id !== result.id,
+  ) ?? null;
+}
+
 /**
  * Detects a qualifying player win streak ending in the latest result for that
- * player/format/season. This is an internal editorial fact; publication policy
- * decides whether it is framed around the winner, a comeback, or suppressed.
+ * player/format/season. The verified payload includes the opposing player/pair
+ * from the mirrored contest row whenever available, so the fact can identify
+ * who actually ended the streak rather than naming only the opponent team.
  */
 export function detectStreaksSnapped(results: RatedResult[]): StoryCandidateDraft[] {
   const groups = new Map<string, PlayerResult[]>();
@@ -46,6 +56,9 @@ export function detectStreaksSnapped(results: RatedResult[]): StoryCandidateDraf
     }
     if (snappedStreak < MIN_WIN_STREAK) continue;
 
+    const breaker = breakerFor(latest.result, results);
+    const breakerNames = breaker?.subjectNames.join(' & ') ?? null;
+
     candidates.push({
       id: `streak-snapped:${latest.result.seasonId}:${latest.playerId}:${latest.result.format}:${latest.result.id}`,
       triggerType: 'STREAK_SNAPPED',
@@ -60,6 +73,8 @@ export function detectStreaksSnapped(results: RatedResult[]): StoryCandidateDraf
         format: latest.result.format,
         snappedStreak,
         breakerOutcome: latest.result.outcome,
+        breaker: breakerNames,
+        breakerTeam: latest.result.opponentTeamName,
         team: latest.result.teamName,
         opponentTeam: latest.result.opponentTeamName,
       },
