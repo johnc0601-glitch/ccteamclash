@@ -101,14 +101,20 @@ export function calculateRosterBasedMatchPrediction(input: {
  * every underlying CI is measured. Those stages still contain lineup
  * uncertainty, and their current probability curves rely on historical proxies.
  * A finished "Chance of Victory" label is reserved for a complete, measured
- * Match Lineup. Missing players block percentage publication entirely.
+ * Match Lineup. Low-confidence rosters and missing players block percentage
+ * publication entirely while preserving the internal calibration value.
  */
 export function predictionReadinessForStrengths(
   team: RosterStrengthResult,
   opponent: RosterStrengthResult,
 ): PredictionReadiness {
   if (team.source !== opponent.source) return 'Unavailable';
-  if (team.omittedPlayerCount > 0 || opponent.omittedPlayerCount > 0) {
+  if (
+    team.confidence === 'Low'
+    || opponent.confidence === 'Low'
+    || team.omittedPlayerCount > 0
+    || opponent.omittedPlayerCount > 0
+  ) {
     return 'Unavailable';
   }
 
