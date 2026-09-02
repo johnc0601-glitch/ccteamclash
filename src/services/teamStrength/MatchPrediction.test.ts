@@ -124,16 +124,49 @@ test('prediction confidence is limited by the weaker side', () => {
   assert.ok(prediction.displayChanceOfVictory != null);
 });
 
-test('thin but complete rosters are early estimates rather than unavailable', () => {
-  const teamPlayers = players(11, 900, false);
-  const opponentPlayers = players(11, 900, false);
-  const team = calculateRosterStageStrength('matchLineup', teamPlayers, teamPlayers.map((candidate) => candidate.id));
-  const opponent = calculateRosterStageStrength('matchLineup', opponentPlayers, opponentPlayers.map((candidate) => candidate.id));
-  assert.ok(team && opponent);
+test('low-confidence thin rosters retain internal probability but block public percentage', () => {
+  const thinPlayers = players(5, 950, false);
+  const fullPlayers = players(18, 850, false);
+  const thin = calculateRosterStageStrength(
+    'activeRoster',
+    thinPlayers,
+    thinPlayers.map((candidate) => candidate.id),
+  );
+  const full = calculateRosterStageStrength(
+    'activeRoster',
+    fullPlayers,
+    fullPlayers.map((candidate) => candidate.id),
+  );
+  assert.ok(thin && full);
+  assert.equal(thin.confidence, 'Low');
 
-  assert.equal(predictionReadinessForStrengths(team, opponent), 'EarlyEstimate');
+  const prediction = calculateRosterBasedMatchPrediction({team: thin, opponent: full});
+  assert.ok(prediction);
+  assert.equal(prediction.readiness, 'Unavailable');
+  assert.equal(prediction.displayLabel, 'Prediction unavailable');
+  assert.equal(prediction.displayChanceOfVictory, null);
+  assert.ok(prediction.regularSeasonChanceOfVictory > 0.5);
+});
+
+test('partial roster counts remain publishable as early estimates', () => {
+  const teamPlayers = players(12, 900, false);
+  const opponentPlayers = players(18, 900, false);
+  const team = calculateRosterStageStrength(
+    'activeRoster',
+    teamPlayers,
+    teamPlayers.map((candidate) => candidate.id),
+  );
+  const opponent = calculateRosterStageStrength(
+    'activeRoster',
+    opponentPlayers,
+    opponentPlayers.map((candidate) => candidate.id),
+  );
+  assert.ok(team && opponent);
+  assert.equal(team.confidence, 'Partial');
+
   const prediction = calculateRosterBasedMatchPrediction({team, opponent});
   assert.ok(prediction);
+  assert.equal(prediction.readiness, 'EarlyEstimate');
   assert.equal(prediction.displayLabel, 'Early estimate');
   assert.equal(prediction.displayChanceOfVictory, 0.5);
 });
