@@ -11,6 +11,7 @@ import {
   type PredictionReadiness,
 } from './MatchPrediction';
 import type {MatchVenueClassification} from './PredictionLifecycle';
+import type {TeamStrengthPredictionSnapshot} from './PredictionSnapshot';
 import {calculateMatchStageStrengthPair} from './PredictionStageStrength';
 import {
   TEAM_STRENGTH_STAGE_LABELS,
@@ -30,9 +31,7 @@ export type PublicMatchPrediction =
   | {
       state: 'calculated';
       source: TeamStrengthSource;
-      /** Information stage shown in the card header. */
       stageLabel: string;
-      /** Canonical strength label shown beside the neutral strength number. */
       strengthLabel: string;
       displayLabel: 'Prediction unavailable' | 'Early estimate' | 'Chance of Victory';
       readiness: PredictionReadiness;
@@ -60,14 +59,6 @@ export type PublicMatchPredictionInput = {
   now?: Date;
 };
 
-/**
- * Public pre-match display is roster-only. Active Roster Strength can be shown
- * as soon as a match is scheduled, Confirmed Available Roster Strength replaces
- * it at Friday noon ET, and Match Lineup Strength replaces that at the official
- * match-day roster lock. Actual Singles/Doubles pairings never upgrade the
- * public pre-match forecast; those belong only to post-match retrospective
- * analysis and model calibration.
- */
 export function resolvePublicPredictionSource(
   matchDate: string,
   now = new Date(),
@@ -83,10 +74,36 @@ export function resolvePublicPredictionSource(
 }
 
 /**
- * Builds the current regular-season roster forecast for public matchday
- * presentation. It never mixes information stages and never recomputes a public
- * pre-match forecast after a result has been published.
+ * Converts the immutable Home-side snapshot into the public card model. This
+ * keeps the displayed probability tied to the exact CI state preserved for
+ * later calibration instead of recalculating it from newer player ratings.
  */
+export function buildPublicMatchPredictionFromSnapshot(
+  snapshot: TeamStrengthPredictionSnapshot,
+): PublicMatchPrediction | undefined {
+  if (snapshot.side !== 'Home') return undefined;
+
+  const displayChance = snapshot.predictionReadiness === 'Unavailable'
+    ? null
+    : snapshot.chanceOfVictory;
+
+  return {
+    state: 'calculated',
+    source: snapshot.source,
+    stageLabel: snapshot.strengthLabel,
+    strengthLabel: snapshot.strengthLabel,
+    displayLabel: displayLabelForReadiness(snapshot.predictionReadiness),
+    readiness: snapshot.predictionReadiness,
+    confidence: snapshot.confidence,
+    awayStrength: snapshot.opponentBaseStrength,
+    homeStrength: snapshot.teamBaseStrength,
+    awayChanceOfVictory: displayChance === null ? null : 1 - displayChance,
+    homeChanceOfVictory: displayChance,
+    venueNote: venueNoteFromTeamVenue(snapshot.venue),
+    updateNote: updateNote(snapshot.source),
+  };
+}
+
 export function buildPublicMatchPrediction(
   input: PublicMatchPredictionInput,
 ): PublicMatchPrediction | undefined {
@@ -151,6 +168,14 @@ export function buildPublicMatchPrediction(
   };
 }
 
+function displayLabelForReadiness(
+  readiness: PredictionReadiness,
+): 'Prediction unavailable' | 'Early estimate' | 'Chance of Victory' {
+  if (readiness === 'Unavailable') return 'Prediction unavailable';
+  if (readiness === 'EarlyEstimate') return 'Early estimate';
+  return 'Chance of Victory';
+}
+
 function venueForSide(
   matchVenue: MatchVenueClassification,
   side: 'Home' | 'Away',
@@ -161,6 +186,12 @@ function venueForSide(
 
 function venueNote(matchVenue: MatchVenueClassification): string {
   return matchVenue === 'Home'
+    ? 'Home-course advantage included (+8 CI)'
+    : 'Neutral venue — no home adjustment';
+}
+
+function venueNoteFromTeamVenue(venue: TeamVenue): string {
+  return venue === 'Home'
     ? 'Home-course advantage included (+8 CI)'
     : 'Neutral venue — no home adjustment';
 }
