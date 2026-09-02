@@ -160,11 +160,10 @@ export function AroundTheClashDesk() {
                 const factText = pulseFactText(candidate);
                 return (
                   <article key={candidate.id} style={{display: 'grid', gap: 12, padding: 16, border: '1px solid rgba(127,127,127,.3)', borderRadius: 12, minWidth: 0}}>
-                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap'}}>
+                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 12}}>
                       <span style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 34, height: 34, padding: '0 8px', borderRadius: 999, border: '1px solid rgba(127,127,127,.35)', fontWeight: 800}}>
                         #{index + 1}
                       </span>
-                      <strong title="Editorial interest score" style={{whiteSpace: 'nowrap'}}>{Math.round(candidate.storyScore)} pts</strong>
                     </div>
                     <div style={{minWidth: 0}}>
                       <strong style={{display: 'block', fontSize: 18, lineHeight: 1.3, overflowWrap: 'anywhere'}}>{pulseFactHeadline(candidate)}</strong>
@@ -207,7 +206,7 @@ export function AroundTheClashDesk() {
               <div style={{display: 'grid', gap: 8, marginTop: 10}}>
                 {selectedItems.map((candidate) => (
                   <div key={candidate.id} style={{display: 'grid', gap: 10, border: '1px solid rgba(127,127,127,.25)', borderRadius: 8, padding: 10}}>
-                    <span style={{overflowWrap: 'anywhere'}}><strong>{pulseFactText(candidate)}</strong><br /><small>{pulseTriggerLabels[candidate.triggerType]} · {Math.round(candidate.storyScore)} pts</small></span>
+                    <span style={{overflowWrap: 'anywhere'}}><strong>{pulseFactText(candidate)}</strong><br /><small>{pulseTriggerLabels[candidate.triggerType]}</small></span>
                     <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8}}>
                       <button type="button" onClick={() => copyToClipboard(`tray-visual:${candidate.id}`, pulseFactText(candidate))}>
                         {copied === `tray-visual:${candidate.id}` ? 'Copied' : 'Copy visual'}
