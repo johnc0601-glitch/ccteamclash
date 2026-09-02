@@ -31,12 +31,20 @@ export function pulseFactHeadline(candidate: StoryCandidate): string {
     if (subject && breaker && length !== null) return `${breaker} snapped ${subject}'s ${length}-match streak`;
   }
 
+  if (candidate.triggerType === 'TEAM_SERIES') {
+    const teamA = firstFact(facts, ['teamA']);
+    const teamB = firstFact(facts, ['teamB']);
+    if (teamA && teamB) return `${teamA} vs ${teamB}`;
+  }
+
   if (subject && opponent) return `${label}: ${subject} vs ${opponent}`;
   if (subject) return `${label}: ${subject}`;
   return label;
 }
 
 export function pulseFactSummary(candidate: StoryCandidate): string {
+  if (candidate.triggerType === 'TEAM_SERIES') return teamSeriesSummary(candidate);
+
   const hidden = new Set(['resultId', 'modelVersion', 'upsetConfidence', 'probabilityConfidence']);
   const facts = Object.entries(candidate.headlineFacts)
     .filter(([key, value]) => !hidden.has(key) && value !== null && value !== '' && typeof value !== 'boolean')
@@ -94,6 +102,8 @@ export function pulseFactText(candidate: StoryCandidate): string {
       }
       return fallbackFactText(candidate);
     }
+    case 'TEAM_SERIES':
+      return `${pulseFactHeadline(candidate)} — ${teamSeriesSummary(candidate)}.`;
     default:
       if (player && team && opponent) return `${player} (${team}) vs ${opponent}: ${pulseFactSummary(candidate)}.`;
       return fallbackFactText(candidate);
@@ -134,6 +144,29 @@ export function pulseFactBundle(candidates: StoryCandidate[]): string {
 export function pulseSeasonLabel(seasonId: string): string {
   const match = seasonId.match(/(20\d{2})-(20\d{2})/);
   return match ? `${match[1]}–${match[2].slice(-2)}` : seasonId;
+}
+
+function teamSeriesSummary(candidate: StoryCandidate): string {
+  const facts = candidate.headlineFacts;
+  const teamA = firstFact(facts, ['teamA']);
+  const teamB = firstFact(facts, ['teamB']);
+  const aWins = numberFact(facts, 'teamAWins');
+  const bWins = numberFact(facts, 'teamBWins');
+  const ties = numberFact(facts, 'ties');
+  const meetings = numberFact(facts, 'meetings');
+
+  if (!teamA || !teamB || aWins === null || bWins === null || ties === null || meetings === null) {
+    return 'Verified team series';
+  }
+
+  if (aWins === bWins) {
+    return `${teamA} and ${teamB} are tied ${aWins}-${bWins}${ties ? ` with ${ties} tie${ties === 1 ? '' : 's'}` : ''} through ${meetings} meeting${meetings === 1 ? '' : 's'}`;
+  }
+
+  const leader = aWins > bWins ? teamA : teamB;
+  const leaderWins = Math.max(aWins, bWins);
+  const trailerWins = Math.min(aWins, bWins);
+  return `${leader} leads the series ${leaderWins}-${trailerWins}${ties ? ` with ${ties} tie${ties === 1 ? '' : 's'}` : ''} through ${meetings} meeting${meetings === 1 ? '' : 's'}`;
 }
 
 function fallbackFactText(candidate: StoryCandidate): string {
