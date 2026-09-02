@@ -148,26 +148,30 @@ export function AroundTheClashDesk() {
             ))}
           </nav>
 
-          <section style={{border: '1px solid rgba(127,127,127,.35)', borderRadius: 12, overflow: 'hidden'}}>
-            <header style={{padding: 16, borderBottom: '1px solid rgba(127,127,127,.25)', display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap'}}>
+          <section style={{display: 'grid', gap: 12}}>
+            <header style={{padding: '0 2px', display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap'}}>
               <h3 style={{margin: 0}}>{trigger === 'ALL' ? 'Top verified facts' : pulseTriggerLabels[trigger]}</h3>
               <span style={{fontSize: 12, opacity: .7}}>Verified data · deterministic wording · no AI generation</span>
             </header>
-            <div>
+            <div style={{display: 'grid', gap: 12}}>
               {visible.length === 0 ? <p style={{padding: 16, margin: 0}}>No facts in this category.</p> : null}
               {visible.map((candidate, index) => {
                 const isSelected = selected.includes(candidate.id);
                 const factText = pulseFactText(candidate);
                 return (
-                  <article key={candidate.id} style={{display: 'grid', gridTemplateColumns: '36px minmax(0,1fr) auto', gap: 12, alignItems: 'center', padding: 14, borderTop: index ? '1px solid rgba(127,127,127,.2)' : undefined}}>
-                    <strong style={{fontSize: 18, textAlign: 'center'}}>{index + 1}</strong>
-                    <div style={{minWidth: 0}}>
-                      <strong>{pulseFactHeadline(candidate)}</strong>
-                      <div style={{fontSize: 13, opacity: .78, marginTop: 4}}>{pulseFactSummary(candidate)}</div>
-                      <div style={{fontSize: 11, opacity: .58, marginTop: 5}}>{pulseTriggerLabels[candidate.triggerType]} · {candidate.eventId ?? candidate.matchId ?? candidate.seasonId}</div>
+                  <article key={candidate.id} style={{display: 'grid', gap: 12, padding: 16, border: '1px solid rgba(127,127,127,.3)', borderRadius: 12, minWidth: 0}}>
+                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap'}}>
+                      <span style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 34, height: 34, padding: '0 8px', borderRadius: 999, border: '1px solid rgba(127,127,127,.35)', fontWeight: 800}}>
+                        #{index + 1}
+                      </span>
+                      <strong title="Editorial interest score" style={{whiteSpace: 'nowrap'}}>{Math.round(candidate.storyScore)} pts</strong>
                     </div>
-                    <div style={{display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end'}}>
-                      <strong title="Editorial interest score">{Math.round(candidate.storyScore)} pts</strong>
+                    <div style={{minWidth: 0}}>
+                      <strong style={{display: 'block', fontSize: 18, lineHeight: 1.3, overflowWrap: 'anywhere'}}>{pulseFactHeadline(candidate)}</strong>
+                      <div style={{fontSize: 14, lineHeight: 1.55, opacity: .8, marginTop: 8, overflowWrap: 'anywhere'}}>{pulseFactSummary(candidate)}</div>
+                      <div style={{fontSize: 11, lineHeight: 1.45, opacity: .58, marginTop: 8, overflowWrap: 'anywhere'}}>{pulseTriggerLabels[candidate.triggerType]} · {candidate.eventId ?? candidate.matchId ?? candidate.seasonId}</div>
+                    </div>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8}}>
                       <button type="button" onClick={() => copyToClipboard(`fact:${candidate.id}`, pulseFactChatText(candidate))}>
                         {copied === `fact:${candidate.id}` ? 'Copied' : 'Copy fact'}
                       </button>
@@ -202,9 +206,9 @@ export function AroundTheClashDesk() {
             ) : (
               <div style={{display: 'grid', gap: 8, marginTop: 10}}>
                 {selectedItems.map((candidate) => (
-                  <div key={candidate.id} style={{display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', border: '1px solid rgba(127,127,127,.25)', borderRadius: 8, padding: 10}}>
-                    <span><strong>{pulseFactText(candidate)}</strong><br /><small>{pulseTriggerLabels[candidate.triggerType]} · {Math.round(candidate.storyScore)} pts</small></span>
-                    <div style={{display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end'}}>
+                  <div key={candidate.id} style={{display: 'grid', gap: 10, border: '1px solid rgba(127,127,127,.25)', borderRadius: 8, padding: 10}}>
+                    <span style={{overflowWrap: 'anywhere'}}><strong>{pulseFactText(candidate)}</strong><br /><small>{pulseTriggerLabels[candidate.triggerType]} · {Math.round(candidate.storyScore)} pts</small></span>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8}}>
                       <button type="button" onClick={() => copyToClipboard(`tray-visual:${candidate.id}`, pulseFactText(candidate))}>
                         {copied === `tray-visual:${candidate.id}` ? 'Copied' : 'Copy visual'}
                       </button>
