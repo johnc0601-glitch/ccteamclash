@@ -15,9 +15,28 @@ function row(index: number, outcome: RatedResult['outcome']): RatedResult {
   };
 }
 
+function breakerRow(index: number, outcome: RatedResult['outcome'] = 'W'): RatedResult {
+  return {
+    ...row(index, outcome),
+    id: `breaker-${index}`,
+    side: 'Away',
+    subjectPlayerIds: ['p2'],
+    subjectNames: ['Breaker Player'],
+    teamId: 't2',
+    teamName: 'Dark Knights',
+    opponentTeamId: 't1',
+    opponentTeamName: 'Cougar Country',
+    outcome,
+    won: outcome === 'W',
+    actualPoints: outcome === 'W' ? 1 : outcome === 'T' ? .5 : 0,
+  };
+}
+
 describe('detectStreaksSnapped', () => {
-  it('detects a qualifying streak ending with a loss', () => {
-    const candidates = detectStreaksSnapped([row(1, 'W'), row(2, 'W'), row(3, 'W'), row(4, 'L')]);
+  it('detects a qualifying streak ending with a loss and names the breaker', () => {
+    const candidates = detectStreaksSnapped([
+      row(1, 'W'), row(2, 'W'), row(3, 'W'), row(4, 'L'), breakerRow(4, 'W'),
+    ]);
     assert.equal(candidates.length, 1);
     assert.equal(candidates[0].triggerType, 'STREAK_SNAPPED');
     assert.equal(candidates[0].eventId, 'round-4');
@@ -25,11 +44,16 @@ describe('detectStreaksSnapped', () => {
     assert.equal(candidates[0].headlineFacts.format, 'Singles');
     assert.equal(candidates[0].headlineFacts.snappedStreak, 3);
     assert.equal(candidates[0].headlineFacts.breakerOutcome, 'L');
+    assert.equal(candidates[0].headlineFacts.breaker, 'Breaker Player');
+    assert.equal(candidates[0].headlineFacts.breakerTeam, 'Dark Knights');
   });
 
-  it('treats a tie as ending the streak', () => {
-    const candidates = detectStreaksSnapped([row(1, 'W'), row(2, 'W'), row(3, 'W'), row(4, 'T')]);
+  it('treats a tie as ending the streak and preserves the tied opponent', () => {
+    const candidates = detectStreaksSnapped([
+      row(1, 'W'), row(2, 'W'), row(3, 'W'), row(4, 'T'), breakerRow(4, 'T'),
+    ]);
     assert.equal(candidates[0]?.headlineFacts.breakerOutcome, 'T');
+    assert.equal(candidates[0]?.headlineFacts.breaker, 'Breaker Player');
   });
 
   it('ignores a run shorter than the publication candidate threshold', () => {
