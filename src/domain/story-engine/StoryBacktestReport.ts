@@ -32,6 +32,8 @@ export type StoryBacktestReport = {
   topCandidates: StoryCandidate[];
 };
 
+const HIDDEN_PULSE_TRIGGERS = new Set<StoryTriggerType>(['HEAD_TO_HEAD', 'PERSONAL_BEST']);
+
 function percentile(sorted: number[], fraction: number): number | null {
   if (sorted.length === 0) return null;
   const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * fraction) - 1));
@@ -66,6 +68,8 @@ function dedupeSeasonCandidates(candidates: StoryCandidate[]): StoryCandidate[] 
   const retained: StoryCandidate[] = [];
 
   for (const candidate of candidates) {
+    if (HIDDEN_PULSE_TRIGGERS.has(candidate.triggerType)) continue;
+
     if (candidate.triggerType !== 'CI_SURGE') {
       retained.push(candidate);
       continue;
@@ -124,14 +128,15 @@ export function buildStoryBacktestReport(
   const events = backtest.rounds.map((round): StoryBacktestEventSummary => {
     const rows = resultsByEvent.get(round.eventId) ?? [];
     const representative = rows[0];
+    const visibleRoundCandidates = round.candidates.filter((candidate) => !HIDDEN_PULSE_TRIGGERS.has(candidate.triggerType));
     return {
       eventId: round.eventId,
       eventLabel: representative?.eventLabel ?? round.eventId,
       eventOrder: representative?.eventOrder ?? null,
       resultRows: rows.length,
-      candidateCount: round.candidates.length,
-      topScore: round.candidates.length
-        ? Math.max(...round.candidates.map((candidate) => candidate.storyScore))
+      candidateCount: visibleRoundCandidates.length,
+      topScore: visibleRoundCandidates.length
+        ? Math.max(...visibleRoundCandidates.map((candidate) => candidate.storyScore))
         : null,
     };
   });
