@@ -1,6 +1,7 @@
 import {createClient} from '@/lib/supabase/server';
 import {
   buildAroundFacts,
+  resolveHistoricalFactSide,
   type CanonicalAroundRow,
 } from '@/services/media/AroundTheClashFacts';
 
@@ -20,7 +21,7 @@ type HistoricalFactRow = {
   player_id: string;
   player_name: string;
   team_id: string;
-  side: string;
+  side: string | null;
   venue: string;
   format: string;
   outcome: string;
@@ -56,6 +57,8 @@ type HistoricalMatchRow = {
   event_order: number;
   event_month: string | null;
   event_label: string | null;
+  away_team_name: string;
+  home_team_name: string;
 };
 
 type ScheduleMatchRow = {
@@ -117,7 +120,7 @@ export async function getAroundTheClashData(): Promise<AroundTheClashData> {
       .order('player_id', {ascending: true})),
     db
       .from('historical_team_matches')
-      .select('id,season_name,event_order,event_month,event_label')
+      .select('id,season_name,event_order,event_month,event_label,away_team_name,home_team_name')
       .order('id', {ascending: true}),
     db
       .from('launch_seasons')
@@ -219,6 +222,14 @@ function toHistoricalCanonicalRow(row: HistoricalFactRow, match: HistoricalMatch
   const teamId = cleanText(row.team_id);
   if (!playerId || !contestId || !matchId || !seasonId || !teamId) return null;
 
+  const officialSide = resolveHistoricalFactSide({
+    teamId,
+    storedSide: row.side,
+    awayTeamName: match.away_team_name,
+    homeTeamName: match.home_team_name,
+  });
+  if (!officialSide) return null;
+
   return {
     source: 'historical',
     id: `historical:${contestId}:${playerId}`,
@@ -231,7 +242,7 @@ function toHistoricalCanonicalRow(row: HistoricalFactRow, match: HistoricalMatch
     playerId,
     playerName: cleanText(row.player_name) || playerId,
     teamId,
-    side: cleanText(row.side),
+    side: officialSide,
     venue: cleanText(row.venue),
     format: cleanText(row.format),
     outcome: cleanText(row.outcome),
