@@ -165,6 +165,37 @@ test('contest validation rejects non-zero-sum facts', () => {
   assert.throws(() => assertCompleteHistoricalContests(altered), /not zero-sum/);
 });
 
+test('contest validation rejects team/opponent assignments that do not describe one contest', () => {
+  const dryRun = dryRunHistoricalCiMovementBackfill(
+    mirroredRegularRows(),
+    new Map([['home', 900], ['away', 900]]),
+  );
+  const altered = dryRun.facts.map((fact, index) => index === 1
+    ? {...fact, teamId: 'team-third', teamName: 'Third Team'}
+    : fact);
+  assert.throws(() => assertCompleteHistoricalContests(altered), /inconsistent opponent teams/);
+});
+
+test('team-match validation rejects a third team hidden in a separately valid contest', () => {
+  const dryRun = dryRunHistoricalCiMovementBackfill(
+    mirroredRegularRows(),
+    new Map([['home', 900], ['away', 900]]),
+  );
+  const secondContest = dryRun.facts.map((fact, index) => ({
+    ...fact,
+    contestId: `${fact.contestId}:second`,
+    matchupDeduplicationKey: `${fact.matchupDeduplicationKey}:second`,
+    teamId: index === 0 ? 'team-third' : 'team-away',
+    teamName: index === 0 ? 'Third Team' : 'Away Team',
+    opponentTeamId: index === 0 ? 'team-away' : 'team-third',
+    opponentTeamName: index === 0 ? 'Away Team' : 'Third Team',
+  }));
+  assert.throws(
+    () => assertCompleteHistoricalContests([...dryRun.facts, ...secondContest]),
+    /has 3 teams across contests; expected 2/,
+  );
+});
+
 test('same input produces the same backfill facts', () => {
   const rows = mirroredRegularRows();
   const ratings = new Map([['home', 900], ['away', 900]]);

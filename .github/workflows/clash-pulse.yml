@@ -1,0 +1,50 @@
+name: Clash Pulse Tests
+
+on:
+  push:
+    paths:
+      - 'src/domain/story-engine/**'
+      - 'src/services/statistics/HistoricalCiMovementBackfill.ts'
+      - 'src/services/statistics/HistoricalCiMovementBackfill.test.ts'
+      - 'scripts/ts-paths-loader.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'tsconfig.pulse-ci.json'
+      - '.github/workflows/clash-pulse.yml'
+  pull_request:
+    paths:
+      - 'src/domain/story-engine/**'
+      - 'src/services/statistics/HistoricalCiMovementBackfill.ts'
+      - 'src/services/statistics/HistoricalCiMovementBackfill.test.ts'
+      - 'scripts/ts-paths-loader.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'tsconfig.pulse-ci.json'
+      - '.github/workflows/clash-pulse.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clash-pulse-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-pulse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run Clash Pulse tests
+        run: npm run test:pulse
+      - name: Type check Pulse source
+        run: npx tsc --project tsconfig.pulse-ci.json

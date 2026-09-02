@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/domain/story-engine/**/*.ts",
+    "src/domain/history/HistoricalClashReplay.ts",
+    "src/domain/history/HistoricalPlayerMatchup.ts",
+    "src/services/statistics/HistoricalCiMovementBackfill.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts"
+  ]
+}

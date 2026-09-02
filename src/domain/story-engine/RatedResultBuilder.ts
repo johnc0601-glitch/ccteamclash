@@ -1,4 +1,5 @@
 import type {ResultContest, ResultContestOutcome, ResultContestSide} from '@/domain/results/MatchResult';
+import {doublesPairCi} from './ClashPrediction';
 import type {ContestRatingFact} from './ContestRatingFact';
 import type {RatedResult} from './RatedResult';
 
@@ -43,6 +44,7 @@ export function buildRatedResults(
     const opponent = side === 'Home'
       ? {id: context.awayTeamId, name: context.awayTeamName}
       : {id: context.homeTeamId, name: context.homeTeamName};
+    const effectiveCi = subjectEffectiveCi(sideFacts, contest.format);
 
     return [{
       id: `${contest.id}:${side.toLowerCase()}`,
@@ -52,8 +54,12 @@ export function buildRatedResults(
       seasonId: context.seasonId,
       format: contest.format,
       side,
+      venue: representative.venue,
       subjectPlayerIds: players.map((player) => player.playerId),
       subjectNames: players.map((player) => player.playerName),
+      subjectCiBefore: sideFacts.map((fact) => fact.clashIndexBefore),
+      subjectCiAfter: sideFacts.map((fact) => fact.clashIndexBefore + fact.ciDelta),
+      subjectCiDeltas: sideFacts.map((fact) => fact.ciDelta),
       teamId: team.id,
       teamName: team.name,
       opponentTeamId: opponent.id,
@@ -63,9 +69,9 @@ export function buildRatedResults(
       actualPoints: representative.actualPoints,
       expectedPoints: representative.expectedPoints,
       winProbability: representative.winProbability,
-      subjectEffectiveCi: subjectEffectiveCi(sideFacts, contest.format),
+      subjectEffectiveCi: effectiveCi,
       opponentEffectiveCi: representative.opponentEffectiveCi,
-      ciDeficit: representative.opponentEffectiveCi - subjectEffectiveCi(sideFacts, contest.format),
+      ciDeficit: representative.opponentEffectiveCi - effectiveCi,
       ciDelta: sideFacts.reduce((sum, fact) => sum + fact.ciDelta, 0),
       modelVersion: representative.algorithmVersion,
       playedAt: context.playedAt,
@@ -79,6 +85,5 @@ function outcomeForSide(contest: ResultContest, side: ResultContestSide): Result
 
 function subjectEffectiveCi(facts: ContestRatingFact[], format: ResultContest['format']): number {
   if (format === 'Singles') return facts[0].clashIndexBefore;
-  const values = facts.map((fact) => fact.clashIndexBefore).sort((a, b) => b - a);
-  return values[0] * 0.8 + values[1] * 0.2;
+  return doublesPairCi(facts[0].clashIndexBefore, facts[1].clashIndexBefore);
 }

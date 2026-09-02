@@ -1,0 +1,159 @@
+import assert from 'node:assert/strict';
+import {describe, it} from 'node:test';
+import type {RatedResult} from './RatedResult';
+import {StoryHistoryIndex} from './StoryHistoryIndex';
+
+function row(overrides: Partial<RatedResult> & Pick<RatedResult, 'id' | 'contestId' | 'side' | 'subjectPlayerIds' | 'subjectNames' | 'outcome' | 'won' | 'winProbability'>): RatedResult {
+  return {
+    matchId: `match-${overrides.contestId}`, eventId: 'round-1', seasonId: '2026-27', format: 'Singles',
+    teamId: overrides.side === 'Home' ? 'home-team' : 'away-team',
+    teamName: overrides.side === 'Home' ? 'Home Team' : 'Away Team',
+    opponentTeamId: overrides.side === 'Home' ? 'away-team' : 'home-team',
+    opponentTeamName: overrides.side === 'Home' ? 'Away Team' : 'Home Team',
+    actualPoints: overrides.outcome === 'W' ? 1 : overrides.outcome === 'T' ? 0.5 : 0,
+    expectedPoints: overrides.winProbability,
+    subjectEffectiveCi: 950,
+    opponentEffectiveCi: 950,
+    ciDeficit: 0,
+    ciDelta: 0,
+    modelVersion: '2026-27-v1',
+    playedAt: '2026-10-03T12:00:00Z',
+    ...overrides,
+  };
+}
+
+describe('StoryHistoryIndex', () => {
+  it('derives singles head-to-head by joining opposite contest sides', () => {
+    const index = new StoryHistoryIndex([
+      row({id: 'c1:home', contestId: 'c1', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: 0.45, playedAt: '2026-10-03T12:00:00Z'}),
+      row({id: 'c1:away', contestId: 'c1', side: 'Away', subjectPlayerIds: ['p2'], subjectNames: ['Two'], outcome: 'L', won: false, winProbability: 0.55, playedAt: '2026-10-03T12:00:00Z'}),
+      row({id: 'c2:home', contestId: 'c2', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'T', won: false, winProbability: 0.50, playedAt: '2026-11-03T12:00:00Z'}),
+      row({id: 'c2:away', contestId: 'c2', side: 'Away', subjectPlayerIds: ['p2'], subjectNames: ['Two'], outcome: 'T', won: false, winProbability: 0.50, playedAt: '2026-11-03T12:00:00Z'}),
+    ]);
+
+    assert.deepEqual(index.playerHeadToHead('p1', 'p2'), {
+      playerAId: 'p1', playerBId: 'p2', meetings: 2, playerAWins: 1, playerBWins: 0, ties: 1,
+      lastMeetingAt: '2026-11-03T12:00:00Z',
+    });
+  });
+
+  it('keeps singles as the default head-to-head format when a season scope is supplied', () => {
+    const index = new StoryHistoryIndex([
+      row({id: 's1:home', contestId: 's1', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: 0.45}),
+      row({id: 's1:away', contestId: 's1', side: 'Away', subjectPlayerIds: ['p2'], subjectNames: ['Two'], outcome: 'L', won: false, winProbability: 0.55}),
+      row({id: 'd1:home', contestId: 'd1', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p1', 'p3'], subjectNames: ['One', 'Three'], outcome: 'W', won: true, winProbability: 0.45}),
+      row({id: 'd1:away', contestId: 'd1', side: 'Away', format: 'Doubles', subjectPlayerIds: ['p2', 'p4'], subjectNames: ['Two', 'Four'], outcome: 'L', won: false, winProbability: 0.55}),
+    ]);
+    assert.equal(index.playerHeadToHead('p1', 'p2', {seasonId: '2026-27'}).meetings, 1);
+  });
+
+  it('aggregates order-independent doubles chemistry and performance versus expectation', () => {
+    const results: RatedResult[] = [
+      row({id: 'd1:home', contestId: 'd1', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p3', 'p1'], subjectNames: ['Three', 'One'], outcome: 'W', won: true, winProbability: 0.40, expectedPoints: 0.40}),
+      row({id: 'd2:home', contestId: 'd2', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p1', 'p3'], subjectNames: ['One', 'Three'], outcome: 'L', won: false, winProbability: 0.60, expectedPoints: 0.60}),
+    ];
+    const record = new StoryHistoryIndex(results).doublesPairRecord('p3', 'p1');
+    assert.deepEqual({playerIds: record.playerIds, contests: record.contests, wins: record.wins, losses: record.losses, ties: record.ties}, {playerIds: ['p1', 'p3'], contests: 2, wins: 1, losses: 1, ties: 0});
+    assert.equal(record.expectedPoints, 1);
+    assert.equal(record.actualPoints, 1);
+    assert.equal(record.performanceVsExpected, 0);
+  });
+
+  it('ranks win streaks against each players longest streak and keeps formats separate', () => {
+    const results: RatedResult[] = [];
+    const singlesWins = (playerId: string, playerName: string, length: number, startDay: number) => {
+      for (let index = 0; index < length; index += 1) {
+        const day = startDay + index;
+        results.push(row({
+          id: `${playerId}-s-${index}`,
+          contestId: `${playerId}-s-${index}`,
+          side: 'Home',
+          subjectPlayerIds: [playerId],
+          subjectNames: [playerName],
+          outcome: 'W', won: true, winProbability: .5,
+          playedAt: `2026-10-${String(day).padStart(2, '0')}T12:00:00Z`,
+        }));
+      }
+    };
+    singlesWins('p1', 'One', 4, 1);
+    singlesWins('p2', 'Two', 3, 1);
+    singlesWins('p3', 'Three', 4, 1);
+    results.push(row({
+      id: 'p4-d-1', contestId: 'p4-d-1', side: 'Home', format: 'Doubles',
+      subjectPlayerIds: ['p4', 'p5'], subjectNames: ['Four', 'Five'],
+      outcome: 'W', won: true, winProbability: .5,
+      playedAt: '2026-10-01T12:00:00Z',
+    }));
+
+    const index = new StoryHistoryIndex(results);
+    assert.equal(index.playerLongestWinStreak('p1', 'Singles'), 4);
+    assert.equal(index.playerLongestWinStreak('p4', 'Singles'), 0);
+    assert.deepEqual(index.winStreakRank(4, 'Singles'), {rank: 1, total: 3});
+    assert.deepEqual(index.winStreakRank(3, 'Singles'), {rank: 3, total: 3});
+    assert.deepEqual(index.winStreakRank(1, 'Doubles'), {rank: 1, total: 2});
+  });
+
+  it('sums singles and doubles contributions from one Matchday before computing post-match CI', () => {
+    const index = new StoryHistoryIndex([
+      row({
+        id: 'match-1:singles', contestId: 's1', matchId: 'match-1', eventId: 'round-1', side: 'Home',
+        subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: .5,
+        subjectEffectiveCi: 900, subjectCiBefore: [900], subjectCiDeltas: [8], ciDelta: 8,
+        playedAt: '2026-10-01T12:00:00Z',
+      }),
+      row({
+        id: 'match-1:doubles', contestId: 'd1', matchId: 'match-1', eventId: 'round-1', side: 'Home', format: 'Doubles',
+        subjectPlayerIds: ['p1', 'p2'], subjectNames: ['One', 'Two'], outcome: 'W', won: true, winProbability: .5,
+        subjectCiBefore: [900, 940], subjectCiDeltas: [6, 8], ciDelta: 14,
+        playedAt: '2026-10-01T12:00:00Z',
+      }),
+    ]);
+
+    assert.deepEqual(index.playerCiObservations('p1'), [{
+      resultId: 'match-1:singles',
+      resultIds: ['match-1:doubles', 'match-1:singles'],
+      matchId: 'match-1',
+      eventId: 'round-1',
+      seasonId: '2026-27',
+      teamId: 'home-team',
+      playedAt: '2026-10-01T12:00:00Z',
+      before: 900,
+      after: 914,
+      delta: 14,
+    }]);
+  });
+
+  it('builds player CI windows from published Matchday movement', () => {
+    const index = new StoryHistoryIndex([
+      row({id: 'm1', contestId: 's1', matchId: 'match-1', eventId: 'round-1', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: .5, subjectEffectiveCi: 900, ciDelta: 8, playedAt: '2026-10-01T12:00:00Z'}),
+      row({id: 'm2', contestId: 'd1', matchId: 'match-2', eventId: 'round-2', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p1', 'p2'], subjectNames: ['One', 'Two'], outcome: 'W', won: true, winProbability: .5, ciDelta: 14, subjectCiBefore: [908, 940], subjectCiDeltas: [6, 8], playedAt: '2026-10-02T12:00:00Z'}),
+      row({id: 'm3', contestId: 's2', matchId: 'match-3', eventId: 'round-3', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: .5, subjectEffectiveCi: 914, ciDelta: 7, playedAt: '2026-10-03T12:00:00Z'}),
+    ]);
+
+    const window = index.playerCiWindow('p1', 3);
+    assert.ok(window);
+    assert.equal(window.matchdays, 3);
+    assert.equal(window.totalDelta, 21);
+    assert.equal(window.startCi, 900);
+    assert.equal(window.currentCi, 921);
+  });
+
+  it('drops an entire Matchday CI observation if any participating doubles contribution is unsafe', () => {
+    const index = new StoryHistoryIndex([
+      row({id: 'safe-singles', contestId: 's1', matchId: 'match-1', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: .5, subjectEffectiveCi: 900, ciDelta: 8}),
+      row({id: 'unsafe-doubles', contestId: 'd1', matchId: 'match-1', side: 'Home', format: 'Doubles', subjectPlayerIds: ['p1', 'p2'], subjectNames: ['One', 'Two'], outcome: 'W', won: true, winProbability: .5, ciDelta: 20}),
+    ]);
+    assert.deepEqual(index.playerCiObservations('p1'), []);
+  });
+
+  it('ranks only qualifying upset wins by lowest pre-match win probability', () => {
+    const index = new StoryHistoryIndex([
+      row({id: 'u1', contestId: 'u1', side: 'Home', subjectPlayerIds: ['p1'], subjectNames: ['One'], outcome: 'W', won: true, winProbability: 0.22}),
+      row({id: 'u2', contestId: 'u2', side: 'Home', subjectPlayerIds: ['p2'], subjectNames: ['Two'], outcome: 'W', won: true, winProbability: 0.09}),
+      row({id: 'f1', contestId: 'f1', side: 'Home', subjectPlayerIds: ['p3'], subjectNames: ['Three'], outcome: 'W', won: true, winProbability: 0.70}),
+    ]);
+    assert.deepEqual(index.upsetRank('u2', {seasonId: '2026-27'}), {rank: 1, total: 2});
+    assert.deepEqual(index.upsetRank('u1', {seasonId: '2026-27'}), {rank: 2, total: 2});
+    assert.equal(index.upsetRank('f1', {seasonId: '2026-27'}), null);
+  });
+});
