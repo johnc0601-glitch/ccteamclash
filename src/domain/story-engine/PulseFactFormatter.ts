@@ -25,6 +25,12 @@ export function pulseFactHeadline(candidate: StoryCandidate): string {
   const opponent = firstFact(facts, ['opponentTeam', 'opponent', 'opponentName']);
   const label = pulseTriggerLabels[candidate.triggerType];
 
+  if (candidate.triggerType === 'STREAK_SNAPPED') {
+    const breaker = firstFact(facts, ['breaker']);
+    const length = numberFact(facts, 'snappedStreak');
+    if (subject && breaker && length !== null) return `${breaker} snapped ${subject}'s ${length}-match streak`;
+  }
+
   if (subject && opponent) return `${label}: ${subject} vs ${opponent}`;
   if (subject) return `${label}: ${subject}`;
   return label;
@@ -34,7 +40,7 @@ export function pulseFactSummary(candidate: StoryCandidate): string {
   const hidden = new Set(['resultId', 'modelVersion', 'upsetConfidence', 'probabilityConfidence']);
   const facts = Object.entries(candidate.headlineFacts)
     .filter(([key, value]) => !hidden.has(key) && value !== null && value !== '' && typeof value !== 'boolean')
-    .slice(0, 5)
+    .slice(0, 7)
     .map(([key, value]) => `${humanizeKey(key)} ${formatFactValue(key, value)}`);
   return facts.join(' · ') || 'Verified Clash fact';
 }
@@ -53,6 +59,22 @@ export function pulseFactText(candidate: StoryCandidate): string {
       return player && length !== null
         ? `${player} has won ${length} straight ${format ? `${format.toLowerCase()} ` : ''}matches.`
         : fallbackFactText(candidate);
+    }
+    case 'STREAK_SNAPPED': {
+      const breaker = firstFact(facts, ['breaker']);
+      const breakerTeam = firstFact(facts, ['breakerTeam', 'opponentTeam']);
+      const length = numberFact(facts, 'snappedStreak');
+      const outcome = firstFact(facts, ['breakerOutcome']);
+      if (player && breaker && length !== null) {
+        if (outcome === 'T') {
+          return `${player}'s ${length}-match ${format ? `${format.toLowerCase()} ` : ''}win streak ended in a tie with ${breaker}${breakerTeam ? ` (${breakerTeam})` : ''}.`;
+        }
+        return `${breaker}${breakerTeam ? ` (${breakerTeam})` : ''} snapped ${player}'s ${length}-match ${format ? `${format.toLowerCase()} ` : ''}win streak.`;
+      }
+      if (player && opponent && length !== null) {
+        return `${opponent} ended ${player}'s ${length}-match ${format ? `${format.toLowerCase()} ` : ''}win streak.`;
+      }
+      return fallbackFactText(candidate);
     }
     case 'CI_SURGE': {
       const gain = numberFact(facts, 'ciGain');
@@ -140,6 +162,9 @@ function humanizeKey(key: string): string {
     ciDeficit: 'CI deficit',
     winProbability: 'win probability',
     matchdays: 'Matchdays',
+    snappedStreak: 'streak length',
+    breaker: 'streak breaker',
+    breakerTeam: 'breaker team',
   };
   return labels[key] ?? key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ').toLocaleLowerCase();
 }
