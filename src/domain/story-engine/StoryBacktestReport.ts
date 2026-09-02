@@ -49,6 +49,45 @@ function scoreDistribution(candidates: StoryCandidate[]): StoryBacktestScoreDist
   };
 }
 
+function numericFact(candidate: StoryCandidate, key: string): number {
+  const value = candidate.headlineFacts[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : Number.NEGATIVE_INFINITY;
+}
+
+/**
+ * A historical round replay can surface the same player's CI surge at several
+ * later checkpoints as the window continues to qualify. The commissioner desk
+ * needs one season-level fact, not every overlapping snapshot, so retain the
+ * strongest CI gain for each player/season. Other trigger families keep their
+ * normal point-in-time candidates.
+ */
+function dedupeSeasonCandidates(candidates: StoryCandidate[]): StoryCandidate[] {
+  const selectedCiSurges = new Map<string, StoryCandidate>();
+  const retained: StoryCandidate[] = [];
+
+  for (const candidate of candidates) {
+    if (candidate.triggerType !== 'CI_SURGE') {
+      retained.push(candidate);
+      continue;
+    }
+
+    const playerId = candidate.playerIds[0] ?? candidate.id;
+    const key = `${candidate.seasonId}\u0000${playerId}`;
+    const current = selectedCiSurges.get(key);
+    if (!current) {
+      selectedCiSurges.set(key, candidate);
+      continue;
+    }
+
+    const gainDifference = numericFact(candidate, 'ciGain') - numericFact(current, 'ciGain');
+    if (gainDifference > 0 || (gainDifference === 0 && candidate.storyScore > current.storyScore)) {
+      selectedCiSurges.set(key, candidate);
+    }
+  }
+
+  return [...retained, ...selectedCiSurges.values()];
+}
+
 /**
  * Produces a compact tuning report from a point-in-time backtest. The report is
  * intentionally factual: it summarizes trigger volume and scores without
@@ -62,13 +101,18 @@ export function buildStoryBacktestReport(
   const seasonResults = results.filter((result) => result.seasonId === seasonId);
   const seasonName = seasonResults.find((result) => result.seasonName)?.seasonName ?? seasonId;
   const backtest = backtestStoryEngine(results, seasonId);
+  const candidates = dedupeSeasonCandidates(backtest.candidates);
+  const countsByTrigger: Partial<Record<StoryTriggerType, number>> = {};
   const countsByImportance: Record<StoryImportance, number> = {
     candidate: 0,
     notable: 0,
     strong: 0,
     major: 0,
   };
-  for (const candidate of backtest.candidates) countsByImportance[storyImportance(candidate.storyScore)] += 1;
+  for (const candidate of candidates) {
+    countsByTrigger[candidate.triggerType] = (countsByTrigger[candidate.triggerType] ?? 0) + 1;
+    countsByImportance[storyImportance(candidate.storyScore)] += 1;
+  }
 
   const resultsByEvent = new Map<string, RatedResult[]>();
   for (const result of seasonResults) {
@@ -97,11 +141,11 @@ export function buildStoryBacktestReport(
     seasonName,
     resultRows: seasonResults.length,
     events,
-    candidateCount: backtest.candidates.length,
-    countsByTrigger: backtest.countsByTrigger,
+    candidateCount: candidates.length,
+    countsByTrigger,
     countsByImportance,
-    scoreDistribution: scoreDistribution(backtest.candidates),
-    topCandidates: [...backtest.candidates]
+    scoreDistribution: scoreDistribution(candidates),
+    topCandidates: [...candidates]
       .sort((a, b) => b.storyScore - a.storyScore || a.id.localeCompare(b.id))
       .slice(0, Math.max(0, topCandidateLimit)),
   };
