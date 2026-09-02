@@ -22,7 +22,7 @@ export const pulseTriggerLabels: Record<StoryTriggerType, string> = {
 export function pulseFactHeadline(candidate: StoryCandidate): string {
   const facts = candidate.headlineFacts;
   const subject = firstFact(facts, ['winner', 'player', 'players', 'pair', 'team', 'leader', 'holder', 'subject']);
-  const opponent = firstFact(facts, ['opponentTeam', 'opponent', 'opponentName']);
+  const opponent = firstFact(facts, ['opponent', 'opponentName', 'opponentTeam']);
   const label = pulseTriggerLabels[candidate.triggerType];
 
   if (candidate.triggerType === 'STREAK_SNAPPED') {
@@ -51,6 +51,7 @@ export function pulseFactHeadline(candidate: StoryCandidate): string {
 export function pulseFactSummary(candidate: StoryCandidate): string {
   if (candidate.triggerType === 'TEAM_SERIES') return teamSeriesSummary(candidate);
   if (candidate.triggerType === 'DOUBLES_CHEMISTRY') return doublesChemistrySummary(candidate);
+  if (candidate.triggerType === 'UPSET') return upsetSummary(candidate);
 
   const hidden = new Set(['resultId', 'modelVersion', 'upsetConfidence', 'probabilityConfidence']);
   const facts = Object.entries(candidate.headlineFacts)
@@ -65,7 +66,7 @@ export function pulseFactText(candidate: StoryCandidate): string {
   const facts = candidate.headlineFacts;
   const player = firstFact(facts, ['player', 'winner', 'players', 'pair', 'leader', 'holder', 'subject']);
   const team = firstFact(facts, ['team']);
-  const opponent = firstFact(facts, ['opponentTeam', 'opponent', 'opponentName']);
+  const opponent = firstFact(facts, ['opponent', 'opponentName', 'opponentTeam']);
   const format = firstFact(facts, ['format']);
 
   switch (candidate.triggerType) {
@@ -153,6 +154,26 @@ export function pulseFactBundle(candidates: StoryCandidate[]): string {
 export function pulseSeasonLabel(seasonId: string): string {
   const match = seasonId.match(/(20\d{2})-(20\d{2})/);
   return match ? `${match[1]}–${match[2].slice(-2)}` : seasonId;
+}
+
+function upsetSummary(candidate: StoryCandidate): string {
+  const facts = candidate.headlineFacts;
+  const winner = firstFact(facts, ['winner']);
+  const winnerTeam = firstFact(facts, ['team']);
+  const opponent = firstFact(facts, ['opponent']);
+  const opponentTeam = firstFact(facts, ['opponentTeam']);
+  const format = firstFact(facts, ['format']);
+  const probability = numberFact(facts, 'winProbability');
+  const deficit = numberFact(facts, 'ciDeficit');
+
+  const matchup = winner && opponent
+    ? `${winner}${winnerTeam ? ` (${winnerTeam})` : ''} beat ${opponent}${opponentTeam ? ` (${opponentTeam})` : ''}`
+    : winner ? winner : 'Verified upset';
+  const details: string[] = [];
+  if (format) details.push(format);
+  if (probability !== null) details.push(`${Math.round(probability * 100)}% pre-match win chance`);
+  if (deficit !== null) details.push(`${Math.round(Math.abs(deficit))}-point CI disadvantage`);
+  return details.length ? `${matchup} · ${details.join(' · ')}` : matchup;
 }
 
 function teamSeriesSummary(candidate: StoryCandidate): string {
