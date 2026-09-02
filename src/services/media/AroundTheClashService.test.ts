@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildAroundFacts,
+  normalizeAroundFactIds,
   type CanonicalAroundRow,
-} from './AroundTheClashService';
-import {normalizeFactIds} from './AroundTheClashRecapService';
+} from './AroundTheClashFacts';
 
 function row(overrides: Partial<CanonicalAroundRow> & Pick<CanonicalAroundRow, 'id' | 'playerId' | 'playerName' | 'teamId' | 'side'>): CanonicalAroundRow {
   return {
@@ -73,8 +73,8 @@ test('quarantines malformed contests instead of surfacing partial story facts', 
 
 test('recap fact ids accept opaque canonical ids but reject whitespace and oversized values', () => {
   assert.deepEqual(
-    normalizeFactIds(['historical:contest:1:alex', 'current:contest:2:bob', 'historical:contest:1:alex', 'bad id', '', null]),
+    normalizeAroundFactIds(['historical:contest:1:alex', 'current:contest:2:bob', 'historical:contest:1:alex', 'bad id', '', null]),
     ['historical:contest:1:alex', 'current:contest:2:bob'],
   );
-  assert.deepEqual(normalizeFactIds(['x'.repeat(501)]), []);
+  assert.deepEqual(normalizeAroundFactIds(['x'.repeat(501)]), []);
 });
