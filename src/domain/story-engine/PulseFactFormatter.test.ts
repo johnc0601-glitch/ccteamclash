@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   pulseFactBundle,
   pulseFactChatText,
+  pulseFactSummary,
   pulseFactText,
 } from './PulseFactFormatter';
 import type {StoryCandidate, StoryTriggerType} from './StoryCandidate';
@@ -58,7 +59,11 @@ test('formats a CI surge from verified window facts', () => {
     team: 'Beast Mode',
   });
 
-  assert.equal(pulseFactText(item), 'Alex Player has gained +24 CI over the last 3 Matchdays.');
+  assert.equal(pulseFactText(item), 'Alex Player gained +24 CI across 3 Matchdays.');
+  assert.match(pulseFactSummary(item), /CI gain \+24/);
+  assert.match(pulseFactSummary(item), /starting CI 920/);
+  assert.match(pulseFactSummary(item), /ending CI 944/);
+  assert.doesNotMatch(pulseFactSummary(item), /current ci/i);
 });
 
 test('uses exact upset probability only when it exists in headline facts', () => {
@@ -112,5 +117,5 @@ test('fact bundle tells downstream writing tools not to invent facts', () => {
 
   assert.match(bundle, /Do not invent names, records, scores, streaks, probabilities, dates, or historical context\./);
   assert.match(bundle, /Player One has won 3 straight singles matches\./);
-  assert.match(bundle, /Player Two has gained \+31 CI over the last 5 Matchdays\./);
+  assert.match(bundle, /Player Two gained \+31 CI across 5 Matchdays\./);
 });
