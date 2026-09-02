@@ -23,6 +23,8 @@ type PulseReport = {
 };
 
 type PulsePayload = {
+  source: 'snapshot' | 'live-fallback' | 'live-debug';
+  snapshot: {generatedAt: string; refreshTrigger: string} | null;
   build: {
     sourceFactRows: number;
     sourceContests: number;
@@ -44,6 +46,7 @@ export function AroundTheClashDesk() {
   const [selected, setSelected] = useState<string[]>([]);
   const [copied, setCopied] = useState('');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -105,6 +108,31 @@ export function AroundTheClashDesk() {
     }
   }
 
+  async function refreshPulse() {
+    setRefreshing(true);
+    setError('');
+    try {
+      const response = await fetch('/api/stories/pulse', {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({trigger: 'commissioner-manual'}),
+      });
+      const result = await response.json() as {error?: string};
+      if (!response.ok) throw new Error(result.error || 'Clash Pulse could not be refreshed.');
+      const params = new URLSearchParams({limit: '100'});
+      if (seasonId) params.set('seasonId', seasonId);
+      if (trigger !== 'ALL') params.set('trigger', trigger);
+      const nextResponse = await fetch(`/api/stories/pulse?${params.toString()}`, {cache: 'no-store'});
+      const next = await nextResponse.json() as PulsePayload;
+      if (!nextResponse.ok) throw new Error(next.error || 'Clash Pulse could not load.');
+      setPayload(next);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Clash Pulse could not be refreshed.');
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
   return (
     <div style={{display: 'grid', gap: 16}}>
       <div style={{border: '1px solid rgba(127,127,127,.28)', borderRadius: 12, padding: 14}}>
@@ -130,6 +158,10 @@ export function AroundTheClashDesk() {
           </select>
         </label>
 
+        <button type="button" onClick={refreshPulse} disabled={loading || refreshing}>
+          {refreshing ? 'Refreshing Pulse…' : 'Refresh Pulse'}
+        </button>
+
         {payload?.report ? (
           <div style={{display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 13}}>
             <span><strong>{payload.report.candidateCount}</strong> verified facts</span>
@@ -145,6 +177,10 @@ export function AroundTheClashDesk() {
         <>
           <div style={{fontSize: 13, opacity: .78}}>
             <strong>{payload.report.seasonName}</strong> · {payload.report.resultRows} normalized result sides · strongest facts ranked first
+            <br />
+            {payload.source === 'snapshot' && payload.snapshot
+              ? `Saved snapshot · ${new Date(payload.snapshot.generatedAt).toLocaleString()}`
+              : 'Live fallback · refresh to save this verified result'}
           </div>
 
           <nav style={{display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4}} aria-label="Clash Pulse fact triggers">
