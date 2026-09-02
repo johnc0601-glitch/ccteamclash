@@ -37,6 +37,12 @@ export function pulseFactHeadline(candidate: StoryCandidate): string {
     if (teamA && teamB) return `${teamA} vs ${teamB}`;
   }
 
+  if (candidate.triggerType === 'DOUBLES_CHEMISTRY') {
+    const playerOne = firstFact(facts, ['playerOne']);
+    const playerTwo = firstFact(facts, ['playerTwo']);
+    if (playerOne && playerTwo) return `Doubles chemistry: ${playerOne} & ${playerTwo}`;
+  }
+
   if (subject && opponent) return `${label}: ${subject} vs ${opponent}`;
   if (subject) return `${label}: ${subject}`;
   return label;
@@ -44,6 +50,7 @@ export function pulseFactHeadline(candidate: StoryCandidate): string {
 
 export function pulseFactSummary(candidate: StoryCandidate): string {
   if (candidate.triggerType === 'TEAM_SERIES') return teamSeriesSummary(candidate);
+  if (candidate.triggerType === 'DOUBLES_CHEMISTRY') return doublesChemistrySummary(candidate);
 
   const hidden = new Set(['resultId', 'modelVersion', 'upsetConfidence', 'probabilityConfidence']);
   const facts = Object.entries(candidate.headlineFacts)
@@ -104,6 +111,8 @@ export function pulseFactText(candidate: StoryCandidate): string {
     }
     case 'TEAM_SERIES':
       return `${pulseFactHeadline(candidate)} — ${teamSeriesSummary(candidate)}.`;
+    case 'DOUBLES_CHEMISTRY':
+      return `${pulseFactHeadline(candidate)} — ${doublesChemistrySummary(candidate)}.`;
     default:
       if (player && team && opponent) return `${player} (${team}) vs ${opponent}: ${pulseFactSummary(candidate)}.`;
       return fallbackFactText(candidate);
@@ -167,6 +176,28 @@ function teamSeriesSummary(candidate: StoryCandidate): string {
   const leaderWins = Math.max(aWins, bWins);
   const trailerWins = Math.min(aWins, bWins);
   return `${leader} leads the series ${leaderWins}-${trailerWins}${ties ? ` with ${ties} tie${ties === 1 ? '' : 's'}` : ''} through ${meetings} meeting${meetings === 1 ? '' : 's'}`;
+}
+
+function doublesChemistrySummary(candidate: StoryCandidate): string {
+  const facts = candidate.headlineFacts;
+  const team = firstFact(facts, ['team']);
+  const contests = numberFact(facts, 'contests');
+  const wins = numberFact(facts, 'wins');
+  const losses = numberFact(facts, 'losses');
+  const ties = numberFact(facts, 'ties');
+
+  if (contests === null || wins === null || losses === null || ties === null) {
+    return team ? team : 'Verified doubles pair';
+  }
+
+  const parts = [
+    team,
+    `${contests} match${contests === 1 ? '' : 'es'}`,
+    `${wins} win${wins === 1 ? '' : 's'}`,
+    `${losses} loss${losses === 1 ? '' : 'es'}`,
+  ].filter(Boolean);
+  if (ties > 0) parts.push(`${ties} tie${ties === 1 ? '' : 's'}`);
+  return parts.join(' · ');
 }
 
 function fallbackFactText(candidate: StoryCandidate): string {
