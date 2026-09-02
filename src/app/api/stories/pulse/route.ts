@@ -1,10 +1,26 @@
 import {createHistoricalStatsReadClient} from '@/core/createHistoricalStatsReadClient';
 import {buildStoryBacktestReport} from '@/domain/story-engine/StoryBacktestReport';
 import {PublicHistoricalPulseRepository} from '@/domain/story-engine/PublicHistoricalPulseRepository';
+import type {StoryTriggerType} from '@/domain/story-engine/StoryCandidate';
 import {StoryAccessError, requireStoryCommissioner} from '@/services/stories/StoryEditorAccess';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const STORY_TRIGGER_TYPES = new Set<StoryTriggerType>([
+  'WIN_STREAK',
+  'STREAK_SNAPPED',
+  'UPSET',
+  'CI_SURGE',
+  'RANK_MILESTONE',
+  'CAREER_MILESTONE',
+  'PERSONAL_BEST',
+  'FIRST_SINCE',
+  'HEAD_TO_HEAD',
+  'TEAM_SERIES',
+  'DOUBLES_CHEMISTRY',
+  'RECORD',
+]);
 
 function readableErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -12,6 +28,12 @@ function readableErrorMessage(error: unknown): string {
     return error.message;
   }
   return 'Clash Pulse could not be loaded.';
+}
+
+function requestedTrigger(value: string | null): StoryTriggerType | null {
+  return value && STORY_TRIGGER_TYPES.has(value as StoryTriggerType)
+    ? value as StoryTriggerType
+    : null;
 }
 
 export async function GET(request: Request) {
@@ -32,13 +54,25 @@ export async function GET(request: Request) {
     const seasonId = requestedSeasonId && seasonIds.includes(requestedSeasonId)
       ? requestedSeasonId
       : seasonIds.at(-1) ?? null;
+    const trigger = requestedTrigger(url.searchParams.get('trigger'));
     const requestedLimit = Number(url.searchParams.get('limit') ?? 50);
     const limit = Number.isFinite(requestedLimit)
       ? Math.min(100, Math.max(10, Math.round(requestedLimit)))
       : 50;
 
-    const report = seasonId
-      ? buildStoryBacktestReport(build.results, seasonId, limit)
+    // Build the complete season ranking first. Category filtering must not be
+    // performed against only the global top 100, or valid lower-ranked facts
+    // disappear from their category tabs.
+    const fullReport = seasonId
+      ? buildStoryBacktestReport(build.results, seasonId, Number.MAX_SAFE_INTEGER)
+      : null;
+    const report = fullReport
+      ? {
+          ...fullReport,
+          topCandidates: fullReport.topCandidates
+            .filter((candidate) => !trigger || candidate.triggerType === trigger)
+            .slice(0, limit),
+        }
       : null;
 
     return Response.json({
@@ -50,6 +84,7 @@ export async function GET(request: Request) {
         diagnostics: build.diagnostics,
       },
       seasonIds,
+      activeTrigger: trigger,
       report,
     });
   } catch (error) {
