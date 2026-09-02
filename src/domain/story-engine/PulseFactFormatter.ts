@@ -58,7 +58,7 @@ export function pulseFactText(candidate: StoryCandidate): string {
       const gain = numberFact(facts, 'ciGain');
       const matchdays = numberFact(facts, 'matchdays');
       return player && gain !== null && matchdays !== null
-        ? `${player} has gained ${signed(gain)} CI over the last ${matchdays} Matchdays.`
+        ? `${player} gained ${signed(gain)} CI across ${matchdays} Matchdays.`
         : fallbackFactText(candidate);
     }
     case 'UPSET': {
@@ -133,7 +133,15 @@ function numberFact(facts: Readonly<Record<string, StoryFactValue>>, key: string
 }
 
 function humanizeKey(key: string): string {
-  return key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ').toLocaleLowerCase();
+  const labels: Record<string, string> = {
+    ciGain: 'CI gain',
+    startCi: 'starting CI',
+    currentCi: 'ending CI',
+    ciDeficit: 'CI deficit',
+    winProbability: 'win probability',
+    matchdays: 'Matchdays',
+  };
+  return labels[key] ?? key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ').toLocaleLowerCase();
 }
 
 function formatFactValue(key: string, value: StoryFactValue): string {
