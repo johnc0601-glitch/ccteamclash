@@ -30,6 +30,7 @@ type PulsePayload = {
     quarantinedContests: number;
   };
   seasonIds: string[];
+  activeTrigger?: StoryTriggerType | null;
   report: PulseReport | null;
   error?: string;
 };
@@ -49,6 +50,7 @@ export function AroundTheClashDesk() {
     let cancelled = false;
     const params = new URLSearchParams({limit: '100'});
     if (seasonId) params.set('seasonId', seasonId);
+    if (trigger !== 'ALL') params.set('trigger', trigger);
 
     setLoading(true);
     setError('');
@@ -62,7 +64,6 @@ export function AroundTheClashDesk() {
         if (cancelled) return;
         setPayload(next);
         if (!seasonId && next.report?.seasonId) setSeasonId(next.report.seasonId);
-        setSelected([]);
       })
       .catch((reason) => {
         if (cancelled) return;
@@ -75,22 +76,18 @@ export function AroundTheClashDesk() {
     return () => {
       cancelled = true;
     };
-  }, [seasonId]);
+  }, [seasonId, trigger]);
 
   const candidates = payload?.report?.topCandidates ?? [];
   const availableTriggers = useMemo(() => {
-    const found = new Set(candidates.map((candidate) => candidate.triggerType));
-    return (Object.keys(pulseTriggerLabels) as StoryTriggerType[]).filter((item) => found.has(item));
-  }, [candidates]);
-
-  // Derive the visible list directly on every render. Keeping this out of a memo
-  // prevents a stale candidate list from surviving a trigger-tab state change.
-  const visible = trigger === 'ALL'
-    ? candidates
-    : candidates.filter((candidate) => candidate.triggerType === trigger);
+    const counts = payload?.report?.countsByTrigger ?? {};
+    return (Object.keys(pulseTriggerLabels) as StoryTriggerType[])
+      .filter((item) => (counts[item] ?? 0) > 0);
+  }, [payload?.report?.countsByTrigger]);
   const selectedItems = candidates.filter((candidate) => selected.includes(candidate.id));
 
   function chooseTrigger(next: TriggerFilter) {
+    if (next === trigger) return;
     setTrigger(next);
   }
 
@@ -120,7 +117,15 @@ export function AroundTheClashDesk() {
       <div style={{display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap'}}>
         <label style={{display: 'grid', gap: 5, minWidth: 240}}>
           <span style={{fontSize: 12, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase'}}>Season</span>
-          <select value={seasonId} onChange={(event) => setSeasonId(event.target.value)} disabled={loading || !payload?.seasonIds.length}>
+          <select
+            value={seasonId}
+            onChange={(event) => {
+              setTrigger('ALL');
+              setSeasonId(event.target.value);
+              setSelected([]);
+            }}
+            disabled={loading || !payload?.seasonIds.length}
+          >
             {(payload?.seasonIds ?? []).map((item) => <option key={item} value={item}>{pulseSeasonLabel(item)}</option>)}
           </select>
         </label>
@@ -135,9 +140,8 @@ export function AroundTheClashDesk() {
       </div>
 
       {error ? <div style={{border: '1px solid rgba(180,50,50,.45)', borderRadius: 10, padding: 12}}>{error}</div> : null}
-      {loading ? <p style={{margin: 0}}>Analyzing verified Clash history...</p> : null}
 
-      {!loading && payload?.report ? (
+      {payload?.report ? (
         <>
           <div style={{fontSize: 13, opacity: .78}}>
             <strong>{payload.report.seasonName}</strong> · {payload.report.resultRows} normalized result sides · strongest facts ranked first
@@ -150,7 +154,7 @@ export function AroundTheClashDesk() {
               aria-pressed={trigger === 'ALL'}
               style={{whiteSpace: 'nowrap', borderRadius: 999, fontWeight: trigger === 'ALL' ? 800 : 500, outline: trigger === 'ALL' ? '2px solid currentColor' : undefined}}
             >
-              All ({candidates.length})
+              All ({payload.report.candidateCount})
             </button>
             {availableTriggers.map((item) => (
               <button
@@ -168,15 +172,15 @@ export function AroundTheClashDesk() {
           <section style={{display: 'grid', gap: 12}}>
             <header style={{padding: '0 2px', display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap'}}>
               <h3 style={{margin: 0}}>{trigger === 'ALL' ? 'Top verified facts' : pulseTriggerLabels[trigger]}</h3>
-              <span style={{fontSize: 12, opacity: .7}}>Verified data · deterministic wording · no AI generation</span>
+              <span style={{fontSize: 12, opacity: .7}}>{loading ? 'Loading selected facts…' : 'Verified data · deterministic wording · no AI generation'}</span>
             </header>
-            <div key={trigger} style={{display: 'grid', gap: 12}}>
-              {visible.length === 0 ? <p style={{padding: 16, margin: 0}}>No facts in this category.</p> : null}
-              {visible.map((candidate, index) => {
+            <div key={`${seasonId}:${trigger}:${payload.activeTrigger ?? 'ALL'}`} style={{display: 'grid', gap: 12, opacity: loading ? .55 : 1}}>
+              {!loading && candidates.length === 0 ? <p style={{padding: 16, margin: 0}}>No facts in this category.</p> : null}
+              {candidates.map((candidate, index) => {
                 const isSelected = selected.includes(candidate.id);
                 const factText = pulseFactText(candidate);
                 return (
-                  <article key={`${trigger}:${candidate.id}`} style={{display: 'grid', gap: 12, padding: 16, border: '1px solid rgba(127,127,127,.3)', borderRadius: 12, minWidth: 0}}>
+                  <article key={candidate.id} style={{display: 'grid', gap: 12, padding: 16, border: '1px solid rgba(127,127,127,.3)', borderRadius: 12, minWidth: 0}}>
                     <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 12}}>
                       <span style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 34, height: 34, padding: '0 8px', borderRadius: 999, border: '1px solid rgba(127,127,127,.35)', fontWeight: 800}}>
                         #{index + 1}
@@ -236,7 +240,7 @@ export function AroundTheClashDesk() {
             )}
           </aside>
         </>
-      ) : null}
+      ) : loading ? <p style={{margin: 0}}>Analyzing verified Clash history...</p> : null}
     </div>
   );
 }
