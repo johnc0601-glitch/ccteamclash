@@ -131,6 +131,35 @@ export function buildAroundFacts(rows: CanonicalAroundRow[]): AroundFact[] {
   });
 }
 
+/**
+ * Resolves a historical fact to the official Home/Away side. Legacy fact rows
+ * may have no stored side, but their team id can still be matched against the
+ * official historical match. A conflicting stored side or unknown team is
+ * rejected rather than guessed.
+ */
+export function resolveHistoricalFactSide(input: {
+  teamId: string;
+  storedSide: string | null | undefined;
+  awayTeamName: string;
+  homeTeamName: string;
+}): 'Away' | 'Home' | null {
+  const teamKey = normalizeTeamKey(input.teamId);
+  const awayKey = normalizeTeamKey(input.awayTeamName);
+  const homeKey = normalizeTeamKey(input.homeTeamName);
+  if (!teamKey || !awayKey || !homeKey || awayKey === homeKey) return null;
+
+  const expectedSide = teamKey === awayKey
+    ? 'Away'
+    : teamKey === homeKey
+      ? 'Home'
+      : null;
+  if (!expectedSide) return null;
+
+  const storedSide = normalize(input.storedSide ?? '');
+  if (storedSide && storedSide !== expectedSide.toLowerCase()) return null;
+  return expectedSide;
+}
+
 export function normalizeAroundFactIds(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return unique(value
@@ -171,6 +200,14 @@ function isDoublesFormat(value: string): boolean {
 
 function normalize(value: string): string {
   return value.trim().toLowerCase();
+}
+
+function normalizeTeamKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 function unique<T>(values: T[]): T[] {

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   buildAroundFacts,
   normalizeAroundFactIds,
+  resolveHistoricalFactSide,
   type CanonicalAroundRow,
 } from './AroundTheClashFacts';
 
@@ -69,6 +70,36 @@ test('quarantines malformed contests instead of surfacing partial story facts', 
   ]);
 
   assert.deepEqual(facts, []);
+});
+
+test('recovers blank legacy sides only from official historical team identity', () => {
+  assert.equal(resolveHistoricalFactSide({
+    teamId: 'hayneous-og-s',
+    storedSide: null,
+    awayTeamName: "Hayneous OG's",
+    homeTeamName: 'Dark Knights',
+  }), 'Away');
+  assert.equal(resolveHistoricalFactSide({
+    teamId: 'dark-knights',
+    storedSide: '',
+    awayTeamName: "Hayneous OG's",
+    homeTeamName: 'Dark Knights',
+  }), 'Home');
+});
+
+test('rejects historical rows whose team or stored side contradicts the official match', () => {
+  assert.equal(resolveHistoricalFactSide({
+    teamId: 'hayneous-og-s',
+    storedSide: 'Away',
+    awayTeamName: 'KB',
+    homeTeamName: 'Ninjas',
+  }), null);
+  assert.equal(resolveHistoricalFactSide({
+    teamId: 'kb',
+    storedSide: 'Home',
+    awayTeamName: 'KB',
+    homeTeamName: 'Ninjas',
+  }), null);
 });
 
 test('recap fact ids accept opaque canonical ids but reject whitespace and oversized values', () => {
