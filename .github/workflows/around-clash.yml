@@ -1,0 +1,40 @@
+name: Around the Clash Tests
+
+on:
+  push:
+    paths:
+      - 'src/services/media/AroundTheClashService.ts'
+      - 'src/services/media/AroundTheClashService.test.ts'
+      - 'src/services/media/AroundTheClashRecapService.ts'
+      - 'src/app/api/media/recap-drafts/**'
+      - 'src/app/office/media/around-the-clash/**'
+      - 'src/components/commissioner/AroundTheClashDesk.tsx'
+      - '.github/workflows/around-clash.yml'
+  pull_request:
+    paths:
+      - 'src/services/media/AroundTheClashService.ts'
+      - 'src/services/media/AroundTheClashService.test.ts'
+      - 'src/services/media/AroundTheClashRecapService.ts'
+      - 'src/app/api/media/recap-drafts/**'
+      - 'src/app/office/media/around-the-clash/**'
+      - 'src/components/commissioner/AroundTheClashDesk.tsx'
+      - '.github/workflows/around-clash.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test-around-clash:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run Around the Clash tests
+        run: node --loader ./scripts/ts-paths-loader.mjs --test src/services/media/AroundTheClashService.test.ts
