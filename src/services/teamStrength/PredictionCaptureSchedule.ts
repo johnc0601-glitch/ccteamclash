@@ -10,13 +10,15 @@ export type PredictionCaptureCheckpoint = {
   captureAt: Date;
 };
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 /**
  * Fixed regular-season Team Strength checkpoints.
  *
  * PreMatch is captured when match-week attendance opens (Friday 12:00 AM ET),
  * before availability data begins to replace the active-roster view.
  * AttendanceFinal is captured at the player response lock (Friday 12:00 PM ET).
- * MatchLineup is captured at the official roster lock (match date 3:00 PM ET).
+ * MatchLineup is captured at the official roster lock (Friday 3:00 PM ET).
  */
 export function predictionCaptureCheckpoints(
   matchDate: string,
@@ -36,8 +38,9 @@ export function predictionCaptureCheckpoints(
 /**
  * Returns the one information stage that is valid to capture at `now`.
  * Earlier stages are deliberately not backfilled using later data: a missed
- * PreMatch or AttendanceFinal snapshot should remain missing rather than being
- * mislabeled with a player pool observed after its checkpoint window.
+ * snapshot remains missing rather than being mislabeled with a player pool or
+ * CI values observed after its checkpoint window. The final lineup window ends
+ * at the close of Friday ET, after the scheduled evening capture has run.
  */
 export function currentPredictionCaptureSource(
   matchDate: string,
@@ -48,6 +51,7 @@ export function currentPredictionCaptureSource(
 
   const [preMatch, attendanceFinal, rosterLock] = checkpoints;
   const timestamp = now.getTime();
+  const lineupCaptureEndsAt = preMatch.captureAt.getTime() + DAY_MS;
 
   if (
     timestamp >= preMatch.captureAt.getTime()
@@ -59,7 +63,10 @@ export function currentPredictionCaptureSource(
     && timestamp < rosterLock.captureAt.getTime()
   ) return 'confirmedAvailableRoster';
 
-  if (timestamp >= rosterLock.captureAt.getTime()) return 'matchLineup';
+  if (
+    timestamp >= rosterLock.captureAt.getTime()
+    && timestamp < lineupCaptureEndsAt
+  ) return 'matchLineup';
 
   return undefined;
 }
