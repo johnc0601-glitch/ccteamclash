@@ -37,11 +37,11 @@ export default function OfficeMediaPage() {
             <div>
               <div style={{display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap'}}>
                 <strong>Around the Clash</strong>
-                <span style={{fontSize: 11, fontWeight: 800, letterSpacing: '.08em', border: '1px solid currentColor', borderRadius: 999, padding: '2px 7px'}}>PREVIEW</span>
+                <span style={{fontSize: 11, fontWeight: 800, letterSpacing: '.08em', border: '1px solid currentColor', borderRadius: 999, padding: '2px 7px'}}>FACTS PREVIEW</span>
               </div>
-              <p style={{margin: '6px 0 0'}}>Browse ranked Matchday statistics and collect the best items for round coverage.</p>
+              <p style={{margin: '6px 0 0'}}>Find verified streaks, upsets, CI movement, milestones, records, and other reusable league facts.</p>
             </div>
-            <Link href="/office/media/around-the-clash">Open stats desk</Link>
+            <Link href="/office/media/around-the-clash">Open fact desk</Link>
           </div>
         </section>
       </div>
