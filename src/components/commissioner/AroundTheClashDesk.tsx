@@ -1,36 +1,16 @@
 'use client';
 
 import {useEffect, useMemo, useState} from 'react';
-
-type StoryTriggerType =
-  | 'WIN_STREAK'
-  | 'STREAK_SNAPPED'
-  | 'UPSET'
-  | 'CI_SURGE'
-  | 'RANK_MILESTONE'
-  | 'CAREER_MILESTONE'
-  | 'PERSONAL_BEST'
-  | 'FIRST_SINCE'
-  | 'HEAD_TO_HEAD'
-  | 'TEAM_SERIES'
-  | 'DOUBLES_CHEMISTRY'
-  | 'RECORD';
-
-type FactValue = string | number | boolean | null;
-
-type PulseCandidate = {
-  id: string;
-  triggerType: StoryTriggerType;
-  seasonId: string;
-  eventId?: string;
-  matchId?: string;
-  playerIds: string[];
-  teamIds: string[];
-  headlineFacts: Record<string, FactValue>;
-  contextFacts: Record<string, FactValue>;
-  storyScore: number;
-  confidence: 'verified';
-};
+import {
+  pulseFactBundle,
+  pulseFactChatText,
+  pulseFactHeadline,
+  pulseFactSummary,
+  pulseFactText,
+  pulseSeasonLabel,
+  pulseTriggerLabels,
+} from '@/domain/story-engine/PulseFactFormatter';
+import type {StoryCandidate, StoryTriggerType} from '@/domain/story-engine/StoryCandidate';
 
 type PulseReport = {
   seasonId: string;
@@ -39,7 +19,7 @@ type PulseReport = {
   candidateCount: number;
   countsByTrigger: Partial<Record<StoryTriggerType, number>>;
   countsByImportance: Record<'candidate' | 'notable' | 'strong' | 'major', number>;
-  topCandidates: PulseCandidate[];
+  topCandidates: StoryCandidate[];
 };
 
 type PulsePayload = {
@@ -55,21 +35,6 @@ type PulsePayload = {
 };
 
 type TriggerFilter = 'ALL' | StoryTriggerType;
-
-const triggerLabels: Record<StoryTriggerType, string> = {
-  WIN_STREAK: 'Win streaks',
-  STREAK_SNAPPED: 'Streaks snapped',
-  UPSET: 'Upsets',
-  CI_SURGE: 'CI surges',
-  RANK_MILESTONE: 'Rank milestones',
-  CAREER_MILESTONE: 'Career milestones',
-  PERSONAL_BEST: 'Personal bests',
-  FIRST_SINCE: 'First since',
-  HEAD_TO_HEAD: 'Head-to-head',
-  TEAM_SERIES: 'Team series',
-  DOUBLES_CHEMISTRY: 'Doubles chemistry',
-  RECORD: 'Records',
-};
 
 export function AroundTheClashDesk() {
   const [payload, setPayload] = useState<PulsePayload | null>(null);
@@ -115,7 +80,7 @@ export function AroundTheClashDesk() {
   const candidates = payload?.report?.topCandidates ?? [];
   const availableTriggers = useMemo(() => {
     const found = new Set(candidates.map((candidate) => candidate.triggerType));
-    return (Object.keys(triggerLabels) as StoryTriggerType[]).filter((item) => found.has(item));
+    return (Object.keys(pulseTriggerLabels) as StoryTriggerType[]).filter((item) => found.has(item));
   }, [candidates]);
   const visible = useMemo(
     () => trigger === 'ALL' ? candidates : candidates.filter((candidate) => candidate.triggerType === trigger),
@@ -150,7 +115,7 @@ export function AroundTheClashDesk() {
         <label style={{display: 'grid', gap: 5, minWidth: 240}}>
           <span style={{fontSize: 12, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase'}}>Season</span>
           <select value={seasonId} onChange={(event) => setSeasonId(event.target.value)} disabled={loading || !payload?.seasonIds.length}>
-            {(payload?.seasonIds ?? []).map((item) => <option key={item} value={item}>{seasonLabel(item)}</option>)}
+            {(payload?.seasonIds ?? []).map((item) => <option key={item} value={item}>{pulseSeasonLabel(item)}</option>)}
           </select>
         </label>
 
@@ -178,32 +143,32 @@ export function AroundTheClashDesk() {
             </button>
             {availableTriggers.map((item) => (
               <button key={item} type="button" onClick={() => setTrigger(item)} aria-pressed={trigger === item} style={{whiteSpace: 'nowrap', borderRadius: 999, fontWeight: trigger === item ? 800 : 500}}>
-                {triggerLabels[item]} ({payload.report?.countsByTrigger[item] ?? 0})
+                {pulseTriggerLabels[item]} ({payload.report?.countsByTrigger[item] ?? 0})
               </button>
             ))}
           </nav>
 
           <section style={{border: '1px solid rgba(127,127,127,.35)', borderRadius: 12, overflow: 'hidden'}}>
             <header style={{padding: 16, borderBottom: '1px solid rgba(127,127,127,.25)', display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap'}}>
-              <h3 style={{margin: 0}}>{trigger === 'ALL' ? 'Top verified facts' : triggerLabels[trigger]}</h3>
+              <h3 style={{margin: 0}}>{trigger === 'ALL' ? 'Top verified facts' : pulseTriggerLabels[trigger]}</h3>
               <span style={{fontSize: 12, opacity: .7}}>Verified data · deterministic wording · no AI generation</span>
             </header>
             <div>
               {visible.length === 0 ? <p style={{padding: 16, margin: 0}}>No facts in this category.</p> : null}
               {visible.map((candidate, index) => {
                 const isSelected = selected.includes(candidate.id);
-                const factText = candidateFactText(candidate);
+                const factText = pulseFactText(candidate);
                 return (
                   <article key={candidate.id} style={{display: 'grid', gridTemplateColumns: '36px minmax(0,1fr) auto', gap: 12, alignItems: 'center', padding: 14, borderTop: index ? '1px solid rgba(127,127,127,.2)' : undefined}}>
                     <strong style={{fontSize: 18, textAlign: 'center'}}>{index + 1}</strong>
                     <div style={{minWidth: 0}}>
-                      <strong>{candidateHeadline(candidate)}</strong>
-                      <div style={{fontSize: 13, opacity: .78, marginTop: 4}}>{candidateFactSummary(candidate)}</div>
-                      <div style={{fontSize: 11, opacity: .58, marginTop: 5}}>{triggerLabels[candidate.triggerType]} · {candidate.eventId ?? candidate.matchId ?? candidate.seasonId}</div>
+                      <strong>{pulseFactHeadline(candidate)}</strong>
+                      <div style={{fontSize: 13, opacity: .78, marginTop: 4}}>{pulseFactSummary(candidate)}</div>
+                      <div style={{fontSize: 11, opacity: .58, marginTop: 5}}>{pulseTriggerLabels[candidate.triggerType]} · {candidate.eventId ?? candidate.matchId ?? candidate.seasonId}</div>
                     </div>
                     <div style={{display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end'}}>
                       <strong title="Editorial interest score">{Math.round(candidate.storyScore)} pts</strong>
-                      <button type="button" onClick={() => copyToClipboard(`fact:${candidate.id}`, candidateChatFact(candidate))}>
+                      <button type="button" onClick={() => copyToClipboard(`fact:${candidate.id}`, pulseFactChatText(candidate))}>
                         {copied === `fact:${candidate.id}` ? 'Copied' : 'Copy fact'}
                       </button>
                       <button type="button" onClick={() => copyToClipboard(`visual:${candidate.id}`, factText)}>
@@ -225,7 +190,7 @@ export function AroundTheClashDesk() {
               </div>
               <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
                 {selectedItems.length > 0 && (
-                  <button type="button" onClick={() => copyToClipboard('tray', candidateBundle(selectedItems))}>
+                  <button type="button" onClick={() => copyToClipboard('tray', pulseFactBundle(selectedItems))}>
                     {copied === 'tray' ? 'Copied' : 'Copy all for ChatGPT'}
                   </button>
                 )}
@@ -238,9 +203,9 @@ export function AroundTheClashDesk() {
               <div style={{display: 'grid', gap: 8, marginTop: 10}}>
                 {selectedItems.map((candidate) => (
                   <div key={candidate.id} style={{display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', border: '1px solid rgba(127,127,127,.25)', borderRadius: 8, padding: 10}}>
-                    <span><strong>{candidateFactText(candidate)}</strong><br /><small>{triggerLabels[candidate.triggerType]} · {Math.round(candidate.storyScore)} pts</small></span>
+                    <span><strong>{pulseFactText(candidate)}</strong><br /><small>{pulseTriggerLabels[candidate.triggerType]} · {Math.round(candidate.storyScore)} pts</small></span>
                     <div style={{display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end'}}>
-                      <button type="button" onClick={() => copyToClipboard(`tray-visual:${candidate.id}`, candidateFactText(candidate))}>
+                      <button type="button" onClick={() => copyToClipboard(`tray-visual:${candidate.id}`, pulseFactText(candidate))}>
                         {copied === `tray-visual:${candidate.id}` ? 'Copied' : 'Copy visual'}
                       </button>
                       <button type="button" onClick={() => toggleSelected(candidate.id)}>Remove</button>
@@ -254,129 +219,4 @@ export function AroundTheClashDesk() {
       ) : null}
     </div>
   );
-}
-
-function candidateHeadline(candidate: PulseCandidate): string {
-  const facts = candidate.headlineFacts;
-  const subject = firstFact(facts, ['winner', 'player', 'players', 'pair', 'team', 'leader', 'holder', 'subject']);
-  const opponent = firstFact(facts, ['opponentTeam', 'opponent', 'opponentName']);
-  const label = triggerLabels[candidate.triggerType];
-
-  if (subject && opponent) return `${label}: ${subject} vs ${opponent}`;
-  if (subject) return `${label}: ${subject}`;
-  return label;
-}
-
-function candidateFactSummary(candidate: PulseCandidate): string {
-  const hidden = new Set(['resultId', 'modelVersion', 'upsetConfidence', 'probabilityConfidence']);
-  const facts = Object.entries(candidate.headlineFacts)
-    .filter(([key, value]) => !hidden.has(key) && value !== null && value !== '' && typeof value !== 'boolean')
-    .slice(0, 5)
-    .map(([key, value]) => `${humanizeKey(key)} ${formatFactValue(key, value)}`);
-  return facts.join(' · ') || 'Verified Clash fact';
-}
-
-function candidateFactText(candidate: PulseCandidate): string {
-  const facts = candidate.headlineFacts;
-  const player = firstFact(facts, ['player', 'winner', 'players', 'pair', 'leader', 'holder', 'subject']);
-  const team = firstFact(facts, ['team']);
-  const opponent = firstFact(facts, ['opponentTeam', 'opponent', 'opponentName']);
-  const format = firstFact(facts, ['format']);
-
-  switch (candidate.triggerType) {
-    case 'WIN_STREAK': {
-      const length = numberFact(facts, 'streakLength');
-      return player && length ? `${player} has won ${length} straight ${format ? `${format.toLowerCase()} ` : ''}matches.` : fallbackFactText(candidate);
-    }
-    case 'CI_SURGE': {
-      const gain = numberFact(facts, 'ciGain');
-      const matchdays = numberFact(facts, 'matchdays');
-      return player && gain && matchdays ? `${player} has gained ${signed(gain)} CI over the last ${matchdays} Matchdays.` : fallbackFactText(candidate);
-    }
-    case 'UPSET': {
-      const probability = numberFact(facts, 'winProbability');
-      const deficit = numberFact(facts, 'ciDeficit');
-      if (player && opponent && probability !== null) return `${player} beat ${opponent} after entering with a ${Math.round(probability * 100)}% model win chance.`;
-      if (player && opponent && deficit !== null) return `${player} beat ${opponent} despite a ${Math.round(Math.abs(deficit))}-point CI disadvantage.`;
-      return fallbackFactText(candidate);
-    }
-    case 'DOUBLES_CHEMISTRY':
-      return fallbackFactText(candidate);
-    case 'TEAM_SERIES':
-      return fallbackFactText(candidate);
-    default:
-      if (player && team && opponent) return `${player} (${team}) vs ${opponent}: ${candidateFactSummary(candidate)}.`;
-      return fallbackFactText(candidate);
-  }
-}
-
-function fallbackFactText(candidate: PulseCandidate): string {
-  const summary = candidateFactSummary(candidate);
-  return `${candidateHeadline(candidate)} — ${summary}.`;
-}
-
-function candidateChatFact(candidate: PulseCandidate): string {
-  const lines = [
-    'VERIFIED CLASH FACT',
-    `Fact: ${candidateFactText(candidate)}`,
-    `Type: ${triggerLabels[candidate.triggerType]}`,
-    `Season: ${seasonLabel(candidate.seasonId)}`,
-    `Context: ${candidate.eventId ?? candidate.matchId ?? candidate.seasonId}`,
-    `Verified details: ${candidateFactSummary(candidate)}`,
-    'Source: Clash Pulse verified league result data.',
-  ];
-  if (candidate.contextFacts.editorialReviewRequired === true) {
-    lines.push('Caution: rating evidence requires commissioner review; do not state an exact probability unless it appears in the verified details.');
-  }
-  return lines.join('\n');
-}
-
-function candidateBundle(candidates: PulseCandidate[]): string {
-  return [
-    'VERIFIED CLASH FACTS',
-    'Use only these supplied facts as factual claims. Do not invent names, records, scores, streaks, probabilities, dates, or historical context.',
-    '',
-    ...candidates.flatMap((candidate, index) => [
-      `${index + 1}. ${candidateFactText(candidate)}`,
-      `   ${candidateFactSummary(candidate)}`,
-      `   ${seasonLabel(candidate.seasonId)} · ${triggerLabels[candidate.triggerType]}`,
-      '',
-    ]),
-  ].join('\n').trim();
-}
-
-function firstFact(facts: Record<string, FactValue>, keys: string[]): string {
-  for (const key of keys) {
-    const value = facts[key];
-    if (typeof value === 'string' && value.trim()) return value.trim();
-    if (typeof value === 'number') return String(value);
-  }
-  return '';
-}
-
-function numberFact(facts: Record<string, FactValue>, key: string): number | null {
-  const value = facts[key];
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-function humanizeKey(key: string): string {
-  return key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ').toLocaleLowerCase();
-}
-
-function formatFactValue(key: string, value: FactValue): string {
-  if (typeof value === 'number') {
-    if (/probability/i.test(key)) return `${Math.round(value * 100)}%`;
-    if (/delta|deficit|gain|change|surge/i.test(key)) return signed(Math.round(value));
-    return Number.isInteger(value) ? String(value) : value.toFixed(2);
-  }
-  return String(value);
-}
-
-function signed(value: number): string {
-  return `${value > 0 ? '+' : ''}${Math.round(value)}`;
-}
-
-function seasonLabel(seasonId: string): string {
-  const match = seasonId.match(/(20\d{2})-(20\d{2})/);
-  return match ? `${match[1]}–${match[2].slice(-2)}` : seasonId;
 }
