@@ -6,6 +6,7 @@ import {SupabasePredictionSnapshotRepository} from '@/services/teamStrength/Pred
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 /**
  * Protected lifecycle writer for Team Strength snapshots. Scheduling is enabled
