@@ -2,13 +2,19 @@ import type {SupabaseClient} from '@supabase/supabase-js';
 import type {Database} from '@/lib/supabase/database';
 import type {TeamStrengthPredictionSnapshot} from './PredictionSnapshot';
 import {TEAM_STRENGTH_VERSION} from './TeamStrength';
+import type {TeamStrengthSource} from './RosterStrength';
 
 export interface PredictionSnapshotRepository {
   saveIfAbsent(snapshots: readonly TeamStrengthPredictionSnapshot[]): Promise<void>;
 }
 
-/** Read-only contract used by post-match retrospective/calibration analysis. */
+/** Read-only contract used by public display and post-match calibration analysis. */
 export interface PredictionSnapshotReader {
+  findHomeSnapshot(
+    matchId: string,
+    source: TeamStrengthSource,
+    modelVersion?: string,
+  ): Promise<TeamStrengthPredictionSnapshot | undefined>;
   findHomeMatchLineupSnapshot(
     matchId: string,
     modelVersion?: string,
@@ -84,8 +90,9 @@ export class SupabasePredictionSnapshotRepository implements
     if (error) throw error;
   }
 
-  async findHomeMatchLineupSnapshot(
+  async findHomeSnapshot(
     matchId: string,
+    source: TeamStrengthSource,
     modelVersion: string = TEAM_STRENGTH_VERSION,
   ): Promise<TeamStrengthPredictionSnapshot | undefined> {
     const normalizedMatchId = matchId.trim();
@@ -98,7 +105,7 @@ export class SupabasePredictionSnapshotRepository implements
       .select('*')
       .eq('match_id', normalizedMatchId)
       .eq('side', 'Home')
-      .eq('source', 'matchLineup')
+      .eq('source', source)
       .eq('model_version', normalizedModelVersion)
       .maybeSingle();
 
@@ -106,6 +113,13 @@ export class SupabasePredictionSnapshotRepository implements
     if (!data) return undefined;
 
     return fromPredictionSnapshotRow(data as PredictionSnapshotInsert);
+  }
+
+  async findHomeMatchLineupSnapshot(
+    matchId: string,
+    modelVersion: string = TEAM_STRENGTH_VERSION,
+  ): Promise<TeamStrengthPredictionSnapshot | undefined> {
+    return this.findHomeSnapshot(matchId, 'matchLineup', modelVersion);
   }
 }
 
