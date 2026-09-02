@@ -118,8 +118,12 @@ export function upsetMagnitude(winProbability: number): number {
 export function detectUpsets(results: RatedResult[]): StoryCandidateDraft[] {
   return results
     .filter((result) => result.won && result.winProbability < UPSET_WIN_PROBABILITY_THRESHOLD)
-    .map((result) => ({result, evidence: upsetRatingEvidence(results, result)}))
-    .map(({result, evidence}) => {
+    .map((result) => ({
+      result,
+      opponent: results.find((other) => other.contestId === result.contestId && other.id !== result.id) ?? null,
+      evidence: upsetRatingEvidence(results, result),
+    }))
+    .map(({result, opponent, evidence}) => {
       const rawMagnitude = upsetMagnitude(result.winProbability);
       const magnitude = evidence.classification === 'Established'
         ? rawMagnitude
@@ -141,6 +145,7 @@ export function detectUpsets(results: RatedResult[]): StoryCandidateDraft[] {
           format: result.format,
           winner: result.subjectNames.join(' & '),
           team: result.teamName,
+          opponent: opponent?.subjectNames.join(' & ') ?? null,
           opponentTeam: result.opponentTeamName,
           // Exact percentages are headline-safe only when both ratings are established.
           winProbability: exactProbabilityConfidence === 'High' ? result.winProbability : null,
