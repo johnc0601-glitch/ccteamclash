@@ -1,17 +1,29 @@
-import {createClient} from '@/lib/supabase/server';
+import {createHistoricalStatsReadClient} from '@/core/createHistoricalStatsReadClient';
 import {buildStoryBacktestReport} from '@/domain/story-engine/StoryBacktestReport';
-import {SupabaseHistoricalRatedResultRepository} from '@/domain/story-engine/SupabaseHistoricalRatedResultRepository';
+import {PublicHistoricalPulseRepository} from '@/domain/story-engine/PublicHistoricalPulseRepository';
 import {StoryAccessError, requireStoryCommissioner} from '@/services/stories/StoryEditorAccess';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+function readableErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+    return error.message;
+  }
+  return 'Clash Pulse could not be loaded.';
+}
+
 export async function GET(request: Request) {
   try {
+    // Authorization remains environment-specific: only an approved commissioner
+    // can open the desk. Historical analysis itself uses the same immutable,
+    // public/RLS-protected production archive used by Stats so preview/staging
+    // never needs a copy of the historical CI ledger.
     await requireStoryCommissioner();
 
-    const supabase = await createClient();
-    const repository = new SupabaseHistoricalRatedResultRepository(supabase);
+    const historicalSupabase = await createHistoricalStatsReadClient();
+    const repository = new PublicHistoricalPulseRepository(historicalSupabase);
     const build = await repository.getBuildReport();
     const seasonIds = [...new Set(build.results.map((result) => result.seasonId))].sort();
 
@@ -45,7 +57,8 @@ export async function GET(request: Request) {
       return Response.json({error: error.message}, {status: error.status});
     }
 
-    const message = error instanceof Error ? error.message : 'Clash Pulse could not be loaded.';
+    const message = readableErrorMessage(error);
+    console.error('[clash-pulse] Failed to load commissioner fact desk', {message});
     return Response.json({error: message}, {status: 500});
   }
 }
