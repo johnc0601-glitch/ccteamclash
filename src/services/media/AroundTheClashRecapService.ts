@@ -5,6 +5,7 @@ import {getAroundTheClashData, type AroundFact} from '@/services/media/AroundThe
 import {createSlug} from '@/shared/utils';
 
 const MAX_RECAP_FACTS = 20;
+const MAX_FACT_ID_LENGTH = 500;
 
 export async function createAroundTheClashRecapDraft(
   factIds: unknown,
@@ -18,8 +19,8 @@ export async function createAroundTheClashRecapDraft(
     throw new StoryValidationError(`Select no more than ${MAX_RECAP_FACTS} facts for one recap draft.`);
   }
 
-  // Re-read the canonical ledger at the moment the draft is created. The client
-  // provides only row ids; no client-provided CI values or wording is trusted.
+  // Re-read the canonical immutable facts at draft creation time. The client
+  // provides only opaque ids; no client-provided CI values or wording is trusted.
   const data = await getAroundTheClashData();
   const factById = new Map(data.facts.map((fact) => [fact.id, fact]));
   const facts = requestedIds.map((id) => factById.get(id)).filter((fact): fact is AroundFact => Boolean(fact));
@@ -58,9 +59,9 @@ export async function createAroundTheClashRecapDraft(
   try {
     return await createStory(story, actorProfileId, snapshot);
   } catch (error) {
-    // A source key from historical/legacy data may not be a current launch match FK.
-    // The immutable source snapshot still retains that match identifier, so retry
-    // without the optional relationship rather than discarding the factual draft.
+    // Historical match keys are not launch_schedule_matches foreign keys. The
+    // immutable source snapshot still keeps that match identifier, so retry the
+    // optional relationship without discarding any verified fact.
     if (matchId && isForeignKeyFailure(error)) {
       return createStory({...story, matchId: null, links: undefined}, actorProfileId, snapshot);
     }
@@ -68,11 +69,11 @@ export async function createAroundTheClashRecapDraft(
   }
 }
 
-function normalizeFactIds(value: unknown): string[] {
+export function normalizeFactIds(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return unique(value
     .map((item) => typeof item === 'string' || typeof item === 'number' ? String(item).trim() : '')
-    .filter((id) => /^\d+$/.test(id)));
+    .filter((id) => id.length > 0 && id.length <= MAX_FACT_ID_LENGTH && !/\s/.test(id)));
 }
 
 function snapshotFact(fact: AroundFact, capturedAt: string): StorySourceFactSnapshot {
@@ -112,7 +113,7 @@ function snapshotFact(fact: AroundFact, capturedAt: string): StorySourceFactSnap
 
 function buildSourceNotes(facts: AroundFact[]): string[] {
   return [
-    'Around the Clash source notes — use these verified CI facts to write the recap, then replace or edit these notes before publishing.',
+    'Around the Clash source notes — use these immutable CI facts to write the recap, then replace or edit these notes before publishing.',
     ...facts.map((fact) => {
       const player = displaySide(fact);
       const opponent = displayOpponent(fact);
@@ -120,7 +121,7 @@ function buildSourceNotes(facts: AroundFact[]): string[] {
       const result = outcomeLabel(fact.outcome);
       const movement = `${fact.totalDelta >= 0 ? '+' : ''}${fact.totalDelta.toFixed(1)} CI`;
       const context = [fact.eventLabel, formatLabel(fact.format), sideLabel(fact.side)].filter(Boolean).join(' · ');
-      return `[Source fact #${fact.id}] ${player}${opponent ? ` vs ${opponent}` : ''}: ${result}, ${expected}, ${movement}. ${context}`;
+      return `[Source fact ${fact.id}] ${player}${opponent ? ` vs ${opponent}` : ''}: ${result}, ${expected}, ${movement}. ${context}`;
     }),
   ];
 }
