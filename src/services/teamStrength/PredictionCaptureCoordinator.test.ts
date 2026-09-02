@@ -60,18 +60,18 @@ test('requires attendance inputs during the AttendanceFinal window', async () =>
   assert.equal(complete.snapshots[0].captureReason, 'AttendanceFinal');
 });
 
-test('requires official rosters after roster lock', async () => {
+test('requires official rosters after the Friday roster lock', async () => {
   const repository = new MemoryRepository();
   const missing = await captureCurrentRosterPrediction({
     ...baseInput(repository),
-    now: new Date('2026-10-03T19:01:00.000Z'),
+    now: new Date('2026-10-02T19:01:00.000Z'),
   });
   assert.deepEqual(missing, {captured: false, reason: 'MissingInputs'});
 
   const complete = await captureCurrentRosterPrediction({
     ...baseInput(repository),
     officialRosters: [officialRoster('home', 'home-0'), officialRoster('away', 'away-0')],
-    now: new Date('2026-10-03T19:01:00.000Z'),
+    now: new Date('2026-10-02T19:01:00.000Z'),
   });
   assert.equal(complete.captured, true);
   if (!complete.captured) return;
@@ -136,9 +136,9 @@ function officialRoster(teamId: string, playerId: string): OfficialMatchRoster {
     teamId,
     teamNameSnapshot: teamId,
     needsCommissionerReview: false,
-    createdAt: '2026-10-03T19:00:00.000Z',
+    createdAt: '2026-10-02T19:00:00.000Z',
     updatedBy: null,
-    updatedAt: '2026-10-03T19:00:00.000Z',
+    updatedAt: '2026-10-02T19:00:00.000Z',
     players: [{
       id: `snapshot-${playerId}`,
       matchId: 'match',
@@ -146,9 +146,9 @@ function officialRoster(teamId: string, playerId: string): OfficialMatchRoster {
       teamNameSnapshot: teamId,
       playerId,
       playerNameSnapshot: playerId,
-      createdAt: '2026-10-03T19:00:00.000Z',
+      createdAt: '2026-10-02T19:00:00.000Z',
       updatedBy: null,
-      updatedAt: '2026-10-03T19:00:00.000Z',
+      updatedAt: '2026-10-02T19:00:00.000Z',
     }],
   };
 }
