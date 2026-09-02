@@ -15,7 +15,7 @@ export default async function AroundTheClashPage() {
           <div>
             <div style={{display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap'}}>
               <h2 style={{margin: 0}}>Around the Clash</h2>
-              <span style={{fontSize: 12, fontWeight: 800, letterSpacing: '.08em', border: '1px solid currentColor', borderRadius: 999, padding: '3px 8px'}}>CI LEDGER</span>
+              <span style={{fontSize: 12, fontWeight: 800, letterSpacing: '.08em', border: '1px solid currentColor', borderRadius: 999, padding: '3px 8px'}}>CI FACTS</span>
             </div>
             <p style={{marginBottom: 0}}>Commissioner stats desk for finding the rated results worth talking about after Matchday.</p>
           </div>
@@ -23,7 +23,7 @@ export default async function AroundTheClashPage() {
         </header>
 
         <div style={{border: '1px solid rgba(127,127,127,.35)', borderRadius: 10, padding: 12, fontSize: 13}}>
-          <strong>Canonical data only.</strong> Rankings come from the stored Clash Index ledger used by the rating system. No story ranking here recalculates CI or invents match results.
+          <strong>Canonical data only.</strong> Rankings come from immutable CI contest facts stored by the rating system. This desk never replays CI, recalculates win probability, or invents a result. “Upsets” here are raw stored model expectations; Clash Pulse applies its separate rating-confidence screen before anything is treated as a verified public upset.
         </div>
 
         <AroundTheClashDesk
