@@ -41,9 +41,17 @@ test('only exposes the stage whose point-in-time inputs are still valid', () => 
     currentPredictionCaptureSource(matchDate, new Date('2026-10-02T19:00:00.000Z')),
     'matchLineup',
   );
+  assert.equal(
+    currentPredictionCaptureSource(matchDate, new Date('2026-10-03T03:59:59.000Z')),
+    'matchLineup',
+  );
+  assert.equal(
+    currentPredictionCaptureSource(matchDate, new Date('2026-10-03T04:00:00.000Z')),
+    undefined,
+  );
 });
 
-test('does not backfill a missed early stage with later information', () => {
+test('does not backfill a missed early or final stage with later information', () => {
   const matchDate = '2026-10-03';
 
   assert.equal(
@@ -53,6 +61,10 @@ test('does not backfill a missed early stage with later information', () => {
   assert.notEqual(
     currentPredictionCaptureSource(matchDate, new Date('2026-10-02T18:00:00.000Z')),
     'activeRoster',
+  );
+  assert.equal(
+    currentPredictionCaptureSource(matchDate, new Date('2026-10-04T12:00:00.000Z')),
+    undefined,
   );
 });
 
