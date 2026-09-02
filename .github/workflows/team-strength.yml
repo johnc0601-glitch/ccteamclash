@@ -9,6 +9,7 @@ on:
       - 'src/app/api/cron/team-strength-predictions/**'
       - 'src/domain/story-engine/ClashVenue.ts'
       - 'src/domain/story-engine/ClashVenue.test.ts'
+      - 'supabase/migrations/20260901210500_add_team_strength_prediction_snapshots.sql'
       - 'package.json'
       - '.github/workflows/team-strength.yml'
   pull_request:
@@ -19,6 +20,7 @@ on:
       - 'src/app/api/cron/team-strength-predictions/**'
       - 'src/domain/story-engine/ClashVenue.ts'
       - 'src/domain/story-engine/ClashVenue.test.ts'
+      - 'supabase/migrations/20260901210500_add_team_strength_prediction_snapshots.sql'
       - 'package.json'
       - '.github/workflows/team-strength.yml'
 
