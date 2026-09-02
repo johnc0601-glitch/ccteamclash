@@ -47,6 +47,7 @@ test('formats a win streak without adding unsupported details', () => {
   });
 
   assert.equal(pulseFactText(item), 'Nicole Pierre has won 4 straight doubles matches.');
+  assert.equal(pulseFactSummary(item), 'Nicole Pierre (Ninjas) · 4 consecutive doubles wins');
 });
 
 test('formats a CI surge from verified window facts', () => {
@@ -59,37 +60,40 @@ test('formats a CI surge from verified window facts', () => {
     team: 'Beast Mode',
   });
 
-  assert.equal(pulseFactText(item), 'Alex Player gained +24 CI across 3 Matchdays.');
-  assert.match(pulseFactSummary(item), /CI gain \+24/);
-  assert.match(pulseFactSummary(item), /starting CI 920/);
-  assert.match(pulseFactSummary(item), /ending CI 944/);
+  assert.equal(pulseFactText(item), 'Alex Player gained +24 CI across 3 Matchdays, moving from 920 to 944.');
+  assert.equal(pulseFactSummary(item), 'Alex Player (Beast Mode) · +24 CI over 3 Matchdays · 920 → 944');
   assert.doesNotMatch(pulseFactSummary(item), /current ci/i);
 });
 
-test('uses exact upset probability only when it exists in headline facts', () => {
+test('uses verified opponent names in upset copy and exact probability only when supplied', () => {
   const verified = candidate('UPSET', {
     winner: 'Nadya Gutierrez & Nicole Pierre',
+    opponent: 'Ariel Cosimo & Crystal Fussell',
     opponentTeam: 'KB',
     team: 'Ninjas',
+    format: 'Doubles',
     winProbability: 0.333,
     ciDeficit: 30,
   });
   const probabilityWithheld = candidate('UPSET', {
     winner: 'Nadya Gutierrez & Nicole Pierre',
+    opponent: 'Ariel Cosimo & Crystal Fussell',
     opponentTeam: 'KB',
     team: 'Ninjas',
+    format: 'Doubles',
     winProbability: null,
     ciDeficit: 30,
   });
 
   assert.equal(
     pulseFactText(verified),
-    'Nadya Gutierrez & Nicole Pierre beat KB after entering with a 33% model win chance.',
+    'Nadya Gutierrez & Nicole Pierre (Ninjas) beat Ariel Cosimo & Crystal Fussell (KB) after entering with a 33% model win chance.',
   );
   assert.equal(
     pulseFactText(probabilityWithheld),
-    'Nadya Gutierrez & Nicole Pierre beat KB despite a 30-point CI disadvantage.',
+    'Nadya Gutierrez & Nicole Pierre (Ninjas) beat Ariel Cosimo & Crystal Fussell (KB) despite a 30-point CI disadvantage.',
   );
+  assert.match(pulseFactSummary(verified), /Ariel Cosimo & Crystal Fussell/);
 });
 
 test('chat copy carries review caution for provisional rating evidence', () => {
@@ -97,7 +101,9 @@ test('chat copy carries review caution for provisional rating evidence', () => {
     'UPSET',
     {
       winner: 'Player One',
+      opponent: 'Player Two',
       opponentTeam: 'Team Two',
+      team: 'Team One',
       winProbability: null,
       ciDeficit: 15,
     },
@@ -117,5 +123,5 @@ test('fact bundle tells downstream writing tools not to invent facts', () => {
 
   assert.match(bundle, /Do not invent names, records, scores, streaks, probabilities, dates, or historical context\./);
   assert.match(bundle, /Player One has won 3 straight singles matches\./);
-  assert.match(bundle, /Player Two gained \+31 CI across 5 Matchdays\./);
+  assert.match(bundle, /Player Two gained \+31 CI across 5 Matchdays, moving from 900 to 931\./);
 });
