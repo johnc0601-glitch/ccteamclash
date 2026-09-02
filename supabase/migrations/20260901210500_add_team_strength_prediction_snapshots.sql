@@ -72,7 +72,8 @@ create index if not exists team_strength_prediction_snapshots_model_idx
 alter table public.team_strength_prediction_snapshots enable row level security;
 
 revoke all on table public.team_strength_prediction_snapshots from anon, authenticated;
-grant all on table public.team_strength_prediction_snapshots to service_role;
+revoke all on table public.team_strength_prediction_snapshots from service_role;
+grant select, insert on table public.team_strength_prediction_snapshots to service_role;
 grant usage, select on sequence public.team_strength_prediction_snapshots_id_seq to service_role;
 
 comment on table public.team_strength_prediction_snapshots is
