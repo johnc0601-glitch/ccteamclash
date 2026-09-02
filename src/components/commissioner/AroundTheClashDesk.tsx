@@ -82,11 +82,17 @@ export function AroundTheClashDesk() {
     const found = new Set(candidates.map((candidate) => candidate.triggerType));
     return (Object.keys(pulseTriggerLabels) as StoryTriggerType[]).filter((item) => found.has(item));
   }, [candidates]);
-  const visible = useMemo(
-    () => trigger === 'ALL' ? candidates : candidates.filter((candidate) => candidate.triggerType === trigger),
-    [candidates, trigger],
-  );
+
+  // Derive the visible list directly on every render. Keeping this out of a memo
+  // prevents a stale candidate list from surviving a trigger-tab state change.
+  const visible = trigger === 'ALL'
+    ? candidates
+    : candidates.filter((candidate) => candidate.triggerType === trigger);
   const selectedItems = candidates.filter((candidate) => selected.includes(candidate.id));
+
+  function chooseTrigger(next: TriggerFilter) {
+    setTrigger(next);
+  }
 
   function toggleSelected(id: string) {
     setSelected((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
@@ -138,11 +144,22 @@ export function AroundTheClashDesk() {
           </div>
 
           <nav style={{display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4}} aria-label="Clash Pulse fact triggers">
-            <button type="button" onClick={() => setTrigger('ALL')} aria-pressed={trigger === 'ALL'} style={{whiteSpace: 'nowrap', borderRadius: 999, fontWeight: trigger === 'ALL' ? 800 : 500}}>
+            <button
+              type="button"
+              onClick={() => chooseTrigger('ALL')}
+              aria-pressed={trigger === 'ALL'}
+              style={{whiteSpace: 'nowrap', borderRadius: 999, fontWeight: trigger === 'ALL' ? 800 : 500, outline: trigger === 'ALL' ? '2px solid currentColor' : undefined}}
+            >
               All ({candidates.length})
             </button>
             {availableTriggers.map((item) => (
-              <button key={item} type="button" onClick={() => setTrigger(item)} aria-pressed={trigger === item} style={{whiteSpace: 'nowrap', borderRadius: 999, fontWeight: trigger === item ? 800 : 500}}>
+              <button
+                key={item}
+                type="button"
+                onClick={() => chooseTrigger(item)}
+                aria-pressed={trigger === item}
+                style={{whiteSpace: 'nowrap', borderRadius: 999, fontWeight: trigger === item ? 800 : 500, outline: trigger === item ? '2px solid currentColor' : undefined}}
+              >
                 {pulseTriggerLabels[item]} ({payload.report?.countsByTrigger[item] ?? 0})
               </button>
             ))}
@@ -153,13 +170,13 @@ export function AroundTheClashDesk() {
               <h3 style={{margin: 0}}>{trigger === 'ALL' ? 'Top verified facts' : pulseTriggerLabels[trigger]}</h3>
               <span style={{fontSize: 12, opacity: .7}}>Verified data · deterministic wording · no AI generation</span>
             </header>
-            <div style={{display: 'grid', gap: 12}}>
+            <div key={trigger} style={{display: 'grid', gap: 12}}>
               {visible.length === 0 ? <p style={{padding: 16, margin: 0}}>No facts in this category.</p> : null}
               {visible.map((candidate, index) => {
                 const isSelected = selected.includes(candidate.id);
                 const factText = pulseFactText(candidate);
                 return (
-                  <article key={candidate.id} style={{display: 'grid', gap: 12, padding: 16, border: '1px solid rgba(127,127,127,.3)', borderRadius: 12, minWidth: 0}}>
+                  <article key={`${trigger}:${candidate.id}`} style={{display: 'grid', gap: 12, padding: 16, border: '1px solid rgba(127,127,127,.3)', borderRadius: 12, minWidth: 0}}>
                     <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 12}}>
                       <span style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 34, height: 34, padding: '0 8px', borderRadius: 999, border: '1px solid rgba(127,127,127,.35)', fontWeight: 800}}>
                         #{index + 1}
