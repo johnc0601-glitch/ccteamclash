@@ -49,7 +49,7 @@ test('freezes exact player pool, CI, composition, shortfall, calibration and dat
   assert.equal(snapshot.captureReason, 'PreMatch');
   assert.equal(snapshot.source, 'activeRoster');
   assert.equal(snapshot.strengthLabel, 'Active Roster Strength');
-  assert.equal(snapshot.predictionReadiness, 'EarlyEstimate');
+  assert.equal(snapshot.predictionReadiness, 'Unavailable');
   assert.deepEqual(snapshot.teamPlayerIds, ['a', 'b']);
   assert.deepEqual(snapshot.opponentPlayerIds, ['c', 'd']);
   assert.deepEqual(snapshot.teamPlayerClashIndexes, [
