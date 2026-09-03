@@ -33,7 +33,10 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  await supabase.auth.getUser();
+  // Supabase recommends getClaims() for SSR token refresh/verification. With
+  // asymmetric signing keys this verifies locally against the cached JWKS
+  // instead of making an Auth-server request on every page navigation.
+  await supabase.auth.getClaims();
 
   return supabaseResponse;
 }
