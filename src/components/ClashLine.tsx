@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import styles from './ClashLine.module.css';
 
 type ClashLineItem = {
@@ -34,6 +34,8 @@ export function ClashLine() {
   const [items, setItems] = useState<ClashLineItem[]>([]);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [rotationEpoch, setRotationEpoch] = useState(0);
+  const touchStart = useRef<{x: number; y: number} | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,7 +72,33 @@ export function ClashLine() {
       setIndex((current) => (current + 1) % items.length);
     }, 8_000);
     return () => window.clearInterval(timer);
-  }, [items.length, paused]);
+  }, [items.length, paused, rotationEpoch]);
+
+  function move(direction: 1 | -1) {
+    if (items.length < 2) return;
+    setIndex((current) => (current + direction + items.length) % items.length);
+    setRotationEpoch((current) => current + 1);
+  }
+
+  function handleTouchStart(event: React.TouchEvent<HTMLElement>) {
+    const touch = event.touches[0];
+    if (!touch) return;
+    touchStart.current = {x: touch.clientX, y: touch.clientY};
+  }
+
+  function handleTouchEnd(event: React.TouchEvent<HTMLElement>) {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+
+    if (Math.abs(dx) < 42 || Math.abs(dx) <= Math.abs(dy)) return;
+    move(dx < 0 ? 1 : -1);
+  }
 
   const item = items[index] ?? null;
   const category = useMemo(() => item ? (triggerLabels[item.triggerType] ?? 'League') : '', [item]);
@@ -79,9 +107,14 @@ export function ClashLine() {
   return (
     <>
       <div className={styles.spacer} aria-hidden="true" />
-      <aside className={styles.shell} aria-label="Clash Line league facts">
-        <div className={styles.brand}>CLASH LINE</div>
-        <div className={styles.fact}>
+      <aside
+        className={styles.shell}
+        aria-label="Clash Line league facts"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className={styles.brand}><span className={styles.brandClash}>CLASH </span>LINE</div>
+        <div className={styles.fact} aria-live="polite">
           <span className={styles.category}>{category}</span>
           <span className={styles.text} key={item.id}>{item.text}</span>
         </div>
