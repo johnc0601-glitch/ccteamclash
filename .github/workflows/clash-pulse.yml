@@ -1,5 +1,6 @@
 name: Clash Pulse Tests
 
+# Preview build trigger for the final Pulse mobile layout.
 on:
   push:
     paths:
