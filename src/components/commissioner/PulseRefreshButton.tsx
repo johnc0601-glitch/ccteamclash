@@ -25,15 +25,32 @@ export function PulseRefreshButton() {
   }
 
   return (
-    <div style={{display: 'grid', gap: 4}}>
+    <div style={{display: 'grid', gap: 5, justifyItems: 'start'}}>
       <button
         type="button"
         onClick={refreshPulse}
         disabled={refreshing}
-        style={{whiteSpace: 'nowrap', fontWeight: 800}}
+        aria-label="Refresh Clash Pulse facts"
+        style={{
+          appearance: 'none',
+          border: '2px solid #1f2326',
+          borderRadius: 9,
+          background: refreshing ? '#d7d3c8' : '#1f2326',
+          color: refreshing ? '#555' : '#fff',
+          padding: '10px 16px',
+          minHeight: 44,
+          whiteSpace: 'nowrap',
+          fontSize: 15,
+          lineHeight: 1,
+          fontWeight: 850,
+          letterSpacing: '.01em',
+          boxShadow: refreshing ? 'none' : '0 2px 0 rgba(0,0,0,.18)',
+          cursor: refreshing ? 'wait' : 'pointer',
+        }}
       >
-        {refreshing ? 'Refreshing Pulse…' : 'Refresh Pulse'}
+        {refreshing ? 'Refreshing Pulse…' : '↻ Refresh Pulse'}
       </button>
+      <span style={{fontSize: 11, opacity: .62}}>Rebuild verified facts</span>
       {error ? <span style={{fontSize: 11, color: '#9d2f2f', maxWidth: 220}}>{error}</span> : null}
     </div>
   );
