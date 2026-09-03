@@ -53,6 +53,7 @@ export function MobileNav() {
             {canOpenOffice ? <Link href="/admin" onClick={closeMenu}>Create post</Link> : null}
             {canOpenOffice ? <Link href="/office" onClick={closeMenu}>Office</Link> : null}
             {canOpenCaptain ? <Link href="/captain" onClick={closeMenu}>Captain</Link> : null}
+            {canOpenCaptain ? <Link href="/captain/free-agents" onClick={closeMenu}>Free Agents</Link> : null}
           </div>
         ) : null}
         <div className="mobile-nav-group">
