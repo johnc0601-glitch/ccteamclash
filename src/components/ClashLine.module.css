@@ -17,11 +17,13 @@
   color: #fff;
   border-top: 1px solid rgba(255,255,255,.18);
   box-shadow: 0 -6px 22px rgba(0,0,0,.18);
+  touch-action: pan-y;
 }
 
 .brand {
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 0 18px;
   background: #ffc400;
   color: #111;
@@ -29,6 +31,10 @@
   font-weight: 950;
   letter-spacing: .08em;
   white-space: nowrap;
+}
+
+.brandClash {
+  display: inline;
 }
 
 .fact {
@@ -102,25 +108,32 @@
 
 @media (max-width: 640px) {
   .spacer {
-    height: calc(58px + env(safe-area-inset-bottom));
+    height: calc(54px + env(safe-area-inset-bottom));
   }
 
   .shell {
-    min-height: 58px;
+    min-height: 54px;
     grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
   .brand {
-    padding: 0 10px;
+    min-width: 48px;
+    padding: 0 8px;
     font-size: 10px;
-    letter-spacing: .055em;
+    letter-spacing: .06em;
+  }
+
+  .brandClash {
+    display: none;
   }
 
   .fact {
     display: grid;
     align-content: center;
-    gap: 4px;
-    padding: 6px 9px;
+    gap: 3px;
+    padding: 5px 8px;
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   .category {
@@ -129,7 +142,7 @@
 
   .text {
     font-size: 13px;
-    line-height: 1.22;
+    line-height: 1.18;
     white-space: normal;
     display: -webkit-box;
     -webkit-line-clamp: 2;
