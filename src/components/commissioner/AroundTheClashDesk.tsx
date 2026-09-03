@@ -12,10 +12,21 @@ import {
 } from '@/domain/story-engine/PulseFactFormatter';
 import type {StoryCandidate, StoryTriggerType} from '@/domain/story-engine/StoryCandidate';
 
+type PulseEvent = {
+  eventId: string;
+  eventLabel: string;
+  eventOrder: number | null;
+  resultRows: number;
+  teamMatchCount: number;
+  candidateCount: number;
+  topScore: number | null;
+};
+
 type PulseReport = {
   seasonId: string;
   seasonName: string;
   resultRows: number;
+  events: PulseEvent[];
   candidateCount: number;
   countsByTrigger: Partial<Record<StoryTriggerType, number>>;
   countsByImportance: Record<'candidate' | 'notable' | 'strong' | 'major', number>;
@@ -33,15 +44,23 @@ type PulsePayload = {
   };
   seasonIds: string[];
   activeTrigger?: StoryTriggerType | null;
+  activeEventId?: string | null;
   report: PulseReport | null;
   error?: string;
 };
 
 type TriggerFilter = 'ALL' | StoryTriggerType;
 
+function eventOptionLabel(event: PulseEvent): string {
+  const label = event.eventLabel?.trim() || (event.eventOrder !== null ? `Matchday ${event.eventOrder}` : 'Matchday');
+  const matchWord = event.teamMatchCount === 1 ? 'team match' : 'team matches';
+  return `${label} (${event.teamMatchCount} ${matchWord})`;
+}
+
 export function AroundTheClashDesk() {
   const [payload, setPayload] = useState<PulsePayload | null>(null);
   const [seasonId, setSeasonId] = useState('');
+  const [eventId, setEventId] = useState('');
   const [trigger, setTrigger] = useState<TriggerFilter>('ALL');
   const [selected, setSelected] = useState<string[]>([]);
   const [copied, setCopied] = useState('');
@@ -52,6 +71,7 @@ export function AroundTheClashDesk() {
     let cancelled = false;
     const params = new URLSearchParams({limit: '100'});
     if (seasonId) params.set('seasonId', seasonId);
+    if (eventId) params.set('eventId', eventId);
     if (trigger !== 'ALL') params.set('trigger', trigger);
 
     setLoading(true);
@@ -77,10 +97,12 @@ export function AroundTheClashDesk() {
     return () => {
       cancelled = true;
     };
-  }, [seasonId, trigger]);
+  }, [seasonId, eventId, trigger]);
 
   const candidates = payload?.report?.topCandidates ?? [];
   const displayedSeasonId = seasonId || payload?.report?.seasonId || '';
+  const events = payload?.report?.events ?? [];
+  const activeEvent = eventId ? events.find((item) => item.eventId === eventId) ?? null : null;
   const availableTriggers = useMemo(() => {
     const counts = payload?.report?.countsByTrigger ?? {};
     return (Object.keys(pulseTriggerLabels) as StoryTriggerType[])
@@ -116,26 +138,47 @@ export function AroundTheClashDesk() {
         </p>
       </div>
 
-      <div style={{display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap'}}>
-        <label style={{display: 'grid', gap: 5, minWidth: 240}}>
-          <span style={{fontSize: 12, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase'}}>Season</span>
-          <select
-            value={displayedSeasonId}
-            onChange={(event) => {
-              setTrigger('ALL');
-              setSeasonId(event.target.value);
-              setSelected([]);
-            }}
-            disabled={loading || !payload?.seasonIds.length}
-          >
-            {(payload?.seasonIds ?? []).map((item) => <option key={item} value={item}>{pulseSeasonLabel(item)}</option>)}
-          </select>
-        </label>
+      <div style={{display: 'flex', gap: 12, alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap'}}>
+        <div style={{display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap'}}>
+          <label style={{display: 'grid', gap: 5, minWidth: 220}}>
+            <span style={{fontSize: 12, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase'}}>Season</span>
+            <select
+              value={displayedSeasonId}
+              onChange={(event) => {
+                setTrigger('ALL');
+                setEventId('');
+                setSeasonId(event.target.value);
+                setSelected([]);
+              }}
+              disabled={loading || !payload?.seasonIds.length}
+            >
+              {(payload?.seasonIds ?? []).map((item) => <option key={item} value={item}>{pulseSeasonLabel(item)}</option>)}
+            </select>
+          </label>
+
+          <label style={{display: 'grid', gap: 5, minWidth: 260}}>
+            <span style={{fontSize: 12, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase'}}>Matchday</span>
+            <select
+              value={eventId}
+              onChange={(event) => {
+                setTrigger('ALL');
+                setEventId(event.target.value);
+                setSelected([]);
+              }}
+              disabled={loading || events.length === 0}
+            >
+              <option value="">All Matchdays</option>
+              {events.map((item) => <option key={item.eventId} value={item.eventId}>{eventOptionLabel(item)}</option>)}
+            </select>
+          </label>
+        </div>
 
         {payload?.report ? (
           <div style={{display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 13}}>
             <span><strong>{payload.report.candidateCount}</strong> verified facts</span>
-            <span><strong>{payload.build.emittedContests}</strong> verified contests</span>
+            {activeEvent
+              ? <span><strong>{activeEvent.teamMatchCount}</strong> team matches</span>
+              : <span><strong>{payload.build.emittedContests}</strong> verified contests</span>}
             <span><strong>{payload.build.quarantinedContests}</strong> quarantined</span>
           </div>
         ) : null}
@@ -146,7 +189,9 @@ export function AroundTheClashDesk() {
       {payload?.report ? (
         <>
           <div style={{fontSize: 13, opacity: .78}}>
-            <strong>{payload.report.seasonName}</strong> · {payload.report.resultRows} normalized result sides · strongest facts ranked first
+            <strong>{payload.report.seasonName}</strong>
+            {activeEvent ? ` · ${eventOptionLabel(activeEvent)}` : ''}
+            {' · '}{payload.report.resultRows} normalized result sides · strongest facts ranked first
             <br />
             {payload.snapshot && payload.source !== 'live-debug'
               ? `${payload.source === 'snapshot' ? 'Saved snapshot' : 'Snapshot created'} · ${new Date(payload.snapshot.generatedAt).toLocaleString()}`
@@ -179,10 +224,10 @@ export function AroundTheClashDesk() {
 
           <section style={{display: 'grid', gap: 12}}>
             <header style={{padding: '0 2px', display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap'}}>
-              <h3 style={{margin: 0}}>{trigger === 'ALL' ? 'Top verified facts' : pulseTriggerLabels[trigger]}</h3>
+              <h3 style={{margin: 0}}>{trigger === 'ALL' ? (activeEvent ? `${activeEvent.eventLabel} verified facts` : 'Top verified facts') : pulseTriggerLabels[trigger]}</h3>
               <span style={{fontSize: 12, opacity: .7}}>{loading ? 'Loading selected facts…' : 'Verified data · deterministic wording · no AI generation'}</span>
             </header>
-            <div key={`${displayedSeasonId}:${trigger}:${payload.activeTrigger ?? 'ALL'}`} style={{display: 'grid', gap: 12, opacity: loading ? .55 : 1}}>
+            <div key={`${displayedSeasonId}:${eventId || 'ALL'}:${trigger}:${payload.activeTrigger ?? 'ALL'}`} style={{display: 'grid', gap: 12, opacity: loading ? .55 : 1}}>
               {!loading && candidates.length === 0 ? <p style={{padding: 16, margin: 0}}>No facts in this category.</p> : null}
               {candidates.map((candidate, index) => {
                 const isSelected = selected.includes(candidate.id);
