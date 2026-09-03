@@ -46,6 +46,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Run Clash Pulse tests
         run: npm run test:pulse
+      - name: Run Pulse snapshot tests
+        run: npm run test:pulse-snapshots
       - name: Run Pulse fact formatter tests
         run: node --loader ./scripts/ts-paths-loader.mjs --test src/domain/story-engine/PulseFactFormatter.test.ts
       - name: Type check Pulse source
