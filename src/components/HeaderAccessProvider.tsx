@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import {createContext, type ReactNode, useContext, useEffect, useState} from 'react';
-import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/client';
+import {hasSupabaseConfig} from '@/lib/supabase/config';
 
 type HeaderRole = 'commissioner' | 'captain' | null;
 
