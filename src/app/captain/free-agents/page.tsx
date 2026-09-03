@@ -13,7 +13,7 @@ type FreeAgentsPageProps = {
 type FreeAgent = {
   application_id: string;
   season_id: string;
-  player_id: string;
+  player_id: string | null;
   display_name: string;
   player_name: string;
   player_type: string;
@@ -57,7 +57,7 @@ export default async function FreeAgentsPage({searchParams}: FreeAgentsPageProps
           <header className={styles.header}>
             <span>Captain recruiting</span>
             <h1>Free Agents</h1>
-            <p>Players here are registered for the active season but do not have a team yet.</p>
+            <p>Signed-in players can enter this pool before completing full player registration.</p>
             <Link href="/captain">Back to Captain Home</Link>
           </header>
 
@@ -75,16 +75,20 @@ export default async function FreeAgentsPage({searchParams}: FreeAgentsPageProps
               <header className={styles.panelHeader}>
                 <span>Available players</span>
                 <h2>{freeAgents.length} in the pool</h2>
-                <p className={styles.muted}>Select a player to move that application to your team&apos;s normal approval list.</p>
+                <p className={styles.muted}>Select a player to move that application toward your team. Any unfinished player setup can be completed afterward.</p>
               </header>
               <div className={styles.list}>
                 {freeAgents.length ? freeAgents.map((player) => (
                   <article className={styles.row} key={player.application_id}>
                     <strong>{player.player_name || player.display_name}</strong>
-                    <span className={styles.rosterMeta}>
-                      CI: {player.clash_index ?? '—'} · PDGA: {player.pdga_rating ?? '—'}
-                      {player.pdga_number ? ` · #${player.pdga_number}` : ''}
-                    </span>
+                    {player.player_id ? (
+                      <span className={styles.rosterMeta}>
+                        CI: {player.clash_index ?? '—'} · PDGA: {player.pdga_rating ?? '—'}
+                        {player.pdga_number ? ` · #${player.pdga_number}` : ''}
+                      </span>
+                    ) : (
+                      <span className={styles.rosterMeta}>Player setup not completed yet</span>
+                    )}
                     <span className={styles.muted}>
                       {player.gender} · {player.player_type}
                       {player.home_area ? ` · ${player.home_area}` : ''}
