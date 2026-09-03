@@ -16,6 +16,8 @@ export const dynamic = 'force-dynamic';
 
 const TRIGGERS = new Set<StoryTriggerType>(['WIN_STREAK', 'STREAK_SNAPPED', 'UPSET', 'CI_SURGE', 'RANK_MILESTONE', 'CAREER_MILESTONE', 'PERSONAL_BEST', 'FIRST_SINCE', 'HEAD_TO_HEAD', 'TEAM_SERIES', 'DOUBLES_CHEMISTRY', 'RECORD']);
 
+type PulseResponseReport = Omit<StoryBacktestReport, 'eventCandidates'>;
+
 function requestedTrigger(value: string | null): StoryTriggerType | null {
   return value && TRIGGERS.has(value as StoryTriggerType) ? value as StoryTriggerType : null;
 }
@@ -31,7 +33,7 @@ function reportForScope(
   requestedEventId: string | null,
   trigger: StoryTriggerType | null,
   limit: number,
-): {report: StoryBacktestReport; activeEventId: string | null} {
+): {report: PulseResponseReport; activeEventId: string | null} {
   const activeEventId = requestedEventId && report.events.some((event) => event.eventId === requestedEventId)
     ? requestedEventId
     : null;
@@ -56,11 +58,13 @@ function reportForScope(
   const visibleCandidates = scopeCandidates
     .filter((candidate) => !trigger || candidate.triggerType === trigger)
     .slice(0, limit);
+  const {eventCandidates, ...publicReport} = report;
+  void eventCandidates;
 
   return {
     activeEventId,
     report: {
-      ...report,
+      ...publicReport,
       resultRows: selectedEvent?.resultRows ?? report.resultRows,
       candidateCount: scopeCandidates.length,
       countsByTrigger,
