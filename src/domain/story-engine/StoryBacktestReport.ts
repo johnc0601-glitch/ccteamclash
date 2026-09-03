@@ -8,6 +8,7 @@ export type StoryBacktestEventSummary = {
   eventLabel: string;
   eventOrder: number | null;
   resultRows: number;
+  teamMatchCount: number;
   candidateCount: number;
   topScore: number | null;
 };
@@ -134,6 +135,7 @@ export function buildStoryBacktestReport(
       eventLabel: representative?.eventLabel ?? round.eventId,
       eventOrder: representative?.eventOrder ?? null,
       resultRows: rows.length,
+      teamMatchCount: new Set(rows.map((row) => row.matchId)).size,
       candidateCount: visibleRoundCandidates.length,
       topScore: visibleRoundCandidates.length
         ? Math.max(...visibleRoundCandidates.map((candidate) => candidate.storyScore))
