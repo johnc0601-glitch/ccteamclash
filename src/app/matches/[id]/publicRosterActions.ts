@@ -18,17 +18,28 @@ export type LazyRosterResult =
 const PREVIEW_COUNT = 5;
 const MAX_RETURNED_PLAYERS = 60;
 
-export async function loadActiveRosterRemainder(seasonId: string, teamId: string): Promise<LazyRosterResult> {
-  const cleanSeasonId = cleanId(seasonId);
+export async function loadActiveRosterRemainder(matchId: string, teamId: string): Promise<LazyRosterResult> {
+  const cleanMatchId = cleanId(matchId);
   const cleanTeamId = cleanId(teamId);
-  if (!cleanSeasonId || !cleanTeamId) return {ok: false, message: 'Roster could not be loaded.'};
+  if (!cleanMatchId || !cleanTeamId) return {ok: false, message: 'Roster could not be loaded.'};
 
   try {
     const supabase = await createClient();
+    const {data: match, error: matchError} = await supabase
+      .from('launch_schedule_matches')
+      .select('season_id,home_team_id,away_team_id')
+      .eq('id', cleanMatchId)
+      .maybeSingle();
+
+    if (matchError) throw matchError;
+    if (!match || (match.home_team_id !== cleanTeamId && match.away_team_id !== cleanTeamId)) {
+      return {ok: false, message: 'Roster could not be loaded.'};
+    }
+
     const {data: memberships, error: membershipError} = await supabase
       .from('launch_season_roster_memberships')
       .select('player_id')
-      .eq('season_id', cleanSeasonId)
+      .eq('season_id', match.season_id)
       .eq('team_id', cleanTeamId)
       .eq('status', 'Active');
 
@@ -59,7 +70,7 @@ export async function loadActiveRosterRemainder(seasonId: string, teamId: string
         })),
     };
   } catch (error) {
-    console.error('Public active roster remainder could not be loaded.', {seasonId: cleanSeasonId, teamId: cleanTeamId, error});
+    console.error('Public active roster remainder could not be loaded.', {matchId: cleanMatchId, teamId: cleanTeamId, error});
     return {ok: false, message: 'Roster could not be loaded. Try again.'};
   }
 }
