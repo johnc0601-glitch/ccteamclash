@@ -12,6 +12,10 @@ type LiveItem = {
   publishedAt: string;
 };
 
+function signalClashLineUpdate() {
+  window.dispatchEvent(new Event('clash-line-updated'));
+}
+
 export function ClashLineTrayPublisher({selectedItems, seasonId}: {selectedItems: StoryCandidate[]; seasonId: string}) {
   const [liveItems, setLiveItems] = useState<LiveItem[]>([]);
   const [busy, setBusy] = useState(false);
@@ -46,6 +50,7 @@ export function ClashLineTrayPublisher({selectedItems, seasonId}: {selectedItems
       if (!response.ok) throw new Error(payload.error || 'Clash Line publish failed.');
       setMessage(`${payload.published ?? selectedItems.length} fact${(payload.published ?? selectedItems.length) === 1 ? '' : 's'} published to Clash Line.`);
       await loadLive();
+      signalClashLineUpdate();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Clash Line publish failed.');
     } finally {
@@ -66,6 +71,7 @@ export function ClashLineTrayPublisher({selectedItems, seasonId}: {selectedItems
       const payload = await response.json() as {error?: string};
       if (!response.ok) throw new Error(payload.error || 'Could not remove Clash Line fact.');
       await loadLive();
+      signalClashLineUpdate();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not remove Clash Line fact.');
     } finally {
