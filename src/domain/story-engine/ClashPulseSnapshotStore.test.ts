@@ -29,7 +29,7 @@ function snapshot(seasonId: string, generatedAt: string): ClashPulseSnapshot {
     seasonName: seasonId,
     report: emptyReport(seasonId),
     provenance: {
-      snapshotVersion: 1,
+      snapshotVersion: 2,
       sourceTables: ['historical_clash_contest_rating_facts'],
       sourceResultIds: [],
       sourceContestIds: [],
@@ -106,7 +106,7 @@ describe('Clash Pulse snapshot provenance', () => {
     assert.deepEqual(value.sourceContestIds, ['c1']);
     assert.deepEqual(value.sourceAlgorithmVersions, ['v1', 'v2']);
     assert.deepEqual(value.sourcePlayedAt, {earliest: '2026-01-01T00:00:00Z', latest: '2026-02-02T00:00:00Z'});
-    assert.equal(value.snapshotVersion, 1);
+    assert.equal(value.snapshotVersion, 2);
   });
 });
 
