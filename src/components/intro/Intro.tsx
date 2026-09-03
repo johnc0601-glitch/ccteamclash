@@ -2,24 +2,18 @@
 
 import type {CSSProperties} from 'react';
 import {INTRO_ASSETS, INTRO_TIMING} from './intro.config';
-import type {IntroQueryOverride} from './introDecision';
 import {LogoScene} from './LogoScene';
 import {SceneImage} from './SceneImage';
 import {useIntro} from './useIntro';
 import styles from './Intro.module.css';
-
-type IntroProps = {
-  hasLoginMarker: boolean;
-  queryOverride: IntroQueryOverride;
-};
 
 type IntroStyle = CSSProperties & {
   '--blackout-duration': string;
   '--exit-duration': string;
 };
 
-export function Intro({hasLoginMarker, queryOverride}: IntroProps) {
-  const {isMounted, phase, reducedMotion} = useIntro({hasLoginMarker, queryOverride});
+export function Intro() {
+  const {isMounted, phase, reducedMotion} = useIntro();
 
   if (!isMounted) return null;
 
