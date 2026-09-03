@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import {notFound} from 'next/navigation';
 import Link from 'next/link';
+import {cache} from 'react';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {getMediaAssetById} from '@/services/media/MediaLibraryService';
 import {getStoryBySlug} from '@/services/stories/StoryService';
@@ -8,16 +9,19 @@ import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresenta
 
 export const dynamic = 'force-dynamic';
 
+const getCachedStoryBySlug = cache(getStoryBySlug);
+const getCachedMediaAssetById = cache(getMediaAssetById);
+
 type StoryPageProps = {params: Promise<{slug: string}>};
 
 export async function generateMetadata({params}: StoryPageProps): Promise<Metadata> {
   const {slug} = await params;
-  const story = await getStoryBySlug(slug);
+  const story = await getCachedStoryBySlug(slug);
   if (!story) return {};
 
   const description = getStoryPreview(story);
   const image = isImageUrl(story.image) ? story.image : undefined;
-  const asset = story.heroAssetId ? await getMediaAssetById(story.heroAssetId) : null;
+  const asset = story.heroAssetId ? await getCachedMediaAssetById(story.heroAssetId) : null;
   const imageAlt = asset?.altText || story.title;
 
   return {
@@ -36,11 +40,11 @@ export async function generateMetadata({params}: StoryPageProps): Promise<Metada
 
 export default async function Page({params}: StoryPageProps) {
   const {slug} = await params;
-  const story = await getStoryBySlug(slug);
+  const story = await getCachedStoryBySlug(slug);
 
   if (!story) notFound();
 
-  const asset = story.heroAssetId ? await getMediaAssetById(story.heroAssetId) : null;
+  const asset = story.heroAssetId ? await getCachedMediaAssetById(story.heroAssetId) : null;
   const heroAlt = asset?.altText || story.title;
 
   return (
