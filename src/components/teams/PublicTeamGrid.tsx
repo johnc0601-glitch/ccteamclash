@@ -1,7 +1,4 @@
-'use client';
-
 import Link from 'next/link';
-import {useEffect, useState} from 'react';
 import {getHistoricalTeamSeedSummary} from '@/data/historicalSeed';
 import type {Team} from '@/models/Team';
 import type {RecordSummary} from '@/services/statistics/StatisticsTypes';
@@ -19,23 +16,12 @@ function formatRecord(record: RecordSummary): string {
     : `${record.wins}-${record.losses}`;
 }
 
-export function PublicTeamGrid({initialTeams, activeSeasonName}: PublicTeamGridProps) {
-  const [teams, setTeams] = useState(initialTeams);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    fetch('/api/teams?status=active', {cache: 'no-store'})
-      .then((response) => response.json() as Promise<{teams?: Team[]}>)
-      .then((payload) => {
-        if (!cancelled) setTeams(payload.teams ?? []);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
+/**
+ * The public teams page already receives fresh server-rendered team data.
+ * Rendering it directly avoids a second no-store /api/teams request and keeps
+ * this directory out of the client JavaScript bundle.
+ */
+export function PublicTeamGrid({initialTeams: teams, activeSeasonName}: PublicTeamGridProps) {
   return (
     <div className={styles.grid}>
       {teams.map((team) => {

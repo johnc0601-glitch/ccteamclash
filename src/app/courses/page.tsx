@@ -1,15 +1,11 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
-import {getStoredCourses} from '@/services/courses/CourseStore';
-import {getStoredTeams} from '@/services/teams/TeamStore';
+import {getPublicDirectoryData} from '@/services/public/PublicDirectoryDataService';
 import styles from './Courses.module.css';
 
 export const dynamic = 'force-dynamic';
 
 export default async function CoursesPage() {
-  const [courses, teams] = await Promise.all([
-    getStoredCourses({status: 'active'}),
-    getStoredTeams({status: 'active'}),
-  ]);
+  const {courses, teams} = await getPublicDirectoryData();
 
   return (
     <>
