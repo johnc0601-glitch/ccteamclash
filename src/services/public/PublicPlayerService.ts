@@ -75,6 +75,17 @@ export class PublicPlayerService {
     const playerIds = players.map((player) => player.id);
     const teamNames = new Map(teams.map((team) => [team.id, team.name]));
     const seasonNames = new Map(seasons.map((season) => [season.id, season.name]));
+
+    // These reads depend only on playerIds, so start them before awaiting the
+    // active-season statistics. This collapses three sequential database waves
+    // into one overlapping wave without changing any returned data.
+    const latestHistoryByPlayerPromise = this.statistics.getPlayerMatchHistoriesForPlayers(
+      playerIds,
+      3,
+      activeSeason?.id,
+    );
+    const careerStatisticsPromise = this.statistics.getPlayerCareerStatisticsForPlayers(playerIds);
+
     const [currentStatistics, currentCiMovements] = activeSeason
       ? await Promise.all([
         this.statistics.getPlayerStatisticsForPlayers(playerIds, activeSeason.id),
@@ -84,12 +95,10 @@ export class PublicPlayerService {
     const currentStatisticsByPlayer = new Map(
       currentStatistics.map((entry) => [entry.playerId, entry]),
     );
-    const latestHistoryByPlayer = await this.statistics.getPlayerMatchHistoriesForPlayers(
-      playerIds,
-      3,
-      activeSeason?.id,
-    );
-    const careerStatistics = await this.statistics.getPlayerCareerStatisticsForPlayers(playerIds);
+    const [latestHistoryByPlayer, careerStatistics] = await Promise.all([
+      latestHistoryByPlayerPromise,
+      careerStatisticsPromise,
+    ]);
     const careerStatisticsByPlayer = new Map(careerStatistics.map((entry) => [entry.playerId, entry]));
 
     return players.map((player) => {
