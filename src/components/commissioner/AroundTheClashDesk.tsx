@@ -66,7 +66,6 @@ export function AroundTheClashDesk() {
       .then((next) => {
         if (cancelled) return;
         setPayload(next);
-        if (!seasonId && next.report?.seasonId) setSeasonId(next.report.seasonId);
       })
       .catch((reason) => {
         if (cancelled) return;
@@ -82,6 +81,7 @@ export function AroundTheClashDesk() {
   }, [seasonId, trigger]);
 
   const candidates = payload?.report?.topCandidates ?? [];
+  const displayedSeasonId = seasonId || payload?.report?.seasonId || '';
   const availableTriggers = useMemo(() => {
     const counts = payload?.report?.countsByTrigger ?? {};
     return (Object.keys(pulseTriggerLabels) as StoryTriggerType[])
@@ -146,7 +146,7 @@ export function AroundTheClashDesk() {
         <label style={{display: 'grid', gap: 5, minWidth: 240}}>
           <span style={{fontSize: 12, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase'}}>Season</span>
           <select
-            value={seasonId}
+            value={displayedSeasonId}
             onChange={(event) => {
               setTrigger('ALL');
               setSeasonId(event.target.value);
@@ -178,9 +178,11 @@ export function AroundTheClashDesk() {
           <div style={{fontSize: 13, opacity: .78}}>
             <strong>{payload.report.seasonName}</strong> · {payload.report.resultRows} normalized result sides · strongest facts ranked first
             <br />
-            {payload.source === 'snapshot' && payload.snapshot
-              ? `Saved snapshot · ${new Date(payload.snapshot.generatedAt).toLocaleString()}`
-              : 'Live fallback · refresh to save this verified result'}
+            {payload.snapshot && payload.source !== 'live-debug'
+              ? `${payload.source === 'snapshot' ? 'Saved snapshot' : 'Snapshot created'} · ${new Date(payload.snapshot.generatedAt).toLocaleString()}`
+              : payload.source === 'live-debug'
+                ? 'Live debug · snapshot bypassed'
+                : 'Live fallback · snapshot unavailable'}
           </div>
 
           <nav style={{display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4}} aria-label="Clash Pulse fact triggers">
@@ -210,7 +212,7 @@ export function AroundTheClashDesk() {
               <h3 style={{margin: 0}}>{trigger === 'ALL' ? 'Top verified facts' : pulseTriggerLabels[trigger]}</h3>
               <span style={{fontSize: 12, opacity: .7}}>{loading ? 'Loading selected facts…' : 'Verified data · deterministic wording · no AI generation'}</span>
             </header>
-            <div key={`${seasonId}:${trigger}:${payload.activeTrigger ?? 'ALL'}`} style={{display: 'grid', gap: 12, opacity: loading ? .55 : 1}}>
+            <div key={`${displayedSeasonId}:${trigger}:${payload.activeTrigger ?? 'ALL'}`} style={{display: 'grid', gap: 12, opacity: loading ? .55 : 1}}>
               {!loading && candidates.length === 0 ? <p style={{padding: 16, margin: 0}}>No facts in this category.</p> : null}
               {candidates.map((candidate, index) => {
                 const isSelected = selected.includes(candidate.id);
