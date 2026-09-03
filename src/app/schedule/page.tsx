@@ -1,10 +1,10 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
-import {createPublicScheduleService} from '@/core/createPublicScheduleService';
+import {getPublicScheduleEvents} from '@/services/public/PublicSeasonDataService';
 
 export const revalidate = 60;
 
 export default async function SchedulePage() {
-  const publicMatches = await createPublicScheduleService().getPublishedEvents();
+  const publicMatches = await getPublicScheduleEvents();
 
   return (
     <>
