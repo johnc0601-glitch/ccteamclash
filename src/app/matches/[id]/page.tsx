@@ -69,13 +69,14 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const courseRepository = new SupabaseCourseRepository(supabase);
   const matchRosterRepository = new SeasonAwareMatchRosterRepository(supabase);
   const matchRosterService = new MatchRosterService(matchRosterRepository);
-  const [event, match, publishedResult, contests, userResult] = await Promise.all([
+  const [event, match, publishedResult, contests, claimsResult] = await Promise.all([
     scheduleService.getPublishedEventById(matchId),
     scheduleService.getMatch(matchId),
     resultsService.getPublishedResult(matchId),
     resultsService.getContests(matchId),
-    supabase.auth.getUser(),
+    supabase.auth.getClaims(),
   ]);
+  const userId = typeof claimsResult.data?.claims?.sub === 'string' ? claimsResult.data.claims.sub : undefined;
 
   if (!event || !match || !match.homeTeamId || !match.awayTeamId || !match.courseId) notFound();
 
@@ -165,12 +166,12 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   });
 
   const attendanceRepository = new SupabaseMatchRosterRepository(supabase);
-  const actor = userResult.data.user ? await attendanceRepository.getAttendanceActor(userResult.data.user.id) : undefined;
+  const actor = userId ? await attendanceRepository.getAttendanceActor(userId) : undefined;
   const openUnlockTeamIds = locked ? await getOpenRosterUnlockTeamIds(supabase, matchId) : new Set<string>();
 
-  const personalAttendance = !locked && userResult.data.user ? await matchRosterService.getPersonalAttendance(userResult.data.user.id, matchId) : undefined;
-  let managedRosters = userResult.data.user && readParam(query.manage) === 'roster'
-    ? await matchRosterService.getManagedTeamRosters(userResult.data.user.id, matchId)
+  const personalAttendance = !locked && userId ? await matchRosterService.getPersonalAttendance(userId, matchId) : undefined;
+  let managedRosters = userId && readParam(query.manage) === 'roster'
+    ? await matchRosterService.getManagedTeamRosters(userId, matchId)
     : [];
   if (locked) {
     const allowedTeamId = actor?.profileRole === 'Captain' && actor.captainTeamId && openUnlockTeamIds.has(actor.captainTeamId)
