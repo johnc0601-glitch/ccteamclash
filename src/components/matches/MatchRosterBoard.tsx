@@ -2,7 +2,9 @@ import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import type {TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import type {OfficialMatchRoster, OfficialSnapshotState} from '@/domain/match-roster/MatchRosterSnapshot';
 import type {PublicMatchday} from '@/services/matches/MatchdayService';
+import type {LazyRosterPlayer} from '@/app/matches/[id]/publicRosterActions';
 import {getStoredTeamById} from '@/services/teams/TeamStore';
+import {LazyActiveRosterCard} from '@/components/matches/LazyActiveRosterCard';
 import {LockedRosterPair} from '@/components/matches/LockedRosterPair';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 import v1 from '@/app/matches/[id]/MatchdayV1.module.css';
@@ -91,46 +93,24 @@ export async function MatchRosterBoard({
         <div><span>Match roster</span><h2>Active team rosters</h2></div>
       </header>
       <div className={v1.previewGrid}>
-        <ActiveRosterCard teamName={matchday.awayTeam.name} label="Away" players={matchday.awayTeam.roster} />
-        <ActiveRosterCard teamName={matchday.homeTeam.name} label="Home" players={matchday.homeTeam.roster} />
+        <LazyActiveRosterCard
+          teamName={matchday.awayTeam.name}
+          label="Away"
+          teamId={matchday.awayTeam.id}
+          matchId={matchday.id}
+          previewPlayers={matchday.awayTeam.roster.slice(0, PREVIEW_COUNT).map(toLazyRosterPlayer)}
+          remainingCount={Math.max(0, matchday.awayTeam.roster.length - PREVIEW_COUNT)}
+        />
+        <LazyActiveRosterCard
+          teamName={matchday.homeTeam.name}
+          label="Home"
+          teamId={matchday.homeTeam.id}
+          matchId={matchday.id}
+          previewPlayers={matchday.homeTeam.roster.slice(0, PREVIEW_COUNT).map(toLazyRosterPlayer)}
+          remainingCount={Math.max(0, matchday.homeTeam.roster.length - PREVIEW_COUNT)}
+        />
       </div>
     </section>
-  );
-}
-
-function ActiveRosterCard({teamName, label, players}: {teamName: string; label: string; players: LaunchPlayer[]}) {
-  const visible = players.slice(0, PREVIEW_COUNT);
-  const remaining = players.slice(PREVIEW_COUNT);
-
-  return (
-    <details className={v1.previewTeam}>
-      <summary className={v1.previewTeamHead}>
-        <span>{teamName}</span>
-        <span>{label}</span>
-      </summary>
-      <div className={v1.previewList}>
-        {visible.length ? visible.map((player) => <ActivePlayerRow key={player.id} player={player} />) : (
-          <div className={v1.previewPlayer}><span className={v1.previewMore}>No players listed yet</span></div>
-        )}
-        {remaining.length ? (
-          <>
-            <div className={`${v1.previewPlayer} ${v1.moreCount}`}><span className={v1.previewMore}>+ {remaining.length} more</span></div>
-            <div className={v1.expandedRoster}>
-              {remaining.map((player) => <ActivePlayerRow key={player.id} player={player} />)}
-            </div>
-          </>
-        ) : null}
-      </div>
-    </details>
-  );
-}
-
-function ActivePlayerRow({player}: {player: LaunchPlayer}) {
-  return (
-    <div className={v1.previewPlayer}>
-      <strong>{player.name}</strong>
-      <span className={v1.playerMeta}>CI: {formatClashIndex(player)}</span>
-    </div>
   );
 }
 
@@ -191,12 +171,13 @@ function findRoster(rosters: OfficialMatchRoster[], teamId: string): OfficialMat
   return roster;
 }
 
-function formatClashIndex(player: LaunchPlayer): string {
-  if (player.clashIndex == null) return '—';
-  const ghost = player.clashIndexProvisional === true || (
-    player.pdgaRating == null
-    && ((player.gender === 'Female' && player.clashIndex === 725)
-      || (player.gender === 'Male' && player.clashIndex === 850))
-  );
-  return `${player.clashIndex}${ghost ? '*' : ''}`;
+function toLazyRosterPlayer(player: LaunchPlayer): LazyRosterPlayer {
+  return {
+    id: player.id,
+    name: player.name,
+    gender: player.gender,
+    pdgaRating: player.pdgaRating,
+    clashIndex: player.clashIndex ?? null,
+    clashIndexProvisional: player.clashIndexProvisional === true,
+  };
 }
