@@ -1,10 +1,7 @@
 import Link from 'next/link';
-import {cache} from 'react';
+import {DesktopRoleLinks, HeaderAccessProvider} from '@/components/HeaderAccessProvider';
 import {MobileAccountLink} from '@/components/MobileAccountLink';
 import {MobileNav} from '@/components/MobileNav';
-import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
-import {hasSupabaseConfig} from '@/lib/supabase';
-import {createClient} from '@/lib/supabase/server';
 import {BRAND_LOGO, BRAND_NAME, BRAND_TAGLINE, FOOTER_COPY} from '@/shared/constants';
 
 const FACEBOOK_GROUP_URL = 'https://facebook.com/groups/780013754161635/';
@@ -30,71 +27,45 @@ function FacebookLink({size = 20}: {size?: number}) {
   );
 }
 
-export async function SiteHeader() {
-  const headerAccess = await getHeaderAccess();
-  const canOpenOffice = headerAccess === 'commissioner';
-  const canOpenCaptain = headerAccess === 'captain';
-
+export function SiteHeader() {
   return (
-    <header className="site-header">
-      <div className="primary-header">
-        <div className="shell nav-wrap primary-nav-wrap">
-          <Link href="/" className="brand">
-            <span className="brand-mark">
-              <img src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} />
-            </span>
-            <span><strong>{BRAND_NAME}</strong><small>{BRAND_TAGLINE}</small></span>
-          </Link>
+    <HeaderAccessProvider>
+      <header className="site-header">
+        <div className="primary-header">
+          <div className="shell nav-wrap primary-nav-wrap">
+            <Link href="/" className="brand">
+              <span className="brand-mark">
+                <img src={BRAND_LOGO} alt="Team Clash logo" width={48} height={48} />
+              </span>
+              <span><strong>{BRAND_NAME}</strong><small>{BRAND_TAGLINE}</small></span>
+            </Link>
 
-          <nav className="desktop-nav primary-nav" aria-label="Primary navigation">
-            <Link href="/schedule">Schedule</Link>
-            <Link href="/standings">Standings</Link>
-            <Link href="/stats">Stats</Link>
-            <Link href="/teams">Teams</Link>
-            <Link href="/players">Players</Link>
-            <Link href="/stories">Stories</Link>
-            <Link href="/courses">Courses</Link>
-            <Link href="/history">History</Link>
-            <FacebookLink size={20} />
-            {(canOpenOffice || canOpenCaptain) ? <span className="primary-nav-separator" aria-hidden="true" /> : null}
-            {canOpenOffice ? <Link className="desktop-role-link" href="/admin">Create post</Link> : null}
-            {canOpenOffice ? <Link className="desktop-role-link" href="/office">Office</Link> : null}
-            {canOpenCaptain ? <Link className="desktop-role-link" href="/captain">Captain</Link> : null}
-            <Link className="desktop-account" href="/account">My Profile</Link>
-          </nav>
+            <nav className="desktop-nav primary-nav" aria-label="Primary navigation">
+              <Link href="/schedule">Schedule</Link>
+              <Link href="/standings">Standings</Link>
+              <Link href="/stats">Stats</Link>
+              <Link href="/teams">Teams</Link>
+              <Link href="/players">Players</Link>
+              <Link href="/stories">Stories</Link>
+              <Link href="/courses">Courses</Link>
+              <Link href="/history">History</Link>
+              <FacebookLink size={20} />
+              <DesktopRoleLinks />
+              <Link className="desktop-account" href="/account">My Profile</Link>
+            </nav>
 
-          <div className="mobile-header-actions">
-            <MobileAccountLink />
-            <MobileNav canOpenOffice={canOpenOffice} canOpenCaptain={canOpenCaptain} />
+            <div className="mobile-header-actions">
+              <MobileAccountLink />
+              <MobileNav />
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </HeaderAccessProvider>
   );
 }
 
-const getHeaderAccess = cache(async (): Promise<'commissioner' | 'captain' | null> => {
-  if (!hasSupabaseConfig()) return null;
-
-  try {
-    const supabase = await createClient();
-    const {data, error} = await supabase.auth.getClaims();
-    const userId = error ? null : data?.claims?.sub;
-    if (!userId) return null;
-
-    const repository = new SupabaseLaunchRepository(supabase);
-    const profile = await repository.getProfileByUserId(userId);
-    if (profile?.role === 'Commissioner' && profile.status === 'Approved') return 'commissioner';
-    if (profile?.role === 'Captain' && profile.status === 'Approved') return 'captain';
-    return null;
-  } catch {
-    return null;
-  }
-});
-
-export async function Footer() {
-  const canCreatePost = await getHeaderAccess() === 'commissioner';
-
+export function Footer() {
   return (
     <footer>
       <div className="shell footer-wrap">
@@ -113,7 +84,6 @@ export async function Footer() {
           <Link href="/teams">Teams</Link>
           <Link href="/courses">Courses</Link>
           <FacebookLink size={20} />
-          {canCreatePost ? <Link href="/admin">Post</Link> : null}
         </div>
       </div>
     </footer>

@@ -33,9 +33,9 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // Supabase recommends getClaims() for SSR token refresh/verification. With
-  // asymmetric signing keys this verifies locally against the cached JWKS
-  // instead of making an Auth-server request on every page navigation.
+  // Session-sensitive routes refresh/verify the token before server code uses
+  // it. Public league pages are deliberately excluded from the matcher below;
+  // their personalized navigation resolves client-side instead.
   await supabase.auth.getClaims();
 
   return supabaseResponse;
@@ -43,6 +43,13 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/account/:path*',
+    '/admin/:path*',
+    '/captain/:path*',
+    '/office/:path*',
+    '/matches/:path*',
+    '/api/:path*',
+    '/auth/:path*',
+    '/confirm-signup',
   ],
 };

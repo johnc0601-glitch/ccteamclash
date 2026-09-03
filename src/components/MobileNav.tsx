@@ -3,17 +3,16 @@
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {useCallback, useEffect, useRef} from 'react';
+import {useHeaderAccess} from '@/components/HeaderAccessProvider';
 
 const FACEBOOK_GROUP_URL = 'https://facebook.com/groups/780013754161635/';
 
-type MobileNavProps = {
-  canOpenOffice: boolean;
-  canOpenCaptain: boolean;
-};
-
-export function MobileNav({canOpenOffice, canOpenCaptain}: MobileNavProps) {
+export function MobileNav() {
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
+  const {role} = useHeaderAccess();
+  const canOpenOffice = role === 'commissioner';
+  const canOpenCaptain = role === 'captain';
 
   const closeMenu = useCallback(() => {
     if (detailsRef.current) detailsRef.current.open = false;
