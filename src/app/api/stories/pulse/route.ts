@@ -7,7 +7,7 @@ import {
 } from '@/domain/story-engine/ClashPulseSnapshotStore';
 import {buildStoryBacktestReport, type StoryBacktestReport} from '@/domain/story-engine/StoryBacktestReport';
 import {PublicHistoricalPulseRepository} from '@/domain/story-engine/PublicHistoricalPulseRepository';
-import type {StoryCandidate, StoryTriggerType} from '@/domain/story-engine/StoryCandidate';
+import type {StoryTriggerType} from '@/domain/story-engine/StoryCandidate';
 import {storyImportance} from '@/domain/story-engine/StoryScoring';
 import {StoryAccessError, requireStoryCommissioner} from '@/services/stories/StoryEditorAccess';
 
