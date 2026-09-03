@@ -11,6 +11,7 @@ import {
   pulseTriggerLabels,
 } from '@/domain/story-engine/PulseFactFormatter';
 import type {StoryCandidate, StoryTriggerType} from '@/domain/story-engine/StoryCandidate';
+import {ClashLineTrayPublisher} from '@/components/commissioner/ClashLineTrayPublisher';
 
 type PulseEvent = {
   eventId: string;
@@ -336,6 +337,7 @@ export function AroundTheClashDesk() {
                 ))}
               </div>
             )}
+            <ClashLineTrayPublisher selectedItems={selectedItems} seasonId={displayedSeasonId} />
           </aside>
         </>
       ) : loading ? <p style={{margin: 0}}>Analyzing verified Clash history...</p> : null}
