@@ -1,11 +1,10 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
-import {createServerScheduleService} from '@/core/createServerScheduleService';
+import {getPublicScheduleEvents} from '@/services/public/PublicSeasonDataService';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SchedulePage() {
-  const scheduleService = await createServerScheduleService();
-  const publicMatches = await scheduleService.getPublishedEvents();
+  const publicMatches = await getPublicScheduleEvents();
 
   return (
     <>
