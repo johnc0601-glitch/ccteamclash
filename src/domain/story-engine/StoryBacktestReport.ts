@@ -30,7 +30,10 @@ export type StoryBacktestReport = {
   countsByTrigger: Partial<Record<StoryTriggerType, number>>;
   countsByImportance: Record<StoryImportance, number>;
   scoreDistribution: StoryBacktestScoreDistribution;
+  /** Season-level surfaced candidates after overlap cleanup such as CI-surge dedupe. */
   topCandidates: StoryCandidate[];
+  /** Point-in-time surfaced candidates retained so a Matchday can be reviewed exactly as it happened. */
+  eventCandidates: StoryCandidate[];
 };
 
 const HIDDEN_PULSE_TRIGGERS = new Set<StoryTriggerType>(['HEAD_TO_HEAD', 'PERSONAL_BEST']);
@@ -106,7 +109,8 @@ export function buildStoryBacktestReport(
   const seasonResults = results.filter((result) => result.seasonId === seasonId);
   const seasonName = seasonResults.find((result) => result.seasonName)?.seasonName ?? seasonId;
   const backtest = backtestStoryEngine(results, seasonId);
-  const candidates = dedupeSeasonCandidates(backtest.candidates);
+  const eventCandidates = backtest.candidates.filter((candidate) => !HIDDEN_PULSE_TRIGGERS.has(candidate.triggerType));
+  const candidates = dedupeSeasonCandidates(eventCandidates);
   const countsByTrigger: Partial<Record<StoryTriggerType, number>> = {};
   const countsByImportance: Record<StoryImportance, number> = {
     candidate: 0,
@@ -155,5 +159,7 @@ export function buildStoryBacktestReport(
     topCandidates: [...candidates]
       .sort((a, b) => b.storyScore - a.storyScore || a.id.localeCompare(b.id))
       .slice(0, Math.max(0, topCandidateLimit)),
+    eventCandidates: [...eventCandidates]
+      .sort((a, b) => b.storyScore - a.storyScore || a.id.localeCompare(b.id)),
   };
 }
