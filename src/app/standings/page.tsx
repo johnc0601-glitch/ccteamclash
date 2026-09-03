@@ -1,11 +1,11 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {StandingsTable} from '@/components/standings/StandingsTable';
-import {createServerStandingsService} from '@/core/createServerStandingsService';
+import {getPublicActiveSeasonStandings} from '@/services/public/PublicSeasonDataService';
 
 export const dynamic = 'force-dynamic';
 
 export default async function StandingsPage() {
-  const standings = await (await createServerStandingsService()).getActiveSeasonStandings();
+  const standings = await getPublicActiveSeasonStandings();
 
   return (
     <>
