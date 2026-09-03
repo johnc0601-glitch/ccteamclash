@@ -7,12 +7,7 @@ import {
   INTRO_TIMING,
   type IntroPhase,
 } from './intro.config';
-import {decideIntroPlayback, type IntroQueryOverride} from './introDecision';
-
-type UseIntroOptions = {
-  hasLoginMarker: boolean;
-  queryOverride: IntroQueryOverride;
-};
+import {decideIntroPlayback, parseIntroQuery} from './introDecision';
 
 type UseIntroResult = {
   isMounted: boolean;
@@ -21,9 +16,8 @@ type UseIntroResult = {
   finish: () => void;
 };
 
-export function useIntro({hasLoginMarker, queryOverride}: UseIntroOptions): UseIntroResult {
-  const initiallyRequested = queryOverride === 'play' || (queryOverride !== 'skip' && hasLoginMarker);
-  const [isMounted, setIsMounted] = useState(initiallyRequested);
+export function useIntro(): UseIntroResult {
+  const [isMounted, setIsMounted] = useState(false);
   const [phase, setPhase] = useState<IntroPhase>('idle');
   const [reducedMotion, setReducedMotion] = useState(false);
   const timers = useRef<number[]>([]);
@@ -38,6 +32,11 @@ export function useIntro({hasLoginMarker, queryOverride}: UseIntroOptions): UseI
   }, []);
 
   useLayoutEffect(() => {
+    const queryOverride = parseIntroQuery(new URLSearchParams(window.location.search).get('intro') ?? undefined);
+    const hasLoginMarker = document.cookie
+      .split(';')
+      .map((part) => part.trim())
+      .some((part) => part === `${INTRO_COOKIE_NAME}=1`);
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const prefersReducedMotion = motionQuery.matches;
     const hasPlayedThisSession = window.sessionStorage.getItem(INTRO_SESSION_KEY) === '1';
@@ -49,31 +48,22 @@ export function useIntro({hasLoginMarker, queryOverride}: UseIntroOptions): UseI
 
     document.cookie = `${INTRO_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
 
-    if (!shouldPlay) {
-      animationFrame.current = window.requestAnimationFrame(() => setIsMounted(false));
-      return () => {
-        if (animationFrame.current !== null) window.cancelAnimationFrame(animationFrame.current);
-        animationFrame.current = null;
-      };
-    }
+    if (!shouldPlay) return;
 
+    setIsMounted(true);
     window.sessionStorage.setItem(INTRO_SESSION_KEY, '1');
 
     if (prefersReducedMotion) {
-      animationFrame.current = window.requestAnimationFrame(() => {
-        setReducedMotion(true);
-        setPhase('logo');
-      });
+      setReducedMotion(true);
+      setPhase('logo');
       timers.current.push(window.setTimeout(finish, INTRO_TIMING.reducedMotionHoldMs));
       return () => {
         timers.current.forEach(window.clearTimeout);
         timers.current = [];
-        if (animationFrame.current !== null) window.cancelAnimationFrame(animationFrame.current);
-        animationFrame.current = null;
       };
     }
 
-    animationFrame.current = window.requestAnimationFrame(() => setPhase('dawn'));
+    setPhase('dawn');
 
     const discAt = INTRO_TIMING.dawnMs;
     const blackoutAt = discAt + INTRO_TIMING.discMs;
@@ -95,7 +85,7 @@ export function useIntro({hasLoginMarker, queryOverride}: UseIntroOptions): UseI
       if (animationFrame.current !== null) window.cancelAnimationFrame(animationFrame.current);
       animationFrame.current = null;
     };
-  }, [finish, hasLoginMarker, queryOverride]);
+  }, [finish]);
 
   return {isMounted, phase, reducedMotion, finish};
 }
