@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import {cache} from 'react';
 import {MobileAccountLink} from '@/components/MobileAccountLink';
 import {MobileNav} from '@/components/MobileNav';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
@@ -72,23 +73,24 @@ export async function SiteHeader() {
   );
 }
 
-async function getHeaderAccess(): Promise<'commissioner' | 'captain' | null> {
+const getHeaderAccess = cache(async (): Promise<'commissioner' | 'captain' | null> => {
   if (!hasSupabaseConfig()) return null;
 
   try {
     const supabase = await createClient();
-    const {data: {user}} = await supabase.auth.getUser();
-    if (!user) return null;
+    const {data, error} = await supabase.auth.getClaims();
+    const userId = error ? null : data?.claims?.sub;
+    if (!userId) return null;
 
     const repository = new SupabaseLaunchRepository(supabase);
-    const profile = await repository.getProfileByUserId(user.id);
+    const profile = await repository.getProfileByUserId(userId);
     if (profile?.role === 'Commissioner' && profile.status === 'Approved') return 'commissioner';
     if (profile?.role === 'Captain' && profile.status === 'Approved') return 'captain';
     return null;
   } catch {
     return null;
   }
-}
+});
 
 export async function Footer() {
   const canCreatePost = await getHeaderAccess() === 'commissioner';
