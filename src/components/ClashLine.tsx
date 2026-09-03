@@ -100,6 +100,12 @@ export function ClashLine() {
     move(dx < 0 ? 1 : -1);
   }
 
+  function handleClick(event: React.MouseEvent<HTMLElement>) {
+    if (items.length < 2 || !window.matchMedia('(min-width: 641px)').matches) return;
+    if ((event.target as HTMLElement).closest('button')) return;
+    move(1);
+  }
+
   const item = items[index] ?? null;
   const category = useMemo(() => item ? (triggerLabels[item.triggerType] ?? 'League') : '', [item]);
   if (!item) return null;
@@ -110,6 +116,7 @@ export function ClashLine() {
       <aside
         className={styles.shell}
         aria-label="Clash Pulse league facts"
+        onClick={handleClick}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
