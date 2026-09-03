@@ -23,6 +23,13 @@ const triggerLabels: Record<string, string> = {
   RECORD: 'Record',
 };
 
+function clashLineEndpoint(): string {
+  const shareToken = new URLSearchParams(window.location.search).get('_vercel_share');
+  return shareToken
+    ? `/api/clash-line?_vercel_share=${encodeURIComponent(shareToken)}`
+    : '/api/clash-line';
+}
+
 export function ClashLine() {
   const [items, setItems] = useState<ClashLineItem[]>([]);
   const [index, setIndex] = useState(0);
@@ -33,7 +40,7 @@ export function ClashLine() {
 
     async function load() {
       try {
-        const response = await fetch('/api/clash-line', {cache: 'no-store'});
+        const response = await fetch(clashLineEndpoint(), {cache: 'no-store', credentials: 'same-origin'});
         if (!response.ok) return;
         const payload = await response.json() as {items?: ClashLineItem[]};
         if (cancelled) return;
