@@ -50,7 +50,7 @@ export function ClashLine() {
         setItems(next);
         setIndex((current) => next.length ? Math.min(current, next.length - 1) : 0);
       } catch {
-        // Clash Line is enhancement-only; never interfere with page rendering.
+        // Clash Pulse is enhancement-only; never interfere with page rendering.
       }
     }
 
@@ -109,11 +109,11 @@ export function ClashLine() {
       <div className={styles.spacer} aria-hidden="true" />
       <aside
         className={styles.shell}
-        aria-label="Clash Line league facts"
+        aria-label="Clash Pulse league facts"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div className={styles.brand}><span className={styles.brandClash}>CLASH </span>LINE</div>
+        <div className={styles.brand}><span className={styles.brandClash}>CLASH </span>PULSE</div>
         <div className={styles.fact} aria-live="polite">
           <span className={styles.category}>{category}</span>
           <span className={styles.text} key={item.id}>{item.text}</span>
@@ -125,8 +125,8 @@ export function ClashLine() {
               className={styles.pause}
               type="button"
               onClick={() => setPaused((current) => !current)}
-              aria-label={paused ? 'Resume Clash Line rotation' : 'Pause Clash Line rotation'}
-              title={paused ? 'Resume Clash Line' : 'Pause Clash Line'}
+              aria-label={paused ? 'Resume Clash Pulse rotation' : 'Pause Clash Pulse rotation'}
+              title={paused ? 'Resume Clash Pulse' : 'Pause Clash Pulse'}
             >
               {paused ? '▶' : 'Ⅱ'}
             </button>
