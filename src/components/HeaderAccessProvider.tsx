@@ -87,6 +87,7 @@ export function DesktopRoleLinks() {
       {canOpenOffice ? <Link className="desktop-role-link" href="/admin">Create post</Link> : null}
       {canOpenOffice ? <Link className="desktop-role-link" href="/office">Office</Link> : null}
       {canOpenCaptain ? <Link className="desktop-role-link" href="/captain">Captain</Link> : null}
+      {canOpenCaptain ? <Link className="desktop-role-link" href="/captain/free-agents">Free Agents</Link> : null}
     </>
   );
 }
