@@ -2,7 +2,7 @@ import type {SupabaseClient} from '@supabase/supabase-js';
 import type {RatedResult} from './RatedResult';
 import type {StoryBacktestReport} from './StoryBacktestReport';
 
-export const CLASH_PULSE_SNAPSHOT_VERSION = 1;
+export const CLASH_PULSE_SNAPSHOT_VERSION = 2;
 
 export type ClashPulseProvenance = {
   snapshotVersion: number;
