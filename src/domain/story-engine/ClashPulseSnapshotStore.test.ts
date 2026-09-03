@@ -20,6 +20,7 @@ function emptyReport(seasonId: string): StoryBacktestReport {
     countsByImportance: {candidate: 0, notable: 0, strong: 0, major: 0},
     scoreDistribution: {minimum: null, median: null, p75: null, p90: null, maximum: null},
     topCandidates: [],
+    eventCandidates: [],
   };
 }
 
