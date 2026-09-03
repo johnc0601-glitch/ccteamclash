@@ -51,23 +51,24 @@ export async function loadActiveRosterRemainder(matchId: string, teamId: string)
     const {data: players, error: playerError} = await (supabase as any)
       .from('launch_players')
       .select('id,name,gender,pdga_rating,clash_index,clash_index_provisional')
-      .in('id', playerIds)
-      .order('name');
+      .in('id', playerIds);
 
     if (playerError) throw playerError;
 
+    const ordered = (players ?? [])
+      .map((player: any): LazyRosterPlayer => ({
+        id: String(player.id),
+        name: typeof player.name === 'string' ? player.name : '',
+        gender: player.gender === 'Female' || player.gender === 'Male' ? player.gender : 'Unknown',
+        pdgaRating: typeof player.pdga_rating === 'number' ? player.pdga_rating : null,
+        clashIndex: typeof player.clash_index === 'number' ? player.clash_index : null,
+        clashIndexProvisional: player.clash_index_provisional === true,
+      }))
+      .sort((left: LazyRosterPlayer, right: LazyRosterPlayer) => left.name.localeCompare(right.name, undefined, {sensitivity: 'base'}));
+
     return {
       ok: true,
-      players: (players ?? [])
-        .slice(PREVIEW_COUNT, PREVIEW_COUNT + MAX_RETURNED_PLAYERS)
-        .map((player: any) => ({
-          id: String(player.id),
-          name: typeof player.name === 'string' ? player.name : '',
-          gender: player.gender === 'Female' || player.gender === 'Male' ? player.gender : 'Unknown',
-          pdgaRating: typeof player.pdga_rating === 'number' ? player.pdga_rating : null,
-          clashIndex: typeof player.clash_index === 'number' ? player.clash_index : null,
-          clashIndexProvisional: player.clash_index_provisional === true,
-        })),
+      players: ordered.slice(PREVIEW_COUNT, PREVIEW_COUNT + MAX_RETURNED_PLAYERS),
     };
   } catch (error) {
     console.error('Public active roster remainder could not be loaded.', {matchId: cleanMatchId, teamId: cleanTeamId, error});
