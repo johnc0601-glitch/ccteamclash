@@ -38,6 +38,32 @@ type SnapshotRow = {
   refresh_trigger: string;
 };
 
+const SNAPSHOT_SELECT = 'season_id,season_name,candidate_payload,provenance,generated_at,generated_by,refresh_trigger';
+
+function fromRow(row: SnapshotRow): ClashPulseSnapshot {
+  return {
+    seasonId: row.season_id,
+    seasonName: row.season_name,
+    report: row.candidate_payload,
+    provenance: row.provenance,
+    generatedAt: row.generated_at,
+    generatedBy: row.generated_by,
+    refreshTrigger: row.refresh_trigger,
+  };
+}
+
+function toRow(snapshot: ClashPulseSnapshot): SnapshotRow {
+  return {
+    season_id: snapshot.seasonId,
+    season_name: snapshot.seasonName,
+    candidate_payload: snapshot.report,
+    provenance: snapshot.provenance,
+    generated_at: snapshot.generatedAt,
+    generated_by: snapshot.generatedBy,
+    refresh_trigger: snapshot.refreshTrigger,
+  };
+}
+
 export function buildClashPulseProvenance(
   results: RatedResult[],
   build: Pick<ClashPulseProvenance, 'sourceFactRows' | 'sourceContests' | 'emittedContests' | 'quarantinedContests'>,
@@ -59,25 +85,41 @@ export function buildClashPulseProvenance(
 export class ClashPulseSnapshotStore {
   constructor(private readonly supabase: SupabaseClient) {}
 
+  async listSeasonIds(): Promise<string[]> {
+    const {data, error} = await this.supabase.from('clash_pulse_snapshots')
+      .select('season_id')
+      .order('season_id', {ascending: true});
+    if (error) throw new Error(`Pulse snapshot season read failed: ${error.message}`);
+    return ((data ?? []) as Array<{season_id: string}>).map((row) => row.season_id);
+  }
+
+  async get(seasonId: string): Promise<ClashPulseSnapshot | null> {
+    const {data, error} = await this.supabase.from('clash_pulse_snapshots')
+      .select(SNAPSHOT_SELECT)
+      .eq('season_id', seasonId)
+      .maybeSingle();
+    if (error) throw new Error(`Pulse snapshot read failed: ${error.message}`);
+    return data ? fromRow(data as unknown as SnapshotRow) : null;
+  }
+
+  /** Retained for diagnostics/tests; normal request paths should use listSeasonIds + get. */
   async list(): Promise<ClashPulseSnapshot[]> {
     const {data, error} = await this.supabase.from('clash_pulse_snapshots')
-      .select('season_id,season_name,candidate_payload,provenance,generated_at,generated_by,refresh_trigger')
+      .select(SNAPSHOT_SELECT)
       .order('season_id', {ascending: true});
     if (error) throw new Error(`Pulse snapshot read failed: ${error.message}`);
-    return ((data ?? []) as unknown as SnapshotRow[]).map((row) => ({
-      seasonId: row.season_id, seasonName: row.season_name, report: row.candidate_payload,
-      provenance: row.provenance, generatedAt: row.generated_at, generatedBy: row.generated_by,
-      refreshTrigger: row.refresh_trigger,
-    }));
+    return ((data ?? []) as unknown as SnapshotRow[]).map(fromRow);
   }
 
   async save(snapshot: ClashPulseSnapshot): Promise<void> {
-    const {error} = await this.supabase.from('clash_pulse_snapshots').upsert({
-      season_id: snapshot.seasonId, season_name: snapshot.seasonName,
-      candidate_payload: snapshot.report, provenance: snapshot.provenance,
-      generated_at: snapshot.generatedAt, generated_by: snapshot.generatedBy,
-      refresh_trigger: snapshot.refreshTrigger,
-    }, {onConflict: 'season_id'});
+    await this.saveMany([snapshot]);
+  }
+
+  /** One upsert request keeps a multi-season refresh from partially updating season-by-season. */
+  async saveMany(snapshots: ClashPulseSnapshot[]): Promise<void> {
+    if (snapshots.length === 0) return;
+    const {error} = await this.supabase.from('clash_pulse_snapshots')
+      .upsert(snapshots.map(toRow), {onConflict: 'season_id'});
     if (error) throw new Error(`Pulse snapshot write failed: ${error.message}`);
   }
 }
