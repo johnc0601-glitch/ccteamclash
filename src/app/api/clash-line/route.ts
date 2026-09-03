@@ -13,6 +13,12 @@ type ClashLineRow = {
   published_at: string;
 };
 
+function cacheControl(): string {
+  return process.env.VERCEL_ENV === 'preview'
+    ? 'no-store'
+    : 'public, s-maxage=5, stale-while-revalidate=15';
+}
+
 export async function GET() {
   const supabase = await createClient();
   const {data, error} = await (supabase as any)
@@ -27,7 +33,7 @@ export async function GET() {
     console.error('[clash-line] Public read failed', {message: error.message});
     return Response.json({items: []}, {
       status: 200,
-      headers: {'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=120'},
+      headers: {'Cache-Control': cacheControl()},
     });
   }
 
@@ -42,6 +48,6 @@ export async function GET() {
   }));
 
   return Response.json({items}, {
-    headers: {'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=120'},
+    headers: {'Cache-Control': cacheControl()},
   });
 }
