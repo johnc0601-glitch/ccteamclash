@@ -7,7 +7,8 @@ import {
 } from '@/domain/story-engine/ClashPulseSnapshotStore';
 import {buildStoryBacktestReport, type StoryBacktestReport} from '@/domain/story-engine/StoryBacktestReport';
 import {PublicHistoricalPulseRepository} from '@/domain/story-engine/PublicHistoricalPulseRepository';
-import type {StoryTriggerType} from '@/domain/story-engine/StoryCandidate';
+import type {StoryCandidate, StoryTriggerType} from '@/domain/story-engine/StoryCandidate';
+import {storyImportance} from '@/domain/story-engine/StoryScoring';
 import {StoryAccessError, requireStoryCommissioner} from '@/services/stories/StoryEditorAccess';
 
 export const runtime = 'nodejs';
@@ -17,6 +18,63 @@ const TRIGGERS = new Set<StoryTriggerType>(['WIN_STREAK', 'STREAK_SNAPPED', 'UPS
 
 function requestedTrigger(value: string | null): StoryTriggerType | null {
   return value && TRIGGERS.has(value as StoryTriggerType) ? value as StoryTriggerType : null;
+}
+
+function percentile(sorted: number[], fraction: number): number | null {
+  if (sorted.length === 0) return null;
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * fraction) - 1));
+  return sorted[index];
+}
+
+function reportForScope(
+  report: StoryBacktestReport,
+  requestedEventId: string | null,
+  trigger: StoryTriggerType | null,
+  limit: number,
+): {report: StoryBacktestReport; activeEventId: string | null} {
+  const activeEventId = requestedEventId && report.events.some((event) => event.eventId === requestedEventId)
+    ? requestedEventId
+    : null;
+  const scopeCandidates = activeEventId
+    ? report.eventCandidates.filter((candidate) => candidate.eventId === activeEventId)
+    : report.topCandidates;
+
+  const countsByTrigger: StoryBacktestReport['countsByTrigger'] = {};
+  const countsByImportance: StoryBacktestReport['countsByImportance'] = {
+    candidate: 0,
+    notable: 0,
+    strong: 0,
+    major: 0,
+  };
+  for (const candidate of scopeCandidates) {
+    countsByTrigger[candidate.triggerType] = (countsByTrigger[candidate.triggerType] ?? 0) + 1;
+    countsByImportance[storyImportance(candidate.storyScore)] += 1;
+  }
+
+  const scores = scopeCandidates.map((candidate) => candidate.storyScore).sort((a, b) => a - b);
+  const selectedEvent = activeEventId ? report.events.find((event) => event.eventId === activeEventId) : null;
+  const visibleCandidates = scopeCandidates
+    .filter((candidate) => !trigger || candidate.triggerType === trigger)
+    .slice(0, limit);
+
+  return {
+    activeEventId,
+    report: {
+      ...report,
+      resultRows: selectedEvent?.resultRows ?? report.resultRows,
+      candidateCount: scopeCandidates.length,
+      countsByTrigger,
+      countsByImportance,
+      scoreDistribution: {
+        minimum: scores[0] ?? null,
+        median: percentile(scores, .5),
+        p75: percentile(scores, .75),
+        p90: percentile(scores, .9),
+        maximum: scores.at(-1) ?? null,
+      },
+      topCandidates: visibleCandidates,
+    },
+  };
 }
 
 function payload(
@@ -29,17 +87,17 @@ function payload(
   const trigger = requestedTrigger(url.searchParams.get('trigger'));
   const rawLimit = Number(url.searchParams.get('limit') ?? 50);
   const limit = Number.isFinite(rawLimit) ? Math.min(100, Math.max(10, Math.round(rawLimit))) : 50;
-  const report: StoryBacktestReport | null = snapshot ? {
-    ...snapshot.report,
-    topCandidates: snapshot.report.topCandidates.filter((candidate) => !trigger || candidate.triggerType === trigger).slice(0, limit),
-  } : null;
+  const scoped = snapshot
+    ? reportForScope(snapshot.report, url.searchParams.get('eventId'), trigger, limit)
+    : {report: null, activeEventId: null};
   return {
     source,
     snapshot: snapshot ? {generatedAt: snapshot.generatedAt, refreshTrigger: snapshot.refreshTrigger, provenance: snapshot.provenance} : null,
     build: snapshot?.provenance ?? {sourceFactRows: 0, sourceContests: 0, emittedContests: 0, quarantinedContests: 0},
     seasonIds,
     activeTrigger: trigger,
-    report,
+    activeEventId: scoped.activeEventId,
+    report: scoped.report,
   };
 }
 
