@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import {AroundTheClashDesk} from '@/components/commissioner/AroundTheClashDesk';
 import {OfficePage} from '@/components/commissioner/OfficePage';
+import {PulseRefreshButton} from '@/components/commissioner/PulseRefreshButton';
 
 export default function AroundTheClashPreviewPage() {
   return (
@@ -11,6 +12,7 @@ export default function AroundTheClashPreviewPage() {
             <div style={{display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap'}}>
               <h2 style={{margin: 0}}>Around the Clash</h2>
               <span style={{fontSize: 12, fontWeight: 800, letterSpacing: '.08em', border: '1px solid currentColor', borderRadius: 999, padding: '3px 8px'}}>FACT ENGINE PREVIEW</span>
+              <PulseRefreshButton />
             </div>
             <p style={{marginBottom: 0}}>Commissioner fact desk for finding verified streaks, upsets, milestones, records, and other useful league facts.</p>
           </div>
