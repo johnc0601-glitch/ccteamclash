@@ -1,7 +1,8 @@
 import 'server-only';
 
+import {unstable_cache} from 'next/cache';
 import type {PublicScheduleEvent, ScheduleEventBucket} from '@/domain/schedule/ScheduleService';
-import {createClient} from '@/lib/supabase/server';
+import {createPublicClient} from '@/lib/supabase/public';
 import type {Team} from '@/models/Team';
 import type {HomepageMatchFeedPreview} from '@/services/media/HomepageMatchFeedService';
 import type {HomepageStory, HomepageStoryData} from '@/services/stories/HomepageStoryService';
@@ -9,6 +10,18 @@ import type {HomepageStory, HomepageStoryData} from '@/services/stories/Homepage
 const MATCH_DISPLAY_WINDOW_DAYS = 14;
 const HOME_STORY_COLUMNS = 'id,slug,title,published_at,image,body,featured';
 const LATEST_STORY_COUNT = 2;
+const HOMEPAGE_CACHE_SECONDS = 60;
+
+type HomepageRows = {
+  featured: any[];
+  latest: any[];
+  teams: any[];
+  courses: any[];
+  schedules: any[];
+  rounds: any[];
+  matches: any[];
+  previews: any[];
+};
 
 export type HomepageData = {
   storyData: HomepageStoryData;
@@ -18,89 +31,112 @@ export type HomepageData = {
 };
 
 /**
- * Loads all public homepage data in one Supabase request wave.
- *
- * The homepage used to fetch stories/teams first, then schedules/courses,
- * then rounds, then one match query per round, then Matchday previews. During
- * elevated API latency those dependent waves compounded into multi-second page
- * loads even though every individual request succeeded. This loader keeps the
- * reads independent and concurrent, then joins the small public datasets in
- * memory.
+ * Loads public homepage rows through a cookie-free client and caches them
+ * briefly across requests. Keeping the cache input public-only avoids leaking
+ * commissioner/captain-scoped RLS results into shared output.
+ */
+const loadHomepageRows = unstable_cache(
+  async (): Promise<HomepageRows> => {
+    const supabase = createPublicClient();
+    const db = supabase as any;
+
+    const [
+      featuredResult,
+      latestResult,
+      teamsResult,
+      coursesResult,
+      schedulesResult,
+      roundsResult,
+      matchesResult,
+      previewsResult,
+    ] = await Promise.all([
+      db
+        .from('launch_stories')
+        .select(HOME_STORY_COLUMNS)
+        .eq('status', 'published')
+        .eq('featured', true)
+        .order('published_at', {ascending: false, nullsFirst: false})
+        .limit(1),
+      db
+        .from('launch_stories')
+        .select(HOME_STORY_COLUMNS)
+        .eq('status', 'published')
+        .order('published_at', {ascending: false, nullsFirst: false})
+        .order('updated_at', {ascending: false})
+        .limit(LATEST_STORY_COUNT),
+      db.from('launch_teams').select('*').order('name', {ascending: true}),
+      db.from('launch_courses').select('id,name,map_url'),
+      db.from('launch_schedules').select('id,published').eq('published', true),
+      db.from('launch_rounds').select('id,schedule_id,published').eq('published', true),
+      db
+        .from('launch_schedule_matches')
+        .select('id,round_id,home_team_id,away_team_id,course_id,date,time,status'),
+      db
+        .from('launch_homepage_match_feed_previews')
+        .select('match_id,author_name_snapshot,body,image_path,comment_count,reaction_count'),
+    ]);
+
+    logHomepageReadError('featured stories', featuredResult.error);
+    logHomepageReadError('latest stories', latestResult.error);
+    logHomepageReadError('teams', teamsResult.error);
+    logHomepageReadError('courses', coursesResult.error);
+    logHomepageReadError('schedules', schedulesResult.error);
+    logHomepageReadError('rounds', roundsResult.error);
+    logHomepageReadError('matches', matchesResult.error);
+    logHomepageReadError('Matchday previews', previewsResult.error);
+
+    return {
+      featured: featuredResult.data ?? [],
+      latest: latestResult.data ?? [],
+      teams: teamsResult.data ?? [],
+      courses: coursesResult.data ?? [],
+      schedules: schedulesResult.data ?? [],
+      rounds: roundsResult.data ?? [],
+      matches: matchesResult.data ?? [],
+      previews: previewsResult.data ?? [],
+    };
+  },
+  ['homepage-public-data-v1'],
+  {
+    revalidate: HOMEPAGE_CACHE_SECONDS,
+    tags: ['league:homepage', 'league:stories', 'league:teams', 'league:schedule', 'league:match-feed'],
+  },
+);
+
+/**
+ * Builds the request-specific homepage model from the shared public row cache.
+ * Date bucketing stays outside the cache so upcoming/recent labels remain
+ * correct as the calendar changes.
  */
 export async function getHomepageData(referenceDate = new Date()): Promise<HomepageData> {
-  const supabase = await createClient();
-  const db = supabase as any;
+  const rows = await loadHomepageRows();
+  const supabase = createPublicClient();
 
-  const [
-    featuredResult,
-    latestResult,
-    teamsResult,
-    coursesResult,
-    schedulesResult,
-    roundsResult,
-    matchesResult,
-    previewsResult,
-  ] = await Promise.all([
-    db
-      .from('launch_stories')
-      .select(HOME_STORY_COLUMNS)
-      .eq('status', 'published')
-      .eq('featured', true)
-      .order('published_at', {ascending: false, nullsFirst: false})
-      .limit(1),
-    db
-      .from('launch_stories')
-      .select(HOME_STORY_COLUMNS)
-      .eq('status', 'published')
-      .order('published_at', {ascending: false, nullsFirst: false})
-      .order('updated_at', {ascending: false})
-      .limit(LATEST_STORY_COUNT),
-    db.from('launch_teams').select('*').order('name', {ascending: true}),
-    db.from('launch_courses').select('id,name,map_url'),
-    db.from('launch_schedules').select('id,published').eq('published', true),
-    db.from('launch_rounds').select('id,schedule_id,published').eq('published', true),
-    db
-      .from('launch_schedule_matches')
-      .select('id,round_id,home_team_id,away_team_id,course_id,date,time,status'),
-    db
-      .from('launch_homepage_match_feed_previews')
-      .select('match_id,author_name_snapshot,body,image_path,comment_count,reaction_count'),
-  ]);
-
-  logHomepageReadError('featured stories', featuredResult.error);
-  logHomepageReadError('latest stories', latestResult.error);
-  logHomepageReadError('teams', teamsResult.error);
-  logHomepageReadError('courses', coursesResult.error);
-  logHomepageReadError('schedules', schedulesResult.error);
-  logHomepageReadError('rounds', roundsResult.error);
-  logHomepageReadError('matches', matchesResult.error);
-  logHomepageReadError('Matchday previews', previewsResult.error);
-
-  const latest: HomepageStory[] = (latestResult.data ?? []).map((row: any) => mapHomepageStory(row));
-  const featured = featuredResult.data?.[0] ? mapHomepageStory(featuredResult.data[0]) : null;
+  const latest: HomepageStory[] = rows.latest.map((row: any) => mapHomepageStory(row));
+  const featured = rows.featured[0] ? mapHomepageStory(rows.featured[0]) : null;
   const storyData: HomepageStoryData = {
     lead: featured ?? latest[0] ?? null,
     latest,
   };
 
-  const teams: Team[] = (teamsResult.data ?? []).map((row: any) => mapTeam(row));
+  const teams: Team[] = rows.teams.map((row: any) => mapTeam(row));
   const teamNames = new Map(teams.map((team: Team) => [team.id, team.name]));
   const courses = new Map<string, {name: string; mapUrl: string}>(
-    (coursesResult.data ?? []).map((row: any) => [
+    rows.courses.map((row: any) => [
       clean(row.id),
       {name: clean(row.name), mapUrl: clean(row.map_url)},
     ]),
   );
   const publishedScheduleIds = new Set<string>(
-    (schedulesResult.data ?? []).filter((row: any) => row.published === true).map((row: any) => clean(row.id)),
+    rows.schedules.filter((row: any) => row.published === true).map((row: any) => clean(row.id)),
   );
   const publishedRoundIds = new Set<string>(
-    (roundsResult.data ?? [])
+    rows.rounds
       .filter((row: any) => row.published === true && publishedScheduleIds.has(clean(row.schedule_id)))
       .map((row: any) => clean(row.id)),
   );
 
-  const events: PublicScheduleEvent[] = (matchesResult.data ?? [])
+  const events: PublicScheduleEvent[] = rows.matches
     .filter((row: any) => publishedRoundIds.has(clean(row.round_id)))
     .map((row: any) => mapPublicEvent(row, teamNames, courses, referenceDate))
     .filter((event: PublicScheduleEvent | null): event is PublicScheduleEvent => Boolean(event))
@@ -116,7 +152,7 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
 
   const homeMatchIds = new Set(homeEvents.map((event) => event.id));
   const feedPreviews = new Map<string, HomepageMatchFeedPreview>();
-  for (const row of previewsResult.data ?? []) {
+  for (const row of rows.previews) {
     const matchId = clean(row.match_id);
     if (!homeMatchIds.has(matchId)) continue;
     const imagePath = clean(row.image_path);
