@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
+import {loadFullStatsGroup} from '@/app/stats/actions';
 import type {StatsGroup, StatsGroupOption, StatsRow} from '@/app/stats/page';
 import {
   toStatsViewSearchParams,
@@ -27,17 +28,30 @@ const HEADER_HELP: Record<SortKey, string> = {
   doublesCiGain: 'D +/- — Clash Index movement earned from doubles results.',
 };
 
-export function StatsTable({group, groupOptions, initialView}: {group: StatsGroup; groupOptions: StatsGroupOption[]; initialView: StatsViewState}) {
+type StatsTableProps = {
+  group: StatsGroup;
+  groupOptions: StatsGroupOption[];
+  initialView: StatsViewState;
+  fullRowCount: number;
+  teamOptions: string[];
+  isPartial: boolean;
+};
+
+export function StatsTable({group, groupOptions, initialView, fullRowCount, teamOptions, isPartial}: StatsTableProps) {
   const router = useRouter();
+  const [activeGroup, setActiveGroup] = useState(group);
+  const [loadingFull, setLoadingFull] = useState(false);
+  const [fullLoadFailed, setFullLoadFailed] = useState(false);
+  const fullLoadRef = useRef<Promise<void> | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>(initialView.sortKey);
   const [direction, setDirection] = useState<Direction>(initialView.direction);
   const [limit, setLimit] = useState<Limit>(initialView.limit);
   const [division, setDivision] = useState<Division>(initialView.division);
-  const [team, setTeam] = useState(() => initialView.team === 'all'
-    || group.rows.some((row) => row.teamNames.includes(initialView.team))
+  const [team, setTeam] = useState(() => initialView.team === 'all' || teamOptions.includes(initialView.team)
     ? initialView.team
     : 'all');
   const [search, setSearch] = useState(initialView.search);
+  const dataIsPartial = isPartial && activeGroup.rows.length < fullRowCount;
 
   useEffect(() => {
     const params = toStatsViewSearchParams(group.id, {division, team, search: search.trim(), sortKey, direction, limit});
@@ -45,25 +59,40 @@ export function StatsTable({group, groupOptions, initialView}: {group: StatsGrou
     window.history.replaceState(window.history.state, '', nextUrl);
   }, [group.id, division, team, search, sortKey, direction, limit]);
 
-  const teams = useMemo(() => {
-    return Array.from(new Set(group.rows.flatMap((row) => row.teamNames).filter(Boolean)))
-      .sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
-  }, [group]);
-
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return group.rows.filter((row) => {
+    return activeGroup.rows.filter((row) => {
       const divisionMatch = division === 'Women' ? row.gender === 'Women' : true;
       const teamMatch = team === 'all' || row.teamNames.includes(team);
       const searchMatch = !query || row.playerName.toLowerCase().includes(query) || row.teamNames.some((name) => name.toLowerCase().includes(query));
       return divisionMatch && teamMatch && searchMatch;
     });
-  }, [group, division, team, search]);
+  }, [activeGroup, division, team, search]);
 
   const sortedRows = useMemo(() => [...filteredRows].sort((a, b) => compareRows(a, b, sortKey, direction)), [filteredRows, sortKey, direction]);
   const rows = limit === 'all' ? sortedRows : sortedRows.slice(0, limit);
   const rankedRows = useMemo(() => rows.map((row, index) => ({row, rank: index + 1})), [rows]);
   const hasCustomView = division !== 'Open' || team !== 'all' || search.trim() !== '' || limit !== 25 || sortKey !== 'clashIndex' || direction !== 'desc';
+  const playerCount = dataIsPartial ? fullRowCount : filteredRows.length;
+
+  function requestFullGroup() {
+    if (!dataIsPartial || fullLoadRef.current) return;
+    setLoadingFull(true);
+    setFullLoadFailed(false);
+    const request = loadFullStatsGroup(group.id)
+      .then((fullGroup) => {
+        setActiveGroup(fullGroup);
+      })
+      .catch((error) => {
+        fullLoadRef.current = null;
+        setFullLoadFailed(true);
+        console.error('[stats] Failed to lazy-load full stats group', error);
+      })
+      .finally(() => {
+        setLoadingFull(false);
+      });
+    fullLoadRef.current = request;
+  }
 
   function selectGroup(nextGroupId: string) {
     if (nextGroupId === group.id) return;
@@ -80,6 +109,7 @@ export function StatsTable({group, groupOptions, initialView}: {group: StatsGrou
   }
 
   function toggleSort(next: SortKey) {
+    requestFullGroup();
     if (sortKey === next) {
       setDirection((value) => value === 'desc' ? 'asc' : 'desc');
       return;
@@ -101,20 +131,20 @@ export function StatsTable({group, groupOptions, initialView}: {group: StatsGrou
 
         <div className={styles.secondaryControls}>
           <div className={styles.divisionTabs} aria-label="Stats division">
-            <button type="button" aria-pressed={division === 'Open'} className={division === 'Open' ? styles.activeDivision : undefined} onClick={() => {setDivision('Open'); setLimit(25);}}>Open</button>
-            <button type="button" aria-pressed={division === 'Women'} className={division === 'Women' ? styles.activeDivision : undefined} onClick={() => {setDivision('Women'); setLimit(25);}}>Women</button>
+            <button type="button" aria-pressed={division === 'Open'} className={division === 'Open' ? styles.activeDivision : undefined} onClick={() => {requestFullGroup(); setDivision('Open'); setLimit(25);}}>Open</button>
+            <button type="button" aria-pressed={division === 'Women'} className={division === 'Women' ? styles.activeDivision : undefined} onClick={() => {requestFullGroup(); setDivision('Women'); setLimit(25);}}>Women</button>
           </div>
 
-          <select aria-label="Filter by team" value={team} onChange={(event) => {setTeam(event.target.value); setLimit(25);}}>
+          <select aria-label="Filter by team" value={team} onChange={(event) => {requestFullGroup(); setTeam(event.target.value); setLimit(25);}}>
             <option value="all">All teams</option>
-            {teams.map((teamName) => <option key={teamName} value={teamName}>{teamName}</option>)}
+            {teamOptions.map((teamName) => <option key={teamName} value={teamName}>{teamName}</option>)}
           </select>
 
-          <input aria-label="Search players" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search player" />
+          <input aria-label="Search players" value={search} onChange={(event) => {requestFullGroup(); setSearch(event.target.value);}} placeholder="Search player" />
         </div>
 
         <div className={styles.mobileSortControl}>
-          <select aria-label="Sort stats" value={sortKey} onChange={(event) => {setSortKey(event.target.value as SortKey); setDirection('desc');}}>
+          <select aria-label="Sort stats" value={sortKey} onChange={(event) => {requestFullGroup(); setSortKey(event.target.value as SortKey); setDirection('desc');}}>
             <option value="clashIndex">CI</option>
             <option value="points">Points</option>
             <option value="ciGain">CI +/-</option>
@@ -126,7 +156,7 @@ export function StatsTable({group, groupOptions, initialView}: {group: StatsGrou
             <option value="singles">Singles</option>
             <option value="doubles">Doubles</option>
           </select>
-          <button type="button" onClick={() => setDirection((value) => value === 'desc' ? 'asc' : 'desc')}>
+          <button type="button" onClick={() => {requestFullGroup(); setDirection((value) => value === 'desc' ? 'asc' : 'desc');}}>
             {direction === 'desc' ? 'High → Low' : 'Low → High'}
           </button>
         </div>
@@ -135,12 +165,12 @@ export function StatsTable({group, groupOptions, initialView}: {group: StatsGrou
       <div className={styles.tableMeta}>
         <div>
           <strong>{group.label} · {division}{team !== 'all' ? ` · ${team}` : ''}</strong>
-          <span>{filteredRows.length} players · ranked by {sortLabel(sortKey)} {direction === 'desc' ? '↓' : '↑'}</span>
+          <span>{loadingFull ? 'Loading full stats…' : fullLoadFailed ? 'Full stats could not load — try the control again.' : `${playerCount} players · ranked by ${sortLabel(sortKey)} ${direction === 'desc' ? '↓' : '↑'}`}</span>
         </div>
         <div className={styles.tableActions}>
           <label className={styles.showControl}>
             <span>Show</span>
-            <select value={limit} onChange={(event) => setLimit(event.target.value === 'all' ? 'all' : 25)}>
+            <select value={limit} onChange={(event) => {const nextLimit = event.target.value === 'all' ? 'all' : 25; if (nextLimit === 'all') requestFullGroup(); setLimit(nextLimit);}}>
               <option value={25}>Top 25</option>
               <option value="all">All</option>
             </select>
@@ -151,39 +181,35 @@ export function StatsTable({group, groupOptions, initialView}: {group: StatsGrou
 
       <div className={`${styles.tableWrap} ${styles.desktopTableWrap}`}>
         <table className={styles.statsTable}>
-          <thead>
-            <tr>
-              <th aria-label="Player" />
-              <SortableHeader label="CI" sort="clashIndex" active={sortKey} direction={direction} onSort={toggleSort} />
-              <SortableHeader label="M" sort="matchesPlayed" active={sortKey} direction={direction} onSort={toggleSort} />
-              <SortableHeader label="W" sort="wins" active={sortKey} direction={direction} onSort={toggleSort} />
-              <SortableHeader label="Win %" sort="winPercentage" active={sortKey} direction={direction} onSort={toggleSort} />
-              <SortableHeader label="Singles" sort="singles" active={sortKey} direction={direction} onSort={toggleSort} />
-              <SortableHeader label="Doubles" sort="doubles" active={sortKey} direction={direction} onSort={toggleSort} />
-              <SortableHeader label="Pts" sort="points" active={sortKey} direction={direction} onSort={toggleSort} />
-              <SortableHeader label="CI +/-" sort="ciGain" active={sortKey} direction={direction} onSort={toggleSort} />
-              <SortableHeader label="S +/-" sort="singlesCiGain" active={sortKey} direction={direction} onSort={toggleSort} />
-              <SortableHeader label="D +/-" sort="doublesCiGain" active={sortKey} direction={direction} onSort={toggleSort} />
-            </tr>
-          </thead>
+          <thead><tr>
+            <th aria-label="Player" />
+            <SortableHeader label="CI" sort="clashIndex" active={sortKey} direction={direction} onSort={toggleSort} />
+            <SortableHeader label="M" sort="matchesPlayed" active={sortKey} direction={direction} onSort={toggleSort} />
+            <SortableHeader label="W" sort="wins" active={sortKey} direction={direction} onSort={toggleSort} />
+            <SortableHeader label="Win %" sort="winPercentage" active={sortKey} direction={direction} onSort={toggleSort} />
+            <SortableHeader label="Singles" sort="singles" active={sortKey} direction={direction} onSort={toggleSort} />
+            <SortableHeader label="Doubles" sort="doubles" active={sortKey} direction={direction} onSort={toggleSort} />
+            <SortableHeader label="Pts" sort="points" active={sortKey} direction={direction} onSort={toggleSort} />
+            <SortableHeader label="CI +/-" sort="ciGain" active={sortKey} direction={direction} onSort={toggleSort} />
+            <SortableHeader label="S +/-" sort="singlesCiGain" active={sortKey} direction={direction} onSort={toggleSort} />
+            <SortableHeader label="D +/-" sort="doublesCiGain" active={sortKey} direction={direction} onSort={toggleSort} />
+          </tr></thead>
           <tbody>
-            {rankedRows.map(({row, rank}) => {
-              return (
-                <tr key={`${group.id}-${row.playerId}`}>
-                  <td><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players?player=${encodeURIComponent(row.playerId)}`}>{row.playerName}</Link></td>
-                  <td><strong>{formatCi(row.clashIndex)}</strong></td>
-                  <td>{row.matchesPlayed}</td>
-                  <td>{row.wins}</td>
-                  <td>{row.winPercentage.toFixed(1)}%{row.matchesPlayed < 5 ? <span className={styles.smallSample}>*</span> : null}</td>
-                  <td>{formatRecord(row.singlesWins, row.singlesLosses, row.singlesTies)}</td>
-                  <td>{formatRecord(row.doublesWins, row.doublesLosses, row.doublesTies)}</td>
-                  <td><strong>{formatPoints(row.points)}</strong></td>
-                  <td><strong>{formatCiGain(row.ciGain)}</strong></td>
-                  <td>{formatCiGain(row.singlesCiGain)}</td>
-                  <td>{formatCiGain(row.doublesCiGain)}</td>
-                </tr>
-              );
-            })}
+            {rankedRows.map(({row, rank}) => (
+              <tr key={`${group.id}-${row.playerId}`}>
+                <td><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players?player=${encodeURIComponent(row.playerId)}`}>{row.playerName}</Link></td>
+                <td><strong>{formatCi(row.clashIndex)}</strong></td>
+                <td>{row.matchesPlayed}</td>
+                <td>{row.wins}</td>
+                <td>{row.winPercentage.toFixed(1)}%{row.matchesPlayed < 5 ? <span className={styles.smallSample}>*</span> : null}</td>
+                <td>{formatRecord(row.singlesWins, row.singlesLosses, row.singlesTies)}</td>
+                <td>{formatRecord(row.doublesWins, row.doublesLosses, row.doublesTies)}</td>
+                <td><strong>{formatPoints(row.points)}</strong></td>
+                <td><strong>{formatCiGain(row.ciGain)}</strong></td>
+                <td>{formatCiGain(row.singlesCiGain)}</td>
+                <td>{formatCiGain(row.doublesCiGain)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
         {!rows.length ? <p className={styles.emptyState}>No players match these filters.</p> : null}
