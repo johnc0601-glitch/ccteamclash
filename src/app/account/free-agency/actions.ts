@@ -31,30 +31,33 @@ export async function joinFreeAgency(formData: FormData) {
   const launchSupabase = supabase as any;
   const {data: profile, error: profileError} = await launchSupabase
     .from('launch_profiles')
-    .select('player_id')
+    .select('player_id, status')
     .eq('user_id', user.id)
-    .eq('status', 'Approved')
     .maybeSingle();
   if (profileError) redirect(`/account/free-agency?error=${encodeURIComponent(profileError.message)}`);
-  if (!profile?.player_id) redirect('/account?error=Finish Player Setup before joining Free Agency.');
+  if (!profile || profile.status === 'Rejected' || profile.status === 'Suspended') {
+    redirect('/account/free-agency?error=This league account cannot enter Free Agency.');
+  }
 
-  const [{data: playerRow, error: playerError}, {data: genderLocked, error: genderLockError}] = await Promise.all([
-    launchSupabase
-      .from('launch_players')
-      .select('gender')
-      .eq('id', profile.player_id)
-      .maybeSingle(),
-    launchSupabase.rpc('launch_player_gender_locked', {target_player_id: profile.player_id}),
-  ]);
-  if (playerError) redirect(`/account/free-agency?error=${encodeURIComponent(playerError.message)}`);
-  if (genderLockError) redirect(`/account/free-agency?error=${encodeURIComponent(genderLockError.message)}`);
+  if (profile.player_id) {
+    const [{data: playerRow, error: playerError}, {data: genderLocked, error: genderLockError}] = await Promise.all([
+      launchSupabase
+        .from('launch_players')
+        .select('gender')
+        .eq('id', profile.player_id)
+        .maybeSingle(),
+      launchSupabase.rpc('launch_player_gender_locked', {target_player_id: profile.player_id}),
+    ]);
+    if (playerError) redirect(`/account/free-agency?error=${encodeURIComponent(playerError.message)}`);
+    if (genderLockError) redirect(`/account/free-agency?error=${encodeURIComponent(genderLockError.message)}`);
 
-  if (genderLocked === true) {
-    const establishedGender = readGender(playerRow?.gender ?? '');
-    if (!establishedGender) {
-      redirect('/account/free-agency?error=Your permanent division is missing. Ask the commissioner to review your player record.');
+    if (genderLocked === true) {
+      const establishedGender = readGender(playerRow?.gender ?? '');
+      if (!establishedGender) {
+        redirect('/account/free-agency?error=Your permanent division is missing. Ask the commissioner to review your player record.');
+      }
+      gender = establishedGender;
     }
-    gender = establishedGender;
   }
 
   const {error} = await (supabase as unknown as FreeAgencyClient).rpc(

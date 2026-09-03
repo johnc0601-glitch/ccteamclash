@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import {redirect} from 'next/navigation';
+import {ensureLaunchSignupProfile} from '@/domain/launch/LaunchAccountSetup';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {createClient} from '@/lib/supabase/server';
 import {joinFreeAgency} from './actions';
@@ -19,6 +20,15 @@ type Application = {
   player_type: string;
   gender: string;
 };
+type LinkedPlayer = {
+  id: string;
+  name: string;
+  gender: string;
+  pdga_number: string;
+  pdga_rating: number | null;
+  clash_index: number | null;
+  home_area: string;
+};
 
 export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps) {
   const params = searchParams ? await searchParams : {};
@@ -29,19 +39,24 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
   if (!user) redirect('/account?error=Sign in first to open Free Agency.');
 
   const repository = new SupabaseLaunchRepository(supabase);
-  const profile = await repository.getProfileByUserId(user.id);
-  if (!profile || profile.status !== 'Approved') {
+  let profile = await repository.getProfileByUserId(user.id);
+  if (!profile) {
+    await ensureLaunchSignupProfile(supabase, user);
+    profile = await repository.getProfileByUserId(user.id);
+  }
+
+  if (!profile || profile.status === 'Rejected' || profile.status === 'Suspended') {
     return (
       <AccountPageLayout
-        description="Finish your league account before entering the player pool."
+        description="A signed-in league account is all you need to use Free Agency."
         error={error}
         notice={notice}
         title="Free Agency"
       >
         <article className={styles.panel}>
-          <span className={styles.eyebrow}>Player setup</span>
-          <h2>Account setup required</h2>
-          <p className={styles.muted}>Connect and approve your player account first. Free Agency uses that same player record.</p>
+          <span className={styles.eyebrow}>League account</span>
+          <h2>Account review required</h2>
+          <p className={styles.muted}>This account cannot enter Free Agency while it is suspended, rejected, or missing its league profile.</p>
           <Link className={styles.actionLink} href="/account">Open My Profile</Link>
         </article>
       </AccountPageLayout>
@@ -49,13 +64,12 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
   }
 
   const launchSupabase = supabase as any;
-  const [{data: setupRow}, players, {data: openSeason}] = await Promise.all([
+  const [{data: setupRow}, {data: openSeason}, linkedPlayerResult] = await Promise.all([
     launchSupabase
       .from('launch_profiles')
       .select('played_before')
       .eq('id', profile.id)
       .maybeSingle(),
-    repository.getPlayers(),
     launchSupabase
       .from('launch_seasons')
       .select('id, name, start_date')
@@ -66,29 +80,18 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
       .order('year', {ascending: false})
       .limit(1)
       .maybeSingle(),
+    profile.playerId
+      ? launchSupabase
+          .from('launch_players')
+          .select('id, name, gender, pdga_number, pdga_rating, clash_index, home_area')
+          .eq('id', profile.playerId)
+          .maybeSingle()
+      : Promise.resolve({data: null}),
   ]);
 
-  const linkedPlayer = players.find((player) => player.id === profile.playerId) ?? null;
+  const linkedPlayer = (linkedPlayerResult.data ?? null) as LinkedPlayer | null;
   const playerSetupComplete = Boolean(linkedPlayer && typeof setupRow?.played_before === 'boolean');
   const season = openSeason as Season | null;
-
-  if (!playerSetupComplete) {
-    return (
-      <AccountPageLayout
-        description="Free Agency uses the same player record as season registration."
-        error={error}
-        notice={notice}
-        title="Free Agency"
-      >
-        <article className={styles.panel}>
-          <span className={styles.eyebrow}>Player setup</span>
-          <h2>Connect your player record</h2>
-          <p className={styles.muted}>Complete Player Setup in My Profile before joining the Free Agent Pool.</p>
-          <Link className={styles.actionLink} href="/account">Finish Player Setup</Link>
-        </article>
-      </AccountPageLayout>
-    );
-  }
 
   if (!season) {
     return (
@@ -108,15 +111,12 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
     );
   }
 
-  const [{data: applicationData}, {data: genderLocked}] = await Promise.all([
-    launchSupabase
-      .from('launch_player_applications')
-      .select('status, requested_team_id, player_type, gender')
-      .eq('profile_id', profile.id)
-      .eq('season_id', season.id)
-      .maybeSingle(),
-    launchSupabase.rpc('launch_player_gender_locked', {target_player_id: linkedPlayer!.id}),
-  ]);
+  const {data: applicationData} = await launchSupabase
+    .from('launch_player_applications')
+    .select('status, requested_team_id, player_type, gender')
+    .eq('profile_id', profile.id)
+    .eq('season_id', season.id)
+    .maybeSingle();
   const application = applicationData as Application | null;
 
   let requestedTeamName: string | null = null;
@@ -181,32 +181,62 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
           <h2>You are in the Free Agent Pool</h2>
           <div className={styles.registrationStatus}>
             <span>Available</span>
-            <strong>{linkedPlayer!.name}</strong>
+            <strong>{linkedPlayer?.name || profile.displayName}</strong>
           </div>
           <dl className={styles.profileDetails}>
             <div><dt>Division</dt><dd>{application.gender}</dd></div>
             <div><dt>Player type</dt><dd>{application.player_type}</dd></div>
-            <div><dt>Clash Index</dt><dd>{linkedPlayer!.clashIndex ?? '—'}</dd></div>
-            <div><dt>PDGA rating</dt><dd>{linkedPlayer!.pdgaRating ?? '—'}</dd></div>
+            <div><dt>Clash Index</dt><dd>{linkedPlayer?.clash_index ?? '—'}</dd></div>
+            <div><dt>PDGA rating</dt><dd>{linkedPlayer?.pdga_rating ?? '—'}</dd></div>
           </dl>
-          <p className={styles.muted}>If a captain selects you, your application moves to that team&apos;s normal captain approval list.</p>
+          <p className={styles.muted}>Player Setup is not required while you are waiting in Free Agency. If a captain selects you, you can finish any remaining registration details then.</p>
           <Link className={styles.secondaryActionLink} href="/account">Back to My Profile</Link>
         </article>
       </AccountPageLayout>
     );
   }
 
-  const establishedGender = linkedPlayer!.gender === 'Male' || linkedPlayer!.gender === 'Female'
-    ? linkedPlayer!.gender
+  if (application?.status === 'Pending' && application.requested_team_id) {
+    return (
+      <AccountPageLayout
+        description="A captain has selected you from the Free Agent Pool."
+        error={error}
+        notice={notice}
+        title="Free Agency"
+      >
+        <article className={styles.panel}>
+          <span className={styles.eyebrow}>{season.name}</span>
+          <h2>{requestedTeamName ?? 'A team'} selected you</h2>
+          <div className={styles.connected}>
+            <strong>{requestedTeamName ?? 'Team selected'}</strong>
+            You are no longer visible in the Free Agent Pool.
+          </div>
+          {playerSetupComplete ? (
+            <p className={styles.muted}>Your player setup is complete. Your captain can now finish the normal roster approval.</p>
+          ) : (
+            <>
+              <p className={styles.muted}>Now complete Player Setup so your captain can finish adding you to the roster.</p>
+              <Link className={styles.actionLink} href="/account">Finish Player Setup</Link>
+            </>
+          )}
+        </article>
+      </AccountPageLayout>
+    );
+  }
+
+  const establishedGender = linkedPlayer?.gender === 'Male' || linkedPlayer?.gender === 'Female'
+    ? linkedPlayer.gender
     : null;
-  const defaultGender = application?.gender === 'Male' || application?.gender === 'Female'
-    ? application.gender
-    : establishedGender ?? '';
-  const defaultPlayerType = application?.player_type === 'Junior' ? 'Junior' : 'Adult';
+  let genderLocked = false;
+  if (linkedPlayer) {
+    const {data} = await launchSupabase.rpc('launch_player_gender_locked', {target_player_id: linkedPlayer.id});
+    genderLocked = data === true;
+  }
+  const defaultGender = establishedGender ?? '';
 
   return (
     <AccountPageLayout
-      description="No team yet? Put your existing season application into a captain-visible player pool."
+      description="No team yet? Join the captain-visible player pool with your league account."
       error={error}
       notice={notice}
       title="Free Agency"
@@ -216,11 +246,8 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
           <span className={styles.eyebrow}>{season.name}</span>
           <h2>Looking for a team</h2>
           <p className={styles.linkingNote}>
-            Captains will see your player name, division, CI, PDGA information, and home area. Your account remains the single player record.
+            You do not need to connect a player record to enter Free Agency. Captains can find you using your account name, division, and player type.
           </p>
-          {application?.requested_team_id ? (
-            <p className={styles.muted}>You currently have a pending request for {requestedTeamName}. Joining Free Agency will replace that pending team request.</p>
-          ) : null}
           <form className={styles.form} action={joinFreeAgency}>
             <input name="seasonId" type="hidden" value={season.id} />
             <label style={{display: 'flex', alignItems: 'center', gap: '10px', textTransform: 'none'}}>
@@ -228,13 +255,12 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
                 name="playerType"
                 type="checkbox"
                 value="Junior"
-                defaultChecked={defaultPlayerType === 'Junior'}
                 style={{width: 'auto', minHeight: 'auto'}}
               />
               <input name="playerType" type="hidden" value="Adult" />
               <span>Junior this season</span>
             </label>
-            {genderLocked === true && establishedGender ? (
+            {genderLocked && establishedGender ? (
               <>
                 <input name="gender" type="hidden" value={establishedGender} />
                 <label>Division</label>
@@ -256,14 +282,14 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
 
         <article className={styles.panel}>
           <span className={styles.eyebrow}>What captains see</span>
-          <h2>{linkedPlayer!.name}</h2>
+          <h2>{linkedPlayer?.name || profile.displayName}</h2>
           <dl className={styles.profileDetails}>
-            <div><dt>Clash Index</dt><dd>{linkedPlayer!.clashIndex ?? '—'}</dd></div>
-            <div><dt>PDGA rating</dt><dd>{linkedPlayer!.pdgaRating ?? '—'}</dd></div>
-            <div><dt>PDGA #</dt><dd>{linkedPlayer!.pdgaNumber || '—'}</dd></div>
-            <div><dt>Home area</dt><dd>{linkedPlayer!.homeArea || '—'}</dd></div>
+            <div><dt>Clash Index</dt><dd>{linkedPlayer?.clash_index ?? '—'}</dd></div>
+            <div><dt>PDGA rating</dt><dd>{linkedPlayer?.pdga_rating ?? '—'}</dd></div>
+            <div><dt>PDGA #</dt><dd>{linkedPlayer?.pdga_number || '—'}</dd></div>
+            <div><dt>Home area</dt><dd>{linkedPlayer?.home_area || '—'}</dd></div>
           </dl>
-          <p className={styles.muted}>No email address or private account information is exposed in the captain list.</p>
+          <p className={styles.muted}>If you already have linked player history, those details are shown automatically. No email address or private account information is exposed.</p>
         </article>
       </section>
     </AccountPageLayout>
