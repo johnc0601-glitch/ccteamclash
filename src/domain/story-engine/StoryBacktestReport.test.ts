@@ -19,7 +19,7 @@ function row(index: number, overrides: Partial<RatedResult> = {}): RatedResult {
 }
 
 describe('buildStoryBacktestReport', () => {
-  it('summarizes event volume, trigger counts, importance and top candidates', () => {
+  it('summarizes only surfaced Pulse facts after hidden-category filtering', () => {
     const report = buildStoryBacktestReport([
       row(1),
       row(2, {winProbability: .18, expectedPoints: .18, ciDeficit: 100}),
@@ -30,14 +30,15 @@ describe('buildStoryBacktestReport', () => {
     assert.equal(report.resultRows, 3);
     assert.equal(report.events.length, 3);
     assert.equal(report.events[2].eventLabel, 'Round 3');
-    assert.equal(report.events[2].candidateCount, 4);
-    assert.equal(report.candidateCount, 6);
+    assert.equal(report.events[2].candidateCount, 3);
+    assert.equal(report.candidateCount, 4);
     assert.deepEqual(report.countsByTrigger, {
       UPSET: 2,
-      PERSONAL_BEST: 2,
       CI_SURGE: 1,
       WIN_STREAK: 1,
     });
+    assert.equal(report.countsByTrigger.PERSONAL_BEST, undefined);
+    assert.equal(report.countsByTrigger.HEAD_TO_HEAD, undefined);
     assert.equal(Object.values(report.countsByImportance).reduce((sum, value) => sum + value, 0), report.candidateCount);
     assert.ok(report.scoreDistribution.maximum !== null);
     assert.equal(report.topCandidates.length, 2);
