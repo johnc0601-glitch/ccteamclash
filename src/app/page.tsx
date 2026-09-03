@@ -1,27 +1,16 @@
 import Link from 'next/link';
-import {cookies} from 'next/headers';
 import type {ReactNode} from 'react';
 import {HomeMatchCarousel} from '@/components/HomeMatchCarousel';
 import {Intro} from '@/components/intro/Intro';
-import {INTRO_COOKIE_NAME} from '@/components/intro/intro.config';
-import {parseIntroQuery} from '@/components/intro/introDecision';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchCard} from '@/components/MatchCard';
 import {getHomepageData} from '@/services/home/HomepageDataService';
 import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
-type HomeProps = {
-  searchParams: Promise<{intro?: string | string[]}>;
-};
-
-export default async function Home({searchParams}: HomeProps) {
-  const [cookieStore, query, homepageData] = await Promise.all([
-    cookies(),
-    searchParams,
-    getHomepageData(),
-  ]);
+export default async function Home() {
+  const homepageData = await getHomepageData();
   const {storyData, teams: teamLogos, homeEvents, feedPreviews} = homepageData;
   const lead = storyData.lead;
 
@@ -77,10 +66,7 @@ export default async function Home({searchParams}: HomeProps) {
       </section>
 
       <Footer />
-      <Intro
-        hasLoginMarker={cookieStore.get(INTRO_COOKIE_NAME)?.value === '1'}
-        queryOverride={parseIntroQuery(query.intro)}
-      />
+      <Intro />
     </main>
   );
 }
