@@ -52,11 +52,14 @@ export function ClashLine() {
       }
     }
 
+    const refreshNow = () => void load();
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) setPaused(true);
     void load();
-    const refresh = window.setInterval(load, 60_000);
+    window.addEventListener('clash-line-updated', refreshNow);
+    const refresh = window.setInterval(load, 30_000);
     return () => {
       cancelled = true;
+      window.removeEventListener('clash-line-updated', refreshNow);
       window.clearInterval(refresh);
     };
   }, []);
