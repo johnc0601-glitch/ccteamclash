@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
+import { ClashLine } from "@/components/ClashLine";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/shared/constants";
 import "./globals.css";
 import "./theme.css";
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body>
         {children}
+        <ClashLine />
         <Analytics />
       </body>
     </html>
