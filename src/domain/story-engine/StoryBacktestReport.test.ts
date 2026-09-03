@@ -30,6 +30,7 @@ describe('buildStoryBacktestReport', () => {
     assert.equal(report.resultRows, 3);
     assert.equal(report.events.length, 3);
     assert.equal(report.events[2].eventLabel, 'Round 3');
+    assert.equal(report.events[2].teamMatchCount, 1);
     assert.equal(report.events[2].candidateCount, 3);
     assert.equal(report.candidateCount, 4);
     assert.deepEqual(report.countsByTrigger, {
@@ -43,6 +44,18 @@ describe('buildStoryBacktestReport', () => {
     assert.ok(report.scoreDistribution.maximum !== null);
     assert.equal(report.topCandidates.length, 2);
     assert.ok(report.topCandidates[0].storyScore >= report.topCandidates[1].storyScore);
+  });
+
+  it('counts distinct team matches inside one Matchday', () => {
+    const report = buildStoryBacktestReport([
+      row(1, {eventId: 'matchday-1', eventLabel: 'Matchday 1', eventOrder: 1, matchId: 'team-match-1'}),
+      row(2, {eventId: 'matchday-1', eventLabel: 'Matchday 1', eventOrder: 1, matchId: 'team-match-2'}),
+      row(3, {eventId: 'matchday-1', eventLabel: 'Matchday 1', eventOrder: 1, matchId: 'team-match-2'}),
+    ], 'season-1');
+
+    assert.equal(report.events.length, 1);
+    assert.equal(report.events[0].eventLabel, 'Matchday 1');
+    assert.equal(report.events[0].teamMatchCount, 2);
   });
 
   it('returns an empty factual report when a season has no results', () => {
