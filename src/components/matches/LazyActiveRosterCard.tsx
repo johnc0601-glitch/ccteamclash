@@ -1,6 +1,6 @@
 'use client';
 
-import {useState} from 'react';
+import {useState, type SyntheticEvent} from 'react';
 import type {LazyRosterPlayer} from '@/app/matches/[id]/publicRosterActions';
 import {loadActiveRosterRemainder} from '@/app/matches/[id]/publicRosterActions';
 import v1 from '@/app/matches/[id]/MatchdayV1.module.css';
@@ -9,14 +9,14 @@ export function LazyActiveRosterCard({
   teamName,
   label,
   teamId,
-  seasonId,
+  matchId,
   previewPlayers,
   remainingCount,
 }: {
   teamName: string;
   label: string;
   teamId: string;
-  seasonId: string;
+  matchId: string;
   previewPlayers: LazyRosterPlayer[];
   remainingCount: number;
 }) {
@@ -24,12 +24,12 @@ export function LazyActiveRosterCard({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  async function handleToggle(event: React.SyntheticEvent<HTMLDetailsElement>) {
+  async function handleToggle(event: SyntheticEvent<HTMLDetailsElement>) {
     if (!event.currentTarget.open || remainingPlayers !== null || loading || remainingCount <= 0) return;
 
     setLoading(true);
     setError('');
-    const result = await loadActiveRosterRemainder(seasonId, teamId);
+    const result = await loadActiveRosterRemainder(matchId, teamId);
     if (result.ok) {
       setRemainingPlayers(result.players);
     } else {
