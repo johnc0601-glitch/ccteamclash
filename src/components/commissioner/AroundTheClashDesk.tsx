@@ -57,6 +57,45 @@ function eventOptionLabel(event: PulseEvent): string {
   return `${label} (${event.teamMatchCount} ${matchWord})`;
 }
 
+const selectorStyle = {
+  width: '100%',
+  minHeight: 50,
+  padding: '10px 42px 10px 13px',
+  border: '1px solid rgba(35,35,35,.42)',
+  borderRadius: 10,
+  background: 'rgba(255,255,255,.38)',
+  color: 'inherit',
+  font: 'inherit',
+  fontSize: 17,
+  fontWeight: 650,
+  appearance: 'none' as const,
+  WebkitAppearance: 'none' as const,
+  cursor: 'pointer',
+};
+
+function SelectShell({children}: {children: React.ReactNode}) {
+  return (
+    <div style={{position: 'relative', width: '100%'}}>
+      {children}
+      <span
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          right: 14,
+          top: '50%',
+          transform: 'translateY(-52%)',
+          fontSize: 20,
+          lineHeight: 1,
+          pointerEvents: 'none',
+          opacity: .75,
+        }}
+      >
+        ▾
+      </span>
+    </div>
+  );
+}
+
 export function AroundTheClashDesk() {
   const [payload, setPayload] = useState<PulsePayload | null>(null);
   const [seasonId, setSeasonId] = useState('');
@@ -139,42 +178,48 @@ export function AroundTheClashDesk() {
       </div>
 
       <div style={{display: 'flex', gap: 12, alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap'}}>
-        <div style={{display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap'}}>
-          <label style={{display: 'grid', gap: 5, minWidth: 220}}>
+        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, alignItems: 'end', width: '100%'}}>
+          <label style={{display: 'grid', gap: 6, minWidth: 0}}>
             <span style={{fontSize: 12, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase'}}>Season</span>
-            <select
-              value={displayedSeasonId}
-              onChange={(event) => {
-                setTrigger('ALL');
-                setEventId('');
-                setSeasonId(event.target.value);
-                setSelected([]);
-              }}
-              disabled={loading || !payload?.seasonIds.length}
-            >
-              {(payload?.seasonIds ?? []).map((item) => <option key={item} value={item}>{pulseSeasonLabel(item)}</option>)}
-            </select>
+            <SelectShell>
+              <select
+                value={displayedSeasonId}
+                onChange={(event) => {
+                  setTrigger('ALL');
+                  setEventId('');
+                  setSeasonId(event.target.value);
+                  setSelected([]);
+                }}
+                disabled={loading || !payload?.seasonIds.length}
+                style={selectorStyle}
+              >
+                {(payload?.seasonIds ?? []).map((item) => <option key={item} value={item}>{pulseSeasonLabel(item)}</option>)}
+              </select>
+            </SelectShell>
           </label>
 
-          <label style={{display: 'grid', gap: 5, minWidth: 260}}>
+          <label style={{display: 'grid', gap: 6, minWidth: 0}}>
             <span style={{fontSize: 12, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase'}}>Matchday</span>
-            <select
-              value={eventId}
-              onChange={(event) => {
-                setTrigger('ALL');
-                setEventId(event.target.value);
-                setSelected([]);
-              }}
-              disabled={loading || events.length === 0}
-            >
-              <option value="">All Matchdays</option>
-              {events.map((item) => <option key={item.eventId} value={item.eventId}>{eventOptionLabel(item)}</option>)}
-            </select>
+            <SelectShell>
+              <select
+                value={eventId}
+                onChange={(event) => {
+                  setTrigger('ALL');
+                  setEventId(event.target.value);
+                  setSelected([]);
+                }}
+                disabled={loading || events.length === 0}
+                style={selectorStyle}
+              >
+                <option value="">All Matchdays</option>
+                {events.map((item) => <option key={item.eventId} value={item.eventId}>{eventOptionLabel(item)}</option>)}
+              </select>
+            </SelectShell>
           </label>
         </div>
 
         {payload?.report ? (
-          <div style={{display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 13}}>
+          <div style={{display: 'flex', gap: '7px 16px', flexWrap: 'wrap', fontSize: 13}}>
             <span><strong>{payload.report.candidateCount}</strong> verified facts</span>
             {activeEvent
               ? <span><strong>{activeEvent.teamMatchCount}</strong> team matches</span>
@@ -222,29 +267,29 @@ export function AroundTheClashDesk() {
             ))}
           </nav>
 
-          <section style={{display: 'grid', gap: 12}}>
-            <header style={{padding: '0 2px', display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap'}}>
-              <h3 style={{margin: 0}}>{trigger === 'ALL' ? (activeEvent ? `${activeEvent.eventLabel} verified facts` : 'Top verified facts') : pulseTriggerLabels[trigger]}</h3>
-              <span style={{fontSize: 12, opacity: .7}}>{loading ? 'Loading selected facts…' : 'Verified data · deterministic wording · no AI generation'}</span>
+          <section style={{display: 'grid', gap: 10}}>
+            <header style={{padding: '0 2px', display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', alignItems: 'baseline'}}>
+              <h3 style={{margin: 0, fontSize: 'clamp(22px, 5vw, 28px)', lineHeight: 1.15}}>{trigger === 'ALL' ? (activeEvent ? `${activeEvent.eventLabel} verified facts` : 'Top verified facts') : pulseTriggerLabels[trigger]}</h3>
+              <span style={{fontSize: 11, opacity: .68}}>{loading ? 'Loading selected facts…' : 'Verified data · deterministic wording · no AI generation'}</span>
             </header>
-            <div key={`${displayedSeasonId}:${eventId || 'ALL'}:${trigger}:${payload.activeTrigger ?? 'ALL'}`} style={{display: 'grid', gap: 12, opacity: loading ? .55 : 1}}>
+            <div key={`${displayedSeasonId}:${eventId || 'ALL'}:${trigger}:${payload.activeTrigger ?? 'ALL'}`} style={{display: 'grid', gap: 10, opacity: loading ? .55 : 1}}>
               {!loading && candidates.length === 0 ? <p style={{padding: 16, margin: 0}}>No facts in this category.</p> : null}
               {candidates.map((candidate, index) => {
                 const isSelected = selected.includes(candidate.id);
                 const factText = pulseFactText(candidate);
                 return (
-                  <article key={candidate.id} style={{display: 'grid', gap: 12, padding: 16, border: '1px solid rgba(127,127,127,.3)', borderRadius: 12, minWidth: 0}}>
-                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 12}}>
-                      <span style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 34, height: 34, padding: '0 8px', borderRadius: 999, border: '1px solid rgba(127,127,127,.35)', fontWeight: 800}}>
+                  <article key={candidate.id} style={{display: 'grid', gap: 10, padding: '14px 14px 13px', border: '1px solid rgba(127,127,127,.3)', borderRadius: 12, minWidth: 0}}>
+                    <div style={{display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr)', gap: 10, alignItems: 'start', minWidth: 0}}>
+                      <span style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 36, height: 36, padding: '0 8px', borderRadius: 999, border: '1px solid rgba(127,127,127,.35)', fontSize: 14, lineHeight: 1, fontWeight: 800, marginTop: 1}}>
                         #{index + 1}
                       </span>
+                      <strong style={{display: 'block', fontSize: 'clamp(24px, 5.6vw, 34px)', lineHeight: 1.14, letterSpacing: '-.018em', overflowWrap: 'anywhere'}}>{pulseFactHeadline(candidate)}</strong>
                     </div>
-                    <div style={{minWidth: 0}}>
-                      <strong style={{display: 'block', fontSize: 18, lineHeight: 1.3, overflowWrap: 'anywhere'}}>{pulseFactHeadline(candidate)}</strong>
-                      <div style={{fontSize: 14, lineHeight: 1.55, opacity: .8, marginTop: 8, overflowWrap: 'anywhere'}}>{pulseFactSummary(candidate)}</div>
-                      <div style={{fontSize: 11, lineHeight: 1.45, opacity: .58, marginTop: 8, overflowWrap: 'anywhere'}}>{pulseTriggerLabels[candidate.triggerType]} · {candidate.eventId ?? candidate.matchId ?? candidate.seasonId}</div>
+                    <div style={{minWidth: 0, paddingLeft: 46}}>
+                      <div style={{fontSize: 'clamp(15px, 3.8vw, 18px)', lineHeight: 1.48, opacity: .82, overflowWrap: 'anywhere'}}>{pulseFactSummary(candidate)}</div>
+                      <div style={{fontSize: 10, lineHeight: 1.35, opacity: .52, marginTop: 7, overflowWrap: 'anywhere'}}>{pulseTriggerLabels[candidate.triggerType]} · {candidate.eventId ?? candidate.matchId ?? candidate.seasonId}</div>
                     </div>
-                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8}}>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))', gap: 7, paddingLeft: 46}}>
                       <button type="button" onClick={() => copyToClipboard(`fact:${candidate.id}`, pulseFactChatText(candidate))}>
                         {copied === `fact:${candidate.id}` ? 'Copied' : 'Copy fact'}
                       </button>
