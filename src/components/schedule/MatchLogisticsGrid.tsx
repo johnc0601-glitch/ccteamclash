@@ -42,7 +42,7 @@ export function MatchLogisticsGrid({
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
 
   useEffect(() => {
-    setDrafts(Object.fromEntries(matches.map((match) => [match.id, toDraft(match)])));
+    setDrafts(Object.fromEntries(matches.map((match) => [match.id, toDraft(match)]));
   }, [matches]);
 
   const activeCourses = useMemo(
@@ -90,7 +90,19 @@ export function MatchLogisticsGrid({
             <th>Time</th>
             <th>Status</th>
             <th>Notes</th>
-            <th>Save</th>
+            <th
+              style={{
+                position: 'sticky',
+                right: 0,
+                zIndex: 9,
+                minWidth: 96,
+                width: 96,
+                background: '#141719',
+                boxShadow: '-10px 0 14px -14px rgba(0, 0, 0, .9)',
+              }}
+            >
+              Save
+            </th>
           </tr>
         </thead>
         {roundGroups.map(({round, matches: roundMatches}) => (
@@ -168,7 +180,7 @@ export function MatchLogisticsGrid({
                       {MATCH_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
                     </select>
                   </td>
-                  <td>
+                  <td style={{minWidth: 190, width: 190}}>
                     <input
                       aria-label={`Notes for ${awayName} at ${homeName}`}
                       type="text"
@@ -178,7 +190,17 @@ export function MatchLogisticsGrid({
                       onChange={(event) => setDraftField(match.id, 'notes', event.target.value)}
                     />
                   </td>
-                  <td>
+                  <td
+                    style={{
+                      position: 'sticky',
+                      right: 0,
+                      zIndex: 4,
+                      minWidth: 96,
+                      width: 96,
+                      background: dirty ? '#fff9e7' : '#fff',
+                      boxShadow: '-10px 0 14px -14px rgba(0, 0, 0, .9)',
+                    }}
+                  >
                     <button
                       type="button"
                       className={styles.gridSaveButton}
