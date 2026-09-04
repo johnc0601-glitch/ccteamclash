@@ -31,7 +31,9 @@ export function MatchForm({
   onCancel,
 }: MatchFormProps) {
   const [values, setValues] = useState(initialValues);
-  const isMatchupLocked = matchupLocked || publicFieldsLocked;
+  const isMatchupLocked = matchupLocked
+    || publicFieldsLocked
+    || Boolean(initialValues.homeTeamId && initialValues.awayTeamId);
 
   function setField<K extends keyof MatchInput>(field: K, value: MatchInput[K]) {
     setValues((current) => ({...current, [field]: value}));
