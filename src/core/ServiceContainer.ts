@@ -76,6 +76,15 @@ const matchLogistics = new MatchLogisticsService(
   seasons,
   repositories.courses,
 );
+
+schedules.updateMatch = (id, input) => matchLogistics.update(id, {
+  courseId: input.courseId,
+  date: input.date,
+  time: input.time,
+  status: input.status,
+  notes: input.notes,
+});
+
 const results = new ResultsService(
   browserSupabase
     ? new SupabaseResultsRepository(browserSupabase)
