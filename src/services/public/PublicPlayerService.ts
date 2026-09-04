@@ -7,6 +7,7 @@ import type {Player} from '@/models/Player';
 import type {Team} from '@/models/Team';
 import type {PlayerService} from '@/services/PlayerService';
 import type {TeamService} from '@/services/TeamService';
+import type {PublicRosterPlayerSummary} from '@/services/public/PublicRosterSummary';
 import type {StatisticsEngine} from '@/services/statistics';
 import type {PlayerMatchHistoryEntry, PlayerStatistics} from '@/services/statistics';
 
@@ -101,6 +102,70 @@ export class PublicPlayerService {
     );
 
     return this.buildViews(players, teams, seasons, activeSeason);
+  }
+
+  async getRosterSummariesForPlayerIdentities(
+    identities: PublicPlayerIdentity[],
+  ): Promise<PublicRosterPlayerSummary[]> {
+    if (!identities.length) return [];
+
+    const [allPlayers, activeSeason] = await Promise.all([
+      this.players.getAll({status: 'active'}),
+      this.seasons.getActive(),
+    ]);
+    const playersById = new Map(allPlayers.map((player) => [player.id, player]));
+    const playersByName = new Map(
+      allPlayers.map((player) => [normalizePlayerName(player.name), player]),
+    );
+    const resolvedPlayers = identities.map((identity) => {
+      const id = identity.id.trim();
+      const name = identity.name.trim();
+      const existing = playersById.get(id) ?? playersByName.get(normalizePlayerName(name));
+      return {
+        id: existing?.id ?? id,
+        name: name || existing?.name || id,
+      };
+    }).filter(({id}) => Boolean(id));
+    const playerIds = Array.from(new Set(resolvedPlayers.map(({id}) => id)));
+    const historicalStatisticsByPlayer = new Map(
+      playerIds.flatMap((playerId) => {
+        const summary = with2024Playoffs(getHistoricalPlayerSeedSummary(playerId), playerId);
+        return summary ? [[playerId, summary] as const] : [];
+      }),
+    );
+    const careerFallbackIds = playerIds.filter((playerId) =>
+      !historicalStatisticsByPlayer.has(playerId),
+    );
+    const [currentStatistics, careerStatistics] = await Promise.all([
+      activeSeason && playerIds.length
+        ? this.statistics.getPlayerStatisticsForPlayers(playerIds, activeSeason.id)
+        : Promise.resolve([]),
+      careerFallbackIds.length
+        ? this.statistics.getPlayerCareerStatisticsForPlayers(careerFallbackIds)
+        : Promise.resolve([]),
+    ]);
+    const currentStatisticsByPlayer = new Map(
+      currentStatistics.map((entry) => [entry.playerId, entry]),
+    );
+    const careerStatisticsByPlayer = new Map(
+      careerStatistics.map((entry) => [entry.playerId, entry]),
+    );
+
+    return resolvedPlayers.map((player) => {
+      const activeStatistics = currentStatisticsByPlayer.get(player.id);
+      const currentStatistics = activeStatistics?.matchesPlayed ? activeStatistics : undefined;
+      const historicalStatistics = historicalStatisticsByPlayer.get(player.id);
+      const careerRecord = historicalStatistics?.overallRecord
+        ?? careerStatisticsByPlayer.get(player.id)?.overallRecord
+        ?? {wins: 0, losses: 0, ties: 0};
+
+      return {
+        id: player.id,
+        name: player.name,
+        record: formatRecord(currentStatistics?.overallRecord ?? careerRecord),
+        recordLabel: currentStatistics ? activeSeason?.name ?? 'Current season' : 'Career',
+      };
+    }).sort((first, second) => first.name.localeCompare(second.name));
   }
 
   async getHistory(playerId: string): Promise<PublicPlayerHistory[]> {
@@ -200,6 +265,12 @@ export class PublicPlayerService {
 
 function normalizePlayerName(value: string): string {
   return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+}
+
+function formatRecord(record: {wins: number; losses: number; ties: number}): string {
+  return record.ties
+    ? `${record.wins}-${record.losses}-${record.ties}`
+    : `${record.wins}-${record.losses}`;
 }
 
 function with2024Playoffs(

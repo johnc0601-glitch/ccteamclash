@@ -16,7 +16,6 @@ import type {TeamScheduleEvent} from '@/domain/schedule/ScheduleService';
 import {getStoredCourses} from '@/services/courses/CourseStore';
 import {getStoredTeamById} from '@/services/teams/TeamStore';
 import {buildPublicTeamRoster} from '@/services/public/PublicRosterService';
-import {buildPublicRosterSummaries} from '@/services/public/PublicRosterSummary';
 import type {RecordSummary} from '@/services/statistics';
 import {createSlug} from '@/shared/utils';
 import {hasSupabaseConfig} from '@/lib/supabase';
@@ -53,28 +52,38 @@ export default async function TeamPage({params}: TeamPageProps) {
   const rosterLaunchPlayers = launchPlayers
     ? launchPlayers.filter((player) => player.active && rosterPlayerIds.has(player.id))
     : [];
-  const historicalPlayersPromise = launchPlayers
-    ? services.publicPlayers.getForPlayerIdentities(
-      rosterLaunchPlayers.map(({id: playerId, name}) => ({id: playerId, name})),
-    )
-    : services.publicPlayers.getAll();
+  const rosterIdentities = rosterLaunchPlayers.map(({id: playerId, name}) => ({
+    id: playerId,
+    name,
+  }));
+  const rosterSummariesPromise = activeSeason && launchPlayers
+    ? services.publicPlayers.getRosterSummariesForPlayerIdentities(rosterIdentities)
+    : Promise.resolve([]);
+  const historicalPlayersPromise = activeSeason && launchPlayers
+    ? Promise.resolve([])
+    : launchPlayers
+      ? services.publicPlayers.getForPlayerIdentities(rosterIdentities)
+      : services.publicPlayers.getAll();
   const scheduleService = await createServerScheduleService();
-  const [historicalPlayers, nextMatch, teamEvents] = await Promise.all([
+  const [rosterSummaries, historicalPlayers, nextMatch, teamEvents] = await Promise.all([
+    rosterSummariesPromise,
     historicalPlayersPromise,
     scheduleService.getTeamNextEvent(team.id),
     scheduleService.getTeamEvents(team.id),
   ]);
-  const roster = launchPlayers
-    ? buildPublicTeamRoster(
-      launchPlayers,
-      historicalPlayers,
-      team.id,
-      team.name,
-      currentSeasonName,
-      rosterPlayerIds,
-    )
-    : historicalPlayers.filter(({player}) => player.teamId === team.id);
-  const rosterSummaries = buildPublicRosterSummaries(roster);
+  const roster = activeSeason && launchPlayers
+    ? []
+    : launchPlayers
+      ? buildPublicTeamRoster(
+        launchPlayers,
+        historicalPlayers,
+        team.id,
+        team.name,
+        currentSeasonName,
+        rosterPlayerIds,
+      )
+      : historicalPlayers.filter(({player}) => player.teamId === team.id);
+  const rosterCount = activeSeason && launchPlayers ? rosterLaunchPlayers.length : roster.length;
   const publishedSeasons = seasons.filter((season) => season.published);
   const seasonStatistics = await Promise.all(publishedSeasons.map(async (season) => ({
     season,
@@ -153,7 +162,7 @@ export default async function TeamPage({params}: TeamPageProps) {
             <header className={styles.sectionHeader}>
               <span>Current team</span>
               <h2>Roster</h2>
-              <p>{roster.length} {roster.length === 1 ? 'player' : 'players'}</p>
+              <p>{rosterCount} {rosterCount === 1 ? 'player' : 'players'}</p>
             </header>
             {activeSeason && launchPlayers ? (
               <LazyTeamRosterDirectory
