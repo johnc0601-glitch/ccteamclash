@@ -3,8 +3,24 @@
 import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCiArchiveReplay';
 import {canonicalHistoricalPlayerId} from '@/domain/history/normalizeHistoricalPlayerMatchups';
-import {createHistoryItems} from '@/services/playerProfiles';
-import type {PlayerProfileMatchHistoryItem} from '@/services/playerProfiles';
+import {
+  createHistoryItems,
+  createProfileFromPublicPlayerView,
+} from '@/services/playerProfiles';
+import type {
+  PlayerProfile,
+  PlayerProfileMatchHistoryItem,
+} from '@/services/playerProfiles';
+
+export async function loadPublicPlayerProfile(playerId: string): Promise<PlayerProfile | null> {
+  const normalizedPlayerId = playerId.trim();
+  if (!normalizedPlayerId || normalizedPlayerId.length > 200) return null;
+
+  const service = await createServerPublicPlayerService();
+  const views = await service.getAll('all', normalizedPlayerId);
+  const view = views.find(({player}) => player.id === normalizedPlayerId);
+  return view ? createProfileFromPublicPlayerView(view) : null;
+}
 
 export async function loadPlayerMatchHistory(
   playerId: string,
