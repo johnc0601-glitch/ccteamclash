@@ -41,3 +41,31 @@ test('roster identity selection retains normalized-name fallback for canonical i
   assert.equal(views[0].player.id, 'abel-jimenez');
   assert.deepEqual(views[0].careerStatistics.overallRecord, {wins: 5, losses: 1, ties: 1});
 });
+
+test('lightweight roster summaries preserve historical record and canonical-name fallback', async () => {
+  const service = createService();
+  const summaries = await service.getRosterSummariesForPlayerIdentities([
+    {id: 'current-roster-id-for-abel', name: '  Abel   Jimenez  '},
+  ]);
+
+  assert.deepEqual(summaries, [{
+    id: 'abel-jimenez',
+    name: 'Abel   Jimenez',
+    record: '5-1-1',
+    recordLabel: 'Career',
+  }]);
+});
+
+test('lightweight roster summaries retain current roster players with no historical identity', async () => {
+  const service = createService();
+  const summaries = await service.getRosterSummariesForPlayerIdentities([
+    {id: 'new-current-player', name: 'New Current Player'},
+  ]);
+
+  assert.deepEqual(summaries, [{
+    id: 'new-current-player',
+    name: 'New Current Player',
+    record: '0-0',
+    recordLabel: 'Career',
+  }]);
+});
