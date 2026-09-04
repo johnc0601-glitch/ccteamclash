@@ -16,6 +16,7 @@ type FreeAgent = {
   player_id: string | null;
   display_name: string;
   player_name: string;
+  contact_email: string;
   player_type: string;
   gender: string;
   pdga_number: string;
@@ -75,24 +76,30 @@ export default async function FreeAgentsPage({searchParams}: FreeAgentsPageProps
               <header className={styles.panelHeader}>
                 <span>Available players</span>
                 <h2>{freeAgents.length} in the pool</h2>
-                <p className={styles.muted}>Select a player to move that application toward your team. Any unfinished player setup can be completed afterward.</p>
+                <p className={styles.muted}>Each listing includes the player&apos;s account name and contact email. Select a player to move that application toward your team.</p>
               </header>
               <div className={styles.list}>
                 {freeAgents.length ? freeAgents.map((player) => (
                   <article className={styles.row} key={player.application_id}>
                     <strong>{player.player_name || player.display_name}</strong>
-                    {player.player_id ? (
+                    {player.contact_email ? (
+                      <a className={styles.muted} href={`mailto:${player.contact_email}`}>{player.contact_email}</a>
+                    ) : (
+                      <span className={styles.muted}>Email unavailable</span>
+                    )}
+                    {(player.clash_index !== null || player.pdga_rating !== null || player.pdga_number) ? (
                       <span className={styles.rosterMeta}>
                         CI: {player.clash_index ?? '—'} · PDGA: {player.pdga_rating ?? '—'}
                         {player.pdga_number ? ` · #${player.pdga_number}` : ''}
                       </span>
                     ) : (
-                      <span className={styles.rosterMeta}>Player setup not completed yet</span>
+                      <span className={styles.rosterMeta}>PDGA details not provided</span>
                     )}
                     <span className={styles.muted}>
                       {player.gender} · {player.player_type}
                       {player.home_area ? ` · ${player.home_area}` : ''}
                     </span>
+                    {!player.player_id ? <span className={styles.muted}>Player setup not completed yet</span> : null}
                     <span className={styles.muted}>Entered Free Agency {formatDate(player.created_at)}</span>
                     <form action={claimFreeAgent}>
                       <input name="applicationId" type="hidden" value={player.application_id} />
