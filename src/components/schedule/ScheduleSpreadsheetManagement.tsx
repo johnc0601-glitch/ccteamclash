@@ -1,6 +1,7 @@
 'use client';
 
 import {useEffect, useMemo, useState} from 'react';
+import {saveMatchLogistics} from '@/app/office/schedule/actions';
 import {MatchLogisticsGrid} from '@/components/schedule/MatchLogisticsGrid';
 import {services} from '@/core/ServiceContainer';
 import type {Course} from '@/domain/course/Course';
@@ -112,7 +113,7 @@ export function ScheduleSpreadsheetManagement() {
     setSavingId(match.id);
     setMessage(null);
     try {
-      const result = await services.matchLogistics.update(match.id, draft);
+      const result = await saveMatchLogistics(match.id, draft);
       if (!result.ok) {
         setMessage({type: 'error', text: result.message});
         return;
@@ -122,7 +123,7 @@ export function ScheduleSpreadsheetManagement() {
       )));
       setMessage({
         type: 'success',
-        text: `${getTeamName(match.awayTeamId)} @ ${getTeamName(match.homeTeamId)} updated.`,
+        text: `${getTeamName(match.awayTeamId)} @ ${getTeamName(match.homeTeamId)} updated and public schedule refreshed.`,
       });
     } catch {
       setMessage({type: 'error', text: 'The match could not be saved.'});
