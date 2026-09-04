@@ -23,18 +23,18 @@ type MatchCardProps = {
 };
 
 export function MatchCard({match, teams, feedPreview}: MatchCardProps) {
-  const homeTeam = findTeam(teams, match?.home);
-  const awayTeam = findTeam(teams, match?.away);
+  const homeTeam = findTeam(teams, match.homeTeamId, match.home);
+  const awayTeam = findTeam(teams, match.awayTeamId, match.away);
 
   return (
     <article className="dark-panel story-home-card home-match-card">
       <div className="story-matchup">
-        <Link className="match-team-link" href={`/teams/${createSlug(match.home)}`}>
+        <Link className="match-team-link" href={`/teams/${encodeURIComponent(match.homeTeamId)}`}>
           <TeamMatchLogo name={match.home} logo={homeTeam?.logo} />
           <strong>{match.home}</strong>
         </Link>
         <b>VS</b>
-        <Link className="match-team-link" href={`/teams/${createSlug(match.away)}`}>
+        <Link className="match-team-link" href={`/teams/${encodeURIComponent(match.awayTeamId)}`}>
           <TeamMatchLogo name={match.away} logo={awayTeam?.logo} />
           <strong>{match.away}</strong>
         </Link>
@@ -80,10 +80,11 @@ function TeamMatchLogo({name, logo}: {name: string; logo?: string}) {
   );
 }
 
-function findTeam(teams: Team[], name?: string): Team | undefined {
-  if (!name) return undefined;
+function findTeam(teams: Team[], teamId: string, name: string): Team | undefined {
+  const byId = teams.find((team) => team.id === teamId);
+  if (byId) return byId;
   const slug = createSlug(name);
-  return teams.find((team) => team.id === slug || createSlug(team.name) === slug);
+  return teams.find((team) => createSlug(team.name) === slug);
 }
 
 function initials(name: string): string {
