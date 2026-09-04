@@ -13,6 +13,7 @@ type MatchFormProps = {
   submitLabel: string;
   submitting: boolean;
   matchupLocked?: boolean;
+  publicFieldsLocked?: boolean;
   onSubmit: (values: MatchInput) => void;
   onCancel: () => void;
 };
@@ -25,10 +26,12 @@ export function MatchForm({
   submitLabel,
   submitting,
   matchupLocked = false,
+  publicFieldsLocked = false,
   onSubmit,
   onCancel,
 }: MatchFormProps) {
   const [values, setValues] = useState(initialValues);
+  const isMatchupLocked = matchupLocked || publicFieldsLocked;
 
   function setField<K extends keyof MatchInput>(field: K, value: MatchInput[K]) {
     setValues((current) => ({...current, [field]: value}));
@@ -41,17 +44,17 @@ export function MatchForm({
 
   return (
     <form className={styles.scheduleForm} onSubmit={handleSubmit} noValidate>
-      {matchupLocked ? (
+      {isMatchupLocked ? (
         <p className={styles.lockNotice}>Matchup is locked. Course, date, time, status, and notes remain editable.</p>
       ) : null}
       <div className={styles.formGrid}>
         <label>
           <span>Home team</span>
           <select
-            autoFocus={!matchupLocked}
-            data-initial-focus={matchupLocked ? undefined : true}
+            autoFocus={!isMatchupLocked}
+            data-initial-focus={isMatchupLocked ? undefined : true}
             value={values.homeTeamId ?? ''}
-            disabled={matchupLocked}
+            disabled={isMatchupLocked}
             onChange={(event) => setField('homeTeamId', event.target.value)}
             aria-invalid={Boolean(fieldErrors.homeTeamId)}
           >
@@ -66,7 +69,7 @@ export function MatchForm({
           <span>Away team</span>
           <select
             value={values.awayTeamId ?? ''}
-            disabled={matchupLocked}
+            disabled={isMatchupLocked}
             onChange={(event) => setField('awayTeamId', event.target.value)}
             aria-invalid={Boolean(fieldErrors.awayTeamId)}
           >
@@ -80,8 +83,8 @@ export function MatchForm({
         <label className={styles.fullField}>
           <span>Course</span>
           <select
-            autoFocus={matchupLocked}
-            data-initial-focus={matchupLocked ? true : undefined}
+            autoFocus={isMatchupLocked}
+            data-initial-focus={isMatchupLocked ? true : undefined}
             value={values.courseId ?? ''}
             onChange={(event) => setField('courseId', event.target.value)}
             aria-invalid={Boolean(fieldErrors.courseId)}
