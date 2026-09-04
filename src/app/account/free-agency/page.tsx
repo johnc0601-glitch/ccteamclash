@@ -190,13 +190,14 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
               <strong>{linkedPlayer?.name || profile.displayName}</strong>
             </div>
             <dl className={styles.profileDetails}>
+              <div><dt>Email</dt><dd>{user.email ?? '—'}</dd></div>
               <div><dt>Division</dt><dd>{application.gender}</dd></div>
               <div><dt>Player type</dt><dd>{application.player_type}</dd></div>
               <div><dt>Clash Index</dt><dd>{linkedPlayer?.clash_index ?? '—'}</dd></div>
               <div><dt>PDGA #</dt><dd>{shownPdgaNumber}</dd></div>
               <div><dt>PDGA rating</dt><dd>{shownPdgaRating}</dd></div>
             </dl>
-            <p className={styles.muted}>Player Setup is not required while you are waiting in Free Agency. If a captain selects you, you can finish any remaining registration details then.</p>
+            <p className={styles.muted}>Your account name and email are visible only to approved captains and commissioners so they can contact you. Player Setup is not required while you are waiting in Free Agency.</p>
           </article>
 
           <article className={styles.panel}>
@@ -288,7 +289,7 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
           <span className={styles.eyebrow}>{season.name}</span>
           <h2>Looking for a team</h2>
           <p className={styles.linkingNote}>
-            You do not need to connect a player record to enter Free Agency. PDGA information is optional, but it helps captains evaluate your listing.
+            Your signed-in account provides your name and contact email. You do not need to connect a player record. PDGA information is optional, but it helps captains evaluate your listing.
           </p>
           <form className={styles.form} action={joinFreeAgency}>
             <input name="seasonId" type="hidden" value={season.id} />
@@ -348,12 +349,13 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
           <span className={styles.eyebrow}>What captains see</span>
           <h2>{linkedPlayer?.name || profile.displayName}</h2>
           <dl className={styles.profileDetails}>
+            <div><dt>Email</dt><dd>{user.email ?? '—'}</dd></div>
             <div><dt>Clash Index</dt><dd>{linkedPlayer?.clash_index ?? '—'}</dd></div>
             <div><dt>PDGA rating</dt><dd>{linkedPlayer?.pdga_rating ?? 'Optional entry'}</dd></div>
             <div><dt>PDGA #</dt><dd>{linkedPlayer?.pdga_number || 'Optional entry'}</dd></div>
             <div><dt>Home area</dt><dd>{linkedPlayer?.home_area || '—'}</dd></div>
           </dl>
-          <p className={styles.muted}>If your PDGA # matches an existing Team Clash player, captains can also see the existing CI and stored PDGA data. No email address or private account information is exposed.</p>
+          <p className={styles.muted}>Your name and signed-in account email are visible only to approved captains and commissioners. If your PDGA # matches an existing Team Clash player, they can also see the existing CI and stored PDGA data.</p>
         </article>
       </section>
     </AccountPageLayout>
