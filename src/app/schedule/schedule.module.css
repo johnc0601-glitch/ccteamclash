@@ -38,11 +38,6 @@
   box-shadow: var(--cc-shadow-card);
 }
 
-.nextRound {
-  border-color: rgba(201, 154, 0, .72);
-  box-shadow: 0 0 0 1px rgba(201, 154, 0, .16), var(--cc-shadow-card);
-}
-
 .roundHeader {
   display: flex;
   align-items: center;
@@ -65,20 +60,9 @@
 
 .roundHeader h2 {
   margin: 0;
-  color: var(--cc-text);
+  color: #fff !important;
   font-size: 23px;
   line-height: 1.05;
-}
-
-.nextBadge {
-  padding: 6px 9px;
-  border-radius: 999px;
-  background: var(--cc-gold);
-  color: var(--cc-on-accent);
-  font-size: 10px;
-  font-weight: 950;
-  letter-spacing: .08em;
-  text-transform: uppercase;
 }
 
 .matches {
