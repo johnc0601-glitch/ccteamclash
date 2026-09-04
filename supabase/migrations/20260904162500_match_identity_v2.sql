@@ -88,6 +88,16 @@ from duplicate_slugs duplicate
 where duplicate.id = match.id
   and duplicate.duplicate_number > 1;
 
+-- A canonical slug must never steal another match's permanent legacy-ID URL.
+update public.launch_schedule_matches match
+set public_slug = match.public_slug || '-' || left(md5(match.id), 8)
+where exists (
+  select 1
+  from public.launch_schedule_matches legacy
+  where legacy.id = match.public_slug
+    and legacy.id <> match.id
+);
+
 create unique index if not exists launch_schedule_matches_public_slug_uidx
   on public.launch_schedule_matches(public_slug)
   where public_slug is not null;
@@ -107,28 +117,68 @@ language plpgsql
 security definer
 set search_path = public, private
 as $$
+declare
+  base_slug text;
+  candidate_slug text;
+  collision_attempt integer := 0;
 begin
-  -- Once Match Identity V2 is installed, newly-created IDs contain no matchup,
-  -- team, date, course, or round semantics.
+  -- INSERT and UPDATE are intentionally separated. OLD is not valid for an
+  -- INSERT trigger and must never be referenced through a combined condition.
   if tg_op = 'INSERT' then
+    -- New IDs contain no matchup, team, date, course, or round semantics.
     new.id := gen_random_uuid()::text;
+  elsif not (
+    new.public_slug is null
+    or new.public_slug is distinct from old.public_slug
+    or new.home_team_id is distinct from old.home_team_id
+    or new.away_team_id is distinct from old.away_team_id
+    or new.round_id is distinct from old.round_id
+    or new.season_id is distinct from old.season_id
+  ) then
+    return new;
   end if;
 
-  if tg_op = 'INSERT'
-     or new.public_slug is null
-     or new.home_team_id is distinct from old.home_team_id
-     or new.away_team_id is distinct from old.away_team_id
-     or new.round_id is distinct from old.round_id
-     or new.season_id is distinct from old.season_id then
-    new.public_slug := private.launch_match_slug(
-      new.away_team_id,
-      new.home_team_id,
-      new.season_id,
-      new.round_id,
-      new.id
+  base_slug := private.launch_match_slug(
+    new.away_team_id,
+    new.home_team_id,
+    new.season_id,
+    new.round_id,
+    new.id
+  );
+
+  if base_slug is null then
+    raise exception 'Unable to generate canonical public match slug';
+  end if;
+
+  candidate_slug := base_slug;
+
+  -- Keep canonical slugs disjoint from current slugs, legacy IDs, and every
+  -- previous public slug. This preserves old URLs permanently.
+  loop
+    exit when not exists (
+      select 1
+      from public.launch_schedule_matches current_match
+      where current_match.public_slug = candidate_slug
+        and current_match.id <> new.id
+    )
+    and not exists (
+      select 1
+      from public.launch_schedule_matches legacy_match
+      where legacy_match.id = candidate_slug
+        and legacy_match.id <> new.id
+    )
+    and not exists (
+      select 1
+      from public.launch_match_url_aliases alias_row
+      where alias_row.alias = candidate_slug
+        and alias_row.match_id <> new.id
     );
-  end if;
 
+    collision_attempt := collision_attempt + 1;
+    candidate_slug := base_slug || '-' || left(md5(new.id || ':' || collision_attempt::text), 8);
+  end loop;
+
+  new.public_slug := candidate_slug;
   return new;
 end;
 $$;
