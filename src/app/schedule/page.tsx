@@ -20,7 +20,6 @@ export default async function SchedulePage() {
     month: new Intl.DateTimeFormat('en-US', {month: 'long'}).format(matches[0].dateTime),
     matches,
   }));
-  const nextRoundId = publicMatches.find((match) => match.bucket === 'upcoming')?.roundId;
 
   return (
     <>
@@ -37,16 +36,12 @@ export default async function SchedulePage() {
         {rounds.length ? (
           <div className={styles.rounds}>
             {rounds.map((round) => (
-              <section
-                className={`${styles.roundCard} ${round.roundId === nextRoundId ? styles.nextRound : ''}`}
-                key={round.roundId}
-              >
+              <section className={styles.roundCard} key={round.roundId}>
                 <header className={styles.roundHeader}>
                   <div>
                     <span className={styles.roundKicker}>Round {round.roundNumber}</span>
                     <h2>{round.month}</h2>
                   </div>
-                  {round.roundId === nextRoundId ? <span className={styles.nextBadge}>Next up</span> : null}
                 </header>
 
                 <div className={styles.matches}>
