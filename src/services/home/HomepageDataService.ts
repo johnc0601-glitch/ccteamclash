@@ -27,6 +27,7 @@ type HomepageRows = {
   schedules: any[];
   rounds: any[];
   matches: any[];
+  identities: any[];
   previews: any[];
 };
 
@@ -50,6 +51,7 @@ const getCachedHomepageRows = unstable_cache(
       schedulesResult,
       roundsResult,
       matchesResult,
+      identitiesResult,
       previewsResult,
     ] = await Promise.all([
       db
@@ -73,6 +75,7 @@ const getCachedHomepageRows = unstable_cache(
       db
         .from('launch_schedule_matches')
         .select('id,round_id,home_team_id,away_team_id,course_id,date,time,status'),
+      db.from('launch_schedule_matches').select('id,public_slug'),
       db
         .from('launch_homepage_match_feed_previews')
         .select('match_id,author_name_snapshot,body,image_path,comment_count,reaction_count'),
@@ -85,6 +88,9 @@ const getCachedHomepageRows = unstable_cache(
     logHomepageReadError('schedules', schedulesResult.error);
     logHomepageReadError('rounds', roundsResult.error);
     logHomepageReadError('matches', matchesResult.error);
+    if (identitiesResult.error && !identitySchemaUnavailable(identitiesResult.error)) {
+      logHomepageReadError('match public identities', identitiesResult.error);
+    }
     logHomepageReadError('Matchday previews', previewsResult.error);
 
     return {
@@ -95,10 +101,11 @@ const getCachedHomepageRows = unstable_cache(
       schedules: schedulesResult.data ?? [],
       rounds: roundsResult.data ?? [],
       matches: matchesResult.data ?? [],
+      identities: identitiesResult.data ?? [],
       previews: previewsResult.data ?? [],
     };
   },
-  ['public-homepage-rows-v1'],
+  ['public-homepage-rows-v2'],
   {
     revalidate: HOMEPAGE_CACHE_SECONDS,
     tags: ['public:homepage', 'public:stories', 'public:teams', 'public:schedule', 'public:match-feed'],
@@ -129,6 +136,11 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
       {name: clean(row.name), mapUrl: clean(row.map_url)},
     ]),
   );
+  const publicSlugs = new Map<string, string>(
+    rows.identities
+      .map((row: any) => [clean(row.id), clean(row.public_slug)] as const)
+      .filter(([id, slug]) => Boolean(id && slug)),
+  );
   const publishedScheduleIds = new Set<string>(
     rows.schedules.filter((row: any) => row.published === true).map((row: any) => clean(row.id)),
   );
@@ -140,7 +152,7 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
 
   const events: PublicScheduleEvent[] = rows.matches
     .filter((row: any) => publishedRoundIds.has(clean(row.round_id)))
-    .map((row: any) => mapPublicEvent(row, teamNames, courses, referenceDate))
+    .map((row: any) => mapPublicEvent(row, teamNames, courses, publicSlugs, referenceDate))
     .filter((event: PublicScheduleEvent | null): event is PublicScheduleEvent => Boolean(event))
     .sort((left: PublicScheduleEvent, right: PublicScheduleEvent) => left.dateTime.getTime() - right.dateTime.getTime());
 
@@ -177,6 +189,7 @@ function mapPublicEvent(
   row: any,
   teamNames: ReadonlyMap<string, string>,
   courses: ReadonlyMap<string, {name: string; mapUrl: string}>,
+  publicSlugs: ReadonlyMap<string, string>,
   referenceDate: Date,
 ): PublicScheduleEvent | null {
   const id = clean(row.id);
@@ -185,18 +198,23 @@ function mapPublicEvent(
   const courseId = clean(row.course_id);
   const date = clean(row.date);
   const time = clean(row.time).slice(0, 5);
+  const storedStatus = clean(row.status);
   if (!id || !homeTeamId || !awayTeamId || !courseId || !date || !time) return null;
+  if (storedStatus === 'Cancelled') return null;
 
   const dateTime = new Date(`${date}T${time}:00`);
   const safeDateTime = Number.isNaN(dateTime.getTime())
     ? new Date(`${date}T00:00:00`)
     : dateTime;
-  const bucket = getEventBucket(safeDateTime, referenceDate);
+  const bucket = storedStatus === 'Completed'
+    ? getCompletedEventBucket(safeDateTime, referenceDate)
+    : getEventBucket(safeDateTime, referenceDate);
   const course = courses.get(courseId);
+  const publicRef = publicSlugs.get(id) || id;
 
   return {
     id,
-    href: `/matches/${id}`,
+    href: `/matches/${encodeURIComponent(publicRef)}`,
     date: formatEventDate(date),
     time: formatEventTime(time),
     course: course?.name ?? courseId,
@@ -215,6 +233,14 @@ function getEventBucket(dateTime: Date, referenceDate: Date): ScheduleEventBucke
   const today = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
   const eventDay = new Date(dateTime.getFullYear(), dateTime.getMonth(), dateTime.getDate());
   if (eventDay.getTime() >= today.getTime()) return 'upcoming';
+  const cutoff = new Date(today);
+  cutoff.setDate(cutoff.getDate() - MATCH_DISPLAY_WINDOW_DAYS);
+  return eventDay.getTime() >= cutoff.getTime() ? 'recent' : 'past';
+}
+
+function getCompletedEventBucket(dateTime: Date, referenceDate: Date): ScheduleEventBucket {
+  const today = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+  const eventDay = new Date(dateTime.getFullYear(), dateTime.getMonth(), dateTime.getDate());
   const cutoff = new Date(today);
   cutoff.setDate(cutoff.getDate() - MATCH_DISPLAY_WINDOW_DAYS);
   return eventDay.getTime() >= cutoff.getTime() ? 'recent' : 'past';
@@ -281,6 +307,10 @@ function clean(value: unknown): string {
 function safeCount(value: unknown): number {
   const count = Number(value);
   return Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
+}
+
+function identitySchemaUnavailable(error: any): boolean {
+  return error?.code === '42703' || /public_slug/i.test(String(error?.message ?? ''));
 }
 
 function logHomepageReadError(label: string, error: any): void {
