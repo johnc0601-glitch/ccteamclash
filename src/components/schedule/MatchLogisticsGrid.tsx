@@ -6,7 +6,7 @@ import {MATCH_STATUSES, type Match, type MatchInput} from '@/domain/schedule/Mat
 import type {Round} from '@/domain/schedule/Round';
 import type {Team} from '@/models/Team';
 import {getTeamName} from '@/components/schedule/scheduleDisplay';
-import styles from './ScheduleManagement.module.css';
+import styles from './ScheduleSpreadsheetManagement.module.css';
 
 type Draft = Pick<MatchInput, 'courseId' | 'date' | 'time' | 'status' | 'notes'>;
 
@@ -42,7 +42,7 @@ export function MatchLogisticsGrid({
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
 
   useEffect(() => {
-    setDrafts(Object.fromEntries(matches.map((match) => [match.id, toDraft(match)])));
+    setDrafts(Object.fromEntries(matches.map((match) => [match.id, toDraft(match)]));
   }, [matches]);
 
   const roundById = useMemo(
