@@ -29,14 +29,14 @@ export function MatchCard({match, teams, feedPreview}: MatchCardProps) {
   return (
     <article className="dark-panel story-home-card home-match-card">
       <div className="story-matchup">
-        <Link className="match-team-link" href={`/teams/${encodeURIComponent(match.homeTeamId)}`}>
-          <TeamMatchLogo name={match.home} logo={homeTeam?.logo} />
-          <strong>{match.home}</strong>
-        </Link>
-        <b>VS</b>
         <Link className="match-team-link" href={`/teams/${encodeURIComponent(match.awayTeamId)}`}>
           <TeamMatchLogo name={match.away} logo={awayTeam?.logo} />
           <strong>{match.away}</strong>
+        </Link>
+        <b>VS</b>
+        <Link className="match-team-link" href={`/teams/${encodeURIComponent(match.homeTeamId)}`}>
+          <TeamMatchLogo name={match.home} logo={homeTeam?.logo} />
+          <strong>{match.home}</strong>
         </Link>
       </div>
       <div className="match-details">
