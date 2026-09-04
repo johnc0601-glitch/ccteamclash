@@ -11,6 +11,8 @@ type FreeAgencyClient = {
       target_season_id: string;
       target_player_type: 'Adult' | 'Junior';
       target_gender: 'Male' | 'Female';
+      target_pdga_number: string;
+      target_pdga_rating: number | null;
     },
   ) => Promise<{error: {message: string} | null}>;
 };
@@ -19,9 +21,18 @@ export async function joinFreeAgency(formData: FormData) {
   const seasonId = readFormValue(formData, 'seasonId');
   const playerType = readPlayerType(readFormValue(formData, 'playerType'));
   let gender = readGender(readFormValue(formData, 'gender'));
+  const pdgaNumber = readFormValue(formData, 'pdgaNumber');
+  const pdgaRatingValue = readFormValue(formData, 'pdgaRating');
+  const pdgaRating = pdgaRatingValue ? Number(pdgaRatingValue) : null;
 
   if (!seasonId || !playerType || !gender) {
-    redirect('/account/free-agency?error=Complete all Free Agency fields.');
+    redirect('/account/free-agency?error=Complete all required Free Agency fields.');
+  }
+  if (pdgaNumber && !/^\d{1,10}$/.test(pdgaNumber)) {
+    redirect('/account/free-agency?error=PDGA number must contain digits only.');
+  }
+  if (pdgaRating !== null && (!Number.isInteger(pdgaRating) || pdgaRating < 1 || pdgaRating > 2000)) {
+    redirect('/account/free-agency?error=Enter a valid PDGA rating.');
   }
 
   const supabase = await createClient();
@@ -66,6 +77,8 @@ export async function joinFreeAgency(formData: FormData) {
       target_season_id: seasonId,
       target_player_type: playerType,
       target_gender: gender,
+      target_pdga_number: pdgaNumber,
+      target_pdga_rating: pdgaRating,
     },
   );
   if (error) redirect(`/account/free-agency?error=${encodeURIComponent(error.message)}`);
@@ -75,7 +88,7 @@ export async function joinFreeAgency(formData: FormData) {
   revalidatePath('/captain');
   revalidatePath('/captain/free-agents');
   revalidatePath('/office/players');
-  redirect('/account/free-agency?notice=You are now listed in the Free Agent Pool for captains.');
+  redirect('/account/free-agency?notice=Your Free Agent listing has been saved for captains.');
 }
 
 function readFormValue(formData: FormData, key: string): string {
