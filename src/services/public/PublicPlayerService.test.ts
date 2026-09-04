@@ -69,3 +69,25 @@ test('lightweight roster summaries retain current roster players with no histori
     recordLabel: 'Career',
   }]);
 });
+
+test('player search index stays compact while preserving searchable record data', async () => {
+  const service = createService();
+  const searchIndex = await service.getSearchIndex();
+  const abel = searchIndex.find((player) => player.id === 'abel-jimenez');
+
+  assert.ok(abel);
+  assert.deepEqual(Object.keys(abel).sort(), [
+    'id',
+    'name',
+    'pdgaNumber',
+    'record',
+    'recordLabel',
+    'teamName',
+  ]);
+  assert.equal(abel.name, 'Abel Jimenez');
+  assert.equal(abel.record, '5-1-1');
+  assert.equal(abel.recordLabel, 'Career');
+  assert.equal('history' in abel, false);
+  assert.equal('careerStatistics' in abel, false);
+  assert.equal('currentCiGain' in abel, false);
+});
