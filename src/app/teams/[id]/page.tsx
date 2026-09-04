@@ -41,7 +41,7 @@ export default async function TeamPage({params}: TeamPageProps) {
   const [activeSeason, seasons, historicalPlayers, courses, launchPlayers] = await Promise.all([
     services.seasons.getActive(),
     services.seasons.getAll(),
-    services.publicPlayers.getAll(),
+    services.publicPlayers.getAll(team.id),
     getStoredCourses({status: 'active'}),
     getLaunchPlayers(),
   ]);
