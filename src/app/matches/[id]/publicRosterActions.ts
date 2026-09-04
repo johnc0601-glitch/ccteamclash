@@ -1,6 +1,13 @@
 'use server';
 
+import type {AttendanceMatch, TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
+import {isMatchAttendanceOpen} from '@/domain/match-roster/MatchRosterLock';
+import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
 import {createClient} from '@/lib/supabase/server';
+import {
+  orderPublicAvailability,
+  PUBLIC_AVAILABILITY_PREVIEW_COUNT,
+} from '@/services/matches/PublicAvailability';
 
 export type LazyRosterPlayer = {
   id: string;
@@ -13,6 +20,10 @@ export type LazyRosterPlayer = {
 
 export type LazyRosterResult =
   | {ok: true; players: LazyRosterPlayer[]}
+  | {ok: false; message: string};
+
+export type LazyAvailabilityResult =
+  | {ok: true; players: TeamAttendanceMember[]}
   | {ok: false; message: string};
 
 const PREVIEW_COUNT = 5;
@@ -73,6 +84,60 @@ export async function loadActiveRosterRemainder(matchId: string, teamId: string)
   } catch (error) {
     console.error('Public active roster remainder could not be loaded.', {matchId: cleanMatchId, teamId: cleanTeamId, error});
     return {ok: false, message: 'Roster could not be loaded. Try again.'};
+  }
+}
+
+export async function loadAvailabilityRosterRemainder(
+  matchId: string,
+  teamId: string,
+): Promise<LazyAvailabilityResult> {
+  const cleanMatchId = cleanId(matchId);
+  const cleanTeamId = cleanId(teamId);
+  if (!cleanMatchId || !cleanTeamId) return {ok: false, message: 'Availability could not be loaded.'};
+
+  try {
+    const supabase = await createClient();
+    const {data: match, error: matchError} = await supabase
+      .from('launch_schedule_matches')
+      .select('id,home_team_id,away_team_id,date,status')
+      .eq('id', cleanMatchId)
+      .maybeSingle();
+
+    if (matchError) throw matchError;
+    if (!match || (match.home_team_id !== cleanTeamId && match.away_team_id !== cleanTeamId)) {
+      return {ok: false, message: 'Availability could not be loaded.'};
+    }
+
+    const attendanceMatch: AttendanceMatch = {
+      id: match.id,
+      homeTeamId: match.home_team_id,
+      awayTeamId: match.away_team_id,
+      date: match.date,
+      status: match.status as AttendanceMatch['status'],
+    };
+    if (!isMatchAttendanceOpen(attendanceMatch)) {
+      return {ok: false, message: 'Availability is no longer open.'};
+    }
+
+    const repository = new SeasonAwareMatchRosterRepository(supabase);
+    const ordered = orderPublicAvailability(
+      await repository.getTeamAttendance(cleanMatchId, cleanTeamId),
+    );
+
+    return {
+      ok: true,
+      players: ordered.slice(
+        PUBLIC_AVAILABILITY_PREVIEW_COUNT,
+        PUBLIC_AVAILABILITY_PREVIEW_COUNT + MAX_RETURNED_PLAYERS,
+      ),
+    };
+  } catch (error) {
+    console.error('Public availability remainder could not be loaded.', {
+      matchId: cleanMatchId,
+      teamId: cleanTeamId,
+      error,
+    });
+    return {ok: false, message: 'Availability could not be loaded. Try again.'};
   }
 }
 
