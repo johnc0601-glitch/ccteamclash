@@ -73,7 +73,7 @@ export class CanonicalScheduleService extends ScheduleService {
     const roundDates = new Map<string, string>(
       publishedRounds
         .map((row: {id: string; date: string | null}) => [clean(row.id), clean(row.date)] as const)
-        .filter(([id, date]) => Boolean(id && date)),
+        .filter((entry: readonly [string, string]) => Boolean(entry[0] && entry[1])),
     );
     const publishedRoundIds = new Set(roundDates.keys());
 
