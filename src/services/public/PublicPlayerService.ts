@@ -1,8 +1,10 @@
+import type {Season} from '@/domain/season/Season';
 import type {SeasonService} from '@/domain/season/SeasonService';
 import {getHistoricalPlayerSeedSummary} from '@/data/historicalSeed';
 import type {HistoricalPlayerSeedSummary} from '@/data/historicalSeed';
 import {HISTORICAL_2024_25_PLAYOFF_ADJUSTMENTS} from '@/data/historicalPlayoffAdjustments';
 import type {Player} from '@/models/Player';
+import type {Team} from '@/models/Team';
 import type {PlayerService} from '@/services/PlayerService';
 import type {TeamService} from '@/services/TeamService';
 import type {StatisticsEngine} from '@/services/statistics';
@@ -24,6 +26,11 @@ export type PublicPlayerView = {
   currentDoublesCiGain?: number;
   careerStatistics: PlayerStatistics;
   history: PublicPlayerHistory[];
+};
+
+export type PublicPlayerIdentity = {
+  id: string;
+  name: string;
 };
 
 type PlayerProvider = Pick<PlayerService, 'getAll' | 'getById'>;
@@ -72,6 +79,53 @@ export class PublicPlayerService {
       this.seasons.getAll(),
       this.seasons.getActive(),
     ]);
+
+    return this.buildViews(players, teams, seasons, activeSeason);
+  }
+
+  async getForPlayerIdentities(identities: PublicPlayerIdentity[]): Promise<PublicPlayerView[]> {
+    if (!identities.length) return [];
+
+    const [allPlayers, teams, seasons, activeSeason] = await Promise.all([
+      this.players.getAll({status: 'active'}),
+      this.teams.getAll(),
+      this.seasons.getAll(),
+      this.seasons.getActive(),
+    ]);
+    const playerIds = new Set(identities.map(({id}) => id.trim()).filter(Boolean));
+    const playerNames = new Set(
+      identities.map(({name}) => normalizePlayerName(name)).filter(Boolean),
+    );
+    const players = allPlayers.filter((player) =>
+      playerIds.has(player.id) || playerNames.has(normalizePlayerName(player.name)),
+    );
+
+    return this.buildViews(players, teams, seasons, activeSeason);
+  }
+
+  async getHistory(playerId: string): Promise<PublicPlayerHistory[]> {
+    const [history, teams, seasons] = await Promise.all([
+      this.completeHistory
+        ? this.completeHistory.getCompleteHistory(playerId)
+        : this.statistics.getPlayerMatchHistory(playerId),
+      this.teams.getAll(),
+      this.seasons.getAll(),
+    ]);
+    const teamNames = new Map(teams.map((team) => [team.id, team.name]));
+    const seasonNames = new Map(seasons.map((season) => [season.id, season.name]));
+    return history.map((entry) => ({
+      ...entry,
+      opponentTeamName: teamNames.get(entry.opponentTeamId) ?? entry.opponentTeamId,
+      seasonName: seasonNames.get(entry.seasonId) ?? entry.seasonId,
+    }));
+  }
+
+  private async buildViews(
+    players: Player[],
+    teams: Team[],
+    seasons: Season[],
+    activeSeason: Season | undefined,
+  ): Promise<PublicPlayerView[]> {
     const playerIds = players.map((player) => player.id);
     const teamNames = new Map(teams.map((team) => [team.id, team.name]));
     const seasonNames = new Map(seasons.map((season) => [season.id, season.name]));
@@ -142,23 +196,10 @@ export class PublicPlayerService {
       };
     });
   }
+}
 
-  async getHistory(playerId: string): Promise<PublicPlayerHistory[]> {
-    const [history, teams, seasons] = await Promise.all([
-      this.completeHistory
-        ? this.completeHistory.getCompleteHistory(playerId)
-        : this.statistics.getPlayerMatchHistory(playerId),
-      this.teams.getAll(),
-      this.seasons.getAll(),
-    ]);
-    const teamNames = new Map(teams.map((team) => [team.id, team.name]));
-    const seasonNames = new Map(seasons.map((season) => [season.id, season.name]));
-    return history.map((entry) => ({
-      ...entry,
-      opponentTeamName: teamNames.get(entry.opponentTeamId) ?? entry.opponentTeamId,
-      seasonName: seasonNames.get(entry.seasonId) ?? entry.seasonId,
-    }));
-  }
+function normalizePlayerName(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 }
 
 function with2024Playoffs(
