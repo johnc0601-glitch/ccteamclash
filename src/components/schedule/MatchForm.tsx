@@ -12,6 +12,7 @@ type MatchFormProps = {
   fieldErrors: ScheduleFieldErrors;
   submitLabel: string;
   submitting: boolean;
+  matchupLocked?: boolean;
   publicFieldsLocked?: boolean;
   onSubmit: (values: MatchInput) => void;
   onCancel: () => void;
@@ -24,11 +25,15 @@ export function MatchForm({
   fieldErrors,
   submitLabel,
   submitting,
+  matchupLocked = false,
   publicFieldsLocked = false,
   onSubmit,
   onCancel,
 }: MatchFormProps) {
   const [values, setValues] = useState(initialValues);
+  const isMatchupLocked = matchupLocked
+    || publicFieldsLocked
+    || Boolean(initialValues.homeTeamId && initialValues.awayTeamId);
 
   function setField<K extends keyof MatchInput>(field: K, value: MatchInput[K]) {
     setValues((current) => ({...current, [field]: value}));
@@ -41,17 +46,17 @@ export function MatchForm({
 
   return (
     <form className={styles.scheduleForm} onSubmit={handleSubmit} noValidate>
-      {publicFieldsLocked ? (
-        <p className={styles.lockNotice}>Public match fields are locked while this schedule is published. Internal notes remain editable.</p>
+      {isMatchupLocked ? (
+        <p className={styles.lockNotice}>Matchup is locked. Course, date, time, status, and notes remain editable.</p>
       ) : null}
       <div className={styles.formGrid}>
         <label>
           <span>Home team</span>
           <select
-            autoFocus={!publicFieldsLocked}
-            data-initial-focus={publicFieldsLocked ? undefined : true}
+            autoFocus={!isMatchupLocked}
+            data-initial-focus={isMatchupLocked ? undefined : true}
             value={values.homeTeamId ?? ''}
-            disabled={publicFieldsLocked}
+            disabled={isMatchupLocked}
             onChange={(event) => setField('homeTeamId', event.target.value)}
             aria-invalid={Boolean(fieldErrors.homeTeamId)}
           >
@@ -66,7 +71,7 @@ export function MatchForm({
           <span>Away team</span>
           <select
             value={values.awayTeamId ?? ''}
-            disabled={publicFieldsLocked}
+            disabled={isMatchupLocked}
             onChange={(event) => setField('awayTeamId', event.target.value)}
             aria-invalid={Boolean(fieldErrors.awayTeamId)}
           >
@@ -80,8 +85,9 @@ export function MatchForm({
         <label className={styles.fullField}>
           <span>Course</span>
           <select
+            autoFocus={isMatchupLocked}
+            data-initial-focus={isMatchupLocked ? true : undefined}
             value={values.courseId ?? ''}
-            disabled={publicFieldsLocked}
             onChange={(event) => setField('courseId', event.target.value)}
             aria-invalid={Boolean(fieldErrors.courseId)}
           >
@@ -94,14 +100,19 @@ export function MatchForm({
         </label>
         <label>
           <span>Date</span>
-          <input type="date" value={values.date ?? ''} readOnly disabled={publicFieldsLocked} />
+          <input
+            type="date"
+            value={values.date ?? ''}
+            onChange={(event) => setField('date', event.target.value)}
+            aria-invalid={Boolean(fieldErrors.date)}
+          />
+          {fieldErrors.date ? <small className={styles.fieldError}>{fieldErrors.date}</small> : null}
         </label>
         <label>
           <span>Time</span>
           <input
             type="time"
             value={values.time ?? ''}
-            disabled={publicFieldsLocked}
             onChange={(event) => setField('time', event.target.value)}
             aria-invalid={Boolean(fieldErrors.time)}
           />
@@ -111,17 +122,16 @@ export function MatchForm({
           <span>Status</span>
           <select
             value={values.status}
-            disabled={publicFieldsLocked}
             onChange={(event) => setField('status', event.target.value as MatchInput['status'])}
+            aria-invalid={Boolean(fieldErrors.status)}
           >
             {MATCH_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
           </select>
+          {fieldErrors.status ? <small className={styles.fieldError}>{fieldErrors.status}</small> : null}
         </label>
         <label className={styles.fullField}>
           <span>Internal notes</span>
           <textarea
-            autoFocus={publicFieldsLocked}
-            data-initial-focus={publicFieldsLocked ? true : undefined}
             rows={4}
             value={values.notes}
             onChange={(event) => setField('notes', event.target.value)}

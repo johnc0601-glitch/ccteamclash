@@ -48,7 +48,7 @@ export function MatchTable({
               <td>
                 <div className={styles.actionRow}>
                   <button type="button" onClick={() => onView(match)}>View</button>
-                  {canEditNotes ? <button type="button" onClick={() => onEdit(match)}>{canEditPublicFields ? 'Edit' : 'Notes'}</button> : null}
+                  {canEditNotes ? <button type="button" onClick={() => onEdit(match)}>Edit</button> : null}
                   {canEditPublicFields ? <button type="button" className={styles.dangerText} onClick={() => onDelete(match)}>Delete</button> : null}
                 </div>
               </td>

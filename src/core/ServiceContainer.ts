@@ -8,6 +8,7 @@ import {ImportService} from '@/domain/import/ImportService';
 import {MockLeagueRepository} from '@/domain/league/LeagueRepository';
 import {LeagueService} from '@/domain/league/LeagueService';
 import {SupabaseLeagueRepository} from '@/domain/league/SupabaseLeagueRepository';
+import {MatchLogisticsService} from '@/domain/schedule/MatchLogisticsService';
 import {MockScheduleRepository} from '@/domain/schedule/ScheduleRepository';
 import {ScheduleService} from '@/domain/schedule/ScheduleService';
 import {SupabaseScheduleRepository} from '@/domain/schedule/SupabaseScheduleRepository';
@@ -70,6 +71,20 @@ const schedules = new ScheduleService(
   scheduleTeams,
   repositories.courses,
 );
+const matchLogistics = new MatchLogisticsService(
+  repositories.schedules,
+  seasons,
+  repositories.courses,
+);
+
+schedules.updateMatch = (id, input) => matchLogistics.update(id, {
+  courseId: input.courseId,
+  date: input.date,
+  time: input.time,
+  status: input.status,
+  notes: input.notes,
+});
+
 const results = new ResultsService(
   browserSupabase
     ? new SupabaseResultsRepository(browserSupabase)
@@ -98,6 +113,7 @@ export const services = {
   courses,
   historicalImports: new HistoricalImportService(repositories.historicalImports, teams, players),
   schedules,
+  matchLogistics,
   results,
   imports: new ImportService(
     repositories.imports,
