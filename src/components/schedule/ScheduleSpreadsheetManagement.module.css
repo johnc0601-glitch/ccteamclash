@@ -1,0 +1,367 @@
+.management {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px;
+  border: 1px solid var(--line, #d9d9d5);
+  border-radius: 18px;
+  background: var(--panel, #fff);
+}
+
+.header h1 {
+  margin: 4px 0 8px;
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  line-height: 1.05;
+}
+
+.header p {
+  max-width: 760px;
+  margin: 0;
+  color: var(--muted, #667067);
+}
+
+.eyebrow,
+.seasonPicker span {
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted, #667067);
+}
+
+.seasonPicker {
+  display: grid;
+  gap: 6px;
+  min-width: min(300px, 100%);
+}
+
+.seasonPicker select {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line, #cfd1cc);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-weight: 700;
+}
+
+.summaryBar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 18px;
+  border: 1px solid var(--line, #d9d9d5);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.summaryBar > div {
+  display: grid;
+  min-width: 66px;
+}
+
+.summaryBar strong {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.summaryBar span,
+.summaryBar p {
+  color: var(--muted, #667067);
+  font-size: .9rem;
+}
+
+.summaryBar p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 0 auto;
+}
+
+.success,
+.error,
+.readOnly,
+.loading,
+.empty {
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.success {
+  border: 1px solid #9bc9a8;
+  background: #f1faf3;
+}
+
+.error {
+  border: 1px solid #d9a4a4;
+  background: #fff3f3;
+}
+
+.readOnly,
+.loading,
+.empty {
+  border: 1px solid var(--line, #d9d9d5);
+  background: #f7f7f4;
+}
+
+.logisticsGridWrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  border: 1px solid var(--line, #d9d9d5);
+  border-radius: 14px;
+  background: #fff;
+  -webkit-overflow-scrolling: touch;
+}
+
+.logisticsGrid {
+  width: 100%;
+  min-width: 1280px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: .9rem;
+}
+
+.logisticsGrid th,
+.logisticsGrid td {
+  padding: 8px;
+  border-right: 1px solid #e3e4df;
+  border-bottom: 1px solid #e3e4df;
+  vertical-align: middle;
+  background: #fff;
+}
+
+.logisticsGrid th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding-top: 11px;
+  padding-bottom: 11px;
+  background: #f2f3ef;
+  color: #4d544e;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.logisticsGrid tr:last-child td {
+  border-bottom: 0;
+}
+
+.logisticsGrid th:last-child,
+.logisticsGrid td:last-child {
+  border-right: 0;
+}
+
+.logisticsGrid input,
+.logisticsGrid select {
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 9px;
+  border: 1px solid #cfd1cc;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2420;
+  font: inherit;
+}
+
+.logisticsGrid input:focus,
+.logisticsGrid select:focus {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+
+.logisticsGrid input:disabled,
+.logisticsGrid select:disabled {
+  background: #f4f4f1;
+  color: #777d78;
+}
+
+.logisticsGrid th:nth-child(3),
+.logisticsGrid td:nth-child(3) {
+  width: 150px;
+  min-width: 150px;
+}
+
+.logisticsGrid th:nth-child(4),
+.logisticsGrid td:nth-child(4) {
+  width: 220px;
+  min-width: 220px;
+}
+
+.logisticsGrid th:nth-child(5),
+.logisticsGrid td:nth-child(5) {
+  width: 120px;
+  min-width: 120px;
+}
+
+.logisticsGrid th:nth-child(6),
+.logisticsGrid td:nth-child(6) {
+  width: 150px;
+  min-width: 150px;
+}
+
+.logisticsGrid th:nth-child(7),
+.logisticsGrid td:nth-child(7) {
+  width: 260px;
+  min-width: 260px;
+}
+
+.gridStickyRound {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  width: 78px;
+  min-width: 78px;
+  max-width: 78px;
+  background: #f8f8f5 !important;
+}
+
+th.gridStickyRound {
+  z-index: 8;
+  background: #eceee8 !important;
+}
+
+.gridStickyRound strong,
+.gridStickyRound small {
+  display: block;
+}
+
+.gridStickyRound small {
+  margin-top: 3px;
+  overflow: hidden;
+  color: #747a75;
+  font-size: .68rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+}
+
+.gridStickyMatchup {
+  position: sticky;
+  left: 78px;
+  z-index: 3;
+  width: 250px;
+  min-width: 250px;
+  max-width: 250px;
+  background: #fbfbf8 !important;
+  box-shadow: 6px 0 10px -10px rgba(0, 0, 0, .55);
+}
+
+th.gridStickyMatchup {
+  z-index: 8;
+  background: #eceee8 !important;
+}
+
+.gridStickyMatchup strong {
+  display: block;
+  overflow: hidden;
+  font-size: .88rem;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gridStickyMatchup span {
+  display: block;
+  margin: 2px 0;
+  color: #838984;
+  font-size: .68rem;
+  font-weight: 800;
+}
+
+.gridSaveButton {
+  min-width: 82px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #222;
+  border-radius: 8px;
+  background: #1d211e;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.gridSaveButton:disabled {
+  border-color: #d4d6d1;
+  background: #eceee9;
+  color: #777d78;
+  cursor: default;
+}
+
+.helpText {
+  margin: -6px 2px 0;
+  color: var(--muted, #667067);
+  font-size: .82rem;
+}
+
+@media (max-width: 760px) {
+  .management {
+    gap: 12px;
+  }
+
+  .header {
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .seasonPicker {
+    min-width: 0;
+  }
+
+  .summaryBar {
+    align-items: start;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+  }
+
+  .summaryBar p {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .logisticsGrid {
+    min-width: 1120px;
+  }
+
+  .gridStickyRound {
+    width: 58px;
+    min-width: 58px;
+    max-width: 58px;
+  }
+
+  .gridStickyMatchup {
+    left: 58px;
+    width: 170px;
+    min-width: 170px;
+    max-width: 170px;
+  }
+
+  .gridStickyRound small {
+    display: none;
+  }
+
+  .logisticsGrid th,
+  .logisticsGrid td {
+    padding: 7px;
+  }
+
+  .logisticsGrid input,
+  .logisticsGrid select,
+  .gridSaveButton {
+    min-height: 44px;
+  }
+}
