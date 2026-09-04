@@ -23,7 +23,7 @@ type MatchLogisticsGridProps = {
 function toDraft(match: Match): Draft {
   return {
     courseId: match.courseId ?? '',
-    date: match.date ?? '',
+    date: match.date,
     time: match.time ?? '',
     status: match.status,
     notes: match.notes,
@@ -123,6 +123,7 @@ export function MatchLogisticsGrid({
               const saving = savingId === match.id;
               const awayName = getTeamName(match.awayTeamId, teams);
               const homeName = getTeamName(match.homeTeamId, teams);
+              const dateIsTbd = draft.date === null;
 
               return (
                 <tr key={match.id} className={dirty ? styles.dirtyRow : undefined}>
@@ -137,14 +138,40 @@ export function MatchLogisticsGrid({
                       <small className={styles.homeTag}>Home</small>
                     </span>
                   </td>
-                  <td>
-                    <input
-                      aria-label={`Date for ${awayName} at ${homeName}`}
-                      type="date"
-                      value={draft.date ?? ''}
-                      disabled={!editable || saving}
-                      onChange={(event) => setDraftField(match.id, 'date', event.target.value)}
-                    />
+                  <td style={{minWidth: 205}}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: 6}}>
+                      <input
+                        aria-label={`Date for ${awayName} at ${homeName}`}
+                        type="date"
+                        value={draft.date ?? ''}
+                        disabled={!editable || saving || dateIsTbd}
+                        onChange={(event) => setDraftField(match.id, 'date', event.target.value || null)}
+                      />
+                      <button
+                        type="button"
+                        aria-label={`Set date TBD for ${awayName} at ${homeName}`}
+                        aria-pressed={dateIsTbd}
+                        disabled={!editable || saving}
+                        onClick={() => setDraftField(
+                          match.id,
+                          'date',
+                          dateIsTbd ? (match.date ?? round.date) : null,
+                        )}
+                        style={{
+                          minHeight: 38,
+                          minWidth: 54,
+                          padding: '0 9px',
+                          borderRadius: 6,
+                          border: dateIsTbd ? '1px solid #c88b00' : '1px solid #c9c9c2',
+                          background: dateIsTbd ? '#ffc400' : '#f6f6f2',
+                          color: '#171a1c',
+                          fontWeight: 800,
+                          cursor: !editable || saving ? 'default' : 'pointer',
+                        }}
+                      >
+                        TBD
+                      </button>
+                    </div>
                   </td>
                   <td>
                     <select
