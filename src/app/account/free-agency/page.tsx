@@ -19,6 +19,8 @@ type Application = {
   requested_team_id: string | null;
   player_type: string;
   gender: string;
+  submitted_pdga_number: string;
+  submitted_pdga_rating: number | null;
 };
 type LinkedPlayer = {
   id: string;
@@ -113,7 +115,7 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
 
   const {data: applicationData} = await launchSupabase
     .from('launch_player_applications')
-    .select('status, requested_team_id, player_type, gender')
+    .select('status, requested_team_id, player_type, gender, submitted_pdga_number, submitted_pdga_rating')
     .eq('profile_id', profile.id)
     .eq('season_id', season.id)
     .maybeSingle();
@@ -169,6 +171,9 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
   }
 
   if (application?.status === 'Pending' && application.requested_team_id === null) {
+    const shownPdgaNumber = linkedPlayer?.pdga_number || application.submitted_pdga_number || '—';
+    const shownPdgaRating = linkedPlayer?.pdga_rating ?? application.submitted_pdga_rating ?? '—';
+
     return (
       <AccountPageLayout
         description="Captains can now find you while building their rosters."
@@ -176,22 +181,59 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
         notice={notice}
         title="Free Agency"
       >
-        <article className={styles.panel}>
-          <span className={styles.eyebrow}>{season.name}</span>
-          <h2>You are in the Free Agent Pool</h2>
-          <div className={styles.registrationStatus}>
-            <span>Available</span>
-            <strong>{linkedPlayer?.name || profile.displayName}</strong>
-          </div>
-          <dl className={styles.profileDetails}>
-            <div><dt>Division</dt><dd>{application.gender}</dd></div>
-            <div><dt>Player type</dt><dd>{application.player_type}</dd></div>
-            <div><dt>Clash Index</dt><dd>{linkedPlayer?.clash_index ?? '—'}</dd></div>
-            <div><dt>PDGA rating</dt><dd>{linkedPlayer?.pdga_rating ?? '—'}</dd></div>
-          </dl>
-          <p className={styles.muted}>Player Setup is not required while you are waiting in Free Agency. If a captain selects you, you can finish any remaining registration details then.</p>
-          <Link className={styles.secondaryActionLink} href="/account">Back to My Profile</Link>
-        </article>
+        <section className={styles.grid}>
+          <article className={styles.panel}>
+            <span className={styles.eyebrow}>{season.name}</span>
+            <h2>You are in the Free Agent Pool</h2>
+            <div className={styles.registrationStatus}>
+              <span>Available</span>
+              <strong>{linkedPlayer?.name || profile.displayName}</strong>
+            </div>
+            <dl className={styles.profileDetails}>
+              <div><dt>Division</dt><dd>{application.gender}</dd></div>
+              <div><dt>Player type</dt><dd>{application.player_type}</dd></div>
+              <div><dt>Clash Index</dt><dd>{linkedPlayer?.clash_index ?? '—'}</dd></div>
+              <div><dt>PDGA #</dt><dd>{shownPdgaNumber}</dd></div>
+              <div><dt>PDGA rating</dt><dd>{shownPdgaRating}</dd></div>
+            </dl>
+            <p className={styles.muted}>Player Setup is not required while you are waiting in Free Agency. If a captain selects you, you can finish any remaining registration details then.</p>
+          </article>
+
+          <article className={styles.panel}>
+            <span className={styles.eyebrow}>Update listing</span>
+            <h2>PDGA details</h2>
+            <p className={styles.muted}>These fields are optional. Adding them helps captains evaluate your Free Agent listing.</p>
+            <form className={styles.form} action={joinFreeAgency}>
+              <input name="seasonId" type="hidden" value={season.id} />
+              <input name="playerType" type="hidden" value={application.player_type} />
+              <input name="gender" type="hidden" value={application.gender} />
+              <label htmlFor="freeAgencyPdgaNumberUpdate">PDGA #</label>
+              <input
+                id="freeAgencyPdgaNumberUpdate"
+                name="pdgaNumber"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={10}
+                defaultValue={application.submitted_pdga_number || linkedPlayer?.pdga_number || ''}
+                placeholder="Optional"
+              />
+              <label htmlFor="freeAgencyPdgaRatingUpdate">PDGA rating</label>
+              <input
+                id="freeAgencyPdgaRatingUpdate"
+                name="pdgaRating"
+                type="number"
+                min={1}
+                max={2000}
+                step={1}
+                defaultValue={application.submitted_pdga_rating ?? linkedPlayer?.pdga_rating ?? ''}
+                placeholder="Optional"
+              />
+              <button className={styles.primaryButton} type="submit">Update PDGA Details</button>
+            </form>
+            <Link className={styles.secondaryActionLink} href="/account">Back to My Profile</Link>
+          </article>
+        </section>
       </AccountPageLayout>
     );
   }
@@ -246,7 +288,7 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
           <span className={styles.eyebrow}>{season.name}</span>
           <h2>Looking for a team</h2>
           <p className={styles.linkingNote}>
-            You do not need to connect a player record to enter Free Agency. Captains can find you using your account name, division, and player type.
+            You do not need to connect a player record to enter Free Agency. PDGA information is optional, but it helps captains evaluate your listing.
           </p>
           <form className={styles.form} action={joinFreeAgency}>
             <input name="seasonId" type="hidden" value={season.id} />
@@ -276,6 +318,28 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
                 </select>
               </>
             )}
+            <label htmlFor="freeAgencyPdgaNumber">PDGA #</label>
+            <input
+              id="freeAgencyPdgaNumber"
+              name="pdgaNumber"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={10}
+              defaultValue={linkedPlayer?.pdga_number || ''}
+              placeholder="Optional"
+            />
+            <label htmlFor="freeAgencyPdgaRating">PDGA rating</label>
+            <input
+              id="freeAgencyPdgaRating"
+              name="pdgaRating"
+              type="number"
+              min={1}
+              max={2000}
+              step={1}
+              defaultValue={linkedPlayer?.pdga_rating ?? ''}
+              placeholder="Optional"
+            />
             <button className={styles.primaryButton} type="submit">Join Free Agent Pool</button>
           </form>
         </article>
@@ -285,11 +349,11 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
           <h2>{linkedPlayer?.name || profile.displayName}</h2>
           <dl className={styles.profileDetails}>
             <div><dt>Clash Index</dt><dd>{linkedPlayer?.clash_index ?? '—'}</dd></div>
-            <div><dt>PDGA rating</dt><dd>{linkedPlayer?.pdga_rating ?? '—'}</dd></div>
-            <div><dt>PDGA #</dt><dd>{linkedPlayer?.pdga_number || '—'}</dd></div>
+            <div><dt>PDGA rating</dt><dd>{linkedPlayer?.pdga_rating ?? 'Optional entry'}</dd></div>
+            <div><dt>PDGA #</dt><dd>{linkedPlayer?.pdga_number || 'Optional entry'}</dd></div>
             <div><dt>Home area</dt><dd>{linkedPlayer?.home_area || '—'}</dd></div>
           </dl>
-          <p className={styles.muted}>If you already have linked player history, those details are shown automatically. No email address or private account information is exposed.</p>
+          <p className={styles.muted}>If your PDGA # matches an existing Team Clash player, captains can also see the existing CI and stored PDGA data. No email address or private account information is exposed.</p>
         </article>
       </section>
     </AccountPageLayout>
