@@ -5,7 +5,9 @@ import type {PublicMatchday} from '@/services/matches/MatchdayService';
 import type {LazyRosterPlayer} from '@/app/matches/[id]/publicRosterActions';
 import {getStoredTeamById} from '@/services/teams/TeamStore';
 import {LazyActiveRosterCard} from '@/components/matches/LazyActiveRosterCard';
+import {LazyAvailabilityRosterCard} from '@/components/matches/LazyAvailabilityRosterCard';
 import {LockedRosterPair} from '@/components/matches/LockedRosterPair';
+import {buildPublicAvailabilityPreview} from '@/services/matches/PublicAvailability';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 import v1 from '@/app/matches/[id]/MatchdayV1.module.css';
 
@@ -72,16 +74,34 @@ export async function MatchRosterBoard({
   }
 
   if (availability) {
-    const awayPlayers = availability.get(matchday.awayTeam.id) ?? [];
-    const homePlayers = availability.get(matchday.homeTeam.id) ?? [];
+    const awayPreview = buildPublicAvailabilityPreview(
+      availability.get(matchday.awayTeam.id) ?? [],
+    );
+    const homePreview = buildPublicAvailabilityPreview(
+      availability.get(matchday.homeTeam.id) ?? [],
+    );
     return (
       <section className={styles.sectionCard}>
         <header className={styles.sectionHeader}>
           <div><span>Match roster</span><h2>Player availability</h2></div>
         </header>
         <div className={v1.previewGrid}>
-          <AvailabilityRosterCard teamName={matchday.awayTeam.name} label="Away" players={awayPlayers} />
-          <AvailabilityRosterCard teamName={matchday.homeTeam.name} label="Home" players={homePlayers} />
+          <LazyAvailabilityRosterCard
+            teamName={matchday.awayTeam.name}
+            label="Away"
+            teamId={matchday.awayTeam.id}
+            matchId={matchday.id}
+            previewPlayers={awayPreview.previewPlayers}
+            remainingCount={awayPreview.remainingCount}
+          />
+          <LazyAvailabilityRosterCard
+            teamName={matchday.homeTeam.name}
+            label="Home"
+            teamId={matchday.homeTeam.id}
+            matchId={matchday.id}
+            previewPlayers={homePreview.previewPlayers}
+            remainingCount={homePreview.remainingCount}
+          />
         </div>
       </section>
     );
@@ -111,48 +131,6 @@ export async function MatchRosterBoard({
         />
       </div>
     </section>
-  );
-}
-
-function AvailabilityRosterCard({teamName, label, players}: {teamName: string; label: string; players: TeamAttendanceMember[]}) {
-  const ordered = [
-    ...players.filter((player) => player.status === 'Playing'),
-    ...players.filter((player) => player.status === 'Unconfirmed'),
-    ...players.filter((player) => player.status === 'NotPlaying'),
-  ];
-  const visible = ordered.slice(0, PREVIEW_COUNT);
-  const remaining = ordered.slice(PREVIEW_COUNT);
-
-  return (
-    <details className={v1.previewTeam}>
-      <summary className={v1.previewTeamHead}>
-        <span>{teamName}</span>
-        <span>{label}</span>
-      </summary>
-      <div className={v1.previewList}>
-        {visible.length ? visible.map((player) => <AvailabilityPlayerRow key={player.playerId} player={player} />) : (
-          <div className={v1.previewPlayer}><span className={v1.previewMore}>No players listed yet</span></div>
-        )}
-        {remaining.length ? (
-          <>
-            <div className={`${v1.previewPlayer} ${v1.moreCount}`}><span className={v1.previewMore}>+ {remaining.length} more</span></div>
-            <div className={v1.expandedRoster}>
-              {remaining.map((player) => <AvailabilityPlayerRow key={player.playerId} player={player} />)}
-            </div>
-          </>
-        ) : null}
-      </div>
-    </details>
-  );
-}
-
-function AvailabilityPlayerRow({player}: {player: TeamAttendanceMember}) {
-  const status = player.status === 'Playing' ? 'Playing' : player.status === 'NotPlaying' ? 'Not playing' : 'Unconfirmed';
-  return (
-    <div className={v1.previewPlayer}>
-      <strong>{player.playerName}</strong>
-      <span className={v1.playerMeta}>{status}</span>
-    </div>
   );
 }
 
