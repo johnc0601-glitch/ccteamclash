@@ -42,7 +42,7 @@ export function MatchLogisticsGrid({
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
 
   useEffect(() => {
-    setDrafts(Object.fromEntries(matches.map((match) => [match.id, toDraft(match)]));
+    setDrafts(Object.fromEntries(matches.map((match) => [match.id, toDraft(match)])));
   }, [matches]);
 
   const roundById = useMemo(
