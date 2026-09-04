@@ -58,10 +58,12 @@ export class MatchLogisticsService {
       fieldErrors.courseId = 'Select an active course.';
     }
 
-    if (!input.date || !isValidDate(input.date)) {
-      fieldErrors.date = 'Enter a valid match date.';
-    } else if (input.date < season.startDate || input.date > season.endDate) {
-      fieldErrors.date = 'Match date must fall within the season date range.';
+    if (input.date !== null) {
+      if (!isValidDate(input.date)) {
+        fieldErrors.date = 'Enter a valid match date or choose TBD.';
+      } else if (input.date < season.startDate || input.date > season.endDate) {
+        fieldErrors.date = 'Match date must fall within the season date range.';
+      }
     }
 
     if (!input.time || !/^([01]\d|2[0-3]):[0-5]\d$/.test(input.time)) {
