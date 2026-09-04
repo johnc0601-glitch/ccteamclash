@@ -34,6 +34,15 @@ export type PublicPlayerIdentity = {
   name: string;
 };
 
+export type PublicPlayerSearchEntry = {
+  id: string;
+  name: string;
+  pdgaNumber: string;
+  teamName: string;
+  record: string;
+  recordLabel: string;
+};
+
 type PlayerProvider = Pick<PlayerService, 'getAll' | 'getById'>;
 type TeamProvider = Pick<TeamService, 'getAll'>;
 type SeasonProvider = Pick<SeasonService, 'getAll' | 'getActive'>;
@@ -82,6 +91,57 @@ export class PublicPlayerService {
     ]);
 
     return this.buildViews(players, teams, seasons, activeSeason);
+  }
+
+  async getSearchIndex(): Promise<PublicPlayerSearchEntry[]> {
+    const [players, teams, activeSeason] = await Promise.all([
+      this.players.getAll({status: 'active'}),
+      this.teams.getAll(),
+      this.seasons.getActive(),
+    ]);
+    const playerIds = players.map((player) => player.id);
+    const teamNames = new Map(teams.map((team) => [team.id, team.name]));
+    const historicalStatisticsByPlayer = new Map(
+      playerIds.flatMap((playerId) => {
+        const summary = with2024Playoffs(getHistoricalPlayerSeedSummary(playerId), playerId);
+        return summary ? [[playerId, summary] as const] : [];
+      }),
+    );
+    const careerFallbackIds = playerIds.filter((playerId) =>
+      !historicalStatisticsByPlayer.has(playerId),
+    );
+    const [currentStatistics, careerStatistics] = await Promise.all([
+      activeSeason && playerIds.length
+        ? this.statistics.getPlayerStatisticsForPlayers(playerIds, activeSeason.id)
+        : Promise.resolve([]),
+      careerFallbackIds.length
+        ? this.statistics.getPlayerCareerStatisticsForPlayers(careerFallbackIds)
+        : Promise.resolve([]),
+    ]);
+    const currentStatisticsByPlayer = new Map(
+      currentStatistics.map((entry) => [entry.playerId, entry]),
+    );
+    const careerStatisticsByPlayer = new Map(
+      careerStatistics.map((entry) => [entry.playerId, entry]),
+    );
+
+    return players.map((player) => {
+      const activeStatistics = currentStatisticsByPlayer.get(player.id);
+      const currentStatistics = activeStatistics?.matchesPlayed ? activeStatistics : undefined;
+      const historicalStatistics = historicalStatisticsByPlayer.get(player.id);
+      const careerRecord = historicalStatistics?.overallRecord
+        ?? careerStatisticsByPlayer.get(player.id)?.overallRecord
+        ?? {wins: 0, losses: 0, ties: 0};
+
+      return {
+        id: player.id,
+        name: player.name,
+        pdgaNumber: player.pdgaNumber,
+        teamName: player.teamId ? teamNames.get(player.teamId) ?? player.teamId : 'Unassigned',
+        record: formatRecord(currentStatistics?.overallRecord ?? careerRecord),
+        recordLabel: currentStatistics ? activeSeason?.name ?? 'Current season' : 'Career',
+      };
+    }).sort((first, second) => first.name.localeCompare(second.name));
   }
 
   async getForPlayerIdentities(identities: PublicPlayerIdentity[]): Promise<PublicPlayerView[]> {
