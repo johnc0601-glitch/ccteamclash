@@ -27,7 +27,7 @@
     display: flex;
     gap: 14px;
     overflow-x: auto;
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: x proximity;
     overscroll-behavior-inline: contain;
     scrollbar-width: none;
     padding: 0 36px 10px;
@@ -41,7 +41,6 @@
   .slide {
     flex: 0 0 calc(100% - 72px);
     scroll-snap-align: center;
-    scroll-snap-stop: always;
   }
 
   .slide > * {
