@@ -138,7 +138,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public, private
-as $$;
+as $$
 begin
   if old.public_slug is distinct from new.public_slug and old.public_slug is not null then
     insert into public.launch_match_url_aliases(alias, match_id, kind)
