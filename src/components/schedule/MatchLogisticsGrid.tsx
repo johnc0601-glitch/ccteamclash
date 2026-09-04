@@ -5,7 +5,7 @@ import type {Course} from '@/domain/course/Course';
 import {MATCH_STATUSES, type Match, type MatchInput} from '@/domain/schedule/Match';
 import type {Round} from '@/domain/schedule/Round';
 import type {Team} from '@/models/Team';
-import {getTeamName} from '@/components/schedule/scheduleDisplay';
+import {formatScheduleDate, getTeamName} from '@/components/schedule/scheduleDisplay';
 import styles from './ScheduleSpreadsheetManagement.module.css';
 
 type Draft = Pick<MatchInput, 'courseId' | 'date' | 'time' | 'status' | 'notes'>;
@@ -45,18 +45,21 @@ export function MatchLogisticsGrid({
     setDrafts(Object.fromEntries(matches.map((match) => [match.id, toDraft(match)])));
   }, [matches]);
 
-  const roundById = useMemo(
-    () => new Map(rounds.map((round) => [round.id, round])),
-    [rounds],
+  const activeCourses = useMemo(
+    () => courses.filter((course) => course.active).sort((left, right) => left.name.localeCompare(right.name)),
+    [courses],
   );
 
-  const orderedMatches = useMemo(() => [...matches].sort((left, right) => {
-    const leftRound = roundById.get(left.roundId)?.number ?? Number.MAX_SAFE_INTEGER;
-    const rightRound = roundById.get(right.roundId)?.number ?? Number.MAX_SAFE_INTEGER;
-    if (leftRound !== rightRound) return leftRound - rightRound;
-    return (left.time ?? '').localeCompare(right.time ?? '')
-      || getTeamName(left.awayTeamId, teams).localeCompare(getTeamName(right.awayTeamId, teams));
-  }), [matches, roundById, teams]);
+  const roundGroups = useMemo(() => [...rounds]
+    .sort((left, right) => left.number - right.number)
+    .map((round) => ({
+      round,
+      matches: matches
+        .filter((match) => match.roundId === round.id)
+        .sort((left, right) => (left.time ?? '').localeCompare(right.time ?? '')
+          || getTeamName(left.awayTeamId, teams).localeCompare(getTeamName(right.awayTeamId, teams))),
+    }))
+    .filter((group) => group.matches.length > 0), [matches, rounds, teams]);
 
   function setDraftField<K extends keyof Draft>(matchId: string, field: K, value: Draft[K]) {
     setDrafts((current) => ({
@@ -90,88 +93,107 @@ export function MatchLogisticsGrid({
             <th>Save</th>
           </tr>
         </thead>
-        <tbody>
-          {orderedMatches.map((match) => {
-            const round = roundById.get(match.roundId);
-            const draft = drafts[match.id] ?? toDraft(match);
-            const dirty = isDirty(match, draft);
-            const saving = savingId === match.id;
-            return (
-              <tr key={match.id}>
-                <td className={styles.gridStickyRound}>
-                  <strong>R{round?.number ?? '?'}</strong>
-                  <small>{round?.name ?? ''}</small>
-                </td>
-                <td className={styles.gridStickyMatchup}>
-                  <strong>{getTeamName(match.awayTeamId, teams)}</strong>
-                  <span>@</span>
-                  <strong>{getTeamName(match.homeTeamId, teams)}</strong>
-                </td>
-                <td>
-                  <input
-                    aria-label={`Date for ${getTeamName(match.awayTeamId, teams)} at ${getTeamName(match.homeTeamId, teams)}`}
-                    type="date"
-                    value={draft.date ?? ''}
-                    disabled={!editable || saving}
-                    onChange={(event) => setDraftField(match.id, 'date', event.target.value)}
-                  />
-                </td>
-                <td>
-                  <select
-                    aria-label={`Course for ${getTeamName(match.awayTeamId, teams)} at ${getTeamName(match.homeTeamId, teams)}`}
-                    value={draft.courseId ?? ''}
-                    disabled={!editable || saving}
-                    onChange={(event) => setDraftField(match.id, 'courseId', event.target.value)}
-                  >
-                    <option value="">Select course</option>
-                    {courses.filter((course) => course.active).map((course) => (
-                      <option key={course.id} value={course.id}>{course.name}</option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <input
-                    aria-label={`Time for ${getTeamName(match.awayTeamId, teams)} at ${getTeamName(match.homeTeamId, teams)}`}
-                    type="time"
-                    value={draft.time ?? ''}
-                    disabled={!editable || saving}
-                    onChange={(event) => setDraftField(match.id, 'time', event.target.value)}
-                  />
-                </td>
-                <td>
-                  <select
-                    aria-label={`Status for ${getTeamName(match.awayTeamId, teams)} at ${getTeamName(match.homeTeamId, teams)}`}
-                    value={draft.status}
-                    disabled={!editable || saving}
-                    onChange={(event) => setDraftField(match.id, 'status', event.target.value as Draft['status'])}
-                  >
-                    {MATCH_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
-                  </select>
-                </td>
-                <td>
-                  <input
-                    aria-label={`Notes for ${getTeamName(match.awayTeamId, teams)} at ${getTeamName(match.homeTeamId, teams)}`}
-                    type="text"
-                    value={draft.notes}
-                    disabled={!editable || saving}
-                    placeholder="Optional"
-                    onChange={(event) => setDraftField(match.id, 'notes', event.target.value)}
-                  />
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className={styles.gridSaveButton}
-                    disabled={!editable || !dirty || saving}
-                    onClick={() => void onSave(match, draft)}
-                  >
-                    {saving ? 'Saving…' : dirty ? 'Save' : 'Saved'}
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
+        {roundGroups.map(({round, matches: roundMatches}) => (
+          <tbody key={round.id} className={styles.roundGroup}>
+            <tr className={styles.roundDivider}>
+              <th colSpan={8}>
+                <div className={styles.roundDividerContent}>
+                  <strong>Round {round.number}</strong>
+                  <span>{round.name}</span>
+                  <span>{formatScheduleDate(round.date)}</span>
+                  <span>{roundMatches.length} matches</span>
+                </div>
+              </th>
+            </tr>
+            {roundMatches.map((match) => {
+              const draft = drafts[match.id] ?? toDraft(match);
+              const dirty = isDirty(match, draft);
+              const saving = savingId === match.id;
+              const awayName = getTeamName(match.awayTeamId, teams);
+              const homeName = getTeamName(match.homeTeamId, teams);
+
+              return (
+                <tr key={match.id} className={dirty ? styles.dirtyRow : undefined}>
+                  <td className={styles.gridStickyRound}>
+                    <strong>R{round.number}</strong>
+                  </td>
+                  <td className={styles.gridStickyMatchup}>
+                    <span className={styles.matchupTeam}>{awayName}</span>
+                    <span className={styles.matchupAt}>@</span>
+                    <span className={styles.matchupTeam}>
+                      {homeName}
+                      <small className={styles.homeTag}>Home</small>
+                    </span>
+                  </td>
+                  <td>
+                    <input
+                      aria-label={`Date for ${awayName} at ${homeName}`}
+                      type="date"
+                      value={draft.date ?? ''}
+                      disabled={!editable || saving}
+                      onChange={(event) => setDraftField(match.id, 'date', event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <select
+                      aria-label={`Course for ${awayName} at ${homeName}`}
+                      value={draft.courseId ?? ''}
+                      disabled={!editable || saving}
+                      onChange={(event) => setDraftField(match.id, 'courseId', event.target.value)}
+                    >
+                      <option value="">Select course</option>
+                      {activeCourses.map((course) => (
+                        <option key={course.id} value={course.id}>{course.name}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      aria-label={`Time for ${awayName} at ${homeName}`}
+                      type="time"
+                      value={draft.time ?? ''}
+                      disabled={!editable || saving}
+                      onChange={(event) => setDraftField(match.id, 'time', event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <select
+                      aria-label={`Status for ${awayName} at ${homeName}`}
+                      className={styles.statusSelect}
+                      data-status={draft.status}
+                      value={draft.status}
+                      disabled={!editable || saving}
+                      onChange={(event) => setDraftField(match.id, 'status', event.target.value as Draft['status'])}
+                    >
+                      {MATCH_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      aria-label={`Notes for ${awayName} at ${homeName}`}
+                      type="text"
+                      value={draft.notes}
+                      disabled={!editable || saving}
+                      placeholder="Optional"
+                      onChange={(event) => setDraftField(match.id, 'notes', event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className={styles.gridSaveButton}
+                      data-dirty={dirty ? 'true' : 'false'}
+                      disabled={!editable || !dirty || saving}
+                      onClick={() => void onSave(match, draft)}
+                    >
+                      {saving ? 'Saving…' : dirty ? 'Save' : 'Saved'}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        ))}
       </table>
     </div>
   );

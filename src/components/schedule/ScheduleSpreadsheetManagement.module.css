@@ -1,6 +1,6 @@
 .management {
   display: grid;
-  gap: 18px;
+  gap: 16px;
   min-width: 0;
 }
 
@@ -9,31 +9,32 @@
   align-items: end;
   justify-content: space-between;
   gap: 24px;
-  padding: 22px;
-  border: 1px solid var(--line, #d9d9d5);
-  border-radius: 18px;
-  background: var(--panel, #fff);
+  padding: 20px 22px;
+  border: 1px solid #d9d9d5;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .05);
 }
 
 .header h1 {
-  margin: 4px 0 8px;
-  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  margin: 4px 0 7px;
+  font-size: clamp(1.65rem, 3vw, 2.2rem);
   line-height: 1.05;
 }
 
 .header p {
   max-width: 760px;
   margin: 0;
-  color: var(--muted, #667067);
+  color: #667067;
 }
 
 .eyebrow,
 .seasonPicker span {
-  font-size: .78rem;
-  font-weight: 800;
-  letter-spacing: .08em;
+  font-size: .76rem;
+  font-weight: 900;
+  letter-spacing: .09em;
   text-transform: uppercase;
-  color: var(--muted, #667067);
+  color: #75611b;
 }
 
 .seasonPicker {
@@ -44,38 +45,41 @@
 
 .seasonPicker select {
   min-height: 44px;
-  padding: 0 12px;
-  border: 1px solid var(--line, #cfd1cc);
-  border-radius: 10px;
+  padding: 0 36px 0 12px;
+  border: 1px solid #c9c9c3;
+  border-radius: 9px;
   background: #fff;
+  color: #1c211d;
   font: inherit;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .summaryBar {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 14px 18px;
-  border: 1px solid var(--line, #d9d9d5);
-  border-radius: 14px;
-  background: #fff;
+  gap: 20px;
+  padding: 12px 16px;
+  border: 1px solid #2c3032;
+  border-radius: 12px;
+  background: #171a1c;
+  color: #f5f5f2;
 }
 
 .summaryBar > div {
   display: grid;
-  min-width: 66px;
+  min-width: 64px;
 }
 
 .summaryBar strong {
+  color: #d0a91d;
   font-size: 1.35rem;
   line-height: 1;
 }
 
 .summaryBar span,
 .summaryBar p {
-  color: var(--muted, #667067);
-  font-size: .9rem;
+  color: #bdc2c3;
+  font-size: .86rem;
 }
 
 .summaryBar p {
@@ -85,6 +89,10 @@
   margin: 0 0 0 auto;
 }
 
+.summaryBar p b {
+  color: #f1f2ef;
+}
+
 .success,
 .error,
 .readOnly,
@@ -92,64 +100,69 @@
 .empty {
   padding: 12px 14px;
   border-radius: 10px;
-  font-weight: 700;
+  font-weight: 750;
 }
 
 .success {
-  border: 1px solid #9bc9a8;
-  background: #f1faf3;
+  border: 1px solid #8bb89a;
+  background: #eef8f1;
+  color: #193c25;
 }
 
 .error {
   border: 1px solid #d9a4a4;
   background: #fff3f3;
+  color: #6b2020;
 }
 
 .readOnly,
 .loading,
 .empty {
-  border: 1px solid var(--line, #d9d9d5);
+  border: 1px solid #d9d9d5;
   background: #f7f7f4;
+  color: #353a36;
 }
 
 .logisticsGridWrap {
   width: 100%;
   overflow-x: auto;
   overflow-y: visible;
-  border: 1px solid var(--line, #d9d9d5);
+  border: 1px solid #cfd0ca;
   border-radius: 14px;
   background: #fff;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .07);
   -webkit-overflow-scrolling: touch;
 }
 
 .logisticsGrid {
   width: 100%;
-  min-width: 1280px;
+  min-width: 1190px;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: .9rem;
+  font-size: .88rem;
 }
 
 .logisticsGrid th,
 .logisticsGrid td {
   padding: 8px;
-  border-right: 1px solid #e3e4df;
-  border-bottom: 1px solid #e3e4df;
+  border-right: 1px solid #e2e3de;
+  border-bottom: 1px solid #e2e3de;
   vertical-align: middle;
   background: #fff;
 }
 
-.logisticsGrid th {
+.logisticsGrid thead th {
   position: sticky;
   top: 0;
   z-index: 5;
   padding-top: 11px;
   padding-bottom: 11px;
-  background: #f2f3ef;
-  color: #4d544e;
-  font-size: .72rem;
+  border-bottom-color: #383d3f;
+  background: #1a1e20;
+  color: #c3c8c9;
+  font-size: .7rem;
   font-weight: 900;
-  letter-spacing: .06em;
+  letter-spacing: .075em;
   text-align: left;
   text-transform: uppercase;
   white-space: nowrap;
@@ -164,22 +177,75 @@
   border-right: 0;
 }
 
+.roundGroup + .roundGroup .roundDivider th {
+  border-top: 6px solid #fff;
+}
+
+.roundDivider th {
+  position: static;
+  z-index: 1;
+  padding: 0;
+  border-right: 0;
+  border-bottom: 1px solid #d7d1ba;
+  background: #ece9df;
+  color: #22251f;
+}
+
+.roundDividerContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border-left: 5px solid #c99a00;
+}
+
+.roundDividerContent strong {
+  font-size: .92rem;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.roundDividerContent span {
+  color: #66675f;
+  font-size: .78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.roundDividerContent span:last-child {
+  margin-left: auto;
+  color: #77776e;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
 .logisticsGrid input,
 .logisticsGrid select {
   width: 100%;
   min-height: 40px;
   padding: 6px 9px;
-  border: 1px solid #cfd1cc;
-  border-radius: 8px;
+  border: 1px solid #c8cac4;
+  border-radius: 7px;
   background: #fff;
   color: #1f2420;
   font: inherit;
+  font-weight: 650;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.logisticsGrid input:hover:not(:disabled),
+.logisticsGrid select:hover:not(:disabled) {
+  border-color: #979d97;
 }
 
 .logisticsGrid input:focus,
 .logisticsGrid select:focus {
-  outline: 2px solid currentColor;
-  outline-offset: 1px;
+  outline: none;
+  border-color: #987400;
+  box-shadow: 0 0 0 2px rgba(201, 154, 0, .16);
 }
 
 .logisticsGrid input:disabled,
@@ -188,134 +254,197 @@
   color: #777d78;
 }
 
+.logisticsGrid tbody tr:not(.roundDivider):hover td {
+  background: #fafaf7;
+}
+
 .logisticsGrid th:nth-child(3),
 .logisticsGrid td:nth-child(3) {
-  width: 150px;
-  min-width: 150px;
+  width: 145px;
+  min-width: 145px;
 }
 
 .logisticsGrid th:nth-child(4),
 .logisticsGrid td:nth-child(4) {
-  width: 220px;
-  min-width: 220px;
+  width: 210px;
+  min-width: 210px;
 }
 
 .logisticsGrid th:nth-child(5),
 .logisticsGrid td:nth-child(5) {
-  width: 120px;
-  min-width: 120px;
+  width: 116px;
+  min-width: 116px;
 }
 
 .logisticsGrid th:nth-child(6),
 .logisticsGrid td:nth-child(6) {
-  width: 150px;
-  min-width: 150px;
+  width: 142px;
+  min-width: 142px;
 }
 
 .logisticsGrid th:nth-child(7),
 .logisticsGrid td:nth-child(7) {
-  width: 260px;
-  min-width: 260px;
+  width: 235px;
+  min-width: 235px;
 }
 
 .gridStickyRound {
   position: sticky;
   left: 0;
   z-index: 3;
-  width: 78px;
-  min-width: 78px;
-  max-width: 78px;
-  background: #f8f8f5 !important;
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
+  background: #f5f5f1 !important;
+  text-align: center;
 }
 
 th.gridStickyRound {
   z-index: 8;
-  background: #eceee8 !important;
+  background: #141719 !important;
+  text-align: left;
 }
 
-.gridStickyRound strong,
-.gridStickyRound small {
+.gridStickyRound strong {
   display: block;
-}
-
-.gridStickyRound small {
-  margin-top: 3px;
-  overflow: hidden;
-  color: #747a75;
-  font-size: .68rem;
-  font-weight: 600;
-  line-height: 1.15;
-  text-overflow: ellipsis;
+  font-size: .75rem;
+  font-weight: 950;
+  letter-spacing: .03em;
 }
 
 .gridStickyMatchup {
   position: sticky;
-  left: 78px;
+  left: 60px;
   z-index: 3;
-  width: 250px;
-  min-width: 250px;
-  max-width: 250px;
+  width: 218px;
+  min-width: 218px;
+  max-width: 218px;
   background: #fbfbf8 !important;
-  box-shadow: 6px 0 10px -10px rgba(0, 0, 0, .55);
+  box-shadow: 8px 0 12px -12px rgba(0, 0, 0, .7);
 }
 
 th.gridStickyMatchup {
   z-index: 8;
-  background: #eceee8 !important;
+  background: #141719 !important;
 }
 
-.gridStickyMatchup strong {
-  display: block;
+.matchupTeam {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   overflow: hidden;
-  font-size: .88rem;
-  line-height: 1.15;
+  color: #202520;
+  font-size: .86rem;
+  font-weight: 850;
+  line-height: 1.18;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.gridStickyMatchup span {
+.matchupAt {
   display: block;
   margin: 2px 0;
-  color: #838984;
-  font-size: .68rem;
-  font-weight: 800;
+  color: #888e89;
+  font-size: .66rem;
+  font-weight: 900;
+}
+
+.homeTag {
+  flex: 0 0 auto;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: #ece8d7;
+  color: #75611b;
+  font-size: .55rem;
+  font-weight: 900;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.dirtyRow td,
+.dirtyRow .gridStickyRound,
+.dirtyRow .gridStickyMatchup {
+  background: #fff9e7 !important;
+}
+
+.dirtyRow td:first-child {
+  box-shadow: inset 4px 0 0 #c99a00;
+}
+
+.statusSelect {
+  font-weight: 800 !important;
+}
+
+.statusSelect[data-status="Completed"] {
+  background: #eef7f0;
+  color: #245b33;
+}
+
+.statusSelect[data-status="Postponed"],
+.statusSelect[data-status="Rain Delay"] {
+  background: #fff8e4;
+  color: #6d5412;
+}
+
+.statusSelect[data-status="Cancelled"] {
+  background: #fff0f0;
+  color: #7b2828;
 }
 
 .gridSaveButton {
-  min-width: 82px;
+  min-width: 78px;
   min-height: 40px;
   padding: 0 12px;
-  border: 1px solid #222;
-  border-radius: 8px;
-  background: #1d211e;
-  color: #fff;
+  border: 1px solid #d2d4cf;
+  border-radius: 7px;
+  background: #eceee9;
+  color: #7b807b;
   font: inherit;
-  font-weight: 800;
+  font-weight: 900;
+  cursor: default;
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+
+.gridSaveButton[data-dirty="true"]:not(:disabled) {
+  border-color: #9d7900;
+  background: #c99a00;
+  color: #151515;
   cursor: pointer;
+  box-shadow: 0 3px 10px rgba(130, 98, 0, .22);
+}
+
+.gridSaveButton[data-dirty="true"]:not(:disabled):active {
+  transform: translateY(1px);
 }
 
 .gridSaveButton:disabled {
-  border-color: #d4d6d1;
-  background: #eceee9;
-  color: #777d78;
   cursor: default;
 }
 
 .helpText {
-  margin: -6px 2px 0;
-  color: var(--muted, #667067);
+  margin: -5px 2px 0;
+  color: #667067;
   font-size: .82rem;
 }
 
 @media (max-width: 760px) {
   .management {
-    gap: 12px;
+    gap: 11px;
   }
 
   .header {
     display: grid;
-    gap: 14px;
-    padding: 16px;
+    gap: 12px;
+    padding: 15px;
+    border-radius: 13px;
+  }
+
+  .header h1 {
+    font-size: 1.6rem;
+  }
+
+  .header p {
+    font-size: .88rem;
   }
 
   .seasonPicker {
@@ -325,7 +454,8 @@ th.gridStickyMatchup {
   .summaryBar {
     align-items: start;
     flex-wrap: wrap;
-    gap: 12px 18px;
+    gap: 10px 16px;
+    padding: 11px 13px;
   }
 
   .summaryBar p {
@@ -333,35 +463,78 @@ th.gridStickyMatchup {
     margin-left: 0;
   }
 
+  .logisticsGridWrap {
+    border-radius: 10px;
+  }
+
   .logisticsGrid {
-    min-width: 1120px;
+    min-width: 1015px;
+    font-size: .84rem;
   }
 
   .gridStickyRound {
-    width: 58px;
-    min-width: 58px;
-    max-width: 58px;
+    width: 48px;
+    min-width: 48px;
+    max-width: 48px;
   }
 
   .gridStickyMatchup {
-    left: 58px;
-    width: 170px;
-    min-width: 170px;
-    max-width: 170px;
+    left: 48px;
+    width: 154px;
+    min-width: 154px;
+    max-width: 154px;
   }
 
-  .gridStickyRound small {
+  .matchupTeam {
+    font-size: .78rem;
+  }
+
+  .homeTag {
+    display: none;
+  }
+
+  .roundDividerContent {
+    gap: 8px;
+    min-height: 38px;
+    padding: 7px 9px;
+  }
+
+  .roundDividerContent span:nth-of-type(1) {
+    max-width: 145px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .roundDividerContent span:last-child {
     display: none;
   }
 
   .logisticsGrid th,
   .logisticsGrid td {
-    padding: 7px;
+    padding: 6px;
   }
 
   .logisticsGrid input,
   .logisticsGrid select,
   .gridSaveButton {
     min-height: 44px;
+  }
+
+  .logisticsGrid th:nth-child(3),
+  .logisticsGrid td:nth-child(3) {
+    width: 140px;
+    min-width: 140px;
+  }
+
+  .logisticsGrid th:nth-child(4),
+  .logisticsGrid td:nth-child(4) {
+    width: 190px;
+    min-width: 190px;
+  }
+
+  .logisticsGrid th:nth-child(7),
+  .logisticsGrid td:nth-child(7) {
+    width: 205px;
+    min-width: 205px;
   }
 }
