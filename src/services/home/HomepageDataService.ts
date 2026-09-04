@@ -31,6 +31,10 @@ type HomepageRows = {
   previews: any[];
 };
 
+type HomepageScheduleEvent = PublicScheduleEvent & {
+  roundId: string;
+};
+
 /**
  * Loads the cookie-free public rows shared by every homepage visitor.
  *
@@ -71,7 +75,7 @@ const getCachedHomepageRows = unstable_cache(
       db.from('launch_teams').select('*').order('name', {ascending: true}),
       db.from('launch_courses').select('id,name,map_url'),
       db.from('launch_schedules').select('id,published').eq('published', true),
-      db.from('launch_rounds').select('id,schedule_id,published').eq('published', true),
+      db.from('launch_rounds').select('id,schedule_id,date,published').eq('published', true),
       db
         .from('launch_schedule_matches')
         .select('id,round_id,home_team_id,away_team_id,course_id,date,time,status'),
@@ -105,7 +109,7 @@ const getCachedHomepageRows = unstable_cache(
       previews: previewsResult.data ?? [],
     };
   },
-  ['public-homepage-rows-v2'],
+  ['public-homepage-rows-v3'],
   {
     revalidate: HOMEPAGE_CACHE_SECONDS,
     tags: ['public:homepage', 'public:stories', 'public:teams', 'public:schedule', 'public:match-feed'],
@@ -144,25 +148,39 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
   const publishedScheduleIds = new Set<string>(
     rows.schedules.filter((row: any) => row.published === true).map((row: any) => clean(row.id)),
   );
-  const publishedRoundIds = new Set<string>(
-    rows.rounds
-      .filter((row: any) => row.published === true && publishedScheduleIds.has(clean(row.schedule_id)))
-      .map((row: any) => clean(row.id)),
+  const publishedRounds = rows.rounds.filter(
+    (row: any) => row.published === true && publishedScheduleIds.has(clean(row.schedule_id)),
+  );
+  const publishedRoundIds = new Set<string>(publishedRounds.map((row: any) => clean(row.id)));
+  const roundDates = new Map<string, string>(
+    publishedRounds
+      .map((row: any) => [clean(row.id), clean(row.date)] as const)
+      .filter(([id, date]) => Boolean(id && date)),
   );
 
-  const events: PublicScheduleEvent[] = rows.matches
+  const events: HomepageScheduleEvent[] = rows.matches
     .filter((row: any) => publishedRoundIds.has(clean(row.round_id)))
-    .map((row: any) => mapPublicEvent(row, teamNames, courses, publicSlugs, referenceDate))
-    .filter((event: PublicScheduleEvent | null): event is PublicScheduleEvent => Boolean(event))
-    .sort((left: PublicScheduleEvent, right: PublicScheduleEvent) => left.dateTime.getTime() - right.dateTime.getTime());
+    .map((row: any) => mapPublicEvent(row, teamNames, courses, publicSlugs, roundDates, referenceDate))
+    .filter((event: HomepageScheduleEvent | null): event is HomepageScheduleEvent => Boolean(event))
+    .sort((left, right) => left.dateTime.getTime() - right.dateTime.getTime());
 
-  const upcoming: PublicScheduleEvent[] = events.filter((event) => event.bucket === 'upcoming');
-  const homeEvents: PublicScheduleEvent[] = (upcoming.length > 0
-    ? upcoming.filter((event) => dateKey(event.dateTime) === dateKey(upcoming[0].dateTime))
-    : events
+  const upcoming = events.filter((event) => event.bucket === 'upcoming');
+  let homeEvents: HomepageScheduleEvent[];
+  if (upcoming.length > 0) {
+    const nextRoundId = upcoming[0].roundId;
+    homeEvents = events
+      .filter((event) => event.roundId === nextRoundId)
+      .sort((left, right) => left.dateTime.getTime() - right.dateTime.getTime())
+      .slice(0, 4);
+  } else {
+    const recent = events
       .filter((event) => event.bucket === 'recent')
-      .sort((left, right) => right.dateTime.getTime() - left.dateTime.getTime()))
-    .slice(0, 4);
+      .sort((left, right) => right.dateTime.getTime() - left.dateTime.getTime());
+    const latestRoundId = recent[0]?.roundId;
+    homeEvents = latestRoundId
+      ? recent.filter((event) => event.roundId === latestRoundId).slice(0, 4)
+      : [];
+  }
 
   const homeMatchIds = new Set(homeEvents.map((event) => event.id));
   const feedPreviews = new Map<string, HomepageMatchFeedPreview>();
@@ -190,21 +208,24 @@ function mapPublicEvent(
   teamNames: ReadonlyMap<string, string>,
   courses: ReadonlyMap<string, {name: string; mapUrl: string}>,
   publicSlugs: ReadonlyMap<string, string>,
+  roundDates: ReadonlyMap<string, string>,
   referenceDate: Date,
-): PublicScheduleEvent | null {
+): HomepageScheduleEvent | null {
   const id = clean(row.id);
+  const roundId = clean(row.round_id);
   const homeTeamId = clean(row.home_team_id);
   const awayTeamId = clean(row.away_team_id);
   const courseId = clean(row.course_id);
   const date = clean(row.date);
   const time = clean(row.time).slice(0, 5);
   const storedStatus = clean(row.status);
-  if (!id || !homeTeamId || !awayTeamId || !courseId || !date || !time) return null;
+  const anchorDate = date || roundDates.get(roundId) || '';
+  if (!id || !roundId || !homeTeamId || !awayTeamId || !courseId || !anchorDate || !time) return null;
   if (storedStatus === 'Cancelled') return null;
 
-  const dateTime = new Date(`${date}T${time}:00`);
+  const dateTime = new Date(`${anchorDate}T${time}:00`);
   const safeDateTime = Number.isNaN(dateTime.getTime())
-    ? new Date(`${date}T00:00:00`)
+    ? new Date(`${anchorDate}T00:00:00`)
     : dateTime;
   const bucket = storedStatus === 'Completed'
     ? getCompletedEventBucket(safeDateTime, referenceDate)
@@ -214,8 +235,9 @@ function mapPublicEvent(
 
   return {
     id,
+    roundId,
     href: `/matches/${encodeURIComponent(publicRef)}`,
-    date: formatEventDate(date),
+    date: date ? formatEventDate(date) : 'TBD',
     time: formatEventTime(time),
     course: course?.name ?? courseId,
     directionsUrl: course?.mapUrl ?? '',
@@ -261,10 +283,6 @@ function formatEventTime(value: string): string {
     hour: 'numeric',
     minute: '2-digit',
   }).format(new Date(2000, 0, 1, hours, minutes));
-}
-
-function dateKey(value: Date): string {
-  return `${value.getFullYear()}-${value.getMonth()}-${value.getDate()}`;
 }
 
 function mapHomepageStory(row: any): HomepageStory {
