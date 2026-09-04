@@ -21,9 +21,10 @@ export async function POST(request: Request) {
 
   const courseSlug = createSlug(typeof courseName === 'string' ? courseName : file.name) || 'course-photo';
   const extension = file.type === 'image/png' ? 'png' : file.type === 'image/jpeg' ? 'jpg' : 'webp';
-  const path = `courses/${courseSlug}.${extension}`;
+  const version = Date.now().toString(36);
+  const path = `courses/${courseSlug}-${version}.${extension}`;
   const {error} = await supabase.storage.from('course-photos').upload(path, file, {
-    upsert: true,
+    upsert: false,
     contentType: file.type,
     cacheControl: '31536000',
   });
