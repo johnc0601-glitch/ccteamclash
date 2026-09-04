@@ -6,6 +6,13 @@ export const dynamic = 'force-dynamic';
 
 export default async function CoursesPage() {
   const {courses, teams} = await getPublicDirectoryData();
+  const coursesWithPhotos = await Promise.all(courses.map(async (course) => {
+    const storedPhotoUrl = getCoursePhotoUrl(course.photoUrl);
+    return {
+      course,
+      photoUrl: storedPhotoUrl || await getUdiscCoursePhotoUrl(course.udiscUrl),
+    };
+  }));
 
   return (
     <>
@@ -15,10 +22,9 @@ export default async function CoursesPage() {
         <h1>Courses</h1>
         <p className="intro">League course cards with directions and UDisc course info.</p>
         <div className={styles.directory}>
-          {courses.map((course) => {
+          {coursesWithPhotos.map(({course, photoUrl}) => {
             const courseTeams = teams.filter((team) =>
               sameCourse(team.homeCourse, course.name));
-            const photoUrl = getCoursePhotoUrl(course.photoUrl);
             return (
               <article className={styles.course} key={course.id}>
                 <div
@@ -57,4 +63,54 @@ function sameCourse(left: string, right: string): boolean {
 function getCoursePhotoUrl(url: string): string {
   const cleanedUrl = url.trim();
   return /\.(jpe?g|png|webp|gif)(\?.*)?$/i.test(cleanedUrl) ? cleanedUrl : '';
+}
+
+async function getUdiscCoursePhotoUrl(udiscUrl: string): Promise<string> {
+  const cleanedUrl = udiscUrl.trim();
+  if (!cleanedUrl) return '';
+
+  try {
+    const courseUrl = new URL(cleanedUrl);
+    if (courseUrl.protocol !== 'https:' || !isUdiscHost(courseUrl.hostname)) return '';
+
+    const response = await fetch(courseUrl, {
+      cache: 'force-cache',
+      next: {revalidate: 86_400},
+      signal: AbortSignal.timeout(3_500),
+    });
+    if (!response.ok) return '';
+
+    const imageUrl = extractSocialImage(await response.text());
+    if (!imageUrl) return '';
+
+    const resolvedImageUrl = new URL(imageUrl, response.url);
+    return resolvedImageUrl.protocol === 'https:' ? resolvedImageUrl.toString() : '';
+  } catch {
+    return '';
+  }
+}
+
+function isUdiscHost(hostname: string): boolean {
+  const normalizedHostname = hostname.toLocaleLowerCase();
+  return normalizedHostname === 'udisc.com' || normalizedHostname.endsWith('.udisc.com');
+}
+
+function extractSocialImage(html: string): string {
+  const metaTags = html.match(/<meta\b[^>]*>/gi) ?? [];
+  const supportedKeys = new Set(['og:image', 'og:image:url', 'twitter:image', 'twitter:image:src']);
+
+  for (const tag of metaTags) {
+    const key = getMetaAttribute(tag, 'property') || getMetaAttribute(tag, 'name');
+    if (!supportedKeys.has(key.toLocaleLowerCase())) continue;
+
+    const content = getMetaAttribute(tag, 'content');
+    if (content) return content.replaceAll('&amp;', '&');
+  }
+
+  return '';
+}
+
+function getMetaAttribute(tag: string, attribute: string): string {
+  const match = tag.match(new RegExp(`${attribute}\\s*=\\s*["']([^"']+)["']`, 'i'));
+  return match?.[1]?.trim() ?? '';
 }
