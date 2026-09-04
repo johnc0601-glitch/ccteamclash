@@ -20,7 +20,7 @@
     "test:league": "node --loader ./scripts/ts-paths-loader.mjs --test src/domain/league/LeagueService.test.ts",
     "test:launch": "node --loader ./scripts/ts-paths-loader.mjs --test src/domain/launch/LaunchService.test.ts",
     "test:intro": "node --loader ./scripts/ts-paths-loader.mjs --test src/components/intro/introDecision.test.ts",
-    "test:matchday": "node --loader ./scripts/ts-paths-loader.mjs --test src/services/matches/MatchFeedLifecycle.test.ts",
+    "test:matchday": "node --loader ./scripts/ts-paths-loader.mjs --test src/services/matches/MatchFeedLifecycle.test.ts src/services/matches/PublicAvailability.test.ts src/services/matches/MatchPublicIdentity.test.ts",
     "test:team-strength": "node --loader ./scripts/ts-paths-loader.mjs --test src/services/teamStrength/*.test.ts",
     "seed:launch:sql": "node --loader ./scripts/ts-paths-loader.mjs scripts/generate_launch_seed_sql.mjs"
   },
