@@ -1,6 +1,7 @@
 'use client';
 
 import {useEffect, useMemo, useState} from 'react';
+import {refreshPublicSchedule} from '@/app/office/schedule/cache-actions';
 import {MatchLogisticsGrid} from '@/components/schedule/MatchLogisticsGrid';
 import {services} from '@/core/ServiceContainer';
 import type {Course} from '@/domain/course/Course';
@@ -120,9 +121,19 @@ export function ScheduleSpreadsheetManagement() {
       setMatches((current) => current.map((candidate) => (
         candidate.id === result.data.id ? result.data : candidate
       )));
+
+      let publicRefreshFailed = false;
+      try {
+        await refreshPublicSchedule(result.data.id);
+      } catch {
+        publicRefreshFailed = true;
+      }
+
       setMessage({
         type: 'success',
-        text: `${getTeamName(match.awayTeamId)} @ ${getTeamName(match.homeTeamId)} updated.`,
+        text: publicRefreshFailed
+          ? `${getTeamName(match.awayTeamId)} @ ${getTeamName(match.homeTeamId)} updated. Public cards may take up to a minute to refresh.`
+          : `${getTeamName(match.awayTeamId)} @ ${getTeamName(match.homeTeamId)} updated and public schedule refreshed.`,
       });
     } catch {
       setMessage({type: 'error', text: 'The match could not be saved.'});
