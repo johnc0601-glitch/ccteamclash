@@ -3,6 +3,7 @@ import {notFound} from 'next/navigation';
 import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
+import {LazyTeamRosterDirectory} from '@/components/teams/LazyTeamRosterDirectory';
 import {services} from '@/core/ServiceContainer';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
@@ -15,6 +16,7 @@ import type {TeamScheduleEvent} from '@/domain/schedule/ScheduleService';
 import {getStoredCourses} from '@/services/courses/CourseStore';
 import {getStoredTeamById} from '@/services/teams/TeamStore';
 import {buildPublicTeamRoster} from '@/services/public/PublicRosterService';
+import {buildPublicRosterSummaries} from '@/services/public/PublicRosterSummary';
 import type {RecordSummary} from '@/services/statistics';
 import {createSlug} from '@/shared/utils';
 import {hasSupabaseConfig} from '@/lib/supabase';
@@ -44,6 +46,7 @@ export default async function TeamPage({params}: TeamPageProps) {
     getStoredCourses({status: 'active'}),
     getLaunchPlayers(),
   ]);
+  const currentSeasonName = activeSeason?.name ?? 'Current season';
   const rosterPlayerIds = activeSeason
     ? await getActiveSeasonRosterPlayerIds(activeSeason.id, team.id)
     : new Set<string>();
@@ -67,10 +70,11 @@ export default async function TeamPage({params}: TeamPageProps) {
       historicalPlayers,
       team.id,
       team.name,
-      activeSeason?.name ?? 'Current season',
+      currentSeasonName,
       rosterPlayerIds,
     )
     : historicalPlayers.filter(({player}) => player.teamId === team.id);
+  const rosterSummaries = buildPublicRosterSummaries(roster);
   const publishedSeasons = seasons.filter((season) => season.published);
   const seasonStatistics = await Promise.all(publishedSeasons.map(async (season) => ({
     season,
@@ -151,10 +155,20 @@ export default async function TeamPage({params}: TeamPageProps) {
               <h2>Roster</h2>
               <p>{roster.length} {roster.length === 1 ? 'player' : 'players'}</p>
             </header>
-            <PublicPlayerDirectory
-              players={roster}
-              showFilters={false}
-            />
+            {activeSeason && launchPlayers ? (
+              <LazyTeamRosterDirectory
+                players={rosterSummaries}
+                teamId={team.id}
+                teamName={team.name}
+                seasonId={activeSeason.id}
+                currentSeasonName={currentSeasonName}
+              />
+            ) : (
+              <PublicPlayerDirectory
+                players={roster}
+                showFilters={false}
+              />
+            )}
           </section>
 
           <section className={styles.section}>
