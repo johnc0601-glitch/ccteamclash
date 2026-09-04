@@ -1,10 +1,10 @@
 import {OfficePage} from '@/components/commissioner/OfficePage';
-import {ScheduleManagement} from '@/components/schedule/ScheduleManagement';
+import {ScheduleSpreadsheetManagement} from '@/components/schedule/ScheduleSpreadsheetManagement';
 
 export default function OfficeSchedulePage() {
   return (
     <OfficePage sectionId="schedule">
-      <ScheduleManagement />
+      <ScheduleSpreadsheetManagement />
     </OfficePage>
   );
 }
