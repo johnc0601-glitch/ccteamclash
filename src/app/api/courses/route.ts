@@ -1,3 +1,4 @@
+import {revalidatePath, revalidateTag} from 'next/cache';
 import type {CourseImportInput, CourseInput, CourseQuery} from '@/domain/course/Course';
 import {
   archiveStoredCourse,
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
     }
     if (payload.action === 'import' && Array.isArray(payload.inputs)) {
       const result = await importStoredCourses(payload.inputs);
+      invalidatePublicCourses();
       const courses = await getStoredCourses();
       return Response.json({result, courses});
     }
@@ -62,6 +64,12 @@ async function courseResponse(result: Awaited<ReturnType<typeof createStoredCour
     return Response.json(result, {status: 400});
   }
 
+  invalidatePublicCourses();
   const courses = await getStoredCourses();
   return Response.json({...result, courses});
+}
+
+function invalidatePublicCourses(): void {
+  revalidateTag('public:courses', 'max');
+  revalidatePath('/courses');
 }
