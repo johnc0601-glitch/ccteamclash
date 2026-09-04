@@ -1,0 +1,540 @@
+.management {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px 22px;
+  border: 1px solid #d9d9d5;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .05);
+}
+
+.header h1 {
+  margin: 4px 0 7px;
+  font-size: clamp(1.65rem, 3vw, 2.2rem);
+  line-height: 1.05;
+}
+
+.header p {
+  max-width: 760px;
+  margin: 0;
+  color: #667067;
+}
+
+.eyebrow,
+.seasonPicker span {
+  font-size: .76rem;
+  font-weight: 900;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: #75611b;
+}
+
+.seasonPicker {
+  display: grid;
+  gap: 6px;
+  min-width: min(300px, 100%);
+}
+
+.seasonPicker select {
+  min-height: 44px;
+  padding: 0 36px 0 12px;
+  border: 1px solid #c9c9c3;
+  border-radius: 9px;
+  background: #fff;
+  color: #1c211d;
+  font: inherit;
+  font-weight: 800;
+}
+
+.summaryBar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 16px;
+  border: 1px solid #2c3032;
+  border-radius: 12px;
+  background: #171a1c;
+  color: #f5f5f2;
+}
+
+.summaryBar > div {
+  display: grid;
+  min-width: 64px;
+}
+
+.summaryBar strong {
+  color: #d0a91d;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.summaryBar span,
+.summaryBar p {
+  color: #bdc2c3;
+  font-size: .86rem;
+}
+
+.summaryBar p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 0 auto;
+}
+
+.summaryBar p b {
+  color: #f1f2ef;
+}
+
+.success,
+.error,
+.readOnly,
+.loading,
+.empty {
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-weight: 750;
+}
+
+.success {
+  border: 1px solid #8bb89a;
+  background: #eef8f1;
+  color: #193c25;
+}
+
+.error {
+  border: 1px solid #d9a4a4;
+  background: #fff3f3;
+  color: #6b2020;
+}
+
+.readOnly,
+.loading,
+.empty {
+  border: 1px solid #d9d9d5;
+  background: #f7f7f4;
+  color: #353a36;
+}
+
+.logisticsGridWrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  border: 1px solid #cfd0ca;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .07);
+  -webkit-overflow-scrolling: touch;
+}
+
+.logisticsGrid {
+  width: 100%;
+  min-width: 1190px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: .88rem;
+}
+
+.logisticsGrid th,
+.logisticsGrid td {
+  padding: 8px;
+  border-right: 1px solid #e2e3de;
+  border-bottom: 1px solid #e2e3de;
+  vertical-align: middle;
+  background: #fff;
+}
+
+.logisticsGrid thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding-top: 11px;
+  padding-bottom: 11px;
+  border-bottom-color: #383d3f;
+  background: #1a1e20;
+  color: #c3c8c9;
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: .075em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.logisticsGrid tr:last-child td {
+  border-bottom: 0;
+}
+
+.logisticsGrid th:last-child,
+.logisticsGrid td:last-child {
+  border-right: 0;
+}
+
+.roundGroup + .roundGroup .roundDivider th {
+  border-top: 6px solid #fff;
+}
+
+.roundDivider th {
+  position: static;
+  z-index: 1;
+  padding: 0;
+  border-right: 0;
+  border-bottom: 1px solid #d7d1ba;
+  background: #ece9df;
+  color: #22251f;
+}
+
+.roundDividerContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border-left: 5px solid #c99a00;
+}
+
+.roundDividerContent strong {
+  font-size: .92rem;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.roundDividerContent span {
+  color: #66675f;
+  font-size: .78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.roundDividerContent span:last-child {
+  margin-left: auto;
+  color: #77776e;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.logisticsGrid input,
+.logisticsGrid select {
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 9px;
+  border: 1px solid #c8cac4;
+  border-radius: 7px;
+  background: #fff;
+  color: #1f2420;
+  font: inherit;
+  font-weight: 650;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.logisticsGrid input:hover:not(:disabled),
+.logisticsGrid select:hover:not(:disabled) {
+  border-color: #979d97;
+}
+
+.logisticsGrid input:focus,
+.logisticsGrid select:focus {
+  outline: none;
+  border-color: #987400;
+  box-shadow: 0 0 0 2px rgba(201, 154, 0, .16);
+}
+
+.logisticsGrid input:disabled,
+.logisticsGrid select:disabled {
+  background: #f4f4f1;
+  color: #777d78;
+}
+
+.logisticsGrid tbody tr:not(.roundDivider):hover td {
+  background: #fafaf7;
+}
+
+.logisticsGrid th:nth-child(3),
+.logisticsGrid td:nth-child(3) {
+  width: 145px;
+  min-width: 145px;
+}
+
+.logisticsGrid th:nth-child(4),
+.logisticsGrid td:nth-child(4) {
+  width: 210px;
+  min-width: 210px;
+}
+
+.logisticsGrid th:nth-child(5),
+.logisticsGrid td:nth-child(5) {
+  width: 116px;
+  min-width: 116px;
+}
+
+.logisticsGrid th:nth-child(6),
+.logisticsGrid td:nth-child(6) {
+  width: 142px;
+  min-width: 142px;
+}
+
+.logisticsGrid th:nth-child(7),
+.logisticsGrid td:nth-child(7) {
+  width: 235px;
+  min-width: 235px;
+}
+
+.gridStickyRound {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
+  background: #f5f5f1 !important;
+  text-align: center;
+}
+
+th.gridStickyRound {
+  z-index: 8;
+  background: #141719 !important;
+  text-align: left;
+}
+
+.gridStickyRound strong {
+  display: block;
+  font-size: .75rem;
+  font-weight: 950;
+  letter-spacing: .03em;
+}
+
+.gridStickyMatchup {
+  position: sticky;
+  left: 60px;
+  z-index: 3;
+  width: 218px;
+  min-width: 218px;
+  max-width: 218px;
+  background: #fbfbf8 !important;
+  box-shadow: 8px 0 12px -12px rgba(0, 0, 0, .7);
+}
+
+th.gridStickyMatchup {
+  z-index: 8;
+  background: #141719 !important;
+}
+
+.matchupTeam {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  color: #202520;
+  font-size: .86rem;
+  font-weight: 850;
+  line-height: 1.18;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matchupAt {
+  display: block;
+  margin: 2px 0;
+  color: #888e89;
+  font-size: .66rem;
+  font-weight: 900;
+}
+
+.homeTag {
+  flex: 0 0 auto;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: #ece8d7;
+  color: #75611b;
+  font-size: .55rem;
+  font-weight: 900;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.dirtyRow td,
+.dirtyRow .gridStickyRound,
+.dirtyRow .gridStickyMatchup {
+  background: #fff9e7 !important;
+}
+
+.dirtyRow td:first-child {
+  box-shadow: inset 4px 0 0 #c99a00;
+}
+
+.statusSelect {
+  font-weight: 800 !important;
+}
+
+.statusSelect[data-status="Completed"] {
+  background: #eef7f0;
+  color: #245b33;
+}
+
+.statusSelect[data-status="Postponed"],
+.statusSelect[data-status="Rain Delay"] {
+  background: #fff8e4;
+  color: #6d5412;
+}
+
+.statusSelect[data-status="Cancelled"] {
+  background: #fff0f0;
+  color: #7b2828;
+}
+
+.gridSaveButton {
+  min-width: 78px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #d2d4cf;
+  border-radius: 7px;
+  background: #eceee9;
+  color: #7b807b;
+  font: inherit;
+  font-weight: 900;
+  cursor: default;
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+
+.gridSaveButton[data-dirty="true"]:not(:disabled) {
+  border-color: #9d7900;
+  background: #c99a00;
+  color: #151515;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(130, 98, 0, .22);
+}
+
+.gridSaveButton[data-dirty="true"]:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+.gridSaveButton:disabled {
+  cursor: default;
+}
+
+.helpText {
+  margin: -5px 2px 0;
+  color: #667067;
+  font-size: .82rem;
+}
+
+@media (max-width: 760px) {
+  .management {
+    gap: 11px;
+  }
+
+  .header {
+    display: grid;
+    gap: 12px;
+    padding: 15px;
+    border-radius: 13px;
+  }
+
+  .header h1 {
+    font-size: 1.6rem;
+  }
+
+  .header p {
+    font-size: .88rem;
+  }
+
+  .seasonPicker {
+    min-width: 0;
+  }
+
+  .summaryBar {
+    align-items: start;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    padding: 11px 13px;
+  }
+
+  .summaryBar p {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .logisticsGridWrap {
+    border-radius: 10px;
+  }
+
+  .logisticsGrid {
+    min-width: 1015px;
+    font-size: .84rem;
+  }
+
+  .gridStickyRound {
+    width: 48px;
+    min-width: 48px;
+    max-width: 48px;
+  }
+
+  .gridStickyMatchup {
+    left: 48px;
+    width: 154px;
+    min-width: 154px;
+    max-width: 154px;
+  }
+
+  .matchupTeam {
+    font-size: .78rem;
+  }
+
+  .homeTag {
+    display: none;
+  }
+
+  .roundDividerContent {
+    gap: 8px;
+    min-height: 38px;
+    padding: 7px 9px;
+  }
+
+  .roundDividerContent span:nth-of-type(1) {
+    max-width: 145px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .roundDividerContent span:last-child {
+    display: none;
+  }
+
+  .logisticsGrid th,
+  .logisticsGrid td {
+    padding: 6px;
+  }
+
+  .logisticsGrid input,
+  .logisticsGrid select,
+  .gridSaveButton {
+    min-height: 44px;
+  }
+
+  .logisticsGrid th:nth-child(3),
+  .logisticsGrid td:nth-child(3) {
+    width: 140px;
+    min-width: 140px;
+  }
+
+  .logisticsGrid th:nth-child(4),
+  .logisticsGrid td:nth-child(4) {
+    width: 190px;
+    min-width: 190px;
+  }
+
+  .logisticsGrid th:nth-child(7),
+  .logisticsGrid td:nth-child(7) {
+    width: 205px;
+    min-width: 205px;
+  }
+}
