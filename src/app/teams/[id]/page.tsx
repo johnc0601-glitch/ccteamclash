@@ -38,18 +38,26 @@ export default async function TeamPage({params}: TeamPageProps) {
   const team = await getStoredTeamById(id);
   if (!team?.active) notFound();
 
-  const [activeSeason, seasons, historicalPlayers, courses, launchPlayers] = await Promise.all([
+  const [activeSeason, seasons, courses, launchPlayers] = await Promise.all([
     services.seasons.getActive(),
     services.seasons.getAll(),
-    services.publicPlayers.getAll(),
     getStoredCourses({status: 'active'}),
     getLaunchPlayers(),
   ]);
   const rosterPlayerIds = activeSeason
     ? await getActiveSeasonRosterPlayerIds(activeSeason.id, team.id)
     : new Set<string>();
+  const rosterLaunchPlayers = launchPlayers
+    ? launchPlayers.filter((player) => player.active && rosterPlayerIds.has(player.id))
+    : [];
+  const historicalPlayersPromise = launchPlayers
+    ? services.publicPlayers.getForPlayerIdentities(
+      rosterLaunchPlayers.map(({id: playerId, name}) => ({id: playerId, name})),
+    )
+    : services.publicPlayers.getAll();
   const scheduleService = await createServerScheduleService();
-  const [nextMatch, teamEvents] = await Promise.all([
+  const [historicalPlayers, nextMatch, teamEvents] = await Promise.all([
+    historicalPlayersPromise,
     scheduleService.getTeamNextEvent(team.id),
     scheduleService.getTeamEvents(team.id),
   ]);
