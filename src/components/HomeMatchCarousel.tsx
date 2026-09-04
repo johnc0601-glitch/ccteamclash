@@ -13,6 +13,7 @@ export function HomeMatchCarousel({children, count}: HomeMatchCarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const groupWidthRef = useRef(0);
   const jumpingRef = useRef(false);
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (count <= 1) return;
@@ -28,7 +29,9 @@ export function HomeMatchCarousel({children, count}: HomeMatchCarouselProps) {
       const groupWidth = firstLast.offsetLeft - firstMiddle.offsetLeft;
       groupWidthRef.current = groupWidth;
       const centered = firstMiddle.offsetLeft - (track.clientWidth - firstMiddle.offsetWidth) / 2;
+      jumpingRef.current = true;
       track.scrollLeft = centered;
+      requestAnimationFrame(() => { jumpingRef.current = false; });
     };
 
     const frame = requestAnimationFrame(positionAtMiddle);
@@ -36,10 +39,11 @@ export function HomeMatchCarousel({children, count}: HomeMatchCarouselProps) {
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', positionAtMiddle);
+      if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
     };
   }, [count]);
 
-  const keepLooping = () => {
+  const recenterLoop = () => {
     if (count <= 1 || jumpingRef.current) return;
     const track = trackRef.current;
     const groupWidth = groupWidthRef.current;
@@ -54,21 +58,38 @@ export function HomeMatchCarousel({children, count}: HomeMatchCarouselProps) {
     const startCenter = middleStart.offsetLeft + middleStart.offsetWidth / 2;
     const endCenter = middleEnd.offsetLeft + middleEnd.offsetWidth / 2;
 
+    let adjustment = 0;
     if (center < startCenter - groupWidth * 0.35) {
-      jumpingRef.current = true;
-      track.scrollLeft += groupWidth;
-      requestAnimationFrame(() => { jumpingRef.current = false; });
+      adjustment = groupWidth;
     } else if (center > endCenter + groupWidth * 0.35) {
-      jumpingRef.current = true;
-      track.scrollLeft -= groupWidth;
-      requestAnimationFrame(() => { jumpingRef.current = false; });
+      adjustment = -groupWidth;
     }
+    if (!adjustment) return;
+
+    jumpingRef.current = true;
+    const previousSnapType = track.style.scrollSnapType;
+    track.style.scrollSnapType = 'none';
+    track.scrollLeft += adjustment;
+
+    requestAnimationFrame(() => {
+      track.style.scrollSnapType = previousSnapType;
+      requestAnimationFrame(() => { jumpingRef.current = false; });
+    });
+  };
+
+  const handleScroll = () => {
+    if (count <= 1 || jumpingRef.current) return;
+    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+    settleTimerRef.current = setTimeout(() => {
+      settleTimerRef.current = null;
+      recenterLoop();
+    }, 120);
   };
 
   return (
     <div className={styles.carousel}>
       <div className={styles.desktopTrack}>{children}</div>
-      <div ref={trackRef} className={styles.mobileTrack} onScroll={keepLooping}>
+      <div ref={trackRef} className={styles.mobileTrack} onScroll={handleScroll}>
         {count > 1
           ? [0, 1, 2].flatMap((cycle) => items.map((item, index) => (
               <div className={styles.slide} key={`${cycle}-${index}`} aria-hidden={cycle !== 1}>
