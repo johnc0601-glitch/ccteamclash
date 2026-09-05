@@ -64,15 +64,38 @@
   appearance: none;
   border: 0;
   border-radius: 999px;
-  padding: 0.75rem 1.1rem;
+  min-height: 46px;
+  padding: 0.75rem 1.25rem;
   background: var(--cc-gold);
   color: #111;
   font: inherit;
   font-weight: 800;
   cursor: pointer;
+  touch-action: manipulation;
+  transition: transform .12s ease, opacity .12s ease;
+}
+
+.saveButton:active:not(:disabled) {
+  transform: scale(.98);
+}
+
+.saveButton:disabled {
+  cursor: progress;
+  opacity: .7;
 }
 
 .current {
   margin: 0.25rem 0 0;
   color: var(--cc-text-muted);
+}
+
+@media (max-width: 760px) {
+  .actions {
+    justify-content: stretch;
+  }
+
+  .saveButton {
+    width: 100%;
+    min-height: 52px;
+  }
 }
