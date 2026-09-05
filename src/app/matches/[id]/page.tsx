@@ -28,6 +28,10 @@ import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 import {resolveMatchday, type PublicMatchday} from '@/services/matches/MatchdayService';
 import {
+  canViewMatchPrediction,
+  getMatchPredictionVisibility,
+} from '@/services/settings/MatchPredictionVisibility';
+import {
   buildPublicMatchPrediction,
   buildPublicMatchPredictionFromSnapshot,
   resolvePublicPredictionSource,
@@ -191,6 +195,8 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
   const attendanceRepository = new SupabaseMatchRosterRepository(supabase);
   const actor = userResult.data.user ? await attendanceRepository.getAttendanceActor(userResult.data.user.id) : undefined;
+  const predictionVisibility = await getMatchPredictionVisibility(supabase);
+  const showMatchPrediction = canViewMatchPrediction(predictionVisibility, actor);
   const openUnlockTeamIds = locked ? await getOpenRosterUnlockTeamIds(supabase, matchId) : new Set<string>();
 
   const personalAttendance = !locked && userResult.data.user ? await matchRosterService.getPersonalAttendance(userResult.data.user.id, matchId) : undefined;
@@ -216,7 +222,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
       <main className={styles.page} style={pageBackground}>
         <MatchHero matchday={matchday} />
         <div className={`shell ${styles.content}`}>
-          {matchPrediction ? (
+          {showMatchPrediction && matchPrediction ? (
             <MatchPredictionCard
               prediction={matchPrediction}
               awayTeamName={matchday.awayTeam.name}
