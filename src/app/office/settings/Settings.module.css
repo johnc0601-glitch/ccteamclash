@@ -50,7 +50,7 @@
 
 .option span {
   margin-top: 0.25rem;
-  color: var(--cc-muted);
+  color: var(--cc-text-muted);
   line-height: 1.45;
 }
 
@@ -74,5 +74,5 @@
 
 .current {
   margin: 0.25rem 0 0;
-  color: var(--cc-muted);
+  color: var(--cc-text-muted);
 }
