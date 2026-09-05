@@ -8,14 +8,15 @@ import type {AttendanceResult, PersonalAttendance} from '@/domain/match-roster/M
 import type {ManagedTeamRoster} from '@/domain/match-roster/MatchAttendance';
 import {createClient} from '@/lib/supabase/server';
 import type {OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
+import {getPublicMatchHref} from '@/services/matches/MatchPublicIdentity';
 
 export async function setOwnMatchAttendance(formData: FormData) {
   const matchId = readFormValue(formData, 'matchId');
   const status = readFormValue(formData, 'status');
   if (!matchId) redirect('/schedule?error=Match is required.');
 
-  const path = `/matches/${encodeURIComponent(matchId)}`;
   const supabase = await createClient();
+  const path = await getPublicMatchHref(supabase, matchId);
   const {data: {user}, error: userError} = await supabase.auth.getUser();
   if (userError || !user) redirect(`/account?error=${encodeURIComponent('Sign in to set your attendance.')}`);
 
@@ -38,8 +39,8 @@ export async function setCaptainMatchAttendance(formData: FormData) {
   const status = readFormValue(formData, 'status');
   if (!matchId || !playerId) redirect('/captain?error=Match and player are required.');
 
-  const path = `/matches/${encodeURIComponent(matchId)}?manage=roster`;
-  const {service, userId} = await getMatchRosterService();
+  const {service, userId, matchHref} = await getMatchRosterService(matchId);
+  const path = `${matchHref}?manage=roster`;
   let result: AttendanceResult<ManagedTeamRoster>;
   try {
     result = await service.setTeamAttendance(userId, matchId, playerId, status);
@@ -49,6 +50,7 @@ export async function setCaptainMatchAttendance(formData: FormData) {
   if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(result.message)}`);
 
   revalidatePath(`/matches/${matchId}`);
+  revalidatePath(matchHref);
   redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was updated.')}`);
 }
 
@@ -57,8 +59,8 @@ export async function clearCaptainMatchAttendance(formData: FormData) {
   const playerId = readFormValue(formData, 'playerId');
   if (!matchId || !playerId) redirect('/captain?error=Match and player are required.');
 
-  const path = `/matches/${encodeURIComponent(matchId)}?manage=roster`;
-  const {service, userId, supabase} = await getMatchRosterService();
+  const {service, userId, supabase, matchHref} = await getMatchRosterService(matchId);
+  const path = `${matchHref}?manage=roster`;
   const managedRosters = await service.getManagedTeamRosters(userId, matchId);
   const authorizedRoster = managedRosters.find((roster) => (
     roster.attendanceOpen
@@ -82,6 +84,7 @@ export async function clearCaptainMatchAttendance(formData: FormData) {
   }
 
   revalidatePath(`/matches/${matchId}`);
+  revalidatePath(matchHref);
   redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was reset to unconfirmed.')}`);
 }
 
@@ -90,8 +93,8 @@ export async function confirmCaptainMatchRoster(formData: FormData) {
   const teamId = readFormValue(formData, 'teamId');
   if (!matchId || !teamId) redirect('/captain?error=Match and team are required.');
 
-  const path = `/matches/${encodeURIComponent(matchId)}?manage=roster`;
-  const {service, userId} = await getMatchRosterService();
+  const {service, userId, matchHref} = await getMatchRosterService(matchId);
+  const path = `${matchHref}?manage=roster`;
   let result: AttendanceResult<ManagedTeamRoster>;
   try {
     result = await service.confirmTeamRoster(userId, matchId, teamId);
@@ -101,6 +104,7 @@ export async function confirmCaptainMatchRoster(formData: FormData) {
   if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(result.message)}`);
 
   revalidatePath(`/matches/${matchId}`);
+  revalidatePath(matchHref);
   revalidatePath('/captain');
   redirect(`${path}&captainNotice=${encodeURIComponent('Match roster confirmed.')}`);
 }
@@ -118,8 +122,8 @@ async function runCommissionerSnapshotAction(formData: FormData, operation: 'add
   const teamId = readFormValue(formData, 'teamId');
   const playerId = readFormValue(formData, 'playerId');
   if (!matchId || !teamId || !playerId) redirect('/schedule?error=Match, team, and player are required.');
-  const path = `/matches/${encodeURIComponent(matchId)}?manage=roster`;
-  const {service, userId} = await getMatchRosterService();
+  const {service, userId, matchHref} = await getMatchRosterService(matchId);
+  const path = `${matchHref}?manage=roster`;
   let result: AttendanceResult<OfficialMatchRoster>;
   try {
     result = operation === 'add'
@@ -130,18 +134,24 @@ async function runCommissionerSnapshotAction(formData: FormData, operation: 'add
   }
   if (!result.ok) redirect(`${path}&commissionerError=${encodeURIComponent(result.message)}`);
   revalidatePath(`/matches/${matchId}`);
+  revalidatePath(matchHref);
   redirect(`${path}&commissionerNotice=${encodeURIComponent(operation === 'add' ? 'Player added to the official roster.' : 'Player removed from the official roster.')}`);
 }
 
-async function getMatchRosterService() {
+async function getMatchRosterService(matchId: string) {
   const supabase = await createClient();
-  const {data: {user}, error} = await supabase.auth.getUser();
+  const [authResult, matchHref] = await Promise.all([
+    supabase.auth.getUser(),
+    getPublicMatchHref(supabase, matchId),
+  ]);
+  const {data: {user}, error} = authResult;
   if (error || !user) redirect(`/account?error=${encodeURIComponent('Sign in with an approved captain account.')}`);
 
   return {
     service: new MatchRosterService(new SeasonAwareMatchRosterRepository(supabase)),
     userId: user.id,
     supabase,
+    matchHref,
   };
 }
 
