@@ -106,7 +106,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
             <article className={styles.row} key={event.id}>
               <div className={styles.matchHeading}><strong>vs {event.opponent}</strong><span className={styles.sideLabel}>{event.isHome ? 'Home' : 'Away'}</span></div>
               <span className={styles.muted}>{event.date} / {event.time}</span><span className={styles.muted}>{event.course}</span>
-              <Link href={`/matches/${event.id}?manage=roster`}>Manage Match Roster</Link>
+              <Link href={`${event.href}?manage=roster`}>Manage Match Roster</Link>
             </article>
           )) : <p className={styles.empty}>No upcoming matches are posted for your team yet.</p>}</div>
         </section>
