@@ -11,6 +11,7 @@ import {
   softDeleteMatchFeedPost,
 } from '@/app/matches/[id]/feedActions';
 import {isMatchFeedOpen} from '@/services/matches/MatchFeedLifecycle';
+import {getPublicMatchHref} from '@/services/matches/MatchPublicIdentity';
 import {MatchFeedComposer} from './MatchFeedComposer';
 import styles from './MatchFeed.module.css';
 
@@ -64,6 +65,7 @@ type FeedCursor = {
 
 export async function MatchFeed({matchId, matchDate, notice, error, before}: MatchFeedProps) {
   const supabase = await createClient();
+  const matchHref = await getPublicMatchHref(supabase, matchId);
   const db = supabase as any;
   const cursor = parseFeedCursor(before);
   const [{data: {user}}, postsResult] = await Promise.all([
@@ -139,8 +141,8 @@ export async function MatchFeed({matchId, matchDate, notice, error, before}: Mat
 
       {(cursor || nextCursor) ? (
         <nav aria-label="Match feed pages" style={{display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginTop: 14}}>
-          {cursor ? <Link href={`/matches/${encodeURIComponent(matchId)}#match-feed`}>Latest posts</Link> : <span />}
-          {nextCursor ? <Link href={olderFeedHref(matchId, nextCursor)}>Older posts -&gt;</Link> : <span />}
+          {cursor ? <Link href={`${matchHref}#match-feed`}>Latest posts</Link> : <span />}
+          {nextCursor ? <Link href={olderFeedHref(matchHref, nextCursor)}>Older posts -&gt;</Link> : <span />}
         </nav>
       ) : null}
     </section>
@@ -324,9 +326,9 @@ function parseFeedCursor(value: string | undefined): FeedCursor | null {
   return {createdAt: new Date(createdAt).toISOString(), id};
 }
 
-function olderFeedHref(matchId: string, cursor: string): string {
+function olderFeedHref(matchHref: string, cursor: string): string {
   const params = new URLSearchParams({feedBefore: cursor});
-  return `/matches/${encodeURIComponent(matchId)}?${params.toString()}#match-feed`;
+  return `${matchHref}?${params.toString()}#match-feed`;
 }
 
 function formatDate(value: string) {
