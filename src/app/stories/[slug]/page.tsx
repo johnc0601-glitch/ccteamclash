@@ -2,13 +2,17 @@ import type {Metadata} from 'next';
 import {notFound} from 'next/navigation';
 import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
+import {StoryComments} from '@/components/stories/StoryComments';
 import {getMediaAssetById} from '@/services/media/MediaLibraryService';
 import {getStoryBySlug} from '@/services/stories/StoryService';
 import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
 
 export const dynamic = 'force-dynamic';
 
-type StoryPageProps = {params: Promise<{slug: string}>};
+type StoryPageProps = {
+  params: Promise<{slug: string}>;
+  searchParams?: Promise<{storyNotice?: string; storyError?: string}>;
+};
 
 export async function generateMetadata({params}: StoryPageProps): Promise<Metadata> {
   const {slug} = await params;
@@ -34,8 +38,11 @@ export async function generateMetadata({params}: StoryPageProps): Promise<Metada
   };
 }
 
-export default async function Page({params}: StoryPageProps) {
-  const {slug} = await params;
+export default async function Page({params, searchParams}: StoryPageProps) {
+  const [{slug}, query] = await Promise.all([
+    params,
+    searchParams ?? Promise.resolve({}),
+  ]);
   const story = await getStoryBySlug(slug);
 
   if (!story) notFound();
@@ -57,6 +64,12 @@ export default async function Page({params}: StoryPageProps) {
             <Link className="button" href={link.url} key={`${link.label}-${link.url}`}>{link.label}</Link>
           ))}
         </div>
+        <StoryComments
+          storyId={story.id}
+          storySlug={story.slug}
+          notice={query.storyNotice}
+          error={query.storyError}
+        />
       </main>
       <Footer />
     </>
