@@ -10,13 +10,15 @@ import {SupabaseMatchRosterRepository} from '@/domain/match-roster/SupabaseMatch
 import {sendReminderBatch} from '@/lib/email/resend';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
+import {getPublicMatchHref} from '@/services/matches/MatchPublicIdentity';
 
 export async function emailCaptainUnconfirmed(formData: FormData) {
   const matchId = readFormValue(formData, 'matchId');
   if (!matchId) redirect('/schedule?error=Match is required.');
 
-  const path = `/matches/${encodeURIComponent(matchId)}?manage=roster`;
   const supabase = await createClient();
+  const publicMatchPath = await getPublicMatchHref(supabase, matchId);
+  const path = `${publicMatchPath}?manage=roster`;
   const {data: {user}, error: userError} = await supabase.auth.getUser();
   if (userError || !user) redirect(`/account?error=${encodeURIComponent('Sign in with an approved captain account.')}`);
 
@@ -107,7 +109,7 @@ export async function emailCaptainUnconfirmed(formData: FormData) {
       awayTeamName,
       homeTeamName,
       matchDateLabel: formatMatchDate(match.date),
-      matchUrl: `${siteUrl}/matches/${encodeURIComponent(matchId)}`,
+      matchUrl: `${siteUrl}${publicMatchPath}`,
     });
 
     await sendReminderBatch(recipients.map((recipient) => ({
@@ -119,7 +121,7 @@ export async function emailCaptainUnconfirmed(formData: FormData) {
       ],
     })));
 
-    revalidatePath(`/matches/${matchId}`);
+    revalidatePath(publicMatchPath);
     const missingCount = unconfirmed.length - recipients.length;
     const notice = missingCount > 0
       ? `Reminder sent to ${recipients.length} unconfirmed player${recipients.length === 1 ? '' : 's'}. ${missingCount} player${missingCount === 1 ? '' : 's'} had no linked email.`
