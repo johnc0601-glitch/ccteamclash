@@ -5,6 +5,7 @@ import {
   type MatchPredictionVisibility,
 } from '@/services/settings/MatchPredictionVisibility';
 import {updateMatchPredictionVisibility} from './actions';
+import {SaveVisibilityButton} from './SaveVisibilityButton';
 import styles from './Settings.module.css';
 
 type OfficeSettingsPageProps = {
@@ -72,7 +73,7 @@ export default async function OfficeSettingsPage({searchParams}: OfficeSettingsP
             ))}
 
             <div className={styles.actions}>
-              <button className={styles.saveButton} type="submit">Save visibility</button>
+              <SaveVisibilityButton />
             </div>
           </form>
         </section>
