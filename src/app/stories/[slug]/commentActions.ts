@@ -212,7 +212,8 @@ async function requireStoryAccount(storyId: string, storySlug: string) {
     .maybeSingle();
   if (!profile) redirect(`/account?error=${encodeURIComponent('Your account profile is not ready yet.')}`);
 
-  const {data: story} = await supabase
+  const db = supabase as any;
+  const {data: story} = await db
     .from('launch_stories')
     .select('id,slug,status')
     .eq('id', storyId)
