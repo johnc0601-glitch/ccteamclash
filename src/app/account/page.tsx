@@ -18,6 +18,8 @@ import {AccountPageLayout, readAccountParam} from './AccountPageLayout';
 import {PasswordField, SubmitButton} from './AuthFormControls';
 import styles from './Account.module.css';
 
+const FREE_AGENT_TEAM_VALUE = '__free_agent__';
+
 type AccountPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
@@ -26,9 +28,11 @@ type RegistrationSeason = {id: string; name: string; start_date: string};
 type RegistrationTeam = {id: string; name: string};
 type RegistrationApplication = {
   status: string;
-  requested_team_id: string;
+  requested_team_id: string | null;
   player_type: string;
   gender: string;
+  submitted_pdga_number: string;
+  submitted_pdga_rating: number | null;
 };
 type EstablishedRegistration = {
   playerType: 'Adult' | 'Junior';
@@ -123,55 +127,76 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
 
   if (profile) {
     const launchSupabase = supabase as any;
-    const {data: setupRow} = await launchSupabase
-      .from('launch_profiles')
-      .select('played_before')
-      .eq('id', profile.id)
-      .maybeSingle();
-    playedBefore = typeof setupRow?.played_before === 'boolean' ? setupRow.played_before : null;
-
-    if (profile.playerId && playedBefore !== null) {
-      const {data: openSeason} = await supabase
+    const [{data: setupRow}, {data: openSeason}] = await Promise.all([
+      launchSupabase
+        .from('launch_profiles')
+        .select('played_before')
+        .eq('id', profile.id)
+        .maybeSingle(),
+      launchSupabase
         .from('launch_seasons')
         .select('id, name, start_date')
         .eq('registration_open', true)
         .eq('active', true)
         .eq('published', true)
+        .eq('archived', false)
         .order('year', {ascending: false})
         .limit(1)
+        .maybeSingle(),
+    ]);
+
+    playedBefore = typeof setupRow?.played_before === 'boolean' ? setupRow.played_before : null;
+    registrationSeason = openSeason as RegistrationSeason | null;
+
+    if (registrationSeason) {
+      const applicationPromise = launchSupabase
+        .from('launch_player_applications')
+        .select('status, requested_team_id, player_type, gender, submitted_pdga_number, submitted_pdga_rating')
+        .eq('profile_id', profile.id)
+        .eq('season_id', registrationSeason.id)
         .maybeSingle();
-      registrationSeason = openSeason as RegistrationSeason | null;
+      const teamsPromise = launchSupabase
+        .from('launch_season_teams')
+        .select('team_id')
+        .eq('season_id', registrationSeason.id);
+      const priorApplicationPromise = launchSupabase
+        .from('launch_player_applications')
+        .select('player_type, gender, created_at')
+        .eq('profile_id', profile.id)
+        .eq('status', 'Approved')
+        .neq('season_id', registrationSeason.id)
+        .order('created_at', {ascending: false})
+        .limit(1)
+        .maybeSingle();
+      const genderLockPromise = profile.playerId
+        ? launchSupabase.rpc('launch_player_gender_locked', {target_player_id: profile.playerId})
+        : Promise.resolve({data: false});
 
-      if (registrationSeason) {
-        const [
-          {data: existingApplication},
-          {data: seasonTeams},
-          {data: priorApplication},
-          {data: genderLocked},
-        ] = await Promise.all([
-          launchSupabase
-            .from('launch_player_applications')
-            .select('status, requested_team_id, player_type, gender')
-            .eq('profile_id', profile.id)
-            .eq('season_id', registrationSeason.id)
-            .maybeSingle(),
-          launchSupabase
-            .from('launch_season_teams')
-            .select('team_id')
-            .eq('season_id', registrationSeason.id),
-          launchSupabase
-            .from('launch_player_applications')
-            .select('player_type, gender, created_at')
-            .eq('profile_id', profile.id)
-            .eq('status', 'Approved')
-            .neq('season_id', registrationSeason.id)
-            .order('created_at', {ascending: false})
-            .limit(1)
-            .maybeSingle(),
-          launchSupabase.rpc('launch_player_gender_locked', {target_player_id: profile.playerId}),
-        ]);
-        application = existingApplication as RegistrationApplication | null;
+      const [
+        {data: existingApplication},
+        {data: seasonTeams},
+        {data: priorApplication},
+        {data: genderLocked},
+      ] = await Promise.all([
+        applicationPromise,
+        teamsPromise,
+        priorApplicationPromise,
+        genderLockPromise,
+      ]);
 
+      application = existingApplication as RegistrationApplication | null;
+
+      const teamIds = ((seasonTeams ?? []) as {team_id: string}[]).map((item) => item.team_id);
+      if (teamIds.length) {
+        const {data: teamRows} = await launchSupabase
+          .from('launch_teams')
+          .select('id, name')
+          .in('id', teamIds)
+          .order('name');
+        registrationTeams = teamRows ?? [];
+      }
+
+      if (profile.playerId) {
         const linkedPlayer = players.find((player) => player.id === profile?.playerId);
         const previousPlayerType = priorApplication?.player_type === 'Adult' || priorApplication?.player_type === 'Junior'
           ? priorApplication.player_type
@@ -187,16 +212,6 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
             playerType: previousPlayerType,
             gender: establishedGender,
           };
-        }
-
-        const teamIds = ((seasonTeams ?? []) as {team_id: string}[]).map((item) => item.team_id);
-        if (teamIds.length) {
-          const {data: teamRows} = await supabase
-            .from('launch_teams')
-            .select('id, name')
-            .in('id', teamIds)
-            .order('name');
-          registrationTeams = teamRows ?? [];
         }
       }
     }
@@ -231,13 +246,12 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
     }
   }
 
-  const playerSetupComplete = Boolean(linkedPlayer && playedBefore !== null);
-  const registrationIncomplete = Boolean(profile && (!playerSetupComplete || (registrationSeason && !application)));
+  const registrationIncomplete = Boolean(profile && registrationSeason && !application);
 
   return (
     <AccountPageLayout
       description={registrationIncomplete
-        ? 'Complete each required step to register for the Coastal Clash season.'
+        ? 'Choose your team, or choose Free Agent if you are looking for one.'
         : 'Manage your player profile, season registration, league history, and access.'}
       error={error ?? profileSetupError}
       notice={notice}
@@ -297,95 +311,65 @@ function MemberProfile({
   const linkedPlayer = players.find((player) => player.id === profile.playerId);
   const playerSetupComplete = Boolean(linkedPlayer && playedBefore !== null);
   const requestedTeam = registrationTeams.find((team) => team.id === application?.requested_team_id);
-
-  if (!playerSetupComplete) {
-    return (
-      <section className={styles.grid}>
-        <article className={styles.panel}>
-          <span className={styles.eyebrow}>Step 1 of 2 · Player record</span>
-          <h2>Find your Coastal Clash player record</h2>
-          <p className={styles.linkingNote}>Most players already have a record. Search for your name first so your history, rankings, and team records stay connected.</p>
-          <form className={styles.form} action={completePlayerSetup}>
-            <input name="playedBefore" type="hidden" value="true" />
-            <label htmlFor="setupRequestedPlayerId">Your player record</label>
-            <PlayerRecordSelect
-              emptyLabel="Choose your previous league name"
-              id="setupRequestedPlayerId"
-              name="requestedPlayerId"
-              players={players}
-              searchLabel="Search player names"
-              searchPlaceholder="Type your name"
-              required
-            />
-            <button className={styles.primaryButton} type="submit">Connect and continue</button>
-          </form>
-          <details style={{marginTop: '1rem'}}>
-            <summary><strong>I have never played Coastal Clash before</strong></summary>
-            <p className={styles.linkingNote}>Only use this if you do not have an existing Coastal Clash player record. This creates a new player with no previous league history.</p>
-            <form className={styles.form} action={completePlayerSetup}>
-              <input name="playedBefore" type="hidden" value="false" />
-              <input name="confirmNewPlayer" type="hidden" value="yes" />
-              <button className={styles.secondaryButton} type="submit">Create new player and continue</button>
-            </form>
-          </details>
-        </article>
-      </section>
-    );
-  }
+  const applicationTeamLabel = application?.requested_team_id
+    ? requestedTeam?.name ?? application.requested_team_id
+    : 'Free Agent — Looking for a team';
 
   if (registrationSeason && !application) {
     return (
       <section className={styles.grid}>
-        <article className={styles.panel}>
-          <span className={styles.eyebrow}>Step 2 of 2 · Team registration</span>
-          <h2>{registrationSeason.name}</h2>
-          <p className={styles.linkingNote}>
-            {establishedRegistration
-              ? `Player record connected as ${linkedPlayer?.name}. Your division is permanently locked. Choose your team and Junior status for this season.`
-              : `Player record connected as ${linkedPlayer?.name}. Choose a team and division to finish registration.`}
-          </p>
-          <form className={styles.form} action={submitSeasonApplication}>
-            <input name="seasonId" type="hidden" value={registrationSeason.id} />
-            <label htmlFor="accountRequestedTeam">Team</label>
-            <select id="accountRequestedTeam" name="requestedTeamId" required defaultValue="">
-              <option value="" disabled>Choose your team</option>
-              {registrationTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
-            </select>
-            <label style={{display: 'flex', alignItems: 'center', gap: '10px', textTransform: 'none'}}>
-              <input
-                name="playerType"
-                type="checkbox"
-                value="Junior"
-                defaultChecked={establishedRegistration?.playerType === 'Junior'}
-                style={{width: 'auto', minHeight: 'auto'}}
-              />
-              <input name="playerType" type="hidden" value="Adult" />
-              <span>Junior this season</span>
-            </label>
-            {establishedRegistration ? (
-              <>
-                <input name="gender" type="hidden" value={establishedRegistration.gender} />
-                <label>Division</label>
-                <div className={styles.connected}><strong>{establishedRegistration.gender}</strong><span>Permanent</span></div>
-              </>
-            ) : (
-              <>
-                <label htmlFor="accountGender">Division</label>
-                <select id="accountGender" name="gender" required defaultValue="">
-                  <option value="" disabled>Choose division</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </>
-            )}
-            <button className={styles.primaryButton} type="submit">Submit registration</button>
-          </form>
-        </article>
+        <RegistrationForm
+          season={registrationSeason}
+          teams={registrationTeams}
+          establishedRegistration={establishedRegistration}
+          linkedPlayer={linkedPlayer}
+          playerSetupComplete={playerSetupComplete}
+        />
+        {!playerSetupComplete ? <PlayerSetupPanel players={players} freeAgentOptional /> : null}
       </section>
     );
   }
 
-  const teamName = playerStats?.teamName || requestedTeam?.name || 'Unassigned';
+  if (!playerSetupComplete && application) {
+    const isFreeAgent = application.requested_team_id === null;
+    return (
+      <section className={styles.grid}>
+        <article className={`${styles.panel} ${styles.registrationPanel}`}>
+          <span className={styles.eyebrow}>Season registration</span>
+          <h2>{registrationSeason?.name ?? 'Current season'}</h2>
+          <div className={styles.registrationStatus}>
+            <span>{isFreeAgent ? 'Free Agent' : application.status}</span>
+            <strong>{applicationTeamLabel}</strong>
+          </div>
+          <dl className={styles.profileDetails}>
+            <div><dt>Team</dt><dd>{applicationTeamLabel}</dd></div>
+            <div><dt>Player type</dt><dd>{application.player_type}</dd></div>
+            <div><dt>Division</dt><dd>{application.gender}</dd></div>
+            {isFreeAgent ? <div><dt>PDGA #</dt><dd>{application.submitted_pdga_number || '—'}</dd></div> : null}
+            {isFreeAgent ? <div><dt>PDGA rating</dt><dd>{application.submitted_pdga_rating ?? '—'}</dd></div> : null}
+          </dl>
+          {isFreeAgent ? (
+            <p className={styles.muted}>Player Setup is not required while you are in Free Agency. If a captain selects you, complete it before final roster approval.</p>
+          ) : (
+            <p className={styles.muted}>Complete Player Setup so your captain can finish adding you to the roster.</p>
+          )}
+        </article>
+        <PlayerSetupPanel players={players} freeAgentOptional={isFreeAgent} />
+      </section>
+    );
+  }
+
+  if (!playerSetupComplete) {
+    return (
+      <section className={styles.grid}>
+        <PlayerSetupPanel players={players} />
+      </section>
+    );
+  }
+
+  const teamName = application
+    ? applicationTeamLabel
+    : playerStats?.teamName || 'Unassigned';
   const playerType = application?.player_type || establishedRegistration?.playerType || 'Adult';
   const gender = application?.gender || linkedPlayer?.gender || establishedRegistration?.gender || '—';
 
@@ -426,14 +410,16 @@ function MemberProfile({
           <span className={styles.eyebrow}>Season registration</span>
           <h2>{registrationSeason.name}</h2>
           <div className={styles.registrationStatus}>
-            <span>{application.status === 'Approved' ? 'Registered' : application.status}</span>
-            <strong>{requestedTeam?.name ?? application.requested_team_id}</strong>
+            <span>{application.requested_team_id === null ? 'Free Agent' : application.status === 'Approved' ? 'Registered' : application.status}</span>
+            <strong>{applicationTeamLabel}</strong>
           </div>
           <dl className={styles.profileDetails}>
-            <div><dt>Team</dt><dd>{requestedTeam?.name ?? application.requested_team_id}</dd></div>
+            <div><dt>Team</dt><dd>{applicationTeamLabel}</dd></div>
             <div><dt>Player type</dt><dd>{application.player_type}</dd></div>
             <div><dt>Division</dt><dd>{application.gender}</dd></div>
             <div><dt>Season starts</dt><dd>{formatDate(registrationSeason.start_date)}</dd></div>
+            {application.requested_team_id === null ? <div><dt>PDGA #</dt><dd>{application.submitted_pdga_number || linkedPlayer?.pdgaNumber || '—'}</dd></div> : null}
+            {application.requested_team_id === null ? <div><dt>PDGA rating</dt><dd>{application.submitted_pdga_rating ?? linkedPlayer?.pdgaRating ?? '—'}</dd></div> : null}
           </dl>
         </article>
       ) : null}
@@ -472,6 +458,129 @@ function MemberProfile({
         <div className={styles.themeAction}><ThemeToggle /></div>
       </article>
     </section>
+  );
+}
+
+function RegistrationForm({
+  season,
+  teams,
+  establishedRegistration,
+  linkedPlayer,
+  playerSetupComplete,
+}: {
+  season: RegistrationSeason;
+  teams: RegistrationTeam[];
+  establishedRegistration: EstablishedRegistration;
+  linkedPlayer: LaunchPlayer | undefined;
+  playerSetupComplete: boolean;
+}) {
+  return (
+    <article className={styles.panel}>
+      <span className={styles.eyebrow}>Season registration</span>
+      <h2>{season.name}</h2>
+      <p className={styles.linkingNote}>
+        {playerSetupComplete
+          ? 'Choose your team, or choose Free Agent if you are looking for one.'
+          : 'Choose Free Agent now without Player Setup. If you are registering directly to a team, connect your player record below first.'}
+      </p>
+      <form className={styles.form} action={submitSeasonApplication}>
+        <input name="seasonId" type="hidden" value={season.id} />
+        <label htmlFor="accountRequestedTeam">Team</label>
+        <select id="accountRequestedTeam" name="requestedTeamId" required defaultValue="">
+          <option value="" disabled>Choose your team</option>
+          <option value={FREE_AGENT_TEAM_VALUE}>Free Agent — Looking for a team</option>
+          {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+        </select>
+        <label style={{display: 'flex', alignItems: 'center', gap: '10px', textTransform: 'none'}}>
+          <input
+            name="playerType"
+            type="checkbox"
+            value="Junior"
+            defaultChecked={establishedRegistration?.playerType === 'Junior'}
+            style={{width: 'auto', minHeight: 'auto'}}
+          />
+          <input name="playerType" type="hidden" value="Adult" />
+          <span>Junior this season</span>
+        </label>
+        {establishedRegistration ? (
+          <>
+            <input name="gender" type="hidden" value={establishedRegistration.gender} />
+            <label>Division</label>
+            <div className={styles.connected}><strong>{establishedRegistration.gender}</strong><span>Permanent</span></div>
+          </>
+        ) : (
+          <>
+            <label htmlFor="accountGender">Division</label>
+            <select id="accountGender" name="gender" required defaultValue={linkedPlayer?.gender === 'Male' || linkedPlayer?.gender === 'Female' ? linkedPlayer.gender : ''}>
+              <option value="" disabled>Choose division</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </>
+        )}
+        <label htmlFor="accountPdgaNumber">PDGA #</label>
+        <input
+          id="accountPdgaNumber"
+          name="pdgaNumber"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={10}
+          defaultValue={linkedPlayer?.pdgaNumber || ''}
+          placeholder="Optional for Free Agents"
+        />
+        <label htmlFor="accountPdgaRating">PDGA rating</label>
+        <input
+          id="accountPdgaRating"
+          name="pdgaRating"
+          type="number"
+          min={1}
+          max={2000}
+          step={1}
+          defaultValue={linkedPlayer?.pdgaRating ?? ''}
+          placeholder="Optional for Free Agents"
+        />
+        <p className={styles.muted}>PDGA information is optional and is used to help captains evaluate Free Agent listings.</p>
+        <button className={styles.primaryButton} type="submit">Submit registration</button>
+      </form>
+    </article>
+  );
+}
+
+function PlayerSetupPanel({players, freeAgentOptional = false}: {players: LaunchPlayer[]; freeAgentOptional?: boolean}) {
+  return (
+    <article className={styles.panel}>
+      <span className={styles.eyebrow}>Player record</span>
+      <h2>Find your Coastal Clash player record</h2>
+      <p className={styles.linkingNote}>
+        {freeAgentOptional
+          ? 'This is not required while you are a Free Agent. Connect it before final roster approval so your history, ratings, and team records stay together.'
+          : 'Connect your player record before registering directly to a team so your history, rankings, and team records stay connected.'}
+      </p>
+      <form className={styles.form} action={completePlayerSetup}>
+        <input name="playedBefore" type="hidden" value="true" />
+        <label htmlFor="setupRequestedPlayerId">Your player record</label>
+        <PlayerRecordSelect
+          emptyLabel="Choose your previous league name"
+          id="setupRequestedPlayerId"
+          name="requestedPlayerId"
+          players={players}
+          searchLabel="Search player names"
+          searchPlaceholder="Type your name"
+          required
+        />
+        <button className={styles.primaryButton} type="submit">Connect player record</button>
+      </form>
+      <details style={{marginTop: '1rem'}}>
+        <summary><strong>I have never played Coastal Clash before</strong></summary>
+        <p className={styles.linkingNote}>Only use this if you do not have an existing Coastal Clash player record. This creates a new player with no previous league history.</p>
+        <form className={styles.form} action={completePlayerSetup}>
+          <input name="playedBefore" type="hidden" value="false" />
+          <input name="confirmNewPlayer" type="hidden" value="yes" />
+          <button className={styles.secondaryButton} type="submit">Create new player record</button>
+        </form>
+      </details>
+    </article>
   );
 }
 
