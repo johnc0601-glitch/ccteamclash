@@ -97,7 +97,7 @@ export async function PersonalAttendanceCard({
         </form>
         {canManageRoster ? (
           <Link
-            href={`/matches/${encodeURIComponent(current.matchId)}?manage=roster`}
+            href="?manage=roster"
             style={{
               alignItems: 'center',
               border: '1px solid var(--cc-teal)',
