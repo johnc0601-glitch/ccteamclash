@@ -15,6 +15,14 @@ export function publicMatchHref(identity: MatchPublicIdentity): string {
   return `/matches/${encodeURIComponent(identity.publicSlug || identity.matchId)}`;
 }
 
+export async function getPublicMatchHref(
+  supabase: SupabaseLike,
+  matchId: string,
+): Promise<string> {
+  const identities = await getMatchPublicIdentities(supabase, [matchId]);
+  return publicMatchHref(identities.get(matchId) ?? {matchId, publicSlug: null});
+}
+
 export async function getMatchPublicIdentities(
   supabase: SupabaseLike,
   matchIds: string[],
