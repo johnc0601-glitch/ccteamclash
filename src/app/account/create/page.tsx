@@ -24,7 +24,7 @@ export default async function CreateAccountPage({searchParams}: CreateAccountPag
 
   return (
     <AccountPageLayout
-      description="Create your league login. After you verify your email, you will complete Player Setup once and then register for the current season."
+      description="Create your league login. After you verify your email, choose your team or Free Agent for the current season."
       error={error}
       narrow
       notice={notice}
