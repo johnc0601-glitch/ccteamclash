@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {redirect} from 'next/navigation';
 import {OfficePage} from '@/components/commissioner/OfficePage';
 import {createClient} from '@/lib/supabase/server';
+import {getMatchPublicIdentities, publicMatchHref} from '@/services/matches/MatchPublicIdentity';
 import {reviewMatchFeedReport, reviewStoryCommentReport} from './actions';
 
 type MatchReportRow = {
@@ -63,6 +64,7 @@ export default async function ModerationPage({searchParams}: {searchParams?: Pro
 
   const matchReports = (matchReportResult.data ?? []) as MatchReportRow[];
   const storyReports = (storyReportResult.data ?? []) as StoryReportRow[];
+  const matchIds = [...new Set(matchReports.map((report) => report.match_id).filter(Boolean))];
   const postIds = [...new Set(matchReports.map((report) => report.post_id).filter((value): value is string => Boolean(value)))];
   const matchCommentIds = [...new Set(matchReports.map((report) => report.comment_id).filter((value): value is string => Boolean(value)))];
   const storyCommentIds = [...new Set(storyReports.map((report) => report.comment_id))];
@@ -72,12 +74,13 @@ export default async function ModerationPage({searchParams}: {searchParams?: Pro
     ...storyReports.flatMap((report) => [report.reporter_profile_id, report.reviewed_by_profile_id]),
   ].filter((value): value is string => Boolean(value)))];
 
-  const [postsResult, matchCommentsResult, storyCommentsResult, storiesResult, profilesResult] = await Promise.all([
+  const [postsResult, matchCommentsResult, storyCommentsResult, storiesResult, profilesResult, matchIdentities] = await Promise.all([
     postIds.length ? db.from('launch_match_feed_posts').select('id,author_name_snapshot,body,deleted_at').in('id', postIds) : Promise.resolve({data: []}),
     matchCommentIds.length ? db.from('launch_match_feed_comments').select('id,post_id,author_name_snapshot,body,deleted_at').in('id', matchCommentIds) : Promise.resolve({data: []}),
     storyCommentIds.length ? db.from('launch_story_comments').select('id,story_id,author_name_snapshot,body,deleted_at').in('id', storyCommentIds) : Promise.resolve({data: []}),
     storyIds.length ? db.from('launch_stories').select('id,slug,title').in('id', storyIds) : Promise.resolve({data: []}),
     profileIds.length ? db.from('launch_profiles').select('id,display_name').in('id', profileIds) : Promise.resolve({data: []}),
+    getMatchPublicIdentities(supabase, matchIds),
   ]);
 
   const posts = new Map(((postsResult.data ?? []) as PostRow[]).map((row) => [row.id, row]));
@@ -85,6 +88,10 @@ export default async function ModerationPage({searchParams}: {searchParams?: Pro
   const storyComments = new Map(((storyCommentsResult.data ?? []) as StoryCommentRow[]).map((row) => [row.id, row]));
   const stories = new Map(((storiesResult.data ?? []) as StoryRow[]).map((row) => [row.id, row]));
   const profiles = new Map(((profilesResult.data ?? []) as ProfileRow[]).map((row) => [row.id, row]));
+  const matchHrefs = new Map(matchIds.map((matchId) => [
+    matchId,
+    publicMatchHref(matchIdentities.get(matchId) ?? {matchId, publicSlug: null}),
+  ]));
 
   const pendingMatch = matchReports.filter((report) => report.status === 'Pending');
   const reviewedMatch = matchReports.filter((report) => report.status !== 'Pending');
@@ -120,7 +127,7 @@ export default async function ModerationPage({searchParams}: {searchParams?: Pro
         {!pendingMatch.length ? <p>No pending Matchday reports.</p> : null}
         <div style={{display: 'grid', gap: 12}}>
           {pendingMatch.map((report) => (
-            <MatchReportCard key={report.id} report={report} posts={posts} comments={matchComments} profiles={profiles} />
+            <MatchReportCard key={report.id} report={report} posts={posts} comments={matchComments} profiles={profiles} matchHrefs={matchHrefs} />
           ))}
         </div>
       </section>
@@ -140,7 +147,7 @@ export default async function ModerationPage({searchParams}: {searchParams?: Pro
         {!reviewedMatch.length ? <p>No reviewed Matchday reports yet.</p> : null}
         <div style={{display: 'grid', gap: 10}}>
           {reviewedMatch.map((report) => (
-            <MatchReportCard key={report.id} report={report} posts={posts} comments={matchComments} profiles={profiles} readOnly />
+            <MatchReportCard key={report.id} report={report} posts={posts} comments={matchComments} profiles={profiles} matchHrefs={matchHrefs} readOnly />
           ))}
         </div>
       </section>
@@ -200,11 +207,12 @@ function StoryReportCard({report, comments, stories, profiles, readOnly = false}
   );
 }
 
-function MatchReportCard({report, posts, comments, profiles, readOnly = false}: {
+function MatchReportCard({report, posts, comments, profiles, matchHrefs, readOnly = false}: {
   report: MatchReportRow;
   posts: Map<string, PostRow>;
   comments: Map<string, MatchCommentRow>;
   profiles: Map<string, ProfileRow>;
+  matchHrefs: Map<string, string>;
   readOnly?: boolean;
 }) {
   const post = report.post_id ? posts.get(report.post_id) : undefined;
@@ -215,6 +223,7 @@ function MatchReportCard({report, posts, comments, profiles, readOnly = false}: 
   const deleted = Boolean(post?.deleted_at ?? comment?.deleted_at);
   const reporter = profiles.get(report.reporter_profile_id)?.display_name || 'Member';
   const reviewer = report.reviewed_by_profile_id ? profiles.get(report.reviewed_by_profile_id)?.display_name || 'Commissioner' : null;
+  const matchHref = matchHrefs.get(report.match_id) ?? `/matches/${encodeURIComponent(report.match_id)}`;
 
   return (
     <article style={{border: '1px solid rgba(127,127,127,.35)', borderRadius: 12, padding: 14}}>
@@ -223,7 +232,7 @@ function MatchReportCard({report, posts, comments, profiles, readOnly = false}: 
           <strong>{report.reason}</strong> · {report.post_id ? 'Post' : 'Comment'} · {report.status}
           <div style={{fontSize: 12, opacity: .72, marginTop: 4}}>Reported by {reporter} · {formatDate(report.created_at)}</div>
         </div>
-        {anchorPostId ? <Link href={`/matches/${encodeURIComponent(report.match_id)}#post-${anchorPostId}`}>Open Matchday item</Link> : null}
+        {anchorPostId ? <Link href={`${matchHref}#post-${anchorPostId}`}>Open Matchday item</Link> : null}
       </div>
 
       <div style={{marginTop: 12, padding: 12, borderRadius: 8, background: 'rgba(127,127,127,.08)'}}>
