@@ -3,6 +3,7 @@ import {notFound} from 'next/navigation';
 import Link from 'next/link';
 import {cache} from 'react';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
+import {StoryComments} from '@/components/stories/StoryComments';
 import {getMediaAssetById} from '@/services/media/MediaLibraryService';
 import {getStoryBySlug} from '@/services/stories/StoryService';
 import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
@@ -12,7 +13,11 @@ export const dynamic = 'force-dynamic';
 const getCachedStoryBySlug = cache(getStoryBySlug);
 const getCachedMediaAssetById = cache(getMediaAssetById);
 
-type StoryPageProps = {params: Promise<{slug: string}>};
+type StoryQuery = {storyNotice?: string; storyError?: string};
+type StoryPageProps = {
+  params: Promise<{slug: string}>;
+  searchParams?: Promise<StoryQuery>;
+};
 
 export async function generateMetadata({params}: StoryPageProps): Promise<Metadata> {
   const {slug} = await params;
@@ -38,8 +43,9 @@ export async function generateMetadata({params}: StoryPageProps): Promise<Metada
   };
 }
 
-export default async function Page({params}: StoryPageProps) {
+export default async function Page({params, searchParams}: StoryPageProps) {
   const {slug} = await params;
+  const query: StoryQuery = searchParams ? await searchParams : {};
   const story = await getCachedStoryBySlug(slug);
 
   if (!story) notFound();
@@ -61,6 +67,12 @@ export default async function Page({params}: StoryPageProps) {
             <Link className="button" href={link.url} key={`${link.label}-${link.url}`}>{link.label}</Link>
           ))}
         </div>
+        <StoryComments
+          storyId={story.id}
+          storySlug={story.slug}
+          notice={query.storyNotice}
+          error={query.storyError}
+        />
       </main>
       <Footer />
     </>
