@@ -163,13 +163,15 @@ export class PlayoffService {
   private async toGameView(game: PlayoffGame): Promise<PlayoffGameView> {
     const match = await this.schedules.getMatch(game.matchId);
     if (!match) throw new Error(`Playoff match ${game.matchId} was not found.`);
-    const [result, teams] = await Promise.all([
+    const [result, teams, publicEvent] = await Promise.all([
       this.results.getPublishedResult(game.matchId),
       this.teams.getAll(),
+      this.schedules.getPublishedEventById(game.matchId),
     ]);
     return {
       ...game,
       match,
+      href: publicEvent?.href ?? `/matches/${encodeURIComponent(game.matchId)}`,
       result,
       homeTeam: match.homeTeamId ? teams.find((team) => team.id === match.homeTeamId) : undefined,
       awayTeam: match.awayTeamId ? teams.find((team) => team.id === match.awayTeamId) : undefined,
