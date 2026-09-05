@@ -6,14 +6,15 @@ import type {AttendanceResult, PersonalAttendance} from '@/domain/match-roster/M
 import {PlayerAvailabilityService} from '@/domain/match-roster/PlayerAvailabilityService';
 import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
 import {createClient} from '@/lib/supabase/server';
+import {getPublicMatchHref} from '@/services/matches/MatchPublicIdentity';
 
 export async function setOwnPlayerAvailability(formData: FormData) {
   const matchId = readFormValue(formData, 'matchId');
   const status = readFormValue(formData, 'status');
   if (!matchId) redirect('/schedule?error=Match is required.');
 
-  const path = `/matches/${encodeURIComponent(matchId)}`;
   const supabase = await createClient();
+  const path = await getPublicMatchHref(supabase, matchId);
   const {data: {user}, error: userError} = await supabase.auth.getUser();
   if (userError || !user) {
     redirect(`/account?error=${encodeURIComponent('Sign in to set your availability.')}`);
