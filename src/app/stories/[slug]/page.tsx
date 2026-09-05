@@ -9,9 +9,10 @@ import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresenta
 
 export const dynamic = 'force-dynamic';
 
+type StoryQuery = {storyNotice?: string; storyError?: string};
 type StoryPageProps = {
   params: Promise<{slug: string}>;
-  searchParams?: Promise<{storyNotice?: string; storyError?: string}>;
+  searchParams?: Promise<StoryQuery>;
 };
 
 export async function generateMetadata({params}: StoryPageProps): Promise<Metadata> {
@@ -39,10 +40,8 @@ export async function generateMetadata({params}: StoryPageProps): Promise<Metada
 }
 
 export default async function Page({params, searchParams}: StoryPageProps) {
-  const [{slug}, query] = await Promise.all([
-    params,
-    searchParams ?? Promise.resolve({}),
-  ]);
+  const {slug} = await params;
+  const query: StoryQuery = searchParams ? await searchParams : {};
   const story = await getStoryBySlug(slug);
 
   if (!story) notFound();
