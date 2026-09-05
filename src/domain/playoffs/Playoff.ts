@@ -27,6 +27,7 @@ export type PlayoffGame = {
 
 export type PlayoffGameView = PlayoffGame & {
   match: Match;
+  href: string;
   result?: MatchResult;
   homeTeam?: Team;
   awayTeam?: Team;
