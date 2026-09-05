@@ -1,0 +1,154 @@
+.wrap {
+  padding: 18px 0 0;
+}
+
+.card {
+  padding: 22px 24px;
+  border: 1px solid var(--cc-card-border);
+  border-left: 5px solid var(--cc-gold);
+  border-radius: 10px;
+  background: var(--cc-card-bg);
+  box-shadow: var(--cc-card-shadow);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.kicker {
+  margin: 0 0 5px;
+  color: var(--cc-teal);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: var(--cc-heading);
+  font-family: var(--cc-font-display);
+  font-size: 30px;
+  font-style: italic;
+  letter-spacing: -.03em;
+  line-height: .95;
+  text-transform: uppercase;
+}
+
+.excerpt {
+  margin: 14px 0 0;
+  color: var(--cc-text);
+  line-height: 1.58;
+  white-space: pre-line;
+}
+
+.storyLink {
+  margin-top: 14px;
+  display: inline-flex;
+  color: var(--cc-teal);
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.storyLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.editor {
+  flex: 0 0 auto;
+}
+
+.editor summary {
+  min-height: 38px;
+  padding: 8px 13px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 6px;
+  background: var(--cc-card-bg);
+  color: var(--cc-heading);
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  list-style: none;
+}
+
+.editor summary::-webkit-details-marker {
+  display: none;
+}
+
+.form {
+  margin-top: 18px;
+  padding-top: 18px;
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--cc-card-border);
+}
+
+.form label {
+  display: grid;
+  gap: 6px;
+  color: var(--cc-heading);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.form textarea,
+.form input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 6px;
+  background: var(--cc-table-head-bg);
+  color: var(--cc-heading);
+  font: inherit;
+}
+
+.form textarea {
+  min-height: 150px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.form small,
+.empty {
+  color: var(--cc-muted);
+  line-height: 1.45;
+}
+
+.form button {
+  min-height: 42px;
+  justify-self: start;
+  padding: 9px 15px;
+  border: 1px solid var(--cc-teal);
+  border-radius: 6px;
+  background: var(--cc-teal);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.empty {
+  margin: 12px 0 0;
+}
+
+@media (max-width: 640px) {
+  .wrap {
+    padding-top: 12px;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
+  .title {
+    font-size: 26px;
+  }
+}
