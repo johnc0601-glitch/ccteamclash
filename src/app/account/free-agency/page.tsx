@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import {redirect} from 'next/navigation';
 import {ensureLaunchSignupProfile} from '@/domain/launch/LaunchAccountSetup';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {createClient} from '@/lib/supabase/server';
-import {joinFreeAgency} from './actions';
+import {createFreeAgencyAccount, joinFreeAgency, signInToFreeAgency} from './actions';
 import {AccountPageLayout, readAccountParam} from '../AccountPageLayout';
+import {PasswordField, SubmitButton} from '../AuthFormControls';
 import styles from '../Account.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -38,7 +38,63 @@ export default async function FreeAgencyPage({searchParams}: FreeAgencyPageProps
   const error = readAccountParam(params.error);
   const supabase = await createClient();
   const {data: {user}} = await supabase.auth.getUser();
-  if (!user) redirect('/account?error=Sign in first to open Free Agency.');
+
+  if (!user) {
+    return (
+      <AccountPageLayout
+        description="Sign in or create a Team Clash account to join the Free Agent Pool."
+        error={error}
+        notice={notice}
+        title="Free Agency"
+      >
+        <section className={styles.grid}>
+          <article className={styles.panel}>
+            <span className={styles.eyebrow}>Already have an account?</span>
+            <h2>Sign in</h2>
+            <form className={styles.form} action={signInToFreeAgency}>
+              <label htmlFor="freeAgencySignInEmail">Email address</label>
+              <input id="freeAgencySignInEmail" name="email" type="email" autoComplete="email" required />
+              <PasswordField
+                autoComplete="current-password"
+                id="freeAgencySignInPassword"
+                label="Password"
+                name="password"
+              />
+              <Link className={styles.forgotLink} href="/account/forgot-password">Forgot password?</Link>
+              <SubmitButton pendingLabel="Signing in...">Sign in to Free Agency</SubmitButton>
+            </form>
+          </article>
+
+          <article className={styles.panel}>
+            <span className={styles.eyebrow}>New to Team Clash?</span>
+            <h2>Create account</h2>
+            <p className={styles.muted}>Create your login here. You do not need to connect a player record before entering Free Agency.</p>
+            <form className={styles.form} action={createFreeAgencyAccount}>
+              <label htmlFor="freeAgencySignupName">Your name</label>
+              <input id="freeAgencySignupName" name="displayName" autoComplete="name" required />
+              <label htmlFor="freeAgencySignupEmail">Email address</label>
+              <input id="freeAgencySignupEmail" name="email" type="email" autoComplete="email" required />
+              <PasswordField
+                autoComplete="new-password"
+                id="freeAgencySignupPassword"
+                label="Create password"
+                minLength={8}
+                name="password"
+              />
+              <PasswordField
+                autoComplete="new-password"
+                id="freeAgencyConfirmPassword"
+                label="Confirm password"
+                minLength={8}
+                name="confirmPassword"
+              />
+              <SubmitButton pendingLabel="Creating account...">Create Free Agency Account</SubmitButton>
+            </form>
+          </article>
+        </section>
+      </AccountPageLayout>
+    );
+  }
 
   const repository = new SupabaseLaunchRepository(supabase);
   let profile = await repository.getProfileByUserId(user.id);
