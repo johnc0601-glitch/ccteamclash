@@ -38,6 +38,39 @@ export async function reviewMatchFeedReport(formData: FormData) {
   redirect(`/office/media/moderation?notice=${encodeURIComponent(status === 'Resolved' ? 'Report resolved.' : 'Report dismissed.')}`);
 }
 
+export async function reviewStoryCommentReport(formData: FormData) {
+  const reportId = read(formData, 'reportId');
+  const status = read(formData, 'status');
+  const resolutionNote = read(formData, 'resolutionNote').slice(0, 500);
+  if (!reportId || !REPORT_STATUSES.has(status)) return;
+
+  const {supabase, profile} = await requireCommissioner();
+  const db = supabase as any;
+  const {data: report, error: reportError} = await db
+    .from('launch_story_comment_reports')
+    .select('id,story_id,comment_id,status')
+    .eq('id', reportId)
+    .maybeSingle();
+
+  if (reportError || !report) redirect(`/office/media/moderation?error=${encodeURIComponent('Story report could not be loaded.')}`);
+  if (report.status !== 'Pending') redirect(`/office/media/moderation?notice=${encodeURIComponent('That story report was already reviewed.')}`);
+
+  const now = new Date().toISOString();
+  const {error} = await db.from('launch_story_comment_reports').update({
+    status,
+    reviewed_at: now,
+    reviewed_by_profile_id: profile.id,
+    resolution_note: resolutionNote,
+  }).eq('id', reportId).eq('status', 'Pending');
+
+  if (error) redirect(`/office/media/moderation?error=${encodeURIComponent('Story report could not be updated.')}`);
+
+  const {data: story} = await db.from('launch_stories').select('slug').eq('id', report.story_id).maybeSingle();
+  revalidatePath('/office/media/moderation');
+  if (story?.slug) revalidatePath(`/stories/${story.slug}`);
+  redirect(`/office/media/moderation?notice=${encodeURIComponent(status === 'Resolved' ? 'Story report resolved.' : 'Story report dismissed.')}`);
+}
+
 async function requireCommissioner() {
   const supabase = await createClient();
   const {data: {user}} = await supabase.auth.getUser();
