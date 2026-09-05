@@ -1,3 +1,9 @@
+import type {AttendanceActor} from '@/domain/match-roster/MatchAttendance';
+import {createClient} from '@/lib/supabase/server';
+import {
+  canViewMatchPrediction,
+  getMatchPredictionVisibility,
+} from '@/services/settings/MatchPredictionVisibility';
 import type {PublicMatchPrediction} from '@/services/teamStrength/PublicMatchPrediction';
 import styles from './MatchPredictionCard.module.css';
 
@@ -7,11 +13,13 @@ type MatchPredictionCardProps = {
   homeTeamName: string;
 };
 
-export function MatchPredictionCard({
+export async function MatchPredictionCard({
   prediction,
   awayTeamName,
   homeTeamName,
 }: MatchPredictionCardProps) {
+  if (!(await canCurrentViewerSeePrediction())) return null;
+
   return (
     <section className={styles.card} aria-label="Match forecast">
       <div className={styles.header}>
@@ -41,6 +49,32 @@ export function MatchPredictionCard({
       </div>
     </section>
   );
+}
+
+async function canCurrentViewerSeePrediction() {
+  const supabase = await createClient();
+  const visibility = await getMatchPredictionVisibility(supabase);
+  if (visibility === 'Public') return true;
+
+  const {data: {user}} = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const {data: profile, error} = await supabase
+    .from('launch_profiles')
+    .select('role,status')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Match prediction viewer role is unavailable.', {error: error.message});
+    return false;
+  }
+  if (!profile) return false;
+
+  return canViewMatchPrediction(visibility, {
+    profileRole: profile.role as AttendanceActor['profileRole'],
+    profileStatus: profile.status as AttendanceActor['profileStatus'],
+  });
 }
 
 function CalculatedForecast({
