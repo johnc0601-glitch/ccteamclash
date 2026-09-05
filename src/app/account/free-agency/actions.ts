@@ -1,5 +1,6 @@
 'use server';
 
+import {headers} from 'next/headers';
 import {revalidatePath} from 'next/cache';
 import {redirect} from 'next/navigation';
 import {createClient} from '@/lib/supabase/server';
@@ -16,6 +17,58 @@ type FreeAgencyClient = {
     },
   ) => Promise<{error: {message: string} | null}>;
 };
+
+export async function signInToFreeAgency(formData: FormData) {
+  const email = readFormValue(formData, 'email');
+  const password = readFormValue(formData, 'password');
+  if (!email) redirect('/account/free-agency?error=Enter your email address.');
+  if (!password) redirect('/account/free-agency?error=Enter your password.');
+
+  const supabase = await createClient();
+  const {error} = await supabase.auth.signInWithPassword({email, password});
+  if (error) {
+    if (isEmailNotConfirmed(error)) {
+      redirect(`/account/check-email?email=${encodeURIComponent(email)}&error=${encodeURIComponent('Your account exists, but your email has not been confirmed. Open the confirmation email we sent you before signing in.')}`);
+    }
+    redirect(`/account/free-agency?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
+  }
+
+  revalidatePath('/account');
+  revalidatePath('/account/free-agency');
+  redirect('/account/free-agency?notice=You are signed in. Complete your Free Agent listing below.');
+}
+
+export async function createFreeAgencyAccount(formData: FormData) {
+  const displayName = readFormValue(formData, 'displayName');
+  const email = readFormValue(formData, 'email');
+  const password = readFormValue(formData, 'password');
+  const confirmPassword = readFormValue(formData, 'confirmPassword');
+
+  if (!displayName) redirect('/account/free-agency?error=Enter your name.');
+  if (!email) redirect('/account/free-agency?error=Enter your email address.');
+  if (password.length < 8) redirect('/account/free-agency?error=Password must be at least 8 characters.');
+  if (password !== confirmPassword) redirect('/account/free-agency?error=Passwords do not match.');
+
+  const supabase = await createClient();
+  const origin = await getOrigin();
+  const {data, error} = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${origin}/auth/callback?flow=signup-confirm&next=/account/free-agency`,
+      data: {displayName},
+    },
+  });
+
+  if (error) redirect(`/account/free-agency?error=${encodeURIComponent(getAuthErrorMessage(error))}`);
+  if (data.user && data.session) {
+    revalidatePath('/account');
+    revalidatePath('/account/free-agency');
+    redirect('/account/free-agency?notice=Account created. Complete your Free Agent listing below.');
+  }
+
+  redirect(`/account/check-email?email=${encodeURIComponent(email)}`);
+}
 
 export async function joinFreeAgency(formData: FormData) {
   const seasonId = readFormValue(formData, 'seasonId');
@@ -37,7 +90,7 @@ export async function joinFreeAgency(formData: FormData) {
 
   const supabase = await createClient();
   const {data: {user}, error: userError} = await supabase.auth.getUser();
-  if (userError || !user) redirect('/account?error=Sign in first.');
+  if (userError || !user) redirect('/account/free-agency?error=Sign in first.');
 
   const launchSupabase = supabase as any;
   const {data: profile, error: profileError} = await launchSupabase
@@ -91,6 +144,17 @@ export async function joinFreeAgency(formData: FormData) {
   redirect('/account/free-agency?notice=Your Free Agent listing has been saved for captains.');
 }
 
+async function getOrigin(): Promise<string> {
+  const headerStore = await headers();
+  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (configuredUrl) return configuredUrl;
+  const origin = headerStore.get('origin');
+  if (origin) return origin;
+  const host = headerStore.get('x-forwarded-host') ?? headerStore.get('host');
+  const protocol = headerStore.get('x-forwarded-proto') ?? (host?.includes('localhost') ? 'http' : 'https');
+  return host ? `${protocol}://${host}` : 'https://www.ccteamclash.com';
+}
+
 function readFormValue(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === 'string' ? value.trim() : '';
@@ -102,4 +166,17 @@ function readPlayerType(value: string): 'Adult' | 'Junior' | null {
 
 function readGender(value: string): 'Male' | 'Female' | null {
   return value === 'Male' || value === 'Female' ? value : null;
+}
+
+function isEmailNotConfirmed(error: {message?: string; code?: string}): boolean {
+  const message = error.message?.trim().toLocaleLowerCase();
+  return error.code === 'email_not_confirmed' || message === 'email not confirmed';
+}
+
+function getAuthErrorMessage(error: {message?: string; code?: string}): string {
+  const message = error.message?.trim();
+  if (isEmailNotConfirmed(error)) return 'Your account exists, but your email has not been confirmed.';
+  if (message === 'Invalid login credentials') return 'Email or password is wrong. Use password reset if needed.';
+  if (message && message !== '{}') return message;
+  return 'The account request could not be completed. Try again.';
 }
