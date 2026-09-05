@@ -32,7 +32,7 @@ function GameCard({game}: {game: PlayoffGameView}) {
       <small>{game.stage === 'Semifinal' ? `Semifinal ${game.position}` : 'Final'}</small>
       <TeamLine seed={game.homeSeed} name={game.homeTeam?.name} score={game.result?.homeScore} winner={game.winnerTeamId === game.match.homeTeamId} />
       <TeamLine seed={game.awaySeed} name={game.awayTeam?.name} score={game.result?.awayScore} winner={game.winnerTeamId === game.match.awayTeamId} />
-      <Link href={`/matches/${game.matchId}`}>{game.result ? 'Final result' : 'Match details'} →</Link>
+      <Link href={game.href}>{game.result ? 'Final result' : 'Match details'} →</Link>
     </article>
   );
 }
