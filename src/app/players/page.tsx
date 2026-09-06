@@ -80,7 +80,6 @@ export default async function PlayersPage({searchParams}: PlayersPageProps) {
           initialPlayerId={initialPlayerId ?? ''}
           initialSearch={initialSearch ?? ''}
           initialProfile={initialProfile}
-          showRankingsLink
         />
       </main>
       <Footer />

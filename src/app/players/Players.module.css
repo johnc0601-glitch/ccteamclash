@@ -42,23 +42,6 @@
   border-color: var(--cc-gold-soft);
 }
 
-.rankingsLink {
-  min-height: 42px;
-  padding: 0 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--cc-gold);
-  border-radius: var(--cc-radius-sm);
-  background: var(--cc-gold);
-  color: #111;
-  font-size: 12px;
-  font-weight: 950;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.rankingsLink:hover { background: var(--cc-gold-soft); border-color: var(--cc-gold-soft); }
-
 .directory {
   border: 1px solid var(--cc-light-border);
   border-radius: var(--cc-radius-md);
@@ -228,7 +211,6 @@
 
 @media (max-width: 700px) {
   .filters { grid-template-columns: 1fr; }
-  .rankingsLink { width: 100%; }
   .player summary { grid-template-columns: minmax(0, 1fr) auto; }
   .summaryStats { display: none; }
   .profileStats dl, .statSections dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }

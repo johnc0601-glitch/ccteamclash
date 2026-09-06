@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import {useState} from 'react';
 import {loadPublicPlayerProfile} from '@/app/players/actions';
 import {PublicPlayerProfileCard} from '@/components/players/PublicPlayerProfileCard';
@@ -13,7 +12,6 @@ type LazyPublicPlayerDirectoryProps = {
   initialPlayerId?: string;
   initialSearch?: string;
   initialProfile?: PlayerProfile;
-  showRankingsLink?: boolean;
 };
 
 function normalizeSearchText(value: string): string {
@@ -25,7 +23,6 @@ export function LazyPublicPlayerDirectory({
   initialPlayerId = '',
   initialSearch = '',
   initialProfile,
-  showRankingsLink = false,
 }: LazyPublicPlayerDirectoryProps) {
   const [search, setSearch] = useState(initialSearch);
   const [selectedPlayerId, setSelectedPlayerId] = useState(initialPlayerId.trim());
@@ -81,7 +78,6 @@ export function LazyPublicPlayerDirectory({
             placeholder="Search by player name"
           />
         </label>
-        {showRankingsLink ? <Link className={styles.rankingsLink} href="/rankings">Rankings</Link> : null}
       </div>
 
       <div className={styles.directory}>
@@ -128,7 +124,6 @@ export function LazyPublicPlayerDirectory({
             <p>{!hasSelection
               ? 'Player details will appear here as soon as you start typing.'
               : 'Try another player name.'}</p>
-            {showRankingsLink ? <Link href="/rankings">View rankings</Link> : null}
           </div>
         ) : null}
       </div>
