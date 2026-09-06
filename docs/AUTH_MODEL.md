@@ -222,20 +222,20 @@ Sign in with Google or email magic link
 
 ## Commissioner Management
 
-Future Commissioner Office page:
+Commissioner Office player management:
 
 ```text
-/office/members
+/office/players
 ```
 
 Sections:
 
 - Pending Signups
 - Pending Claims
-- Approved Members
+- Approved Players and Accounts
 - Captains
 - Unclaimed Historical Players
-- Suspended Members
+- Suspended Accounts
 
 Actions:
 
@@ -249,6 +249,8 @@ Actions:
 - assign captain
 - remove captain
 - assign current/default team
+
+The legacy `/office/members` URL is retained only as a compatibility redirect to `/office/players`.
 
 ## Captain Assignment
 
