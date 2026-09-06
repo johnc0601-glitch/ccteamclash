@@ -27,7 +27,6 @@ import {MockPlayerRepository} from '@/repositories/PlayerRepository';
 import {PlayerService} from '@/services/PlayerService';
 import {PublicPlayerService} from '@/services/public/PublicPlayerService';
 import {TeamService} from '@/services/TeamService';
-import {RankingsService} from '@/services/rankings';
 import {StandingsService} from '@/services/standings';
 import {MockStatisticsRepository, StatisticsEngine} from '@/services/statistics';
 import {createClient as createBrowserSupabaseClient} from '@/lib/supabase/client';
@@ -83,7 +82,6 @@ const results = new ResultsService(
   repositories.schedules,
 );
 const statistics = new StatisticsEngine(repositories.statistics);
-const rankings = new RankingsService(players, statistics);
 const publicPlayers = new PublicPlayerService(players, teams, seasons, statistics);
 const standings = new StandingsService(scheduleTeams, results, schedules, seasons);
 const playoffs = new PlayoffService(
@@ -113,7 +111,6 @@ export const services = {
     schedules,
   ),
   statistics,
-  rankings,
   publicPlayers,
   standings,
   playoffs,
