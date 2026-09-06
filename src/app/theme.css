@@ -88,12 +88,10 @@ body {
 }
 
 .primary-nav > a[href="/schedule"],
-.primary-nav > a[href="/standings"],
-.primary-nav > a[href="/rankings"] { font-weight: 950 !important; }
+.primary-nav > a[href="/standings"] { font-weight: 950 !important; }
 
 .primary-nav > a[href="/schedule"]::after,
-.primary-nav > a[href="/standings"]::after,
-.primary-nav > a[href="/rankings"]::after {
+.primary-nav > a[href="/standings"]::after {
   content: '';
   position: absolute;
   right: 0;
@@ -105,8 +103,7 @@ body {
 }
 
 .primary-nav > a[href="/schedule"]:hover::after,
-.primary-nav > a[href="/standings"]:hover::after,
-.primary-nav > a[href="/rankings"]:hover::after { background: var(--cc-gold); }
+.primary-nav > a[href="/standings"]:hover::after { background: var(--cc-gold); }
 
 .primary-nav-separator {
   width: 1px;
