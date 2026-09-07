@@ -5,6 +5,7 @@ import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
 import {LazyTeamRosterDirectory} from '@/components/teams/LazyTeamRosterDirectory';
 import {services} from '@/core/ServiceContainer';
+import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {
@@ -56,13 +57,16 @@ export default async function TeamPage({params}: TeamPageProps) {
     id: playerId,
     name,
   }));
-  const rosterSummariesPromise = activeSeason && launchPlayers
-    ? services.publicPlayers.getRosterSummariesForPlayerIdentities(rosterIdentities)
+  const serverPublicPlayers = launchPlayers
+    ? await createServerPublicPlayerService()
+    : null;
+  const rosterSummariesPromise = activeSeason && serverPublicPlayers
+    ? serverPublicPlayers.getRosterSummariesForPlayerIdentities(rosterIdentities)
     : Promise.resolve([]);
   const historicalPlayersPromise = activeSeason && launchPlayers
     ? Promise.resolve([])
-    : launchPlayers
-      ? services.publicPlayers.getForPlayerIdentities(rosterIdentities)
+    : launchPlayers && serverPublicPlayers
+      ? serverPublicPlayers.getForPlayerIdentities(rosterIdentities)
       : services.publicPlayers.getAll();
   const scheduleService = await createServerScheduleService();
   const [rosterSummaries, historicalPlayers, nextMatch, teamEvents] = await Promise.all([
