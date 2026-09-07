@@ -1,8 +1,11 @@
 'use client';
 
 import {useState} from 'react';
+import {
+  generateOfficePlayoffs,
+  publishOfficePlayoffs,
+} from '@/app/office/playoffs/actions';
 import {PlayoffBracket} from '@/components/playoffs/PlayoffBracket';
-import {services} from '@/core/ServiceContainer';
 import type {PlayoffBracketView} from '@/domain/playoffs/Playoff';
 import type {Match} from '@/domain/schedule/Match';
 import styles from './PlayoffManagement.module.css';
@@ -26,7 +29,7 @@ export function PlayoffManagement({
 
   async function generate() {
     setWorking(true);
-    const result = await services.playoffs.generate({
+    const result = await generateOfficePlayoffs({
       seasonId,
       semifinal1MatchId: sf1,
       semifinal2MatchId: sf2,
@@ -40,7 +43,7 @@ export function PlayoffManagement({
 
   async function publish() {
     setWorking(true);
-    const result = await services.playoffs.publish(seasonId);
+    const result = await publishOfficePlayoffs(seasonId);
     setWorking(false);
     if (!result.ok) return setMessage(result.message);
     setView(result.data);
