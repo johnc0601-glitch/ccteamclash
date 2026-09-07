@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {MockCourseRepository} from '@/domain/course/CourseRepository';
+import {MockCourseRepository} from '@/test-fixtures/MockCourseRepository';
 import {
   SCHEDULE_IMPORT_SCHEMA_VERSION,
   validateScheduleImport,
