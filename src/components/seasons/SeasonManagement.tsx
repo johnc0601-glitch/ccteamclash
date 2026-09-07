@@ -1,6 +1,15 @@
 'use client';
 
 import {useEffect, useState} from 'react';
+import {
+  activateSeason,
+  archiveSeason,
+  createSeason,
+  deleteSeason,
+  duplicateSeason,
+  loadSeasons,
+  updateSeason,
+} from '@/app/office/seasons/actions';
 import type {
   Season,
   SeasonFieldErrors,
@@ -8,7 +17,6 @@ import type {
   SeasonStatusFilter,
   SeasonViewMode,
 } from '@/domain/season/Season';
-import {services} from '@/core/ServiceContainer';
 import {ConfirmationDialog} from '@/components/teams/ConfirmationDialog';
 import {SeasonCard} from '@/components/seasons/SeasonCard';
 import {SeasonDetailsDialog} from '@/components/seasons/SeasonDetailsDialog';
@@ -44,11 +52,18 @@ export function SeasonManagement() {
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
 
-    services.seasons.getAll({search, status})
-      .then((nextSeasons) => {
+    loadSeasons(search, status)
+      .then((result) => {
         if (cancelled) return;
-        setSeasons(nextSeasons);
+        if (!result.ok) {
+          setSeasons([]);
+          setMessage({type: 'error', text: result.message});
+          setLoading(false);
+          return;
+        }
+        setSeasons(result.data);
         setLoading(false);
       })
       .catch(() => {
@@ -81,8 +96,8 @@ export function SeasonManagement() {
     setSubmitting(true);
     try {
       const result = editor.mode === 'create'
-        ? await services.seasons.create(values)
-        : await services.seasons.update(editor.season.id, values);
+        ? await createSeason(values)
+        : await updateSeason(editor.season.id, values);
       if (!result.ok) {
         setFieldErrors(result.fieldErrors ?? {});
         setMessage({type: 'error', text: result.message});
@@ -106,8 +121,8 @@ export function SeasonManagement() {
   async function handleImmediateAction(action: 'activate' | 'duplicate', season: Season) {
     setProcessingId(season.id);
     const result = action === 'activate'
-      ? await services.seasons.activate(season.id)
-      : await services.seasons.duplicate(season.id);
+      ? await activateSeason(season.id)
+      : await duplicateSeason(season.id);
     setProcessingId(null);
 
     if (!result.ok) {
@@ -130,8 +145,8 @@ export function SeasonManagement() {
 
     setSubmitting(true);
     const result = confirmation.action === 'archive'
-      ? await services.seasons.archive(confirmation.season.id)
-      : await services.seasons.delete(confirmation.season.id);
+      ? await archiveSeason(confirmation.season.id)
+      : await deleteSeason(confirmation.season.id);
     setSubmitting(false);
 
     if (!result.ok) {
