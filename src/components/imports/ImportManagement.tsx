@@ -2,7 +2,7 @@
 
 import {useEffect, useMemo, useState} from 'react';
 import {StatusBadge} from '@/components/imports/StatusBadge';
-import {services} from '@/core/ServiceContainer';
+import {historicalImportService} from '@/domain/history/historicalImportFixture';
 import type {
   HistoricalImportPreview,
   HistoricalImportResult,
@@ -63,7 +63,7 @@ export function ImportManagement() {
   useEffect(() => {
     let cancelled = false;
 
-    services.historicalImports.getOverview()
+    historicalImportService.getOverview()
       .then((nextOverview) => {
         if (cancelled) return;
         setOverview(nextOverview);
@@ -105,7 +105,7 @@ export function ImportManagement() {
 
   async function handleApply() {
     setApplying(true);
-    const result = await services.historicalImports.applyHistoricalRecords();
+    const result = await historicalImportService.applyHistoricalRecords();
     setApplying(false);
     setMessage({
       type: 'success',
