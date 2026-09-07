@@ -1,9 +1,9 @@
 import {MockHistoricalImportRepository} from '@/domain/history/HistoricalImportRepository';
 import {HistoricalImportService} from '@/domain/history/HistoricalImportService';
-import {MockPlayerRepository} from '@/repositories/PlayerRepository';
-import {MockTeamRepository} from '@/repositories/TeamRepository';
 import {PlayerService} from '@/services/PlayerService';
 import {TeamService} from '@/services/TeamService';
+import {MockPlayerRepository} from '@/test-fixtures/MockPlayerRepository';
+import {MockTeamRepository} from '@/test-fixtures/MockTeamRepository';
 
 // Isolated legacy fixture for the historical workbook preview/apply screen.
 // Current league features must use explicit Supabase-backed server services.
