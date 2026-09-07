@@ -12,7 +12,7 @@ import {
   ScheduleImportConversionError,
   scheduleRowsToImport,
 } from '@/domain/schedule/ScheduleImportAdapters';
-import {MockSeasonRepository} from '@/domain/season/SeasonRepository';
+import {MockSeasonRepository} from '@/test-fixtures/MockSeasonRepository';
 import {MockTeamRepository} from '@/test-fixtures/MockTeamRepository';
 
 test('CSV schedule rows convert into the canonical JSON schedule model', () => {
