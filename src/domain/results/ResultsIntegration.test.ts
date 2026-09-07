@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {MockResultsRepository} from '@/domain/results/ResultsRepository';
 import {ResultsService} from '@/domain/results/ResultsService';
-import {MockScheduleRepository} from '@/domain/schedule/ScheduleRepository';
 import type {ResultContestInput} from '@/domain/results/MatchResult';
+import {MockScheduleRepository} from '@/test-fixtures/MockScheduleRepository';
 
 function createService() {
   return new ResultsService(new MockResultsRepository(), new MockScheduleRepository());
