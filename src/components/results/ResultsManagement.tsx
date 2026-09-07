@@ -1,7 +1,12 @@
 'use client';
 
 import {useMemo, useState} from 'react';
-import {services} from '@/core/ServiceContainer';
+import {
+  loadResultContests,
+  loadResultsRound,
+  loadResultsWorkspace,
+  saveOfficeResult,
+} from '@/app/office/results/actions';
 import type {Course} from '@/domain/course/Course';
 import type {
   MatchResult,
@@ -61,33 +66,29 @@ export function ResultsManagement({
   const [contests, setContests] = useState<ResultContestInput[]>([]);
 
   async function load(preferredRoundId?: string) {
-    const [nextSchedules, nextTeams, nextCourses, nextResults] = await Promise.all([
-      services.schedules.getSchedules(),
-      services.schedules.getTeams(),
-      services.schedules.getCourses(),
-      services.results.getResults(),
-    ]);
-    const nextRounds = (await Promise.all(
-      nextSchedules.map((schedule) => services.schedules.getRounds(schedule.id)),
-    )).flat().sort((left, right) =>
-      (left.date ?? '').localeCompare(right.date ?? '') || left.number - right.number,
-    );
-    const selectedRoundId = preferredRoundId || roundId || nextRounds[0]?.id || '';
-    const nextMatches = selectedRoundId
-      ? await services.schedules.getMatches(selectedRoundId)
-      : [];
-    setSchedules(nextSchedules);
-    setTeams(nextTeams);
-    setCourses(nextCourses);
-    setResults(nextResults);
-    setRounds(nextRounds);
-    setRoundId(selectedRoundId);
-    setMatches(nextMatches);
+    const workspace = await loadResultsWorkspace(preferredRoundId || roundId);
+    if (!workspace.ok) {
+      setMessage(workspace.message);
+      return;
+    }
+    setSchedules(workspace.data.schedules);
+    setTeams(workspace.data.teams);
+    setCourses(workspace.data.courses);
+    setResults(workspace.data.results);
+    setRounds(workspace.data.rounds);
+    setRoundId(workspace.data.roundId);
+    setMatches(workspace.data.matches);
   }
 
   async function selectRound(nextRoundId: string) {
     setRoundId(nextRoundId);
-    setMatches(await services.schedules.getMatches(nextRoundId));
+    const round = await loadResultsRound(nextRoundId);
+    if (!round.ok) {
+      setMessage(round.message);
+      setMatches([]);
+      return;
+    }
+    setMatches(round.data);
     setEditor(null);
     setMessage('');
   }
@@ -99,7 +100,13 @@ export function ResultsManagement({
     setAwayScore(result?.awayScore === null || result?.awayScore === undefined ? '' : String(result.awayScore));
     setFieldErrors({});
     setMessage('');
-    setContests((await services.results.getContests(match.id)).map(toContestInput));
+    const contestResult = await loadResultContests(match.id);
+    if (!contestResult.ok) {
+      setContests([]);
+      setMessage(contestResult.message);
+      return;
+    }
+    setContests(contestResult.data.map(toContestInput));
   }
 
   async function save(action: 'draft' | 'publish' | 'reopen') {
@@ -111,11 +118,12 @@ export function ResultsManagement({
       awayScore: parseScore(awayScore),
       contests,
     };
-    const result = action === 'draft'
-      ? await services.results.saveDraft(editor.match.id, input)
-      : action === 'publish'
-        ? await services.results.publish(editor.match.id, input)
-        : await services.results.reopen(editor.match.id);
+    const result = await saveOfficeResult(
+      action,
+      editor.match.id,
+      editor.match.seasonId,
+      input,
+    );
     setSaving(false);
     if (!result.ok) {
       setFieldErrors(result.fieldErrors ?? {});
@@ -123,7 +131,6 @@ export function ResultsManagement({
       return;
     }
     setMessage(action === 'draft' ? 'Draft saved.' : action === 'publish' ? 'Result published.' : 'Result reopened.');
-    if (action !== 'draft') await services.playoffs.getBracket(editor.match.seasonId);
     await load(roundId);
     setEditor({match: editor.match, result: result.data});
   }
