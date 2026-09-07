@@ -1,9 +1,12 @@
 'use client';
 
 import {useEffect, useMemo, useState} from 'react';
-import {saveMatchLogistics} from '@/app/office/schedule/actions';
+import {
+  loadScheduleSpreadsheetBaseData,
+  loadScheduleSpreadsheetRows,
+  saveMatchLogistics,
+} from '@/app/office/schedule/actions';
 import {MatchLogisticsGrid} from '@/components/schedule/MatchLogisticsGrid';
-import {services} from '@/core/ServiceContainer';
 import type {Course} from '@/domain/course/Course';
 import type {Match} from '@/domain/schedule/Match';
 import type {Round} from '@/domain/schedule/Round';
@@ -33,14 +36,20 @@ export function ScheduleSpreadsheetManagement() {
 
     async function loadBaseData() {
       try {
-        const [nextSchedules, nextSeasons, nextTeams, nextCourses] = await Promise.all([
-          services.schedules.getSchedules({search: '', seasonId: 'all', publication: 'all'}),
-          services.seasons.getAll(),
-          services.schedules.getTeams(),
-          services.schedules.getCourses(),
-        ]);
+        const result = await loadScheduleSpreadsheetBaseData();
         if (cancelled) return;
+        if (!result.ok) {
+          setMessage({type: 'error', text: result.message});
+          setLoading(false);
+          return;
+        }
 
+        const {
+          schedules: nextSchedules,
+          seasons: nextSeasons,
+          teams: nextTeams,
+          courses: nextCourses,
+        } = result.data;
         setSchedules(nextSchedules);
         setSeasons(nextSeasons);
         setTeams(nextTeams);
@@ -51,8 +60,12 @@ export function ScheduleSpreadsheetManagement() {
           ? nextSchedules.find((schedule) => schedule.seasonId === activeSeason.id)
           : undefined;
         setSelectedScheduleId(preferredSchedule?.id ?? nextSchedules[0]?.id ?? '');
+        if (!nextSchedules.length) setLoading(false);
       } catch {
-        if (!cancelled) setMessage({type: 'error', text: 'Schedule data could not be loaded.'});
+        if (!cancelled) {
+          setMessage({type: 'error', text: 'Schedule data could not be loaded.'});
+          setLoading(false);
+        }
       }
     }
 
@@ -75,13 +88,16 @@ export function ScheduleSpreadsheetManagement() {
 
       setLoading(true);
       try {
-        const nextRounds = await services.schedules.getRounds(selectedScheduleId);
-        const matchGroups = await Promise.all(
-          nextRounds.map((round) => services.schedules.getMatches(round.id)),
-        );
+        const result = await loadScheduleSpreadsheetRows(selectedScheduleId);
         if (cancelled) return;
-        setRounds(nextRounds);
-        setMatches(matchGroups.flat());
+        if (!result.ok) {
+          setMessage({type: 'error', text: result.message});
+          setRounds([]);
+          setMatches([]);
+          return;
+        }
+        setRounds(result.data.rounds);
+        setMatches(result.data.matches);
       } catch {
         if (!cancelled) setMessage({type: 'error', text: 'Matches could not be loaded.'});
       } finally {
