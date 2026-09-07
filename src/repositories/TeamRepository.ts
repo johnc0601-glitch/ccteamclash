@@ -1,8 +1,6 @@
 import {TEAM_MOCK_DATA} from '@/data/teams';
 import type {Team} from '@/models/Team';
 
-const TEAM_STORAGE_KEY = 'cc-team-clash:teams';
-
 export interface TeamRepository {
   getAll(): Promise<Team[]>;
   getById(id: string): Promise<Team | undefined>;
@@ -21,36 +19,18 @@ function cloneTeam(team: Team): Team {
   return {...team};
 }
 
-function canUseBrowserStorage(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+function cloneAlias(alias: TeamAlias): TeamAlias {
+  return {...alias};
 }
 
-function loadStoredTeams(): Team[] | undefined {
-  if (!canUseBrowserStorage()) return undefined;
-
-  try {
-    const storedTeams = window.localStorage.getItem(TEAM_STORAGE_KEY);
-    if (!storedTeams) return undefined;
-    const parsedTeams = JSON.parse(storedTeams);
-    if (!Array.isArray(parsedTeams)) return undefined;
-    return parsedTeams.map(cloneTeam);
-  } catch {
-    return undefined;
-  }
-}
-
-function saveStoredTeams(teams: Team[]): void {
-  if (!canUseBrowserStorage()) return;
-
-  try {
-    window.localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(teams));
-  } catch {
-    // The mock repository should keep working even when browser storage is full or unavailable.
-  }
-}
-
+/**
+ * In-memory repository for tests and the isolated historical-import fixture.
+ * It intentionally does not persist to browser storage; production team data
+ * must come from the Supabase-backed repositories.
+ */
 export class MockTeamRepository implements TeamRepository {
-  private teams: Team[] = loadStoredTeams() ?? TEAM_MOCK_DATA.map(cloneTeam);
+  private teams: Team[] = TEAM_MOCK_DATA.map(cloneTeam);
+  private aliases: TeamAlias[] = [];
 
   async getAll(): Promise<Team[]> {
     return this.teams.map(cloneTeam);
@@ -75,7 +55,6 @@ export class MockTeamRepository implements TeamRepository {
   async create(team: Team): Promise<Team> {
     const storedTeam = cloneTeam(team);
     this.teams.push(storedTeam);
-    saveStoredTeams(this.teams);
     return cloneTeam(storedTeam);
   }
 
@@ -84,7 +63,6 @@ export class MockTeamRepository implements TeamRepository {
     if (index === -1) return undefined;
 
     this.teams[index] = cloneTeam(team);
-    saveStoredTeams(this.teams);
     return cloneTeam(this.teams[index]);
   }
 
@@ -94,35 +72,25 @@ export class MockTeamRepository implements TeamRepository {
 
     team.active = false;
     team.updatedAt = new Date().toISOString();
-    saveStoredTeams(this.teams);
     return cloneTeam(team);
   }
 
   async delete(id: string): Promise<boolean> {
     const initialLength = this.teams.length;
     this.teams = this.teams.filter((team) => team.id !== id);
-    const deleted = this.teams.length < initialLength;
-    if (deleted) saveStoredTeams(this.teams);
-    return deleted;
+    return this.teams.length < initialLength;
   }
 
   async getAliases(): Promise<TeamAlias[]> {
-    if (!canUseBrowserStorage()) return [];
-    try {
-      return JSON.parse(window.localStorage.getItem('cc-team-clash:team-aliases') ?? '[]') as TeamAlias[];
-    } catch {
-      return [];
-    }
+    return this.aliases.map(cloneAlias);
   }
 
   async saveAlias(alias: TeamAlias): Promise<TeamAlias> {
-    const aliases = (await this.getAliases()).filter(
+    this.aliases = this.aliases.filter(
       (candidate) => candidate.alias.toLocaleLowerCase() !== alias.alias.toLocaleLowerCase(),
     );
-    aliases.push(alias);
-    if (canUseBrowserStorage()) {
-      window.localStorage.setItem('cc-team-clash:team-aliases', JSON.stringify(aliases));
-    }
-    return alias;
+    const storedAlias = cloneAlias(alias);
+    this.aliases.push(storedAlias);
+    return cloneAlias(storedAlias);
   }
 }
