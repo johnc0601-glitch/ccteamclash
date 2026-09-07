@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {MockPlayoffRepository} from '@/domain/playoffs/PlayoffRepository';
 import {PlayoffService} from '@/domain/playoffs/PlayoffService';
-import {MockResultsRepository} from '@/domain/results/ResultsRepository';
 import {ResultsService} from '@/domain/results/ResultsService';
 import type {Match} from '@/domain/schedule/Match';
 import type {Round} from '@/domain/schedule/Round';
@@ -13,6 +12,7 @@ import type {Team} from '@/models/Team';
 import type {TeamService} from '@/services/TeamService';
 import type {StandingsService} from '@/services/standings';
 import type {TeamStanding} from '@/services/standings/StandingsTypes';
+import {MockResultsRepository} from '@/test-fixtures/MockResultsRepository';
 
 const seasonId = 'season-1';
 const playoffIds = ['sf-1', 'sf-2', 'championship'] as const;
