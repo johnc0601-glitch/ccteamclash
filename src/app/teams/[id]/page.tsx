@@ -4,8 +4,9 @@ import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory'
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
 import {LazyTeamRosterDirectory} from '@/components/teams/LazyTeamRosterDirectory';
-import {services} from '@/core/ServiceContainer';
+import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
+import {createServerTeamPageServices} from '@/core/createServerTeamPageServices';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {
   getHistoricalTeamSeasonSummaries,
@@ -18,7 +19,6 @@ import {getStoredTeamById} from '@/services/teams/TeamStore';
 import {buildPublicTeamRoster} from '@/services/public/PublicRosterService';
 import type {RecordSummary} from '@/services/statistics';
 import {createSlug} from '@/shared/utils';
-import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
 import styles from './TeamDetail.module.css';
 
@@ -39,9 +39,10 @@ export default async function TeamPage({params}: TeamPageProps) {
   const team = await getStoredTeamById(id);
   if (!team?.active) notFound();
 
+  const teamPageServices = await createServerTeamPageServices();
   const [activeSeason, seasons, courses, launchPlayers] = await Promise.all([
-    services.seasons.getActive(),
-    services.seasons.getAll(),
+    teamPageServices?.seasons.getActive() ?? Promise.resolve(undefined),
+    teamPageServices?.seasons.getAll() ?? Promise.resolve([]),
     getStoredCourses({status: 'active'}),
     getLaunchPlayers(),
   ]);
@@ -56,14 +57,17 @@ export default async function TeamPage({params}: TeamPageProps) {
     id: playerId,
     name,
   }));
-  const rosterSummariesPromise = activeSeason && launchPlayers
-    ? services.publicPlayers.getRosterSummariesForPlayerIdentities(rosterIdentities)
+  const serverPublicPlayers = launchPlayers
+    ? await createServerPublicPlayerService()
+    : null;
+  const rosterSummariesPromise = activeSeason && serverPublicPlayers
+    ? serverPublicPlayers.getRosterSummariesForPlayerIdentities(rosterIdentities)
     : Promise.resolve([]);
   const historicalPlayersPromise = activeSeason && launchPlayers
     ? Promise.resolve([])
-    : launchPlayers
-      ? services.publicPlayers.getForPlayerIdentities(rosterIdentities)
-      : services.publicPlayers.getAll();
+    : launchPlayers && serverPublicPlayers
+      ? serverPublicPlayers.getForPlayerIdentities(rosterIdentities)
+      : Promise.resolve([]);
   const scheduleService = await createServerScheduleService();
   const [rosterSummaries, historicalPlayers, nextMatch, teamEvents] = await Promise.all([
     rosterSummariesPromise,
@@ -85,13 +89,15 @@ export default async function TeamPage({params}: TeamPageProps) {
       : historicalPlayers.filter(({player}) => player.teamId === team.id);
   const rosterCount = activeSeason && launchPlayers ? rosterLaunchPlayers.length : roster.length;
   const publishedSeasons = seasons.filter((season) => season.published);
-  const seasonStatistics = await Promise.all(publishedSeasons.map(async (season) => ({
-    season,
-    statistics: await services.statistics.getTeamStatistics(team.id, season.id),
-  })));
-  const currentStatistics = activeSeason
+  const seasonStatistics = teamPageServices
+    ? await Promise.all(publishedSeasons.map(async (season) => ({
+      season,
+      statistics: await teamPageServices.statistics.getTeamStatistics(team.id, season.id),
+    })))
+    : [];
+  const currentStatistics = activeSeason && teamPageServices
     ? seasonStatistics.find(({season}) => season.id === activeSeason.id)?.statistics
-      ?? await services.statistics.getTeamStatistics(team.id, activeSeason.id)
+      ?? await teamPageServices.statistics.getTeamStatistics(team.id, activeSeason.id)
     : undefined;
   const historicalStatistics = getHistoricalTeamSeedSummary(team.id);
   const displayStatistics = historicalStatistics ?? currentStatistics;
@@ -223,32 +229,22 @@ export default async function TeamPage({params}: TeamPageProps) {
 }
 
 async function getLaunchPlayers() {
-  if (!hasSupabaseConfig()) return null;
-
-  try {
-    const supabase = await createClient();
-    return await new SupabaseLaunchRepository(supabase).getPlayers();
-  } catch {
-    return null;
-  }
+  const supabase = await createClient();
+  return new SupabaseLaunchRepository(supabase).getPlayers();
 }
 
 async function getActiveSeasonRosterPlayerIds(seasonId: string, teamId: string): Promise<ReadonlySet<string>> {
-  if (!hasSupabaseConfig()) return new Set<string>();
-
-  try {
-    const supabase = await createClient();
-    const {data, error} = await supabase
-      .from('launch_season_roster_memberships')
-      .select('player_id')
-      .eq('season_id', seasonId)
-      .eq('team_id', teamId)
-      .eq('status', 'Active');
-    if (error) return new Set<string>();
-    return new Set((data ?? []).map((membership) => membership.player_id));
-  } catch {
-    return new Set<string>();
+  const supabase = await createClient();
+  const {data, error} = await supabase
+    .from('launch_season_roster_memberships')
+    .select('player_id')
+    .eq('season_id', seasonId)
+    .eq('team_id', teamId)
+    .eq('status', 'Active');
+  if (error) {
+    throw new Error(`Failed to load active roster for team ${teamId}: ${error.message}`);
   }
+  return new Set((data ?? []).map((membership) => membership.player_id));
 }
 
 function sameCourse(left: string, right: string): boolean {

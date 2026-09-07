@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import {useState} from 'react';
 import {PublicPlayerProfileCard} from '@/components/players/PublicPlayerProfileCard';
 import type {PublicPlayerView} from '@/services/public/PublicPlayerService';
@@ -14,7 +13,6 @@ type PublicPlayerDirectoryProps = {
   initialMode?: 'list' | 'search';
   initialPlayerId?: string;
   initialSearch?: string;
-  showRankingsLink?: boolean;
 };
 
 function formatRecord(statistics: PlayerStatistics): string {
@@ -47,7 +45,6 @@ export function PublicPlayerDirectory({
   initialMode = 'list',
   initialPlayerId = '',
   initialSearch = '',
-  showRankingsLink = false,
 }: PublicPlayerDirectoryProps) {
   const [search, setSearch] = useState(initialSearch);
   const [selectedPlayerId, setSelectedPlayerId] = useState(initialPlayerId.trim());
@@ -79,7 +76,6 @@ export function PublicPlayerDirectory({
             placeholder="Search by player name"
           />
         </label>
-        {showRankingsLink ? <Link className={styles.rankingsLink} href="/rankings">Rankings</Link> : null}
       </div> : null}
 
       <div className={styles.directory}>
@@ -114,7 +110,6 @@ export function PublicPlayerDirectory({
             <p>{searchRequired && !hasSelection
               ? 'Player details will appear here as soon as you start typing.'
               : 'Try another player name.'}</p>
-            {showRankingsLink ? <Link href="/rankings">View rankings</Link> : null}
           </div>
         ) : null}
       </div>

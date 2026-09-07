@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {MockSeasonRepository} from '@/domain/season/SeasonRepository';
 import {SeasonService} from '@/domain/season/SeasonService';
-import {MockPlayerRepository} from '@/repositories/PlayerRepository';
-import {MockTeamRepository} from '@/repositories/TeamRepository';
 import {PlayerService} from '@/services/PlayerService';
 import {PublicPlayerService} from '@/services/public/PublicPlayerService';
 import {TeamService} from '@/services/TeamService';
 import {MockStatisticsRepository, StatisticsEngine} from '@/services/statistics';
+import {MockPlayerRepository} from '@/test-fixtures/MockPlayerRepository';
+import {MockSeasonRepository} from '@/test-fixtures/MockSeasonRepository';
+import {MockTeamRepository} from '@/test-fixtures/MockTeamRepository';
 
 function createService() {
   const teams = new TeamService(new MockTeamRepository());

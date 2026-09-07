@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {MockCourseRepository} from '@/domain/course/CourseRepository';
 import {SCHEDULE_IMPORT_SCHEMA_VERSION} from '@/domain/schedule/ScheduleImport';
-import {MockScheduleRepository} from '@/domain/schedule/ScheduleRepository';
 import {ScheduleService} from '@/domain/schedule/ScheduleService';
-import {MockSeasonRepository} from '@/domain/season/SeasonRepository';
 import {SeasonService} from '@/domain/season/SeasonService';
-import {MockTeamRepository} from '@/repositories/TeamRepository';
 import {TeamService} from '@/services/TeamService';
+import {MockCourseRepository} from '@/test-fixtures/MockCourseRepository';
+import {MockScheduleRepository} from '@/test-fixtures/MockScheduleRepository';
+import {MockSeasonRepository} from '@/test-fixtures/MockSeasonRepository';
+import {MockTeamRepository} from '@/test-fixtures/MockTeamRepository';
 
 function createService() {
   const repository = new MockScheduleRepository();

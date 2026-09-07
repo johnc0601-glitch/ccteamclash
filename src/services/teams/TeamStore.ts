@@ -1,6 +1,5 @@
 import 'server-only';
 
-import {TEAM_MOCK_DATA} from '@/data/teams';
 import type {Team} from '@/models/Team';
 import type {TeamRepository} from '@/repositories/TeamRepository';
 import {TeamService} from '@/services/TeamService';
@@ -29,21 +28,17 @@ type LaunchTeamRow = {
 
 class SupabaseTeamRepository implements TeamRepository {
   async getAll(): Promise<Team[]> {
-    if (!hasSupabaseConfig()) return getSeedTeams();
-    const supabase = await createClient();
+    const supabase = await requireSupabase();
     const {data, error} = await (supabase as any).from('launch_teams').select('*').order('name');
     if (error) throw error;
-    return mergeSeedTeamDefaults((data ?? []).map(toTeam), await getSeedTeams());
+    return (data ?? []).map(toTeam);
   }
 
   async getById(id: string): Promise<Team | undefined> {
-    if (!hasSupabaseConfig()) return (await getSeedTeams()).find((team) => team.id === id);
-    const supabase = await createClient();
+    const supabase = await requireSupabase();
     const {data, error} = await (supabase as any).from('launch_teams').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
-    if (!data) return undefined;
-    const [team] = mergeSeedTeamDefaults([toTeam(data)], await getSeedTeams());
-    return team;
+    return data ? toTeam(data) : undefined;
   }
 
   async search(text: string): Promise<Team[]> {
@@ -180,32 +175,6 @@ function fromTeam(team: Team) {
     created_at: team.createdAt,
     updated_at: team.updatedAt,
   };
-}
-
-async function getSeedTeams(): Promise<Team[]> {
-  return TEAM_MOCK_DATA.map((team) => ({...team}));
-}
-
-function mergeSeedTeamDefaults(teams: Team[], seedTeams: Team[]): Team[] {
-  const seedById = new Map(seedTeams.map((team) => [team.id, team]));
-  const seedByName = new Map(seedTeams.map((team) => [team.name.toLocaleLowerCase(), team]));
-  return teams.map((team) => {
-    const seed = seedById.get(team.id) ?? seedByName.get(team.name.toLocaleLowerCase());
-    if (!seed) return team;
-    return {
-      ...team,
-      city: team.city || seed.city,
-      state: team.state || seed.state,
-      captain: team.captain || seed.captain,
-      homeCourse: team.homeCourse || seed.homeCourse,
-      logo: team.logo || seed.logo,
-      primaryColor: team.primaryColor || seed.primaryColor,
-      secondaryColor: team.secondaryColor || seed.secondaryColor,
-      website: team.website || seed.website,
-      facebook: team.facebook || seed.facebook,
-      description: team.description || seed.description,
-    };
-  });
 }
 
 function cleanText(value: unknown): string {

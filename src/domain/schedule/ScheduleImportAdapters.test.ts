@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {MockCourseRepository} from '@/domain/course/CourseRepository';
+import {MockCourseRepository} from '@/test-fixtures/MockCourseRepository';
 import {
   SCHEDULE_IMPORT_SCHEMA_VERSION,
   validateScheduleImport,
@@ -12,8 +12,8 @@ import {
   ScheduleImportConversionError,
   scheduleRowsToImport,
 } from '@/domain/schedule/ScheduleImportAdapters';
-import {MockSeasonRepository} from '@/domain/season/SeasonRepository';
-import {MockTeamRepository} from '@/repositories/TeamRepository';
+import {MockSeasonRepository} from '@/test-fixtures/MockSeasonRepository';
+import {MockTeamRepository} from '@/test-fixtures/MockTeamRepository';
 
 test('CSV schedule rows convert into the canonical JSON schedule model', () => {
   const rows = parseCsv([

@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {MockResultsRepository} from '@/domain/results/ResultsRepository';
 import {ResultsService} from '@/domain/results/ResultsService';
 import type {Match} from '@/domain/schedule/Match';
 import type {ScheduleService} from '@/domain/schedule/ScheduleService';
@@ -8,6 +7,7 @@ import type {SeasonService} from '@/domain/season/SeasonService';
 import type {Team} from '@/models/Team';
 import type {TeamService} from '@/services/TeamService';
 import {StandingsService} from '@/services/standings/StandingsService';
+import {MockResultsRepository} from '@/test-fixtures/MockResultsRepository';
 
 const MATCHES: Match[] = [
   match('match-1', 'round-1', 'team-a', 'team-b'),

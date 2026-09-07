@@ -1,6 +1,6 @@
 'use server';
 
-import {services} from '@/core/ServiceContainer';
+import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {createClient} from '@/lib/supabase/server';
 import {createProfileFromPublicPlayerView} from '@/services/playerProfiles';
@@ -38,7 +38,8 @@ export async function loadTeamRosterPlayerProfile(
   );
   if (!launchPlayer) return null;
 
-  const historicalPlayers = await services.publicPlayers.getForPlayerIdentities([
+  const publicPlayers = await createServerPublicPlayerService();
+  const historicalPlayers = await publicPlayers.getForPlayerIdentities([
     {id: request.playerId, name: request.playerName},
   ]);
   const roster = buildPublicTeamRoster(

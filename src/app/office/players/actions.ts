@@ -291,5 +291,4 @@ function readRating(value: string): number | null {
 
 function revalidatePeoplePages() {
   revalidatePath(PLAYERS_PATH);
-  revalidatePath('/office/members');
 }
