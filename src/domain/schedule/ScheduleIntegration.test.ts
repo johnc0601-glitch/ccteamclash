@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {SCHEDULE_IMPORT_SCHEMA_VERSION} from '@/domain/schedule/ScheduleImport';
-import {MockScheduleRepository} from '@/domain/schedule/ScheduleRepository';
 import {ScheduleService} from '@/domain/schedule/ScheduleService';
 import {SeasonService} from '@/domain/season/SeasonService';
 import {TeamService} from '@/services/TeamService';
 import {MockCourseRepository} from '@/test-fixtures/MockCourseRepository';
+import {MockScheduleRepository} from '@/test-fixtures/MockScheduleRepository';
 import {MockSeasonRepository} from '@/test-fixtures/MockSeasonRepository';
 import {MockTeamRepository} from '@/test-fixtures/MockTeamRepository';
 
