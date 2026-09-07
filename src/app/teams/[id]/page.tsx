@@ -4,9 +4,9 @@ import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory'
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
 import {LazyTeamRosterDirectory} from '@/components/teams/LazyTeamRosterDirectory';
-import {services} from '@/core/ServiceContainer';
 import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
+import {createServerTeamPageServices} from '@/core/createServerTeamPageServices';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {
   getHistoricalTeamSeasonSummaries,
@@ -40,9 +40,10 @@ export default async function TeamPage({params}: TeamPageProps) {
   const team = await getStoredTeamById(id);
   if (!team?.active) notFound();
 
+  const teamPageServices = await createServerTeamPageServices();
   const [activeSeason, seasons, courses, launchPlayers] = await Promise.all([
-    services.seasons.getActive(),
-    services.seasons.getAll(),
+    teamPageServices?.seasons.getActive() ?? Promise.resolve(undefined),
+    teamPageServices?.seasons.getAll() ?? Promise.resolve([]),
     getStoredCourses({status: 'active'}),
     getLaunchPlayers(),
   ]);
@@ -67,7 +68,7 @@ export default async function TeamPage({params}: TeamPageProps) {
     ? Promise.resolve([])
     : launchPlayers && serverPublicPlayers
       ? serverPublicPlayers.getForPlayerIdentities(rosterIdentities)
-      : services.publicPlayers.getAll();
+      : Promise.resolve([]);
   const scheduleService = await createServerScheduleService();
   const [rosterSummaries, historicalPlayers, nextMatch, teamEvents] = await Promise.all([
     rosterSummariesPromise,
@@ -89,13 +90,15 @@ export default async function TeamPage({params}: TeamPageProps) {
       : historicalPlayers.filter(({player}) => player.teamId === team.id);
   const rosterCount = activeSeason && launchPlayers ? rosterLaunchPlayers.length : roster.length;
   const publishedSeasons = seasons.filter((season) => season.published);
-  const seasonStatistics = await Promise.all(publishedSeasons.map(async (season) => ({
-    season,
-    statistics: await services.statistics.getTeamStatistics(team.id, season.id),
-  })));
-  const currentStatistics = activeSeason
+  const seasonStatistics = teamPageServices
+    ? await Promise.all(publishedSeasons.map(async (season) => ({
+      season,
+      statistics: await teamPageServices.statistics.getTeamStatistics(team.id, season.id),
+    })))
+    : [];
+  const currentStatistics = activeSeason && teamPageServices
     ? seasonStatistics.find(({season}) => season.id === activeSeason.id)?.statistics
-      ?? await services.statistics.getTeamStatistics(team.id, activeSeason.id)
+      ?? await teamPageServices.statistics.getTeamStatistics(team.id, activeSeason.id)
     : undefined;
   const historicalStatistics = getHistoricalTeamSeedSummary(team.id);
   const displayStatistics = historicalStatistics ?? currentStatistics;
