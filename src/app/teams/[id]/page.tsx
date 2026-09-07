@@ -19,7 +19,6 @@ import {getStoredTeamById} from '@/services/teams/TeamStore';
 import {buildPublicTeamRoster} from '@/services/public/PublicRosterService';
 import type {RecordSummary} from '@/services/statistics';
 import {createSlug} from '@/shared/utils';
-import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
 import styles from './TeamDetail.module.css';
 
@@ -230,32 +229,22 @@ export default async function TeamPage({params}: TeamPageProps) {
 }
 
 async function getLaunchPlayers() {
-  if (!hasSupabaseConfig()) return null;
-
-  try {
-    const supabase = await createClient();
-    return await new SupabaseLaunchRepository(supabase).getPlayers();
-  } catch {
-    return null;
-  }
+  const supabase = await createClient();
+  return new SupabaseLaunchRepository(supabase).getPlayers();
 }
 
 async function getActiveSeasonRosterPlayerIds(seasonId: string, teamId: string): Promise<ReadonlySet<string>> {
-  if (!hasSupabaseConfig()) return new Set<string>();
-
-  try {
-    const supabase = await createClient();
-    const {data, error} = await supabase
-      .from('launch_season_roster_memberships')
-      .select('player_id')
-      .eq('season_id', seasonId)
-      .eq('team_id', teamId)
-      .eq('status', 'Active');
-    if (error) return new Set<string>();
-    return new Set((data ?? []).map((membership) => membership.player_id));
-  } catch {
-    return new Set<string>();
+  const supabase = await createClient();
+  const {data, error} = await supabase
+    .from('launch_season_roster_memberships')
+    .select('player_id')
+    .eq('season_id', seasonId)
+    .eq('team_id', teamId)
+    .eq('status', 'Active');
+  if (error) {
+    throw new Error(`Failed to load active roster for team ${teamId}: ${error.message}`);
   }
+  return new Set((data ?? []).map((membership) => membership.player_id));
 }
 
 function sameCourse(left: string, right: string): boolean {
