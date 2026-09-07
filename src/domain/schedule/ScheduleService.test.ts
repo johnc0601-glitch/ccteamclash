@@ -1,10 +1,10 @@
-import {MockCourseRepository} from '@/domain/course/CourseRepository';
 import {MockScheduleRepository} from '@/domain/schedule/ScheduleRepository';
 import {ScheduleService} from '@/domain/schedule/ScheduleService';
 import {MockSeasonRepository} from '@/domain/season/SeasonRepository';
 import {SeasonService} from '@/domain/season/SeasonService';
 import {MockTeamRepository} from '@/repositories/TeamRepository';
 import {TeamService} from '@/services/TeamService';
+import {MockCourseRepository} from '@/test-fixtures/MockCourseRepository';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
