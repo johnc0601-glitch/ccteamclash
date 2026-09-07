@@ -1,4 +1,4 @@
-import {MockCourseRepository} from '@/domain/course/CourseRepository';
+import {MockCourseRepository} from '@/test-fixtures/MockCourseRepository';
 import {CourseService} from '@/domain/course/CourseService';
 import assert from 'node:assert/strict';
 import test from 'node:test';
