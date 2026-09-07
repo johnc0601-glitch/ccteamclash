@@ -1,9 +1,7 @@
 import 'server-only';
 
 import {unstable_cache} from 'next/cache';
-import {TEAM_MOCK_DATA} from '@/data/teams';
 import type {Course} from '@/domain/course/Course';
-import {MockCourseRepository} from '@/domain/course/CourseRepository';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createPublicClient} from '@/lib/supabase/public';
 import type {Team} from '@/models/Team';
@@ -26,11 +24,7 @@ export type PublicDirectoryData = {
 export const getPublicDirectoryData = unstable_cache(
   async (): Promise<PublicDirectoryData> => {
     if (!hasSupabaseConfig()) {
-      return {
-        teams: TEAM_MOCK_DATA.filter((team) => team.active).map((team) => ({...team})),
-        courses: (await new MockCourseRepository().getAll()).filter((course) => course.active),
-        activeSeasonName: 'Current season',
-      };
+      throw new Error('Public league directory storage is not connected.');
     }
 
     const supabase = createPublicClient();
@@ -46,7 +40,7 @@ export const getPublicDirectoryData = unstable_cache(
     if (seasonResult.error) throw seasonResult.error;
 
     return {
-      teams: mergeSeedTeamDefaults((teamsResult.data ?? []).map(mapTeam), TEAM_MOCK_DATA),
+      teams: (teamsResult.data ?? []).map(mapTeam),
       courses: (coursesResult.data ?? []).map(mapCourse),
       activeSeasonName: clean(seasonResult.data?.name) || 'Current season',
     };
@@ -95,29 +89,6 @@ function mapCourse(row: any): Course {
     createdAt: clean(row.created_at),
     updatedAt: clean(row.updated_at),
   };
-}
-
-function mergeSeedTeamDefaults(teams: Team[], seedTeams: Team[]): Team[] {
-  const seedById = new Map(seedTeams.map((team) => [team.id, team]));
-  const seedByName = new Map(seedTeams.map((team) => [team.name.toLocaleLowerCase(), team]));
-
-  return teams.map((team) => {
-    const seed = seedById.get(team.id) ?? seedByName.get(team.name.toLocaleLowerCase());
-    if (!seed) return team;
-    return {
-      ...team,
-      city: team.city || seed.city,
-      state: team.state || seed.state,
-      captain: team.captain || seed.captain,
-      homeCourse: team.homeCourse || seed.homeCourse,
-      logo: team.logo || seed.logo,
-      primaryColor: team.primaryColor || seed.primaryColor,
-      secondaryColor: team.secondaryColor || seed.secondaryColor,
-      website: team.website || seed.website,
-      facebook: team.facebook || seed.facebook,
-      description: team.description || seed.description,
-    };
-  });
 }
 
 function clean(value: unknown): string {
