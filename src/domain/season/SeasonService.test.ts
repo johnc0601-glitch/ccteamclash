@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {CCTEAMCLASH_LEAGUE_ID} from '@/domain/league/League';
-import {MockSeasonRepository} from '@/domain/season/SeasonRepository';
 import {SeasonService} from '@/domain/season/SeasonService';
+import {MockSeasonRepository} from '@/test-fixtures/MockSeasonRepository';
 
 test('existing, new, and duplicated seasons retain league ownership', async () => {
   const service = new SeasonService(new MockSeasonRepository());
