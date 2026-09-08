@@ -52,6 +52,58 @@ const PLAYOFFS_BY_SEASON: Record<string, PlayoffMatch[]> = {
 };
 
 const SEASON_RESULTS_BY_SEASON: Record<string, SeasonResultGroup[]> = {
+  'coastal-clash-2024-2025': [
+    {
+      label: 'Nov 9th',
+      matches: [
+        {awayTeamId: 'dark-knights', awayTeamName: 'Dark Knights', awayScore: 23.5, homeTeamId: 'wild-turkey', homeTeamName: 'Wild Turkey', homeScore: 12.5},
+        {awayTeamId: 'kb', awayTeamName: 'KB', awayScore: 14, homeTeamId: 'cougar-country', homeTeamName: 'Cougar Country', homeScore: 23},
+        {awayTeamId: 'beast-mode', awayTeamName: 'Beast Mode', awayScore: 6.5, homeTeamId: 'hayneous-og-s', homeTeamName: "Hayneous OG's", homeScore: 30.5},
+      ],
+    },
+    {
+      label: 'Dec 7th',
+      matches: [
+        {awayTeamId: 'hayneous-og-s', awayTeamName: "Hayneous OG's", awayScore: 12.5, homeTeamId: 'kb', homeTeamName: 'KB', homeScore: 23.5},
+        {awayTeamId: 'cougar-country', awayTeamName: 'Cougar Country', awayScore: 14.5, homeTeamId: 'dark-knights', homeTeamName: 'Dark Knights', homeScore: 21.5},
+        {awayTeamId: 'wild-turkey', awayTeamName: 'Wild Turkey', awayScore: 11, homeTeamId: 'beast-mode', homeTeamName: 'Beast Mode', homeScore: 23},
+      ],
+    },
+    {
+      label: 'Jan 4th',
+      matches: [
+        {awayTeamId: 'wild-turkey', awayTeamName: 'Wild Turkey', awayScore: 10.5, homeTeamId: 'hayneous-og-s', homeTeamName: "Hayneous OG's", homeScore: 25.5},
+        {awayTeamId: 'dark-knights', awayTeamName: 'Dark Knights', awayScore: 13, homeTeamId: 'kb', homeTeamName: 'KB', homeScore: 24},
+        {awayTeamId: 'beast-mode', awayTeamName: 'Beast Mode', awayScore: 13.5, homeTeamId: 'cougar-country', homeTeamName: 'Cougar Country', homeScore: 22.5},
+      ],
+    },
+    {
+      label: 'Feb',
+      matches: [
+        {awayTeamId: 'hayneous-og-s', awayTeamName: "Hayneous OG's", awayScore: 12.5, homeTeamId: 'dark-knights', homeTeamName: 'Dark Knights', homeScore: 22.5},
+        {awayTeamId: 'kb', awayTeamName: 'KB', awayScore: 21.5, homeTeamId: 'beast-mode', homeTeamName: 'Beast Mode', homeScore: 14.5},
+        {awayTeamId: 'cougar-country', awayTeamName: 'Cougar Country', awayScore: 20.5, homeTeamId: 'wild-turkey', homeTeamName: 'Wild Turkey', homeScore: 15.5},
+      ],
+    },
+    {
+      label: 'Mar 1st',
+      sublabel: 'Rain Date',
+      matches: [
+        {awayTeamId: 'wild-turkey', awayTeamName: 'Wild Turkey', awayScore: 10, homeTeamId: 'kb', homeTeamName: 'KB', homeScore: 22},
+        {awayTeamId: 'hayneous-og-s', awayTeamName: "Hayneous OG's", awayScore: 15.5, homeTeamId: 'cougar-country', homeTeamName: 'Cougar Country', homeScore: 22.5},
+        {awayTeamId: 'beast-mode', awayTeamName: 'Beast Mode', awayScore: 14.5, homeTeamId: 'dark-knights', homeTeamName: 'Dark Knights', homeScore: 24.5},
+      ],
+    },
+    {
+      label: 'April 5th',
+      sublabel: 'Playoffs',
+      matches: [
+        {awayTeamId: 'hayneous-og-s', awayTeamName: "Hayneous OG's", awayScore: 6, homeTeamId: 'dark-knights', homeTeamName: 'Dark Knights', homeScore: 13},
+        {awayTeamId: 'kb', awayTeamName: 'KB', awayScore: 7, homeTeamId: 'cougar-country', homeTeamName: 'Cougar Country', homeScore: 10},
+        {awayTeamId: 'cougar-country', awayTeamName: 'Cougar Country', awayScore: 5, homeTeamId: 'dark-knights', homeTeamName: 'Dark Knights', homeScore: 12},
+      ],
+    },
+  ],
   'coastal-clash-2025-2026': [
     {
       label: 'Oct 4th',
