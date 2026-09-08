@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {StatsTable} from '@/components/stats/StatsTable';
 import {loadServerStatsPageData} from '@/core/loadServerStatsPageData';
@@ -62,6 +63,10 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
           <h1>Stats</h1>
           <p>Player performance by season or across the full recorded Coastal Clash history.</p>
         </header>
+        <div className={styles.ciExplainer}>
+          <span><strong>CI — Clash Index</strong> is Coastal Clash&apos;s match-play player rating.</span>
+          <Link href="/clash-index">How CI works →</Link>
+        </div>
         {showProductionArchiveNotice ? (
           <p className={styles.archiveNotice} role="note">
             Stats are shown from the production archive. Live data on this preview deployment may differ.
