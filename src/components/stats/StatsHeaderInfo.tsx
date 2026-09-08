@@ -1,7 +1,7 @@
 'use client';
 
 import {useEffect, useRef, useState} from 'react';
-import styles from '@/app/stats/Stats.module.css';
+import styles from './StatsHeaderInfo.module.css';
 
 type StatsHeaderInfoProps = {
   label: string;
@@ -34,10 +34,10 @@ export function StatsHeaderInfo({label, text}: StatsHeaderInfoProps) {
   }, [open]);
 
   return (
-    <span ref={rootRef} className={styles.headerInfo} data-open={open ? 'true' : 'false'}>
+    <span ref={rootRef} className={styles.root} data-open={open ? 'true' : 'false'}>
       <button
         type="button"
-        className={styles.headerInfoButton}
+        className={styles.button}
         aria-label={`About ${label}`}
         aria-expanded={open}
         onClick={(event) => {
@@ -47,7 +47,7 @@ export function StatsHeaderInfo({label, text}: StatsHeaderInfoProps) {
       >
         i
       </button>
-      <span className={styles.headerInfoPopup} role="tooltip">{text}</span>
+      <span className={styles.popup} role="tooltip">{text}</span>
     </span>
   );
 }
