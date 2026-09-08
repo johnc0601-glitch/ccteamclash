@@ -5,6 +5,7 @@ import {useRouter} from 'next/navigation';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {loadFullStatsGroup} from '@/app/stats/actions';
 import type {StatsGroup, StatsGroupOption, StatsRow} from '@/app/stats/page';
+import {StatsHeaderInfo} from '@/components/stats/StatsHeaderInfo';
 import {
   toStatsViewSearchParams,
   type StatsDirection as Direction,
@@ -225,27 +226,7 @@ function SortableHeader({label, sort, active, direction, onSort}: {label: string
     <th aria-sort={active === sort ? (direction === 'desc' ? 'descending' : 'ascending') : 'none'}>
       <span className={styles.headerCell}>
         <button type="button" onClick={() => onSort(sort)}>{label}<span aria-hidden="true">{active === sort ? (direction === 'desc' ? ' ↓' : ' ↑') : ''}</span></button>
-        <span
-          className={styles.headerInfo}
-          title={HEADER_HELP[sort]}
-          aria-label={`About ${label}: ${HEADER_HELP[sort]}`}
-          tabIndex={0}
-          style={{
-            width: 13,
-            height: 13,
-            display: 'inline-grid',
-            placeItems: 'center',
-            border: '1px solid #8d9496',
-            borderRadius: '50%',
-            color: '#697174',
-            fontFamily: 'Arial, sans-serif',
-            fontSize: 8,
-            fontStyle: 'normal',
-            fontWeight: 900,
-            lineHeight: 1,
-            cursor: 'help',
-          }}
-        >i</span>
+        <StatsHeaderInfo label={label} text={HEADER_HELP[sort]} />
       </span>
     </th>
   );

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {StatsTable} from '@/components/stats/StatsTable';
 import {loadServerStatsPageData} from '@/core/loadServerStatsPageData';
@@ -6,6 +7,7 @@ import type {StatsGroup, StatsRow} from '@/services/stats/StatsPageModel';
 import {InvalidStatsSeasonError, type StatsGroupOption} from '@/services/stats/StatsPageService';
 import {DEFAULT_STATS_VIEW, parseStatsViewState} from '@/services/stats/StatsViewState';
 import styles from './Stats.module.css';
+import helpStyles from './StatsHelp.module.css';
 import './compact.css';
 
 export type {StatsGroup, StatsRow} from '@/services/stats/StatsPageModel';
@@ -62,6 +64,10 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
           <h1>Stats</h1>
           <p>Player performance by season or across the full recorded Coastal Clash history.</p>
         </header>
+        <div className={helpStyles.explainer}>
+          <span><strong>CI — Clash Index</strong> is Coastal Clash&apos;s match-play player rating.</span>
+          <Link href="/clash-index">How CI works →</Link>
+        </div>
         {showProductionArchiveNotice ? (
           <p className={styles.archiveNotice} role="note">
             Stats are shown from the production archive. Live data on this preview deployment may differ.
