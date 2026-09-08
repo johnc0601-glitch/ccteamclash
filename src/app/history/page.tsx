@@ -12,7 +12,7 @@ type HistoryProps = {
 };
 
 type PlayoffMatch = {
-  round: 'Semifinal' | 'Championship';
+  round: 'Semifinal' | 'Third Place' | 'Championship';
   label: string;
   awayTeamId: string;
   awayTeamName: string;
@@ -27,6 +27,12 @@ const PLAYOFFS_BY_SEASON: Record<string, PlayoffMatch[]> = {
     {round: 'Semifinal', label: 'Semifinal 1', awayTeamId: 'hayneous-og-s', awayTeamName: "Hayneous OG's", awayScore: 6, homeTeamId: 'dark-knights', homeTeamName: 'Dark Knights', homeScore: 13},
     {round: 'Semifinal', label: 'Semifinal 2', awayTeamId: 'kb', awayTeamName: 'KB', awayScore: 7, homeTeamId: 'cougar-country', homeTeamName: 'Cougar Country', homeScore: 10},
     {round: 'Championship', label: 'Championship', awayTeamId: 'cougar-country', awayTeamName: 'Cougar Country', awayScore: 5, homeTeamId: 'dark-knights', homeTeamName: 'Dark Knights', homeScore: 12},
+  ],
+  'coastal-clash-2025-2026': [
+    {round: 'Semifinal', label: 'Semifinal 1', awayTeamId: 'kb', awayTeamName: 'KB', awayScore: 5.5, homeTeamId: 'beast-mode', homeTeamName: 'Beast Mode', homeScore: 12.5},
+    {round: 'Semifinal', label: 'Semifinal 2', awayTeamId: 'riptide', awayTeamName: 'Riptide', awayScore: 12.5, homeTeamId: 'ninjas', homeTeamName: 'Ninjas', homeScore: 5.5},
+    {round: 'Third Place', label: '3rd Place', awayTeamId: 'kb', awayTeamName: 'KB', awayScore: 7, homeTeamId: 'ninjas', homeTeamName: 'Ninjas', homeScore: 12},
+    {round: 'Championship', label: 'Championship', awayTeamId: 'riptide', awayTeamName: 'Riptide', awayScore: 12, homeTeamId: 'beast-mode', homeTeamName: 'Beast Mode', homeScore: 7},
   ],
 };
 
@@ -114,7 +120,7 @@ function SeasonView({archive}: {archive: HistoricalSeasonArchive}) {
       <div className={styles.section}><div className={styles.sectionHeading}><div><span className="eyebrow">Final table</span><h2>Standings</h2></div></div><StandingsTable standings={archive.standings} /></div>
       <div className={styles.section}><div className={styles.sectionHeading}><div><span className="eyebrow">Postseason</span><h2>Playoffs</h2></div></div>{playoffs.length ? <div className={styles.playoffStack}>{playoffs.map((match) => <PlayoffCard key={match.label} match={match} />)}</div> : <div className={styles.emptyPanel}><strong>{archive.championTeamName ?? 'Champion'} is preserved as season champion.</strong><p>The detailed postseason scores are not yet loaded into this archive, so no matchup results are being inferred.</p></div>}</div>
     </section>
-    <section className={styles.seasonSummary}><div><span className="eyebrow">Season summary</span><h2>{archive.championTeamName ?? 'Season'} finished on top.</h2><p>{championship ? `${championship.homeTeamName} defeated ${championship.awayTeamName} ${championship.homeScore}–${championship.awayScore} in the championship match.` : 'This page preserves the league result and final standings while detailed player statistics and Clash Index remain in Stats.'}</p></div></section>
+    <section className={styles.seasonSummary}><div><span className="eyebrow">Season summary</span><h2>{archive.championTeamName ?? 'Season'} finished on top.</h2><p>{championship ? `${championship.awayScore > championship.homeScore ? championship.awayTeamName : championship.homeTeamName} defeated ${championship.awayScore > championship.homeScore ? championship.homeTeamName : championship.awayTeamName} ${Math.max(championship.awayScore, championship.homeScore)}–${Math.min(championship.awayScore, championship.homeScore)} in the championship match.` : 'This page preserves the league result and final standings while detailed player statistics and Clash Index remain in Stats.'}</p></div></section>
     <ExploreRecords seasonName={compactSeasonName(archive.seasonName)} seasonId={archive.seasonId} archiveUrl={SEASON_ARCHIVE_URLS[archive.seasonId]} />
   </div>;
 }
