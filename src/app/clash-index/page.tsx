@@ -18,16 +18,16 @@ export default function ClashIndexPage() {
             <strong>Clash Index (CI) is Coastal Clash&apos;s match-play player rating.</strong>
           </p>
 
-          <p>Your CI changes based on how you perform compared with what was expected.</p>
+          <p>CI reflects how you perform against the competition you face.</p>
 
           <ul className={styles.movementList}>
-            <li><strong>Beat a stronger player</strong><span>Bigger CI gain</span></li>
-            <li><strong>Beat someone you were expected to beat</strong><span>Smaller gain</span></li>
-            <li><strong>Lose to a stronger player</strong><span>Smaller drop</span></li>
-            <li><strong>Lose when you were favored</strong><span>Bigger drop</span></li>
+            <li><strong>Beat a stronger player</strong><span>Your CI may rise more because the result was less expected.</span></li>
+            <li><strong>Beat someone you were favored against</strong><span>Your CI may rise a little.</span></li>
+            <li><strong>Lose to a stronger player</strong><span>Your CI may drop only slightly.</span></li>
+            <li><strong>Lose as the favorite</strong><span>Your CI may drop more.</span></li>
           </ul>
 
-          <p className={styles.callout}><strong>The bigger the surprise, the bigger the movement.</strong></p>
+          <p className={styles.callout}><strong>CI is meant to add context to match results — not become the focus of the match.</strong></p>
 
           <h2>Singles</h2>
           <p>
