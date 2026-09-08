@@ -4,7 +4,7 @@
   align-items: center;
 }
 
-.button {
+.root .button {
   width: 15px;
   height: 15px;
   display: inline-grid;
@@ -22,8 +22,8 @@
   cursor: help;
 }
 
-.button:hover,
-.button:focus-visible,
+.root .button:hover,
+.root .button:focus-visible,
 .root[data-open='true'] .button {
   border-color: var(--cc-gold, #b88900);
   color: var(--cc-gold, #b88900);
@@ -31,10 +31,8 @@
 }
 
 .popup {
-  position: absolute;
-  z-index: 30;
-  top: calc(100% + 8px);
-  right: 0;
+  position: fixed;
+  z-index: 1000;
   width: 220px;
   padding: 9px 10px;
   border: 1px solid #34393b;
@@ -48,36 +46,14 @@
   text-align: left;
   white-space: normal;
   text-transform: none;
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-2px);
-  transition: opacity .12s ease, transform .12s ease, visibility .12s ease;
-}
-
-.root[data-open='true'] .popup,
-.root:focus-within .popup {
-  visibility: visible;
-  opacity: 1;
-  transform: translateY(0);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .root:hover .popup {
-    visibility: visible;
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @media (max-width: 760px) {
   .popup {
-    position: fixed;
-    z-index: 100;
-    top: auto;
+    top: auto !important;
     right: 14px;
     bottom: 18px;
-    left: 14px;
+    left: 14px !important;
     width: auto;
     padding: 12px 14px;
     font-size: 11px;
