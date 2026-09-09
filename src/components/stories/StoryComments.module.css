@@ -72,6 +72,14 @@
   background: var(--surface, rgba(255, 255, 255, .04));
 }
 
+.replyForm input {
+  color: #fff;
+}
+
+.replyForm input::placeholder {
+  color: rgba(255, 255, 255, .58);
+}
+
 .composer textarea,
 .editForm textarea {
   resize: vertical;
