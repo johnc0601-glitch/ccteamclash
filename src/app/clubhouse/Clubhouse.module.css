@@ -1,4 +1,8 @@
 .page {
+  --clubhouse-accent: var(--cc-gold);
+  --clubhouse-secondary: var(--cc-bg);
+  --clubhouse-black: #0a0b0b;
+  --clubhouse-dark: #111313;
   padding: 52px 0 96px;
   background: var(--cc-bg);
   color: var(--cc-text);
@@ -9,26 +13,44 @@
 }
 
 .hero {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 24px;
   margin-bottom: 22px;
-  padding: 28px 30px;
-  border: 1px solid var(--cc-card-border);
+  padding: 30px 32px;
+  border: 1px solid color-mix(in srgb, var(--clubhouse-accent) 68%, #000);
+  border-left: 7px solid var(--clubhouse-accent);
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--cc-surface-deep), var(--cc-card-bg));
+  background:
+    radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--clubhouse-accent) 24%, transparent), transparent 32%),
+    linear-gradient(135deg, #080909 0%, #131515 100%);
   box-shadow: var(--cc-card-shadow);
   overflow: hidden;
 }
 
+.hero::after {
+  content: '';
+  position: absolute;
+  right: -90px;
+  bottom: -100px;
+  width: 260px;
+  height: 260px;
+  border: 1px solid color-mix(in srgb, var(--clubhouse-accent) 28%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
 .hero > div:first-child {
   min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .hero h1 {
   margin: 8px 0 12px;
-  color: var(--cc-heading);
+  color: #f5f3ed;
   font-family: var(--cc-font-display);
   font-size: clamp(44px, 7vw, 74px);
   font-style: italic;
@@ -37,33 +59,39 @@
   text-transform: uppercase;
 }
 
+.hero h1 span {
+  color: var(--clubhouse-accent);
+}
+
 .hero p {
   max-width: 690px;
   margin: 0;
-  color: var(--cc-muted);
+  color: rgba(255,255,255,.7);
   line-height: 1.55;
 }
 
 .logoWrap {
-  width: 108px;
-  height: 108px;
-  flex: 0 0 108px;
+  position: relative;
+  z-index: 1;
+  width: 116px;
+  height: 116px;
+  flex: 0 0 116px;
   display: grid;
   place-items: center;
-  border: 2px solid var(--cc-gold);
+  border: 3px solid var(--clubhouse-accent);
   border-radius: 18px;
-  background: var(--cc-surface-raised);
-  box-shadow: var(--cc-card-shadow);
+  background: #050606;
+  box-shadow: 0 10px 30px rgba(0,0,0,.34), 0 0 0 1px rgba(255,255,255,.05) inset;
 }
 
 .logoWrap img {
-  width: 88px;
-  height: 88px;
+  width: 94px;
+  height: 94px;
   object-fit: contain;
 }
 
 .kicker {
-  color: var(--cc-gold);
+  color: var(--clubhouse-accent);
   font-size: 11px;
   font-weight: 950;
   letter-spacing: .12em;
@@ -102,7 +130,9 @@
   gap: 20px;
   margin-bottom: 16px;
   padding: 24px 26px;
-  border-left: 5px solid var(--cc-gold);
+  border-color: color-mix(in srgb, var(--clubhouse-accent) 62%, #1a1a1a);
+  border-left: 6px solid var(--clubhouse-accent);
+  background: linear-gradient(100deg, #0a0b0b 0%, #151717 100%);
 }
 
 .matchCard h2,
@@ -117,12 +147,13 @@
 }
 
 .matchCard h2 {
+  color: #fff;
   font-size: clamp(28px, 4vw, 38px);
 }
 
 .matchCard p {
   margin: 0;
-  color: var(--cc-muted);
+  color: rgba(255,255,255,.68);
   line-height: 1.5;
 }
 
@@ -258,16 +289,23 @@
 .schedulePanel {
   padding: 0;
   overflow: hidden;
+  border-color: color-mix(in srgb, var(--clubhouse-accent) 42%, var(--cc-card-border));
 }
 
 .schedulePanel > summary {
-  padding: 19px 24px;
+  padding: 20px 24px;
   list-style-position: inside;
+  background: linear-gradient(90deg, #0b0c0c, #171919);
+  color: #fff;
+  border-left: 5px solid var(--clubhouse-accent);
+}
+
+.schedulePanel > summary::marker {
+  color: var(--clubhouse-accent);
 }
 
 .schedulePanel[open] > summary {
-  border-bottom: 1px solid var(--cc-card-border);
-  background: var(--cc-surface-deep);
+  border-bottom: 1px solid color-mix(in srgb, var(--clubhouse-accent) 42%, #222);
 }
 
 .schedule {
@@ -286,25 +324,32 @@
 }
 
 .schedule a:last-child { border-bottom: 0; }
-.schedule a:hover { background: var(--cc-surface-deep); }
-.schedule strong { color: var(--cc-heading); }
+.schedule a:hover { background: color-mix(in srgb, var(--clubhouse-accent) 5%, var(--cc-surface-deep)); }
+.schedule strong { color: var(--clubhouse-accent); }
 .schedule span { font-weight: 900; text-transform: uppercase; }
 .schedule small { color: var(--cc-muted); }
 
 .composer {
   padding: 0;
   overflow: hidden;
+  border-color: color-mix(in srgb, var(--clubhouse-accent) 42%, var(--cc-card-border));
 }
 
 .composerHeader {
   padding: 22px 24px 18px;
-  border-bottom: 1px solid var(--cc-card-border);
-  background: var(--cc-surface-deep);
+  border-bottom: 1px solid color-mix(in srgb, var(--clubhouse-accent) 36%, #222);
+  border-left: 5px solid var(--clubhouse-accent);
+  background:
+    linear-gradient(110deg, #090a0a 0%, #181a1a 100%);
+}
+
+.composerHeader h2 {
+  color: #fff;
 }
 
 .composerHeader p {
   margin: 0;
-  color: var(--cc-muted);
+  color: rgba(255,255,255,.68);
   line-height: 1.5;
 }
 
@@ -332,8 +377,8 @@
 .composer textarea:focus,
 .commentForm input:focus,
 .replyForm input:focus {
-  outline: 2px solid var(--cc-gold-soft);
-  border-color: var(--cc-gold);
+  outline: 2px solid color-mix(in srgb, var(--clubhouse-accent) 32%, transparent);
+  border-color: var(--clubhouse-accent);
 }
 
 .composer button { justify-self: end; }
@@ -349,8 +394,8 @@
 }
 
 .pinned {
-  border-color: var(--cc-gold);
-  box-shadow: 0 0 0 1px var(--cc-gold-soft), var(--cc-card-shadow);
+  border-color: var(--clubhouse-accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--clubhouse-accent) 28%, transparent), var(--cc-card-shadow);
 }
 
 .postTop {
@@ -358,8 +403,9 @@
   justify-content: space-between;
   gap: 14px;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--cc-card-border);
-  background: var(--cc-surface-deep);
+  border-bottom: 1px solid color-mix(in srgb, var(--clubhouse-accent) 28%, #222);
+  border-left: 5px solid var(--clubhouse-accent);
+  background: linear-gradient(90deg, #0c0d0d, #171919);
 }
 
 .postTop > div {
@@ -368,21 +414,21 @@
 }
 
 .postTop strong {
-  color: var(--cc-heading);
+  color: #fff;
   text-transform: uppercase;
 }
 
 .postTop span {
-  color: var(--cc-muted);
+  color: rgba(255,255,255,.58);
   font-size: 11px;
 }
 
 .postTop b {
   align-self: start;
   padding: 4px 8px;
-  border: 1px solid var(--cc-gold-soft);
+  border: 1px solid color-mix(in srgb, var(--clubhouse-accent) 58%, transparent);
   border-radius: 999px;
-  color: var(--cc-gold);
+  color: var(--clubhouse-accent);
   font-size: 10px;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -427,8 +473,8 @@
 }
 
 .postTools button[data-active=true] {
-  border-color: var(--cc-gold);
-  background: var(--cc-surface-deep);
+  border-color: var(--clubhouse-accent);
+  background: color-mix(in srgb, var(--clubhouse-accent) 8%, var(--cc-surface-deep));
 }
 
 .comments {
@@ -463,7 +509,7 @@
   gap: 3px;
   margin: 10px 0 0 18px;
   padding-left: 12px;
-  border-left: 2px solid var(--cc-gold-soft);
+  border-left: 2px solid color-mix(in srgb, var(--clubhouse-accent) 45%, var(--cc-card-border));
 }
 
 .commentForm,
@@ -482,7 +528,7 @@
 .empty {
   margin: 0;
   padding: 30px;
-  border: 1px dashed var(--cc-card-border);
+  border: 1px dashed color-mix(in srgb, var(--clubhouse-accent) 42%, var(--cc-card-border));
   border-radius: 8px;
   color: var(--cc-muted);
   text-align: center;
@@ -492,8 +538,8 @@
   .page { padding: 34px 0 72px; }
   .hero { padding: 22px; align-items: flex-start; }
   .hero h1 { font-size: clamp(40px, 11vw, 58px); }
-  .logoWrap { width: 82px; height: 82px; flex-basis: 82px; border-radius: 14px; }
-  .logoWrap img { width: 68px; height: 68px; }
+  .logoWrap { width: 86px; height: 86px; flex-basis: 86px; border-radius: 14px; }
+  .logoWrap img { width: 70px; height: 70px; }
   .matchCard { align-items: flex-start; flex-direction: column; }
   .statusLists { grid-template-columns: 1fr; }
   .schedule a { grid-template-columns: 96px 1fr; }
@@ -503,8 +549,8 @@
 @media (max-width: 560px) {
   .hero { gap: 14px; padding: 19px; }
   .hero p { display: none; }
-  .logoWrap { width: 68px; height: 68px; flex-basis: 68px; }
-  .logoWrap img { width: 56px; height: 56px; }
+  .logoWrap { width: 70px; height: 70px; flex-basis: 70px; }
+  .logoWrap img { width: 58px; height: 58px; }
   .panel { padding: 18px; }
   .sectionHeading { align-items: start; }
   .sectionHeading > strong { font-size: 18px; }
