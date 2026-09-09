@@ -20,6 +20,11 @@ export const OFFICE_SECTIONS = {
     description: 'Maintain player records, accounts, history links, team assignments, and captain access.',
     href: '/office/players',
   },
+  clubhouses: {
+    title: 'Clubhouses',
+    description: 'Review private team Clubhouse posts and conversations.',
+    href: '/office/clubhouses',
+  },
   seasons: {
     title: 'Seasons',
     description: 'Set the active season and preserve the structure of past seasons.',
