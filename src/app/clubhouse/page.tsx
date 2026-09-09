@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import {redirect} from 'next/navigation';
+import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {createClient} from '@/lib/supabase/server';
 import {getOwnClubhouseContext} from '@/lib/clubhouse';
 import {
@@ -88,113 +89,123 @@ export default async function ClubhousePage({searchParams}: Props) {
   const ownStatus = attendance.get(context.playerId) ?? 'Unconfirmed';
 
   return (
-    <main className={`shell ${styles.page}`}>
-      <header className={styles.hero}>
-        <div>
-          <span className={styles.kicker}>Private team space · {context.seasonName}</span>
-          <h1>{context.teamName} Clubhouse</h1>
-        </div>
-        {context.teamLogo ? <img src={context.teamLogo} alt="" width={76} height={76} /> : null}
-      </header>
+    <main>
+      <SiteHeader />
+      <section className={styles.page}>
+        <div className="shell">
+          <header className={styles.hero}>
+            <div>
+              <span className={styles.kicker}>Private team space · {context.seasonName}</span>
+              <h1>{context.teamName} Clubhouse</h1>
+              <p>Your team schedule, match availability, and private discussion in one place.</p>
+            </div>
+            {context.teamLogo ? <div className={styles.logoWrap}><img src={context.teamLogo} alt={`${context.teamName} logo`} width={92} height={92} /></div> : null}
+          </header>
 
-      {notice ? <p className={styles.notice}>{notice}</p> : null}
-      {error ? <p className={styles.error}>{error}</p> : null}
+          {notice ? <p className={styles.notice}>{notice}</p> : null}
+          {error ? <p className={styles.error}>{error}</p> : null}
 
-      {nextMatch ? (
-        <section className={styles.matchCard}>
-          <div>
-            <span className={styles.kicker}>Next match</span>
-            <h2>{nextMatch.away_team_id === context.teamId ? `${context.teamName} @ ${teams.get(nextMatch.home_team_id) ?? 'Opponent'}` : `${teams.get(nextMatch.away_team_id) ?? 'Opponent'} @ ${context.teamName}`}</h2>
-            <p>{formatDate(nextMatch.date)} · {courses.get(nextMatch.course_id) ?? 'Location TBD'}</p>
-          </div>
-          <Link href={`/matches/${nextMatch.public_slug || nextMatch.id}`}>Open Matchday</Link>
-        </section>
-      ) : null}
+          {nextMatch ? (
+            <section className={styles.matchCard}>
+              <div>
+                <span className={styles.kicker}>Next match</span>
+                <h2>{nextMatch.away_team_id === context.teamId ? `${context.teamName} @ ${teams.get(nextMatch.home_team_id) ?? 'Opponent'}` : `${teams.get(nextMatch.away_team_id) ?? 'Opponent'} @ ${context.teamName}`}</h2>
+                <p>{formatDate(nextMatch.date)} · {courses.get(nextMatch.course_id) ?? 'Location TBD'}</p>
+              </div>
+              <Link href={`/matches/${nextMatch.public_slug || nextMatch.id}`}>Open Matchday</Link>
+            </section>
+          ) : null}
 
-      {nextMatch ? (
-        <section className={styles.panel}>
-          <div className={styles.sectionHeading}><div><span className={styles.kicker}>Availability</span><h2>Are you coming?</h2></div><strong>{going.length} going</strong></div>
-          <div className={styles.rsvpRow}>
-            {[
-              ['Playing','Going','green'],
-              ['NotPlaying','Not going','red'],
-              ['Unconfirmed','Undecided','yellow'],
-            ].map(([status,label,tone]) => (
-              <form action={setClubhouseAttendance} key={status}>
-                <input type="hidden" name="matchId" value={nextMatch.id} />
-                <button className={`${styles.rsvp} ${styles[tone]} ${ownStatus === status ? styles.selected : ''}`} name="status" value={status}>{label}</button>
-              </form>
-            ))}
-          </div>
-          <details className={styles.details}>
-            <summary>View players</summary>
-            <div className={styles.statusLists}>
-              <StatusList label="Going" tone="green" ids={going} players={players} />
-              <StatusList label="Not going" tone="red" ids={notGoing} players={players} />
-              <StatusList label="Undecided" tone="yellow" ids={undecided} players={players} />
+          {nextMatch ? (
+            <section className={styles.panel}>
+              <div className={styles.sectionHeading}><div><span className={styles.kicker}>Availability</span><h2>Are you coming?</h2></div><strong>{going.length} going</strong></div>
+              <div className={styles.rsvpRow}>
+                {[
+                  ['Playing','Going','green'],
+                  ['NotPlaying','Not going','red'],
+                  ['Unconfirmed','Undecided','yellow'],
+                ].map(([status,label,tone]) => (
+                  <form action={setClubhouseAttendance} key={status}>
+                    <input type="hidden" name="matchId" value={nextMatch.id} />
+                    <button className={`${styles.rsvp} ${styles[tone]} ${ownStatus === status ? styles.selected : ''}`} name="status" value={status}>{label}</button>
+                  </form>
+                ))}
+              </div>
+              <details className={styles.details}>
+                <summary>View players</summary>
+                <div className={styles.statusLists}>
+                  <StatusList label="Going" tone="green" ids={going} players={players} />
+                  <StatusList label="Not going" tone="red" ids={notGoing} players={players} />
+                  <StatusList label="Undecided" tone="yellow" ids={undecided} players={players} />
+                </div>
+              </details>
+            </section>
+          ) : null}
+
+          <details className={`${styles.panel} ${styles.details} ${styles.schedulePanel}`}>
+            <summary>Team schedule</summary>
+            <div className={styles.schedule}>
+              {teamMatchRows.map((match) => {
+                const opponentId = match.home_team_id === context.teamId ? match.away_team_id : match.home_team_id;
+                const side = match.home_team_id === context.teamId ? 'vs' : '@';
+                return <Link href={`/matches/${match.public_slug || match.id}`} key={match.id}><strong>{formatDate(match.date)}</strong><span>{side} {teams.get(opponentId) ?? 'Opponent'}</span><small>{courses.get(match.course_id) ?? 'Location TBD'}</small></Link>;
+              })}
             </div>
           </details>
-        </section>
-      ) : null}
 
-      <details className={`${styles.panel} ${styles.details}`}>
-        <summary>Team schedule</summary>
-        <div className={styles.schedule}>
-          {teamMatchRows.map((match) => {
-            const opponentId = match.home_team_id === context.teamId ? match.away_team_id : match.home_team_id;
-            const side = match.home_team_id === context.teamId ? 'vs' : '@';
-            return <Link href={`/matches/${match.public_slug || match.id}`} key={match.id}><strong>{formatDate(match.date)}</strong><span>{side} {teams.get(opponentId) ?? 'Opponent'}</span><small>{courses.get(match.course_id) ?? 'Location TBD'}</small></Link>;
-          })}
-        </div>
-      </details>
+          <section className={styles.composer}>
+            <div className={styles.composerHeader}>
+              <span className={styles.kicker}>Team discussion</span>
+              <h2>Post to the Clubhouse</h2>
+              <p>Only your current team and league commissioners can see this conversation.</p>
+            </div>
+            <form action={createClubhousePost}>
+              <input name="title" maxLength={120} placeholder="Optional title" />
+              <textarea name="body" maxLength={3000} rows={4} placeholder="Share something with your team" required />
+              <button type="submit">Post</button>
+            </form>
+          </section>
 
-      <section className={styles.composer}>
-        <span className={styles.kicker}>Team discussion</span>
-        <h2>Post to the Clubhouse</h2>
-        <form action={createClubhousePost}>
-          <input name="title" maxLength={120} placeholder="Optional title" />
-          <textarea name="body" maxLength={3000} rows={4} placeholder="Share something with your team" required />
-          <button type="submit">Post</button>
-        </form>
-      </section>
-
-      <section className={styles.feed}>
-        {(posts ?? []).map((post: any) => {
-          const comments = (commentResult.data ?? []).filter((comment: any) => comment.post_id === post.id);
-          const reactions = (reactionResult.data ?? []).filter((reaction: any) => reaction.post_id === post.id);
-          const canManage = context.isCaptain || context.isCommissioner || post.author_profile_id === context.profileId;
-          return (
-            <article className={`${styles.post} ${post.pinned_at ? styles.pinned : ''}`} key={post.id}>
-              <div className={styles.postTop}>
-                <div><strong>{authors.get(post.author_profile_id) ?? 'Member'}</strong><span>{new Date(post.created_at).toLocaleString()}</span></div>
-                {post.pinned_at ? <b>Pinned</b> : null}
-              </div>
-              {post.title ? <h3>{post.title}</h3> : null}
-              <p>{post.body}</p>
-              <div className={styles.postTools}>
-                {REACTIONS.map(([key,icon]) => {
-                  const count = reactions.filter((reaction: any) => reaction.reaction_type === key).length;
-                  const active = reactions.some((reaction: any) => reaction.reaction_type === key && reaction.profile_id === context.profileId);
-                  return <form action={reactToClubhousePost} key={key}><input type="hidden" name="postId" value={post.id}/><button data-active={active} name="reactionType" value={key}>{icon}{count ? ` ${count}` : ''}</button></form>;
-                })}
-                {(context.isCaptain || context.isCommissioner) ? <form action={toggleClubhousePin}><input type="hidden" name="postId" value={post.id}/><input type="hidden" name="pinned" value={post.pinned_at ? 'true' : 'false'}/><button>{post.pinned_at ? 'Unpin' : 'Pin'}</button></form> : null}
-                {canManage ? <form action={deleteClubhousePost}><input type="hidden" name="postId" value={post.id}/><button>Remove</button></form> : null}
-              </div>
-              <div className={styles.comments}>
-                {comments.filter((comment: any) => !comment.parent_comment_id).map((comment: any) => (
-                  <div className={styles.comment} key={comment.id}>
-                    <strong>{authors.get(comment.author_profile_id) ?? 'Member'}</strong><p>{comment.body}</p>
-                    {comments.filter((reply: any) => reply.parent_comment_id === comment.id).map((reply: any) => <div className={styles.reply} key={reply.id}><strong>{authors.get(reply.author_profile_id) ?? 'Member'}</strong><span>{reply.body}</span></div>)}
-                    <form action={addClubhouseComment} className={styles.replyForm}><input type="hidden" name="postId" value={post.id}/><input type="hidden" name="parentCommentId" value={comment.id}/><input name="body" maxLength={1500} placeholder="Reply" required/><button>Reply</button></form>
+          <section className={styles.feed}>
+            {(posts ?? []).map((post: any) => {
+              const comments = (commentResult.data ?? []).filter((comment: any) => comment.post_id === post.id);
+              const reactions = (reactionResult.data ?? []).filter((reaction: any) => reaction.post_id === post.id);
+              const canManage = context.isCaptain || context.isCommissioner || post.author_profile_id === context.profileId;
+              return (
+                <article className={`${styles.post} ${post.pinned_at ? styles.pinned : ''}`} key={post.id}>
+                  <div className={styles.postTop}>
+                    <div><strong>{authors.get(post.author_profile_id) ?? 'Member'}</strong><span>{new Date(post.created_at).toLocaleString()}</span></div>
+                    {post.pinned_at ? <b>Pinned</b> : null}
                   </div>
-                ))}
-                <form action={addClubhouseComment} className={styles.commentForm}><input type="hidden" name="postId" value={post.id}/><input name="body" maxLength={1500} placeholder="Add a comment" required/><button>Comment</button></form>
-              </div>
-            </article>
-          );
-        })}
-        {!(posts ?? []).length ? <p className={styles.empty}>No posts yet.</p> : null}
+                  {post.title ? <h3>{post.title}</h3> : null}
+                  <p>{post.body}</p>
+                  <div className={styles.postTools}>
+                    {REACTIONS.map(([key,icon]) => {
+                      const count = reactions.filter((reaction: any) => reaction.reaction_type === key).length;
+                      const active = reactions.some((reaction: any) => reaction.reaction_type === key && reaction.profile_id === context.profileId);
+                      return <form action={reactToClubhousePost} key={key}><input type="hidden" name="postId" value={post.id}/><button data-active={active} name="reactionType" value={key}>{icon}{count ? ` ${count}` : ''}</button></form>;
+                    })}
+                    {(context.isCaptain || context.isCommissioner) ? <form action={toggleClubhousePin}><input type="hidden" name="postId" value={post.id}/><input type="hidden" name="pinned" value={post.pinned_at ? 'true' : 'false'}/><button>{post.pinned_at ? 'Unpin' : 'Pin'}</button></form> : null}
+                    {canManage ? <form action={deleteClubhousePost}><input type="hidden" name="postId" value={post.id}/><button>Remove</button></form> : null}
+                  </div>
+                  <div className={styles.comments}>
+                    {comments.filter((comment: any) => !comment.parent_comment_id).map((comment: any) => (
+                      <div className={styles.comment} key={comment.id}>
+                        <strong>{authors.get(comment.author_profile_id) ?? 'Member'}</strong><p>{comment.body}</p>
+                        {comments.filter((reply: any) => reply.parent_comment_id === comment.id).map((reply: any) => <div className={styles.reply} key={reply.id}><strong>{authors.get(reply.author_profile_id) ?? 'Member'}</strong><span>{reply.body}</span></div>)}
+                        <form action={addClubhouseComment} className={styles.replyForm}><input type="hidden" name="postId" value={post.id}/><input type="hidden" name="parentCommentId" value={comment.id}/><input name="body" maxLength={1500} placeholder="Reply" required/><button>Reply</button></form>
+                      </div>
+                    ))}
+                    <form action={addClubhouseComment} className={styles.commentForm}><input type="hidden" name="postId" value={post.id}/><input name="body" maxLength={1500} placeholder="Add a comment" required/><button>Comment</button></form>
+                  </div>
+                </article>
+              );
+            })}
+            {!(posts ?? []).length ? <p className={styles.empty}>No posts yet.</p> : null}
+          </section>
+        </div>
       </section>
+      <Footer />
     </main>
   );
 }
