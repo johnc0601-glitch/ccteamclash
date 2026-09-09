@@ -19,7 +19,7 @@ export default async function OfficeClubhousesPage({searchParams}: Props) {
 
   const {data: seasonTeams} = await db.from('launch_season_teams').select('team_id').eq('season_id', season.id);
   const teamIds = (seasonTeams ?? []).map((row:any) => row.team_id);
-  const {data: teams} = teamIds.length ? await db.from('launch_teams').select('id,name,short_name').in('id', teamIds).order('name') : {data:[]};
+  const {data: teams} = teamIds.length ? await db.from('launch_teams').select('id,name,short_name,logo,primary_color').in('id', teamIds).order('name') : {data:[]};
   const selectedTeam = (teams ?? []).find((team:any) => team.id === selectedTeamId) ?? (teams ?? [])[0] ?? null;
 
   let posts:any[] = [];
@@ -42,12 +42,41 @@ export default async function OfficeClubhousesPage({searchParams}: Props) {
       <div className="office-section-heading">
         <div><span className="eyebrow">Private team review · {season.name}</span><h1>Clubhouses</h1></div>
       </div>
-      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:20}}>
-        {(teams ?? []).map((team:any) => <Link key={team.id} href={`/office/clubhouses?team=${encodeURIComponent(team.id)}`} className="office-chip" aria-current={selectedTeam?.id===team.id?'page':undefined}>{team.short_name || team.name}</Link>)}
+
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:10,marginBottom:24}}>
+        {(teams ?? []).map((team:any) => {
+          const active = selectedTeam?.id === team.id;
+          return (
+            <Link
+              key={team.id}
+              href={`/office/clubhouses?team=${encodeURIComponent(team.id)}`}
+              aria-current={active ? 'page' : undefined}
+              style={{
+                display:'flex',alignItems:'center',gap:10,padding:'12px 14px',
+                border:`1px solid ${active ? (team.primary_color || '#c89b22') : 'rgba(127,127,127,.24)'}`,
+                borderLeft:`4px solid ${team.primary_color || '#c89b22'}`,
+                borderRadius:10,textDecoration:'none',color:'inherit',
+                background:active ? 'rgba(127,127,127,.08)' : 'transparent'
+              }}
+            >
+              {team.logo ? <img src={team.logo} alt="" width={34} height={34} style={{objectFit:'contain',flex:'0 0 34px'}} /> : null}
+              <div style={{minWidth:0}}>
+                <strong style={{display:'block'}}>{team.name}</strong>
+                <small style={{opacity:.62}}>{active ? 'Currently viewing' : 'Open review'}</small>
+              </div>
+            </Link>
+          );
+        })}
       </div>
+
       {selectedTeam ? <>
-        <h2>{selectedTeam.name}</h2>
-        <p style={{opacity:.68}}>Office review only. Team members cannot browse other Clubhouses.</p>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+          <div>
+            <h2 style={{marginBottom:4}}>{selectedTeam.name}</h2>
+            <p style={{opacity:.68,marginTop:0}}>Office review only. Team members cannot browse other Clubhouses.</p>
+          </div>
+          <Link href={`/office/clubhouses?team=${encodeURIComponent(selectedTeam.id)}`} className="office-chip">Refresh review</Link>
+        </div>
         <div style={{display:'grid',gap:12,marginTop:16}}>
           {posts.map((post:any) => <article key={post.id} style={{border:'1px solid rgba(127,127,127,.24)',borderRadius:14,padding:14}}>
             <div style={{display:'flex',justifyContent:'space-between',gap:12}}><strong>{names.get(post.author_profile_id) || 'Member'}</strong><small>{new Date(post.created_at).toLocaleString()}</small></div>
