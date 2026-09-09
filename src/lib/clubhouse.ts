@@ -6,6 +6,8 @@ type ClubhouseContext = {
   teamId: string;
   teamName: string;
   teamLogo: string | null;
+  teamPrimaryColor: string;
+  teamSecondaryColor: string;
   profileId: string;
   playerId: string;
   role: string;
@@ -46,7 +48,7 @@ export async function getOwnClubhouseContext(supabase: SupabaseClient): Promise<
 
   const {data: team} = await db
     .from('launch_teams')
-    .select('id,name,logo')
+    .select('id,name,logo,primary_color,secondary_color')
     .eq('id', membership.team_id)
     .maybeSingle();
   if (!team) return null;
@@ -57,6 +59,8 @@ export async function getOwnClubhouseContext(supabase: SupabaseClient): Promise<
     teamId: team.id,
     teamName: team.name,
     teamLogo: team.logo ?? null,
+    teamPrimaryColor: team.primary_color || '#c89b2b',
+    teamSecondaryColor: team.secondary_color || '#f4f0e6',
     profileId: profile.id,
     playerId: profile.player_id,
     role: profile.role,
