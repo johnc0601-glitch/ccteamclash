@@ -76,11 +76,11 @@ export default async function ClubhousePage({searchParams}: Props) {
     ? await db.from('launch_profiles').select('id,display_name').in('id', allProfileIds)
     : {data: []};
 
-  const teams = new Map((teamResult.data ?? []).map((row: any) => [row.id, row.name]));
-  const courses = new Map((courseResult.data ?? []).map((row: any) => [row.id, row.name]));
-  const players = new Map((playerResult.data ?? []).map((row: any) => [row.id, row.name]));
-  const authors = new Map((authorProfiles ?? []).map((row: any) => [row.id, row.display_name]));
-  const attendance = new Map((attendanceResult.data ?? []).map((row: any) => [row.player_id, row.status]));
+  const teams = new Map<string, string>((teamResult.data ?? []).map((row: any): [string, string] => [String(row.id), String(row.name)]));
+  const courses = new Map<string, string>((courseResult.data ?? []).map((row: any): [string, string] => [String(row.id), String(row.name)]));
+  const players = new Map<string, string>((playerResult.data ?? []).map((row: any): [string, string] => [String(row.id), String(row.name)]));
+  const authors = new Map<string, string>((authorProfiles ?? []).map((row: any): [string, string] => [String(row.id), String(row.display_name)]));
+  const attendance = new Map<string, string>((attendanceResult.data ?? []).map((row: any): [string, string] => [String(row.player_id), String(row.status)]));
 
   const going = playerIds.filter((id: string) => attendance.get(id) === 'Playing');
   const notGoing = playerIds.filter((id: string) => attendance.get(id) === 'NotPlaying');
