@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {redirect} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {createClient} from '@/lib/supabase/server';
-import {getOwnClubhouseContext} from '@/lib/clubhouse';
+import {getClubhouseContext} from '@/lib/clubhouse';
 import {
   addClubhouseComment,
   createClubhousePost,
@@ -30,9 +30,13 @@ export default async function ClubhousePage({searchParams}: Props) {
   const params = searchParams ? await searchParams : {};
   const notice = readParam(params.notice);
   const error = readParam(params.error);
+  const requestedTeamId = readParam(params.team);
   const supabase = await createClient();
-  const context = await getOwnClubhouseContext(supabase);
-  if (!context) redirect('/account');
+  const context = await getClubhouseContext(supabase, requestedTeamId);
+  if (!context) {
+    if (requestedTeamId) redirect('/clubhouse?error=That Clubhouse is private to its team.');
+    redirect('/account');
+  }
   const db = supabase as any;
   const brandStyle = {
     '--clubhouse-accent': context.teamPrimaryColor,
@@ -100,13 +104,16 @@ export default async function ClubhousePage({searchParams}: Props) {
         <div className="shell">
           <header className={styles.hero}>
             <div>
-              <span className={styles.kicker}>Private team space · {context.seasonName}</span>
+              <span className={styles.kicker}>{context.isCommissionerReview ? 'Commissioner review' : 'Private team space'} · {context.seasonName}</span>
               <h1><span>{context.teamName}</span> Clubhouse</h1>
-              <p>Your team schedule, match availability, and private discussion in one place.</p>
+              <p>{context.isCommissionerReview ? 'Read-only Office view of this team’s Clubhouse.' : 'Your team schedule, match availability, and private discussion in one place.'}</p>
             </div>
             {context.teamLogo ? <div className={styles.logoWrap}><img src={context.teamLogo} alt={`${context.teamName} logo`} width={92} height={92} /></div> : null}
           </header>
 
+          {context.isCommissionerReview ? (
+            <p className={styles.notice}>Commissioner review mode · read only · <Link href="/office/clubhouses">Back to Clubhouses</Link></p>
+          ) : null}
           {notice ? <p className={styles.notice}>{notice}</p> : null}
           {error ? <p className={styles.error}>{error}</p> : null}
 
@@ -147,26 +154,28 @@ export default async function ClubhousePage({searchParams}: Props) {
                   </div>
                 </details>
 
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'12px',flexWrap:'wrap',marginTop:'16px'}}>
-                  <span style={{color:'rgba(255,255,255,.62)',fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'.08em'}}>Your status</span>
-                  <div style={{display:'flex',gap:'6px',flexWrap:'wrap'}}>
-                    {[
-                      ['Playing','Going','green'],
-                      ['NotPlaying','Not going','red'],
-                      ['Unconfirmed','Undecided','yellow'],
-                    ].map(([status,label,tone]) => (
-                      <form action={setClubhouseAttendance} key={status} style={{margin:0}}>
-                        <input type="hidden" name="matchId" value={nextMatch.id} />
-                        <button
-                          className={`${styles.rsvp} ${styles[tone]} ${ownStatus === status ? styles.selected : ''}`}
-                          style={{width:'auto',minHeight:'32px',padding:'0 10px',fontSize:'10px',background:'rgba(255,255,255,.04)'}}
-                          name="status"
-                          value={status}
-                        >{label}</button>
-                      </form>
-                    ))}
+                {!context.isCommissionerReview ? (
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'12px',flexWrap:'wrap',marginTop:'16px'}}>
+                    <span style={{color:'rgba(255,255,255,.62)',fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'.08em'}}>Your status</span>
+                    <div style={{display:'flex',gap:'6px',flexWrap:'wrap'}}>
+                      {[
+                        ['Playing','Going','green'],
+                        ['NotPlaying','Not going','red'],
+                        ['Unconfirmed','Undecided','yellow'],
+                      ].map(([status,label,tone]) => (
+                        <form action={setClubhouseAttendance} key={status} style={{margin:0}}>
+                          <input type="hidden" name="matchId" value={nextMatch.id} />
+                          <button
+                            className={`${styles.rsvp} ${styles[tone]} ${ownStatus === status ? styles.selected : ''}`}
+                            style={{width:'auto',minHeight:'32px',padding:'0 10px',fontSize:'10px',background:'rgba(255,255,255,.04)'}}
+                            name="status"
+                            value={status}
+                          >{label}</button>
+                        </form>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ) : null}
               </div>
             </section>
           ) : null}
@@ -182,24 +191,26 @@ export default async function ClubhousePage({searchParams}: Props) {
             </div>
           </details>
 
-          <section className={styles.composer}>
-            <div className={styles.composerHeader}>
-              <span className={styles.kicker}>Team discussion</span>
-              <h2>Post to the Clubhouse</h2>
-              <p>Only your current team and league commissioners can see this conversation.</p>
-            </div>
-            <form action={createClubhousePost}>
-              <input name="title" maxLength={120} placeholder="Optional title" />
-              <textarea name="body" maxLength={3000} rows={4} placeholder="Share something with your team" required />
-              <button type="submit">Post</button>
-            </form>
-          </section>
+          {!context.isCommissionerReview ? (
+            <section className={styles.composer}>
+              <div className={styles.composerHeader}>
+                <span className={styles.kicker}>Team discussion</span>
+                <h2>Post to the Clubhouse</h2>
+                <p>Only your current team and league commissioners can see this conversation.</p>
+              </div>
+              <form action={createClubhousePost}>
+                <input name="title" maxLength={120} placeholder="Optional title" />
+                <textarea name="body" maxLength={3000} rows={4} placeholder="Share something with your team" required />
+                <button type="submit">Post</button>
+              </form>
+            </section>
+          ) : null}
 
           <section className={styles.feed}>
             {(posts ?? []).map((post: any) => {
               const comments = (commentResult.data ?? []).filter((comment: any) => comment.post_id === post.id);
               const reactions = (reactionResult.data ?? []).filter((reaction: any) => reaction.post_id === post.id);
-              const canManage = context.isCaptain || context.isCommissioner || post.author_profile_id === context.profileId;
+              const canManage = !context.isCommissionerReview && (context.isCaptain || context.isCommissioner || post.author_profile_id === context.profileId);
               return (
                 <article className={`${styles.post} ${post.pinned_at ? styles.pinned : ''}`} key={post.id}>
                   <div className={styles.postTop}>
@@ -209,12 +220,15 @@ export default async function ClubhousePage({searchParams}: Props) {
                   {post.title ? <h3>{post.title}</h3> : null}
                   <p>{post.body}</p>
                   <div className={styles.postTools}>
-                    {REACTIONS.map(([key,icon]) => {
+                    {context.isCommissionerReview ? REACTIONS.map(([key,icon]) => {
+                      const count = reactions.filter((reaction: any) => reaction.reaction_type === key).length;
+                      return count ? <span key={key}>{icon} {count}</span> : null;
+                    }) : REACTIONS.map(([key,icon]) => {
                       const count = reactions.filter((reaction: any) => reaction.reaction_type === key).length;
                       const active = reactions.some((reaction: any) => reaction.reaction_type === key && reaction.profile_id === context.profileId);
                       return <form action={reactToClubhousePost} key={key}><input type="hidden" name="postId" value={post.id}/><button data-active={active} name="reactionType" value={key}>{icon}{count ? ` ${count}` : ''}</button></form>;
                     })}
-                    {(context.isCaptain || context.isCommissioner) ? <form action={toggleClubhousePin}><input type="hidden" name="postId" value={post.id}/><input type="hidden" name="pinned" value={post.pinned_at ? 'true' : 'false'}/><button>{post.pinned_at ? 'Unpin' : 'Pin'}</button></form> : null}
+                    {!context.isCommissionerReview && (context.isCaptain || context.isCommissioner) ? <form action={toggleClubhousePin}><input type="hidden" name="postId" value={post.id}/><input type="hidden" name="pinned" value={post.pinned_at ? 'true' : 'false'}/><button>{post.pinned_at ? 'Unpin' : 'Pin'}</button></form> : null}
                     {canManage ? <form action={deleteClubhousePost}><input type="hidden" name="postId" value={post.id}/><button>Remove</button></form> : null}
                   </div>
                   <div className={styles.comments}>
@@ -222,10 +236,10 @@ export default async function ClubhousePage({searchParams}: Props) {
                       <div className={styles.comment} key={comment.id}>
                         <strong>{authors.get(comment.author_profile_id) ?? 'Member'}</strong><p>{comment.body}</p>
                         {comments.filter((reply: any) => reply.parent_comment_id === comment.id).map((reply: any) => <div className={styles.reply} key={reply.id}><strong>{authors.get(reply.author_profile_id) ?? 'Member'}</strong><span>{reply.body}</span></div>)}
-                        <form action={addClubhouseComment} className={styles.replyForm}><input type="hidden" name="postId" value={post.id}/><input type="hidden" name="parentCommentId" value={comment.id}/><input name="body" maxLength={1500} placeholder="Reply" required/><button>Reply</button></form>
+                        {!context.isCommissionerReview ? <form action={addClubhouseComment} className={styles.replyForm}><input type="hidden" name="postId" value={post.id}/><input type="hidden" name="parentCommentId" value={comment.id}/><input name="body" maxLength={1500} placeholder="Reply" required/><button>Reply</button></form> : null}
                       </div>
                     ))}
-                    <form action={addClubhouseComment} className={styles.commentForm}><input type="hidden" name="postId" value={post.id}/><input name="body" maxLength={1500} placeholder="Add a comment" required/><button>Comment</button></form>
+                    {!context.isCommissionerReview ? <form action={addClubhouseComment} className={styles.commentForm}><input type="hidden" name="postId" value={post.id}/><input name="body" maxLength={1500} placeholder="Add a comment" required/><button>Comment</button></form> : null}
                   </div>
                 </article>
               );
