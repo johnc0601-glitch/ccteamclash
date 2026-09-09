@@ -111,39 +111,63 @@ export default async function ClubhousePage({searchParams}: Props) {
           {error ? <p className={styles.error}>{error}</p> : null}
 
           {nextMatch ? (
-            <section className={styles.matchCard}>
-              <div>
-                <span className={styles.kicker}>Next match</span>
-                <h2>{nextMatch.away_team_id === context.teamId ? `${context.teamName} @ ${teams.get(nextMatch.home_team_id) ?? 'Opponent'}` : `${teams.get(nextMatch.away_team_id) ?? 'Opponent'} @ ${context.teamName}`}</h2>
-                <p>{formatDate(nextMatch.date)} · {courses.get(nextMatch.course_id) ?? 'Location TBD'}</p>
-              </div>
-              <Link href={`/matches/${nextMatch.public_slug || nextMatch.id}`}>Open Matchday</Link>
-            </section>
-          ) : null}
-
-          {nextMatch ? (
-            <section className={styles.panel}>
-              <div className={styles.sectionHeading}><div><span className={styles.kicker}>Availability</span><h2>Are you coming?</h2></div><strong>{going.length} going</strong></div>
-              <div className={styles.rsvpRow}>
-                {[
-                  ['Playing','Going','green'],
-                  ['NotPlaying','Not going','red'],
-                  ['Unconfirmed','Undecided','yellow'],
-                ].map(([status,label,tone]) => (
-                  <form action={setClubhouseAttendance} key={status}>
-                    <input type="hidden" name="matchId" value={nextMatch.id} />
-                    <button className={`${styles.rsvp} ${styles[tone]} ${ownStatus === status ? styles.selected : ''}`} name="status" value={status}>{label}</button>
-                  </form>
-                ))}
-              </div>
-              <details className={styles.details}>
-                <summary>View players</summary>
-                <div className={styles.statusLists}>
-                  <StatusList label="Going" tone="green" ids={going} players={players} />
-                  <StatusList label="Not going" tone="red" ids={notGoing} players={players} />
-                  <StatusList label="Undecided" tone="yellow" ids={undecided} players={players} />
+            <section className={styles.matchCard} style={{display:'block'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:'20px',flexWrap:'wrap'}}>
+                <div>
+                  <span className={styles.kicker}>Next match</span>
+                  <h2>{nextMatch.away_team_id === context.teamId ? `${context.teamName} @ ${teams.get(nextMatch.home_team_id) ?? 'Opponent'}` : `${teams.get(nextMatch.away_team_id) ?? 'Opponent'} @ ${context.teamName}`}</h2>
+                  <p>{formatDate(nextMatch.date)} · {courses.get(nextMatch.course_id) ?? 'Location TBD'}</p>
                 </div>
-              </details>
+                <Link href={`/matches/${nextMatch.public_slug || nextMatch.id}`}>Open Matchday</Link>
+              </div>
+
+              <div style={{marginTop:'22px',paddingTop:'18px',borderTop:'1px solid rgba(255,255,255,.12)'}}>
+                <span className={styles.kicker}>Roster status</span>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:'10px',marginTop:'10px'}}>
+                  <div style={{padding:'10px 12px',border:'1px solid rgba(73,185,104,.45)',borderRadius:'7px',background:'rgba(73,185,104,.08)'}}>
+                    <strong className={styles.green} style={{display:'block',fontSize:'24px',lineHeight:1}}>{going.length}</strong>
+                    <span style={{color:'rgba(255,255,255,.72)',fontSize:'11px',fontWeight:900,textTransform:'uppercase'}}>Going</span>
+                  </div>
+                  <div style={{padding:'10px 12px',border:'1px solid rgba(217,91,91,.45)',borderRadius:'7px',background:'rgba(217,91,91,.08)'}}>
+                    <strong className={styles.red} style={{display:'block',fontSize:'24px',lineHeight:1}}>{notGoing.length}</strong>
+                    <span style={{color:'rgba(255,255,255,.72)',fontSize:'11px',fontWeight:900,textTransform:'uppercase'}}>Not going</span>
+                  </div>
+                  <div style={{padding:'10px 12px',border:'1px solid rgba(216,182,52,.45)',borderRadius:'7px',background:'rgba(216,182,52,.08)'}}>
+                    <strong className={styles.yellow} style={{display:'block',fontSize:'24px',lineHeight:1}}>{undecided.length}</strong>
+                    <span style={{color:'rgba(255,255,255,.72)',fontSize:'11px',fontWeight:900,textTransform:'uppercase'}}>Undecided</span>
+                  </div>
+                </div>
+
+                <details className={styles.details}>
+                  <summary style={{color:'#fff'}}>View players</summary>
+                  <div className={styles.statusLists}>
+                    <StatusList label="Going" tone="green" ids={going} players={players} />
+                    <StatusList label="Not going" tone="red" ids={notGoing} players={players} />
+                    <StatusList label="Undecided" tone="yellow" ids={undecided} players={players} />
+                  </div>
+                </details>
+
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'12px',flexWrap:'wrap',marginTop:'16px'}}>
+                  <span style={{color:'rgba(255,255,255,.62)',fontSize:'11px',fontWeight:900,textTransform:'uppercase',letterSpacing:'.08em'}}>Your status</span>
+                  <div style={{display:'flex',gap:'6px',flexWrap:'wrap'}}>
+                    {[
+                      ['Playing','Going','green'],
+                      ['NotPlaying','Not going','red'],
+                      ['Unconfirmed','Undecided','yellow'],
+                    ].map(([status,label,tone]) => (
+                      <form action={setClubhouseAttendance} key={status} style={{margin:0}}>
+                        <input type="hidden" name="matchId" value={nextMatch.id} />
+                        <button
+                          className={`${styles.rsvp} ${styles[tone]} ${ownStatus === status ? styles.selected : ''}`}
+                          style={{width:'auto',minHeight:'32px',padding:'0 10px',fontSize:'10px',background:'rgba(255,255,255,.04)'}}
+                          name="status"
+                          value={status}
+                        >{label}</button>
+                      </form>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </section>
           ) : null}
 
