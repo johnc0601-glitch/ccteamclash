@@ -1,3 +1,4 @@
+import type {CSSProperties} from 'react';
 import Link from 'next/link';
 import {redirect} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
@@ -33,6 +34,10 @@ export default async function ClubhousePage({searchParams}: Props) {
   const context = await getOwnClubhouseContext(supabase);
   if (!context) redirect('/account');
   const db = supabase as any;
+  const brandStyle = {
+    '--clubhouse-accent': context.teamPrimaryColor,
+    '--clubhouse-secondary': context.teamSecondaryColor,
+  } as CSSProperties;
 
   const [{data: matches}, {data: rosterRows}, {data: posts}] = await Promise.all([
     db.from('launch_schedule_matches')
@@ -91,12 +96,12 @@ export default async function ClubhousePage({searchParams}: Props) {
   return (
     <main>
       <SiteHeader />
-      <section className={styles.page}>
+      <section className={styles.page} style={brandStyle}>
         <div className="shell">
           <header className={styles.hero}>
             <div>
               <span className={styles.kicker}>Private team space · {context.seasonName}</span>
-              <h1>{context.teamName} Clubhouse</h1>
+              <h1><span>{context.teamName}</span> Clubhouse</h1>
               <p>Your team schedule, match availability, and private discussion in one place.</p>
             </div>
             {context.teamLogo ? <div className={styles.logoWrap}><img src={context.teamLogo} alt={`${context.teamName} logo`} width={92} height={92} /></div> : null}
