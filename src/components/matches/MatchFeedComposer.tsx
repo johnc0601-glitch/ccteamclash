@@ -17,6 +17,7 @@ export function MatchFeedComposer({matchId}: MatchFeedComposerProps) {
   const [fileName, setFileName] = useState('');
   const [previewFailed, setPreviewFailed] = useState(false);
   const [photoError, setPhotoError] = useState('');
+  const photoInputId = `match-photo-${matchId}`;
 
   useEffect(() => {
     return () => {
@@ -52,7 +53,7 @@ export function MatchFeedComposer({matchId}: MatchFeedComposerProps) {
   return (
     <form action={createMatchFeedPost} className={styles.composer}>
       <input type="hidden" name="matchId" value={matchId} />
-      <textarea name="body" maxLength={3000} placeholder="What’s happening at this match?" aria-label="New match post" />
+      <textarea name="body" maxLength={3000} placeholder="Write a message…" aria-label="New match post" />
       {photoError ? <div className={styles.previewFallback} role="alert">{photoError}</div> : null}
       {previewUrl ? (
         <div className={styles.composerPreview}>
@@ -63,18 +64,23 @@ export function MatchFeedComposer({matchId}: MatchFeedComposerProps) {
           )}
           <div className={styles.previewMeta} aria-live="polite">
             <span title={fileName}>{fileName}</span>
-            <button type="button" onClick={clearPhoto}>Remove photo</button>
+            <button type="button" onClick={clearPhoto}>Remove</button>
           </div>
         </div>
       ) : null}
       <div className={styles.composerActions}>
         <input
           ref={fileInputRef}
+          className={styles.photoInput}
+          id={photoInputId}
           type="file"
           name="photo"
           accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
           onChange={(event) => selectPhoto(event.currentTarget.files?.[0] ?? null)}
         />
+        <label className={styles.attachButton} htmlFor={photoInputId}>
+          {previewUrl ? 'Change photo' : 'Attach photo'}
+        </label>
         <PostButton />
       </div>
     </form>
