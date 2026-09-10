@@ -1,6 +1,21 @@
 -- Keep mutable Matchday state aligned when a scheduled matchup changes teams.
 -- Official roster snapshots are deliberately preserved.
 
+-- Repair stale team roster rows first. Attendance deletes can invalidate the
+-- corresponding roster confirmation, so the invalid roster row must be gone
+-- before stale attendance is removed.
+delete from public.launch_match_rosters roster
+using public.launch_schedule_matches match
+where roster.match_id = match.id
+  and roster.team_id is distinct from match.home_team_id
+  and roster.team_id is distinct from match.away_team_id
+  and not exists (
+    select 1
+    from public.launch_match_roster_snapshots snapshot
+    where snapshot.match_id = roster.match_id
+      and snapshot.team_id = roster.team_id
+  );
+
 -- Repair any stale mutable attendance left behind by previous matchup edits.
 delete from public.launch_match_attendance attendance
 using public.launch_schedule_matches match
@@ -12,19 +27,6 @@ where attendance.match_id = match.id
     from public.launch_match_roster_snapshots snapshot
     where snapshot.match_id = attendance.match_id
       and snapshot.team_id = attendance.team_id
-  );
-
--- Repair any stale mutable team roster rows left behind by previous matchup edits.
-delete from public.launch_match_rosters roster
-using public.launch_schedule_matches match
-where roster.match_id = match.id
-  and roster.team_id is distinct from match.home_team_id
-  and roster.team_id is distinct from match.away_team_id
-  and not exists (
-    select 1
-    from public.launch_match_roster_snapshots snapshot
-    where snapshot.match_id = roster.match_id
-      and snapshot.team_id = roster.team_id
   );
 
 -- Membership changes should only invalidate roster rows for teams that actually
@@ -121,7 +123,7 @@ end;
 $$;
 
 -- When teams on a mutable schedule match are edited, immediately remove stale
--- attendance/roster rows for teams no longer in that matchup and invalidate any
+-- roster/attendance rows for teams no longer in that matchup and invalidate any
 -- remaining unsnapshotted roster confirmation.
 create or replace function private.reconcile_launch_match_state_after_schedule_change()
 returns trigger
@@ -135,17 +137,6 @@ begin
     return new;
   end if;
 
-  delete from public.launch_match_attendance attendance
-  where attendance.match_id = new.id
-    and attendance.team_id is distinct from new.home_team_id
-    and attendance.team_id is distinct from new.away_team_id
-    and not exists (
-      select 1
-      from public.launch_match_roster_snapshots snapshot
-      where snapshot.match_id = attendance.match_id
-        and snapshot.team_id = attendance.team_id
-    );
-
   delete from public.launch_match_rosters roster
   where roster.match_id = new.id
     and roster.team_id is distinct from new.home_team_id
@@ -155,6 +146,17 @@ begin
       from public.launch_match_roster_snapshots snapshot
       where snapshot.match_id = roster.match_id
         and snapshot.team_id = roster.team_id
+    );
+
+  delete from public.launch_match_attendance attendance
+  where attendance.match_id = new.id
+    and attendance.team_id is distinct from new.home_team_id
+    and attendance.team_id is distinct from new.away_team_id
+    and not exists (
+      select 1
+      from public.launch_match_roster_snapshots snapshot
+      where snapshot.match_id = attendance.match_id
+        and snapshot.team_id = attendance.team_id
     );
 
   update public.launch_match_rosters roster
