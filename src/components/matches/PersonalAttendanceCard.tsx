@@ -44,26 +44,27 @@ export async function PersonalAttendanceCard({
   const selectedBox = '0 0 0 3px var(--cc-heading)';
 
   return (
-    <section className={styles.attendanceCard} aria-labelledby="personal-attendance-heading">
+    <section
+      className={styles.attendanceCard}
+      aria-labelledby="personal-attendance-heading"
+      style={{padding: '16px 18px', gap: '12px'}}
+    >
       <div>
-        <span>Your availability</span>
-        <h2 id="personal-attendance-heading">Can you play?</h2>
-        <p>
+        <h2 id="personal-attendance-heading" style={{margin: 0, fontSize: '30px'}}>Can you play?</h2>
+        <p style={{marginTop: '5px', fontSize: '13px', lineHeight: 1.35}}>
           {current.attendanceOpen
-            ? `${current.playerName}, choose Yes or No. You can change this until Friday at 12:00 PM.`
-            : 'Player responses closed Friday at 12:00 PM.'}
+            ? 'Change your answer until Friday at noon.'
+            : 'Player responses closed Friday at noon.'}
         </p>
       </div>
-      <div className={styles.attendanceControls}>
-        <p className={styles.attendanceStatus} data-status={current.status}>
-          Current answer: <strong>{formatStatus(current.status)}</strong>
-        </p>
+      <div className={styles.attendanceControls} style={{gap: '8px'}}>
         {notice ? <p className={styles.attendanceNotice}>{notice}</p> : null}
         {error ? <p className={styles.attendanceError}>{error}</p> : null}
-        <form action={setOwnPlayerAvailability} className={styles.attendanceActions}>
+        <form action={setOwnPlayerAvailability} className={styles.attendanceActions} style={{gap: '8px'}}>
           <input name="matchId" type="hidden" value={current.matchId} />
           <button
             aria-pressed={yesSelected}
+            aria-label={yesSelected ? 'Yes, selected' : 'Yes'}
             className={styles.playingButton}
             disabled={!current.attendanceOpen}
             name="status"
@@ -72,14 +73,16 @@ export async function PersonalAttendanceCard({
               borderColor: '#4f7f32',
               boxShadow: yesSelected ? selectedBox : 'none',
               color: '#fff',
+              minHeight: '44px',
             }}
             type="submit"
             value="Playing"
           >
-            Yes
+            {yesSelected ? '✓ Yes' : 'Yes'}
           </button>
           <button
             aria-pressed={noSelected}
+            aria-label={noSelected ? 'No, selected' : 'No'}
             className={styles.notPlayingButton}
             disabled={!current.attendanceOpen}
             name="status"
@@ -88,11 +91,12 @@ export async function PersonalAttendanceCard({
               borderColor: '#b64040',
               boxShadow: noSelected ? selectedBox : 'none',
               color: '#fff',
+              minHeight: '44px',
             }}
             type="submit"
             value="NotPlaying"
           >
-            No
+            {noSelected ? '✓ No' : 'No'}
           </button>
         </form>
         {canManageRoster ? (
@@ -104,11 +108,11 @@ export async function PersonalAttendanceCard({
               borderRadius: '6px',
               color: 'var(--cc-heading)',
               display: 'flex',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: 900,
               justifyContent: 'center',
-              minHeight: '42px',
-              padding: '9px 14px',
+              minHeight: '36px',
+              padding: '7px 12px',
               textDecoration: 'none',
             }}
           >
@@ -118,10 +122,4 @@ export async function PersonalAttendanceCard({
       </div>
     </section>
   );
-}
-
-function formatStatus(status: PersonalAttendance['status']): string {
-  if (status === 'Playing') return 'Yes';
-  if (status === 'NotPlaying') return 'No';
-  return 'Unconfirmed';
 }
