@@ -2,7 +2,7 @@
 
 import {useState, useTransition} from 'react';
 import {useRouter} from 'next/navigation';
-import {reviewTeamApplicationInline} from './quick-actions';
+import {approveTeamApplicationsInline, reviewTeamApplicationInline} from './quick-actions';
 import styles from './Captain.module.css';
 
 type TeamApplication = {
@@ -12,14 +12,31 @@ type TeamApplication = {
   gender: string;
 };
 
+type EditableApplication = {
+  id: string;
+  displayName: string;
+  playerType: 'Adult' | 'Junior';
+  gender: 'Male' | 'Female' | '';
+};
+
 export function CaptainApprovalQueue({applications}: {applications: TeamApplication[]}) {
   const router = useRouter();
-  const [queue, setQueue] = useState(applications);
+  const [queue, setQueue] = useState<EditableApplication[]>(() => applications.map(normalizeApplication));
   const [message, setMessage] = useState<string | null>(null);
+  const [bulkPending, startBulkTransition] = useTransition();
   const [, startRefresh] = useTransition();
 
   if (!queue.length) {
     return <p className={styles.empty}>{message ?? 'No season requests need captain confirmation.'}</p>;
+  }
+
+  const readyApplications = queue.filter((application) => application.gender === 'Male' || application.gender === 'Female');
+  const needsGenderCount = queue.length - readyApplications.length;
+
+  function updateApplication(applicationId: string, updates: Partial<Pick<EditableApplication, 'gender' | 'playerType'>>) {
+    setQueue((current) => current.map((application) => (
+      application.id === applicationId ? {...application, ...updates} : application
+    )));
   }
 
   function finish(applicationId: string, displayName: string, status: 'Approved' | 'Rejected') {
@@ -29,25 +46,85 @@ export function CaptainApprovalQueue({applications}: {applications: TeamApplicat
     if (wasLast) startRefresh(() => router.refresh());
   }
 
+  function approveAllReady() {
+    if (!readyApplications.length || bulkPending) return;
+    setMessage(null);
+
+    startBulkTransition(async () => {
+      const result = await approveTeamApplicationsInline(readyApplications.map((application) => ({
+        applicationId: application.id,
+        gender: application.gender as 'Male' | 'Female',
+        playerType: application.playerType,
+      })));
+
+      const approvedIds = new Set(result.approvedIds);
+      if (approvedIds.size) {
+        setQueue((current) => current.filter((application) => !approvedIds.has(application.id)));
+      }
+
+      if (result.errors.length) {
+        setMessage(`${result.approvedIds.length} approved. ${result.errors.length} still need attention.`);
+      } else {
+        setMessage(`${result.approvedIds.length} player${result.approvedIds.length === 1 ? '' : 's'} approved.`);
+      }
+
+      startRefresh(() => router.refresh());
+    });
+  }
+
   return (
-    <div className={styles.list}>
+    <div className={styles.approvalQueue}>
+      <div className={styles.approvalToolbar}>
+        <div>
+          <strong>{queue.length} pending</strong>
+          <span>
+            {readyApplications.length} ready{needsGenderCount ? ` · ${needsGenderCount} need Male / Female` : ''}
+          </span>
+        </div>
+        <button
+          className={styles.primaryButton}
+          type="button"
+          onClick={approveAllReady}
+          disabled={!readyApplications.length || bulkPending}
+        >
+          {bulkPending ? 'Approving…' : `Approve ${readyApplications.length} ready`}
+        </button>
+      </div>
+
       {message ? <p className={styles.approvalStatus}>{message}</p> : null}
-      {queue.map((application) => (
-        <ApprovalRow key={application.id} application={application} onDone={finish} />
-      ))}
+
+      <div className={styles.list}>
+        {queue.map((application) => (
+          <ApprovalRow
+            key={application.id}
+            application={application}
+            onChange={updateApplication}
+            onDone={finish}
+            disabled={bulkPending}
+          />
+        ))}
+      </div>
     </div>
   );
 }
 
-function ApprovalRow({application, onDone}: {application: TeamApplication; onDone: (id: string, name: string, status: 'Approved' | 'Rejected') => void}) {
-  const initialGender = application.gender === 'Male' || application.gender === 'Female' ? application.gender : '';
-  const [gender, setGender] = useState<'Male' | 'Female' | ''>(initialGender);
-  const [isJunior, setIsJunior] = useState(application.playerType === 'Junior');
+function ApprovalRow({
+  application,
+  onChange,
+  onDone,
+  disabled,
+}: {
+  application: EditableApplication;
+  onChange: (id: string, updates: Partial<Pick<EditableApplication, 'gender' | 'playerType'>>) => void;
+  onDone: (id: string, name: string, status: 'Approved' | 'Rejected') => void;
+  disabled: boolean;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const busy = pending || disabled;
 
   function approve() {
-    if (!gender) {
+    if (!application.gender) {
       setError('Choose Male or Female first.');
       return;
     }
@@ -56,8 +133,8 @@ function ApprovalRow({application, onDone}: {application: TeamApplication; onDon
       const result = await reviewTeamApplicationInline({
         applicationId: application.id,
         status: 'Approved',
-        gender,
-        playerType: isJunior ? 'Junior' : 'Adult',
+        gender: application.gender,
+        playerType: application.playerType,
       });
       if (!result.ok) {
         setError(result.error);
@@ -84,27 +161,50 @@ function ApprovalRow({application, onDone}: {application: TeamApplication; onDon
     <article className={styles.approvalRow}>
       <div className={styles.approvalName}>
         <strong>{application.displayName}</strong>
-        <span>{isJunior ? 'Junior' : 'Adult'}</span>
+        <span>{application.playerType}</span>
       </div>
+
       <div className={styles.approvalControls}>
         <label>
           <span>Male / Female</span>
-          <select value={gender} onChange={(event) => setGender(event.target.value as 'Male' | 'Female' | '')} disabled={pending}>
+          <select
+            value={application.gender}
+            onChange={(event) => onChange(application.id, {gender: event.target.value as 'Male' | 'Female' | ''})}
+            disabled={busy}
+          >
             <option value="">Choose</option>
             <option value="Male">Male</option>
             <option value="Female">Female</option>
           </select>
         </label>
         <label className={styles.approvalCheck}>
-          <input type="checkbox" checked={isJunior} onChange={(event) => setIsJunior(event.target.checked)} disabled={pending} />
+          <input
+            type="checkbox"
+            checked={application.playerType === 'Junior'}
+            onChange={(event) => onChange(application.id, {playerType: event.target.checked ? 'Junior' : 'Adult'})}
+            disabled={busy}
+          />
           <span>Junior</span>
         </label>
       </div>
+
       <div className={styles.approvalActions}>
-        <button className={styles.primaryButton} type="button" onClick={approve} disabled={pending}>{pending ? 'Saving…' : 'Approve'}</button>
-        <button type="button" onClick={reject} disabled={pending}>Reject</button>
+        <button className={styles.primaryButton} type="button" onClick={approve} disabled={busy}>
+          {pending ? 'Saving…' : 'Approve'}
+        </button>
+        <button type="button" onClick={reject} disabled={busy}>Reject</button>
       </div>
+
       {error ? <p className={styles.approvalError}>{error}</p> : null}
     </article>
   );
+}
+
+function normalizeApplication(application: TeamApplication): EditableApplication {
+  return {
+    id: application.id,
+    displayName: application.displayName,
+    gender: application.gender === 'Male' || application.gender === 'Female' ? application.gender : '',
+    playerType: application.playerType === 'Junior' ? 'Junior' : 'Adult',
+  };
 }
