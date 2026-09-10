@@ -6,7 +6,8 @@ import type {TeamScheduleEvent} from '@/domain/schedule/ScheduleService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
-import {confirmTeamApplication, rejectTeamApplication, returnRosteredPlayerToCommissioner, saveRosterPlayerRegistration, saveTeamAppearance} from './actions';
+import {returnRosteredPlayerToCommissioner, saveRosterPlayerRegistration, saveTeamAppearance} from './actions';
+import {CaptainApprovalQueue} from './CaptainApprovalQueue';
 import styles from './Captain.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -61,6 +62,11 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
       </div>
 
       <div className={styles.grid}>
+        <section className={styles.panel} id="season-requests">
+          <header className={styles.panelHeader}><span>Captain confirmation</span><h2>Season requests</h2><p className={styles.muted}>Approve players here without reloading Captain Home after every request.</p></header>
+          <CaptainApprovalQueue applications={pendingApplications} />
+        </section>
+
         <section className={styles.panel}>
           <header className={styles.panelHeader}>
             <span>Season information</span>
@@ -109,22 +115,6 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
               <Link href={`${event.href}?manage=roster`}>Manage Match Roster</Link>
             </article>
           )) : <p className={styles.empty}>No upcoming matches are posted for your team yet.</p>}</div>
-        </section>
-
-        <section className={styles.panel}>
-          <header className={styles.panelHeader}><span>Captain confirmation</span><h2>Season requests</h2><p className={styles.muted}>Confirm Male/Female and Junior status before approving players for {team.name}.</p></header>
-          <div className={styles.list}>{pendingApplications.length ? pendingApplications.map((application) => (
-            <article className={styles.row} key={application.id}>
-              <strong>{application.displayName}</strong>
-              <form action={confirmTeamApplication} style={{display: 'grid', gap: '10px'}}>
-                <input name="applicationId" type="hidden" value={application.id} />
-                <label style={{display: 'grid', gap: '4px'}}><span className={styles.muted}>Male / Female</span><select name="gender" required defaultValue={application.gender === 'Male' || application.gender === 'Female' ? application.gender : ''}><option value="" disabled>Choose</option><option value="Male">Male</option><option value="Female">Female</option></select></label>
-                <label style={{display: 'flex', alignItems: 'center', gap: '8px'}}><input name="playerType" type="checkbox" value="Junior" defaultChecked={application.playerType === 'Junior'} style={{width: 'auto', minHeight: 'auto'}} /><input name="playerType" type="hidden" value="Adult" /><span className={styles.muted}>Junior</span></label>
-                <button className={styles.primaryButton} type="submit">Approve</button>
-              </form>
-              <form action={rejectTeamApplication}><input name="applicationId" type="hidden" value={application.id} /><button type="submit">Reject</button></form>
-            </article>
-          )) : <p className={styles.empty}>No season requests need captain confirmation.</p>}</div>
         </section>
 
         <section className={styles.panel}>
