@@ -120,53 +120,76 @@
 
   .inner {
     width: 100%;
-    min-height: 72px;
-    padding: 9px 20px;
+    min-height: 46px;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "eyebrow count date";
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 0;
+    padding: 7px 16px;
     border: 0;
     border-radius: 0;
     box-shadow: none;
     background: #0b0d0e;
-    column-gap: 14px;
   }
 
   .eyebrow {
-    font-size: 9px;
+    align-self: center;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--cc-gold);
+    font-size: 8px;
+    letter-spacing: .045em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .daysOnly {
-    gap: 6px;
+    gap: 4px;
   }
 
   .daysOnly strong {
-    font-size: 36px;
+    font-size: 25px;
   }
 
   .daysOnly span {
-    font-size: 11px;
+    font-size: 8px;
+    letter-spacing: .035em;
   }
 
   .date {
-    color: #d0d0ca;
+    align-self: center;
+    color: #c9c9c3;
+    font-size: 0;
+    letter-spacing: 0;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .date::after {
+    content: "OCT 3";
     font-size: 8px;
+    font-weight: 900;
+    letter-spacing: .08em;
   }
 
   .detail {
-    gap: 5px;
+    gap: 3px;
   }
 
   .timePart {
-    gap: 2px;
+    gap: 1px;
   }
 
   .timePart strong {
-    font-size: 23px;
+    font-size: 15px;
   }
 
   .timePart span {
-    font-size: 7px;
+    font-size: 6px;
   }
 
   .divider {
-    font-size: 11px;
+    font-size: 8px;
   }
 }
