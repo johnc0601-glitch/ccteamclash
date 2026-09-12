@@ -1,0 +1,133 @@
+.wrap {
+  border-top: 1px solid var(--cc-panel-border);
+  border-bottom: 1px solid var(--cc-panel-border);
+  background: linear-gradient(145deg, var(--cc-surface-raised), #0c0e0f);
+}
+
+.inner {
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding-top: 18px;
+  padding-bottom: 18px;
+  text-align: center;
+}
+
+.eyebrow {
+  color: var(--cc-gold);
+  font-size: 13px;
+  font-weight: 950;
+  font-style: italic;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.daysOnly {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.daysOnly strong {
+  color: var(--cc-text);
+  font-size: clamp(46px, 6vw, 70px);
+  font-weight: 950;
+  font-style: italic;
+  letter-spacing: -.05em;
+}
+
+.daysOnly span {
+  color: var(--cc-text);
+  font-size: 18px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: .05em;
+}
+
+.detail {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 13px;
+  color: var(--cc-text);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.timePart {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.timePart strong {
+  font-size: clamp(34px, 5vw, 58px);
+  font-weight: 950;
+  font-style: italic;
+  letter-spacing: -.045em;
+}
+
+.timePart span {
+  font-size: 13px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: .04em;
+}
+
+.divider {
+  color: var(--cc-gold);
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.date {
+  color: var(--cc-text-muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 600px) {
+  .inner {
+    min-height: 116px;
+    gap: 6px;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+  }
+
+  .daysOnly strong {
+    font-size: 52px;
+  }
+
+  .daysOnly span {
+    font-size: 15px;
+  }
+
+  .detail {
+    gap: 8px;
+  }
+
+  .timePart {
+    gap: 4px;
+  }
+
+  .timePart strong {
+    font-size: 32px;
+  }
+
+  .timePart span {
+    font-size: 10px;
+  }
+
+  .divider {
+    font-size: 17px;
+  }
+}
