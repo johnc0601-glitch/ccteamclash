@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type {ReactNode} from 'react';
+import {ClashCountdown} from '@/components/ClashCountdown';
 import {HomeMatchCarousel} from '@/components/HomeMatchCarousel';
 import {Intro} from '@/components/intro/Intro';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
@@ -17,6 +18,7 @@ export default async function Home() {
   return (
     <main className="home-page">
       <SiteHeader />
+      <ClashCountdown />
 
       {lead ? (
         <section className="story-home-hero">
