@@ -120,49 +120,71 @@
 
   .inner {
     width: 100%;
-    min-height: 46px;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    min-height: 58px;
+    grid-template-columns: minmax(142px, 1fr) auto auto;
     grid-template-areas: "eyebrow count date";
     align-items: center;
     column-gap: 10px;
     row-gap: 0;
-    padding: 7px 16px;
+    padding: 0 14px 0 0;
     border: 0;
     border-radius: 0;
     box-shadow: none;
-    background: #0b0d0e;
+    background: linear-gradient(90deg, #0b0d0e 0%, #111416 100%);
   }
 
   .eyebrow {
-    align-self: center;
-    justify-self: center;
+    align-self: stretch;
+    justify-self: stretch;
+    display: flex;
+    align-items: center;
     min-width: 0;
     overflow: hidden;
-    padding-left: 0;
-    color: var(--cc-gold);
-    font-size: 8px;
-    letter-spacing: .045em;
-    text-align: center;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    padding: 0 30px 0 18px;
+    background: linear-gradient(90deg, #7a5200 0%, #5b3d00 100%);
+    border-right: 1px solid rgba(255, 196, 0, .72);
+    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 0 100%);
+    color: #ffd45c;
+    font-size: 0;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .eyebrow::after {
+    content: "COUNTDOWN\A TO THE CLASH";
+    white-space: pre-line;
+    color: #ffd45c;
+    font-size: 9px;
+    font-weight: 950;
+    font-style: italic;
+    letter-spacing: .09em;
+    line-height: 1.18;
+    text-transform: uppercase;
   }
 
   .daysOnly {
     gap: 4px;
+    margin-left: 2px;
   }
 
   .daysOnly strong {
-    font-size: 25px;
+    font-size: 30px;
   }
 
   .daysOnly span {
-    font-size: 8px;
+    font-size: 9px;
     letter-spacing: .035em;
   }
 
   .date {
     align-self: center;
-    color: #c9c9c3;
+    display: flex;
+    align-items: center;
+    height: 30px;
+    margin-left: 2px;
+    padding-left: 12px;
+    border-left: 1px solid rgba(255, 255, 255, .24);
+    color: #d6d4cc;
     font-size: 0;
     letter-spacing: 0;
     line-height: 1;
@@ -171,13 +193,14 @@
 
   .date::after {
     content: "OCT 3";
-    font-size: 8px;
+    font-size: 9px;
     font-weight: 900;
     letter-spacing: .08em;
   }
 
   .detail {
     gap: 3px;
+    margin-left: 2px;
   }
 
   .timePart {
