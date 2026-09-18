@@ -23,6 +23,19 @@ type CaptainFreeAgent = {
   player_id: string | null;
 };
 
+type PickupMode = 'captain' | 'commissioner' | null;
+
+type CommissionerTeamOption = {
+  id: string;
+  name: string;
+};
+
+type PlayerPickupContext = {
+  claimableApplications: Record<string, string>;
+  commissionerTeams: CommissionerTeamOption[];
+  mode: PickupMode;
+};
+
 type FreeAgentListClient = {
   rpc: (
     fn: 'captain_list_launch_free_agents',
@@ -59,13 +72,13 @@ export default async function PlayersPage({searchParams}: PlayersPageProps) {
   const error = readParam(query.error);
   const service = await createServerPublicPlayerService();
   const searchIndexPromise = service.getSearchIndex();
-  const captainFreeAgentsPromise = getCaptainFreeAgentApplications();
+  const playerPickupPromise = getPlayerPickupContext();
   const directPlayerPromise = initialPlayerId
     ? service.getAll('all', initialPlayerId)
     : Promise.resolve([]);
   let searchIndex = await searchIndexPromise;
   let initialViews = await directPlayerPromise;
-  const captainFreeAgents = await captainFreeAgentsPromise;
+  const playerPickup = await playerPickupPromise;
 
   if (!initialPlayerId && initialSearch) {
     const normalizedInitialSearch = normalizeSearchText(initialSearch);
@@ -100,7 +113,9 @@ export default async function PlayersPage({searchParams}: PlayersPageProps) {
           initialPlayerId={initialPlayerId ?? ''}
           initialSearch={initialSearch ?? ''}
           initialProfile={initialProfile}
-          claimableApplications={captainFreeAgents}
+          claimableApplications={playerPickup.claimableApplications}
+          pickupMode={playerPickup.mode}
+          commissionerTeams={playerPickup.commissionerTeams}
         />
       </main>
       <Footer />
@@ -108,11 +123,17 @@ export default async function PlayersPage({searchParams}: PlayersPageProps) {
   );
 }
 
-async function getCaptainFreeAgentApplications(): Promise<Record<string, string>> {
+async function getPlayerPickupContext(): Promise<PlayerPickupContext> {
+  const empty: PlayerPickupContext = {
+    claimableApplications: {},
+    commissionerTeams: [],
+    mode: null,
+  };
+
   try {
     const supabase = await createClient();
     const {data: {user}} = await supabase.auth.getUser();
-    if (!user) return {};
+    if (!user) return empty;
 
     const {data: profile, error: profileError} = await (supabase as any)
       .from('launch_profiles')
@@ -124,22 +145,57 @@ async function getCaptainFreeAgentApplications(): Promise<Record<string, string>
       || !profile
       || profile.status !== 'Approved'
       || (profile.role !== 'Captain' && profile.role !== 'Commissioner')
-      || !profile.captain_team_id
     ) {
-      return {};
+      return empty;
     }
+    if (profile.role === 'Captain' && !profile.captain_team_id) return empty;
 
     const {data, error} = await (supabase as unknown as FreeAgentListClient)
       .rpc('captain_list_launch_free_agents');
-    if (error) return {};
+    if (error) return empty;
 
-    return Object.fromEntries(
+    const claimableApplications = Object.fromEntries(
       (data ?? [])
         .filter((entry): entry is CaptainFreeAgent & {player_id: string} => Boolean(entry.player_id))
         .map((entry) => [entry.player_id, entry.application_id]),
     );
+
+    if (profile.role === 'Captain') {
+      return {claimableApplications, commissionerTeams: [], mode: 'captain'};
+    }
+
+    const {data: season} = await (supabase as any)
+      .from('launch_seasons')
+      .select('id')
+      .eq('active', true)
+      .eq('published', true)
+      .eq('archived', false)
+      .maybeSingle();
+    if (!season?.id) return {claimableApplications, commissionerTeams: [], mode: 'commissioner'};
+
+    const {data: seasonTeams} = await (supabase as any)
+      .from('launch_season_teams')
+      .select('team_id')
+      .eq('season_id', season.id);
+    const teamIds = (seasonTeams ?? [])
+      .map((row: {team_id?: string}) => row.team_id)
+      .filter((teamId: string | undefined): teamId is string => Boolean(teamId));
+    if (!teamIds.length) return {claimableApplications, commissionerTeams: [], mode: 'commissioner'};
+
+    const {data: teams} = await (supabase as any)
+      .from('launch_teams')
+      .select('id, name')
+      .in('id', teamIds)
+      .eq('active', true)
+      .order('name');
+
+    return {
+      claimableApplications,
+      commissionerTeams: (teams ?? []) as CommissionerTeamOption[],
+      mode: 'commissioner',
+    };
   } catch {
-    return {};
+    return empty;
   }
 }
 
