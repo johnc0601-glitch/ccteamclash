@@ -37,8 +37,8 @@ export async function proxy(request: NextRequest) {
   );
 
   // Session-sensitive routes refresh/verify the token before server code uses
-  // it. Public league pages are deliberately excluded from the matcher below;
-  // their personalized navigation resolves client-side instead.
+  // it. Most public league pages keep personalized navigation client-side, but
+  // /players also renders captain free-agent controls on the server.
   await supabase.auth.getClaims();
 
   const matchReference = readMatchReference(request.nextUrl.pathname);
@@ -91,6 +91,7 @@ export const config = {
     '/admin/:path*',
     '/captain/:path*',
     '/office/:path*',
+    '/players',
     '/matches/:path*',
     '/api/:path*',
     '/auth/:path*',
