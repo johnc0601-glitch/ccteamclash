@@ -139,6 +139,18 @@
   font-size: 11px;
 }
 
+.captainAction select {
+  min-height: 40px;
+  min-width: 170px;
+  padding: 0 10px;
+  border: 1px solid var(--cc-light-border);
+  border-radius: var(--cc-radius-sm);
+  background: #fff;
+  color: var(--cc-light-text);
+  font: inherit;
+  font-size: 12px;
+}
+
 .captainAction button {
   min-height: 40px;
   padding: 0 16px;
@@ -279,6 +291,7 @@
   .player summary { grid-template-columns: minmax(0, 1fr) auto; }
   .summaryStats { display: none; }
   .captainAction { align-items: stretch; flex-direction: column; }
+  .captainAction select,
   .captainAction button { width: 100%; }
   .profileStats dl, .statSections dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .statSections { grid-template-columns: 1fr; }
