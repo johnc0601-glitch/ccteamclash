@@ -35,9 +35,7 @@ export async function loadPublicPlayerProfile(playerId: string): Promise<PlayerP
 export async function captainAddFreeAgent(formData: FormData) {
   const applicationId = readFormValue(formData, 'applicationId');
   const returnSearch = readFormValue(formData, 'returnSearch').slice(0, 100);
-  const returnPath = returnSearch
-    ? `/players?search=${encodeURIComponent(returnSearch)}`
-    : '/players';
+  const returnPath = `/players?search=${encodeURIComponent(returnSearch)}`;
 
   if (!applicationId) {
     redirect(`${returnPath}&error=${encodeURIComponent('Free agent application is required.')}`);
