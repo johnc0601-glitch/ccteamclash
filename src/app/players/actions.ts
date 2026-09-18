@@ -1,8 +1,11 @@
 'use server';
 
+import {revalidatePath} from 'next/cache';
+import {redirect} from 'next/navigation';
 import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCiArchiveReplay';
 import {canonicalHistoricalPlayerId} from '@/domain/history/normalizeHistoricalPlayerMatchups';
+import {createClient} from '@/lib/supabase/server';
 import {
   createHistoryItems,
   createProfileFromPublicPlayerView,
@@ -12,6 +15,13 @@ import type {
   PlayerProfileMatchHistoryItem,
 } from '@/services/playerProfiles';
 
+type CaptainFreeAgentClient = {
+  rpc: (
+    fn: 'captain_claim_launch_free_agent' | 'captain_review_launch_player_application',
+    args: {target_application_id: string},
+  ) => Promise<{error: {message: string} | null}>;
+};
+
 export async function loadPublicPlayerProfile(playerId: string): Promise<PlayerProfile | null> {
   const normalizedPlayerId = playerId.trim();
   if (!normalizedPlayerId || normalizedPlayerId.length > 200) return null;
@@ -20,6 +30,45 @@ export async function loadPublicPlayerProfile(playerId: string): Promise<PlayerP
   const views = await service.getAll('all', normalizedPlayerId);
   const view = views.find(({player}) => player.id === normalizedPlayerId);
   return view ? createProfileFromPublicPlayerView(view) : null;
+}
+
+export async function captainAddFreeAgent(formData: FormData) {
+  const applicationId = readFormValue(formData, 'applicationId');
+  const returnSearch = readFormValue(formData, 'returnSearch').slice(0, 100);
+  const returnPath = returnSearch
+    ? `/players?search=${encodeURIComponent(returnSearch)}`
+    : '/players';
+
+  if (!applicationId) {
+    redirect(`${returnPath}&error=${encodeURIComponent('Free agent application is required.')}`);
+  }
+
+  const supabase = await createClient();
+  const {data: {user}, error: userError} = await supabase.auth.getUser();
+  if (userError || !user) redirect('/account?error=Sign in first.');
+
+  const client = supabase as unknown as CaptainFreeAgentClient;
+  const {error: claimError} = await client.rpc(
+    'captain_claim_launch_free_agent',
+    {target_application_id: applicationId},
+  );
+  if (claimError) {
+    redirect(`${returnPath}&error=${encodeURIComponent(claimError.message)}`);
+  }
+
+  const {error: approvalError} = await client.rpc(
+    'captain_review_launch_player_application',
+    {target_application_id: applicationId},
+  );
+  if (approvalError) {
+    revalidateCaptainPlayerPages();
+    redirect(`/captain?error=${encodeURIComponent(
+      `Player was claimed, but roster approval needs attention: ${approvalError.message}`,
+    )}`);
+  }
+
+  revalidateCaptainPlayerPages();
+  redirect(`${returnPath}&notice=${encodeURIComponent('Player added to your team roster.')}`);
 }
 
 export async function loadPlayerMatchHistory(
@@ -47,4 +96,18 @@ export async function loadPlayerMatchHistory(
     // reconciliation; only the CI movement annotation is omitted in that case.
     return items;
   }
+}
+
+function revalidateCaptainPlayerPages() {
+  revalidatePath('/players');
+  revalidatePath('/captain');
+  revalidatePath('/office/players');
+  revalidatePath('/account');
+  revalidatePath('/teams');
+  revalidatePath('/stats');
+}
+
+function readFormValue(formData: FormData, key: string): string {
+  const value = formData.get(key);
+  return typeof value === 'string' ? value.trim() : '';
 }
