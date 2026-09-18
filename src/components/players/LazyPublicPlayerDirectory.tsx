@@ -1,7 +1,7 @@
 'use client';
 
 import {useState} from 'react';
-import {captainAddFreeAgent, loadPublicPlayerProfile} from '@/app/players/actions';
+import {captainAddFreeAgent, commissionerAddFreeAgent, loadPublicPlayerProfile} from '@/app/players/actions';
 import {PublicPlayerProfileCard} from '@/components/players/PublicPlayerProfileCard';
 import type {PlayerProfile} from '@/services/playerProfiles';
 import type {PublicPlayerSearchEntry} from '@/services/public/PublicPlayerService';
@@ -13,6 +13,8 @@ type LazyPublicPlayerDirectoryProps = {
   initialSearch?: string;
   initialProfile?: PlayerProfile;
   claimableApplications?: Record<string, string>;
+  pickupMode?: 'captain' | 'commissioner' | null;
+  commissionerTeams?: Array<{id: string; name: string}>;
 };
 
 function normalizeSearchText(value: string): string {
@@ -25,6 +27,8 @@ export function LazyPublicPlayerDirectory({
   initialSearch = '',
   initialProfile,
   claimableApplications = {},
+  pickupMode = null,
+  commissionerTeams = [],
 }: LazyPublicPlayerDirectoryProps) {
   const [search, setSearch] = useState(initialSearch);
   const [selectedPlayerId, setSelectedPlayerId] = useState(initialPlayerId.trim());
@@ -114,14 +118,29 @@ export function LazyPublicPlayerDirectory({
                 <span className={styles.expandLabel}>View stats</span>
               </summary>
               <div className={styles.details}>
-                {applicationId ? (
-                  <form action={captainAddFreeAgent} className={styles.captainAction}>
+                {applicationId && pickupMode ? (
+                  <form
+                    action={pickupMode === 'commissioner' ? commissionerAddFreeAgent : captainAddFreeAgent}
+                    className={styles.captainAction}
+                  >
                     <input name="applicationId" type="hidden" value={applicationId} />
                     <input name="returnSearch" type="hidden" value={player.name} />
                     <div>
                       <strong>Available free agent</strong>
-                      <span>Add this player directly to your current season roster.</span>
+                      <span>
+                        {pickupMode === 'commissioner'
+                          ? 'Choose the team that should receive this player.'
+                          : 'Add this player directly to your current season roster.'}
+                      </span>
                     </div>
+                    {pickupMode === 'commissioner' ? (
+                      <select name="teamId" defaultValue="" required aria-label={`Team for ${player.name}`}>
+                        <option value="" disabled>Choose team</option>
+                        {commissionerTeams.map((team) => (
+                          <option key={team.id} value={team.id}>{team.name}</option>
+                        ))}
+                      </select>
+                    ) : null}
                     <button type="submit">Add to Team</button>
                   </form>
                 ) : null}
