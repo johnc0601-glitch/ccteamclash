@@ -1,7 +1,7 @@
 'use client';
 
 import {useState} from 'react';
-import {loadPublicPlayerProfile} from '@/app/players/actions';
+import {captainAddFreeAgent, loadPublicPlayerProfile} from '@/app/players/actions';
 import {PublicPlayerProfileCard} from '@/components/players/PublicPlayerProfileCard';
 import type {PlayerProfile} from '@/services/playerProfiles';
 import type {PublicPlayerSearchEntry} from '@/services/public/PublicPlayerService';
@@ -12,6 +12,7 @@ type LazyPublicPlayerDirectoryProps = {
   initialPlayerId?: string;
   initialSearch?: string;
   initialProfile?: PlayerProfile;
+  claimableApplications?: Record<string, string>;
 };
 
 function normalizeSearchText(value: string): string {
@@ -23,6 +24,7 @@ export function LazyPublicPlayerDirectory({
   initialPlayerId = '',
   initialSearch = '',
   initialProfile,
+  claimableApplications = {},
 }: LazyPublicPlayerDirectoryProps) {
   const [search, setSearch] = useState(initialSearch);
   const [selectedPlayerId, setSelectedPlayerId] = useState(initialPlayerId.trim());
@@ -85,6 +87,7 @@ export function LazyPublicPlayerDirectory({
           const profile = profiles[player.id];
           const isLoading = loading[player.id] === true;
           const error = errors[player.id];
+          const applicationId = claimableApplications[player.id];
           const openFromLink = selectedPlayerId
             ? player.id === selectedPlayerId
             : normalizedInitialSearch.length > 0
@@ -102,7 +105,7 @@ export function LazyPublicPlayerDirectory({
               <summary>
                 <span>
                   <strong>{player.name}</strong>
-                  <small>{player.teamName}</small>
+                  <small>{applicationId ? 'Free Agent · Available' : player.teamName}</small>
                 </span>
                 <span className={styles.summaryStats}>
                   <b>{player.record}</b>
@@ -111,6 +114,17 @@ export function LazyPublicPlayerDirectory({
                 <span className={styles.expandLabel}>View stats</span>
               </summary>
               <div className={styles.details}>
+                {applicationId ? (
+                  <form action={captainAddFreeAgent} className={styles.captainAction}>
+                    <input name="applicationId" type="hidden" value={applicationId} />
+                    <input name="returnSearch" type="hidden" value={player.name} />
+                    <div>
+                      <strong>Available free agent</strong>
+                      <span>Add this player directly to your current season roster.</span>
+                    </div>
+                    <button type="submit">Add to Team</button>
+                  </form>
+                ) : null}
                 {profile ? <PublicPlayerProfileCard profile={profile} /> : null}
                 {isLoading ? <p className={styles.empty}>Loading player stats...</p> : null}
                 {!isLoading && error ? <p className={styles.empty} role="alert">{error}</p> : null}
