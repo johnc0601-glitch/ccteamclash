@@ -22,6 +22,13 @@ type CaptainFreeAgentClient = {
   ) => Promise<{error: {message: string} | null}>;
 };
 
+type CommissionerFreeAgentClient = {
+  rpc: (
+    fn: 'commissioner_add_launch_free_agent_to_team',
+    args: {target_application_id: string; target_team_id: string},
+  ) => Promise<{error: {message: string} | null}>;
+};
+
 export async function loadPublicPlayerProfile(playerId: string): Promise<PlayerProfile | null> {
   const normalizedPlayerId = playerId.trim();
   if (!normalizedPlayerId || normalizedPlayerId.length > 200) return null;
@@ -67,6 +74,36 @@ export async function captainAddFreeAgent(formData: FormData) {
 
   revalidateCaptainPlayerPages();
   redirect(`${returnPath}&notice=${encodeURIComponent('Player added to your team roster.')}`);
+}
+
+
+export async function commissionerAddFreeAgent(formData: FormData) {
+  const applicationId = readFormValue(formData, 'applicationId');
+  const teamId = readFormValue(formData, 'teamId');
+  const returnSearch = readFormValue(formData, 'returnSearch').slice(0, 100);
+  const returnPath = `/players?search=${encodeURIComponent(returnSearch)}`;
+
+  if (!applicationId) {
+    redirect(`${returnPath}&error=${encodeURIComponent('Free agent application is required.')}`);
+  }
+  if (!teamId) {
+    redirect(`${returnPath}&error=${encodeURIComponent('Choose a team.')}`);
+  }
+
+  const supabase = await createClient();
+  const {data: {user}, error: userError} = await supabase.auth.getUser();
+  if (userError || !user) redirect('/account?error=Sign in first.');
+
+  const {error} = await (supabase as unknown as CommissionerFreeAgentClient).rpc(
+    'commissioner_add_launch_free_agent_to_team',
+    {target_application_id: applicationId, target_team_id: teamId},
+  );
+  if (error) {
+    redirect(`${returnPath}&error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidateCaptainPlayerPages();
+  redirect(`${returnPath}&notice=${encodeURIComponent('Player added to the selected team roster.')}`);
 }
 
 export async function loadPlayerMatchHistory(
