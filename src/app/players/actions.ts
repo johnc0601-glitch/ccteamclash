@@ -22,6 +22,13 @@ type CaptainFreeAgentClient = {
   ) => Promise<{error: {message: string} | null}>;
 };
 
+type CaptainListedPlayerClient = {
+  rpc: (
+    fn: 'captain_add_listed_unassigned_player',
+    args: {target_player_id: string},
+  ) => Promise<{error: {message: string} | null}>;
+};
+
 export async function loadPublicPlayerProfile(playerId: string): Promise<PlayerProfile | null> {
   const normalizedPlayerId = playerId.trim();
   if (!normalizedPlayerId || normalizedPlayerId.length > 200) return null;
@@ -30,6 +37,31 @@ export async function loadPublicPlayerProfile(playerId: string): Promise<PlayerP
   const views = await service.getAll('all', normalizedPlayerId);
   const view = views.find(({player}) => player.id === normalizedPlayerId);
   return view ? createProfileFromPublicPlayerView(view) : null;
+}
+
+export async function captainAddListedPlayer(formData: FormData) {
+  const playerId = readFormValue(formData, 'playerId');
+  const returnSearch = readFormValue(formData, 'returnSearch').slice(0, 100);
+  const returnPath = `/players?search=${encodeURIComponent(returnSearch)}`;
+
+  if (!playerId) {
+    redirect(`${returnPath}&error=${encodeURIComponent('Player is required.')}`);
+  }
+
+  const supabase = await createClient();
+  const {data: {user}, error: userError} = await supabase.auth.getUser();
+  if (userError || !user) redirect('/account?error=Sign in first.');
+
+  const {error} = await (supabase as unknown as CaptainListedPlayerClient).rpc(
+    'captain_add_listed_unassigned_player',
+    {target_player_id: playerId},
+  );
+  if (error) {
+    redirect(`${returnPath}&error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidateCaptainPlayerPages();
+  redirect(`${returnPath}&notice=${encodeURIComponent('Player added to your team roster.')}`);
 }
 
 export async function captainAddFreeAgent(formData: FormData) {
