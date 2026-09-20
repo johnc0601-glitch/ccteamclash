@@ -18,17 +18,6 @@ type PlayersPageProps = {
   }>;
 };
 
-type CaptainFreeAgent = {
-  application_id: string;
-  player_id: string | null;
-};
-
-type FreeAgentListClient = {
-  rpc: (
-    fn: 'captain_list_launch_free_agents',
-  ) => Promise<{data: CaptainFreeAgent[] | null; error: {message: string} | null}>;
-};
-
 function normalizeSearchText(value: string): string {
   return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 }
@@ -59,13 +48,13 @@ export default async function PlayersPage({searchParams}: PlayersPageProps) {
   const error = readParam(query.error);
   const service = await createServerPublicPlayerService();
   const searchIndexPromise = service.getSearchIndex();
-  const captainFreeAgentsPromise = getCaptainFreeAgentApplications();
+  const captainPickupAccessPromise = getCaptainPickupAccess();
   const directPlayerPromise = initialPlayerId
     ? service.getAll('all', initialPlayerId)
     : Promise.resolve([]);
   let searchIndex = await searchIndexPromise;
   let initialViews = await directPlayerPromise;
-  const captainFreeAgents = await captainFreeAgentsPromise;
+  const canAddUnassignedPlayers = await captainPickupAccessPromise;
 
   if (!initialPlayerId && initialSearch) {
     const normalizedInitialSearch = normalizeSearchText(initialSearch);
@@ -100,7 +89,7 @@ export default async function PlayersPage({searchParams}: PlayersPageProps) {
           initialPlayerId={initialPlayerId ?? ''}
           initialSearch={initialSearch ?? ''}
           initialProfile={initialProfile}
-          claimableApplications={captainFreeAgents}
+          canAddUnassignedPlayers={canAddUnassignedPlayers}
         />
       </main>
       <Footer />
@@ -108,38 +97,24 @@ export default async function PlayersPage({searchParams}: PlayersPageProps) {
   );
 }
 
-async function getCaptainFreeAgentApplications(): Promise<Record<string, string>> {
+async function getCaptainPickupAccess(): Promise<boolean> {
   try {
     const supabase = await createClient();
     const {data: {user}} = await supabase.auth.getUser();
-    if (!user) return {};
+    if (!user) return false;
 
-    const {data: profile, error: profileError} = await (supabase as any)
+    const {data: profile, error} = await (supabase as any)
       .from('launch_profiles')
       .select('role, status, captain_team_id')
       .eq('user_id', user.id)
       .maybeSingle();
-    if (
-      profileError
-      || !profile
-      || profile.status !== 'Approved'
-      || (profile.role !== 'Captain' && profile.role !== 'Commissioner')
-      || !profile.captain_team_id
-    ) {
-      return {};
-    }
 
-    const {data, error} = await (supabase as unknown as FreeAgentListClient)
-      .rpc('captain_list_launch_free_agents');
-    if (error) return {};
-
-    return Object.fromEntries(
-      (data ?? [])
-        .filter((entry): entry is CaptainFreeAgent & {player_id: string} => Boolean(entry.player_id))
-        .map((entry) => [entry.player_id, entry.application_id]),
-    );
+    return !error
+      && profile?.status === 'Approved'
+      && profile?.role === 'Captain'
+      && Boolean(profile.captain_team_id);
   } catch {
-    return {};
+    return false;
   }
 }
 
