@@ -195,23 +195,29 @@
 }
 
 .captainTeamHeader {
-  padding: 18px;
-  background: linear-gradient(145deg, #12191b, #071012);
-  color: #fff;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--cc-card-border);
+  background: var(--cc-table-head-bg);
+  color: var(--cc-heading);
 }
 
 .captainTeamHeader > div {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
 .captainTeamHeader span {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border: 1px solid var(--cc-gold-soft);
+  border-radius: 999px;
   color: var(--cc-gold);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 950;
-  letter-spacing: .12em;
+  letter-spacing: .1em;
+  line-height: 1;
   text-transform: uppercase;
 }
 
@@ -221,16 +227,21 @@
 }
 
 .captainTeamHeader h3 {
+  min-width: 0;
+  color: var(--cc-heading);
   font-family: var(--cc-font-display);
-  font-size: 25px;
+  font-size: 20px;
   font-style: italic;
+  line-height: 1;
   text-transform: uppercase;
 }
 
 .captainTeamHeader p {
-  margin-top: 8px;
-  color: #d7e0dd;
-  font-size: 13px;
+  margin-top: 6px;
+  color: var(--cc-muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
 .captainPlayerList {
@@ -637,6 +648,19 @@
 
   .exportActions {
     grid-template-columns: 1fr;
+  }
+
+  .captainTeamHeader {
+    padding: 11px 12px;
+  }
+
+  .captainTeamHeader h3 {
+    font-size: 18px;
+  }
+
+  .captainTeamHeader p {
+    margin-top: 5px;
+    font-size: 11px;
   }
 
   .captainPlayerRow {
