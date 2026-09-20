@@ -1,7 +1,7 @@
 'use client';
 
 import {useState} from 'react';
-import {captainAddFreeAgent, loadPublicPlayerProfile} from '@/app/players/actions';
+import {captainAddListedPlayer, loadPublicPlayerProfile} from '@/app/players/actions';
 import {PublicPlayerProfileCard} from '@/components/players/PublicPlayerProfileCard';
 import type {PlayerProfile} from '@/services/playerProfiles';
 import type {PublicPlayerSearchEntry} from '@/services/public/PublicPlayerService';
@@ -12,7 +12,7 @@ type LazyPublicPlayerDirectoryProps = {
   initialPlayerId?: string;
   initialSearch?: string;
   initialProfile?: PlayerProfile;
-  claimableApplications?: Record<string, string>;
+  canAddUnassignedPlayers?: boolean;
 };
 
 function normalizeSearchText(value: string): string {
@@ -24,7 +24,7 @@ export function LazyPublicPlayerDirectory({
   initialPlayerId = '',
   initialSearch = '',
   initialProfile,
-  claimableApplications = {},
+  canAddUnassignedPlayers = false,
 }: LazyPublicPlayerDirectoryProps) {
   const [search, setSearch] = useState(initialSearch);
   const [selectedPlayerId, setSelectedPlayerId] = useState(initialPlayerId.trim());
@@ -87,7 +87,7 @@ export function LazyPublicPlayerDirectory({
           const profile = profiles[player.id];
           const isLoading = loading[player.id] === true;
           const error = errors[player.id];
-          const applicationId = claimableApplications[player.id];
+          const isAddable = canAddUnassignedPlayers && player.teamName === 'Unassigned';
           const openFromLink = selectedPlayerId
             ? player.id === selectedPlayerId
             : normalizedInitialSearch.length > 0
@@ -105,7 +105,7 @@ export function LazyPublicPlayerDirectory({
               <summary>
                 <span>
                   <strong>{player.name}</strong>
-                  <small>{applicationId ? 'Free Agent · Available' : player.teamName}</small>
+                  <small>{isAddable ? 'Unassigned · Available' : player.teamName}</small>
                 </span>
                 <span className={styles.summaryStats}>
                   <b>{player.record}</b>
@@ -114,13 +114,13 @@ export function LazyPublicPlayerDirectory({
                 <span className={styles.expandLabel}>View stats</span>
               </summary>
               <div className={styles.details}>
-                {applicationId ? (
-                  <form action={captainAddFreeAgent} className={styles.captainAction}>
-                    <input name="applicationId" type="hidden" value={applicationId} />
+                {isAddable ? (
+                  <form action={captainAddListedPlayer} className={styles.captainAction}>
+                    <input name="playerId" type="hidden" value={player.id} />
                     <input name="returnSearch" type="hidden" value={player.name} />
                     <div>
-                      <strong>Available free agent</strong>
-                      <span>Add this player directly to your current season roster.</span>
+                      <strong>Available player</strong>
+                      <span>Add this listed player directly to your current season roster.</span>
                     </div>
                     <button type="submit">Add to Team</button>
                   </form>
