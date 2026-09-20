@@ -191,7 +191,7 @@ export async function submitSeasonApplication(formData: FormData) {
   revalidatePath('/captain');
   revalidatePath('/office/players');
   revalidatePath('/players');
-  redirect('/account?notice=Registration submitted. Your selected team captain must approve it before you are added to the roster.');
+  redirect('/account?notice=Registration submitted. Your captain can approve it now.');
 }
 
 export async function signInWithPassword(formData: FormData) {

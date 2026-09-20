@@ -413,6 +413,9 @@ function MemberProfile({
             <span>{application.requested_team_id === null ? 'Free Agent' : application.status === 'Approved' ? 'Registered' : application.status}</span>
             <strong>{applicationTeamLabel}</strong>
           </div>
+          {application.requested_team_id !== null && application.status === 'Pending' ? (
+            <p className={styles.linkingNote}>Registration submitted to {applicationTeamLabel}. Your captain can approve it now.</p>
+          ) : null}
           <dl className={styles.profileDetails}>
             <div><dt>Team</dt><dd>{applicationTeamLabel}</dd></div>
             <div><dt>Player type</dt><dd>{application.player_type}</dd></div>
@@ -541,7 +544,7 @@ function RegistrationForm({
           placeholder="Optional for Free Agents"
         />
         <p className={styles.muted}>PDGA information is optional and is used to help captains evaluate Free Agent listings.</p>
-        <button className={styles.primaryButton} type="submit">Submit registration</button>
+        <SubmitButton pendingLabel="Submitting registration...">Submit registration</SubmitButton>
       </form>
     </article>
   );
