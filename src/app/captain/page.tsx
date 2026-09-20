@@ -118,30 +118,37 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
         </section>
 
         <section className={styles.panel}>
-          <header className={styles.panelHeader}><span>Roster</span><h2>{team.name}</h2><p className={styles.muted}>{season?.canEditRegistrations ? 'Edit registration details here before the season starts. Remove sends a player to the commissioner.' : 'Registration details are locked. Remove sends a player to the commissioner for removal or reassignment.'}</p></header>
+          <header className={styles.panelHeader}><span>Roster</span><h2>{team.name}</h2><p className={styles.muted}>{season?.canEditRegistrations ? 'Tap Edit registration to update player details or remove a player from your roster.' : 'Registration details are locked for this season. Open Roster options to request a removal or reassignment.'}</p></header>
           <div className={styles.list}>{roster.length ? roster.map((player) => (
             <article className={styles.row} key={player.id}>
-              <div>
-                <strong>{player.name}</strong>
-                <span className={styles.rosterMeta}>CI: {formatClashIndex(player)} · {player.gender} · {player.rosterCategory === 'Junior' ? 'Junior' : 'Adult'}{player.pdgaNumber ? ` · PDGA #${player.pdgaNumber}` : ' · No PDGA #'}</span>
+              <div className={styles.playerIdentity}>
+                <strong className={styles.playerName}>{player.name}</strong>
+                <span className={styles.rosterMeta}>
+                  <span>CI: {formatClashIndex(player)}</span>
+                  <span>{player.gender}</span>
+                  <span>{player.rosterCategory === 'Junior' ? 'Junior' : 'Adult'}</span>
+                  <span>{player.pdgaNumber ? `PDGA #${player.pdgaNumber}` : 'No PDGA #'}</span>
+                </span>
               </div>
-              {season?.canEditRegistrations ? (
-                <details>
-                  <summary>Edit registration</summary>
-                  <form action={saveRosterPlayerRegistration} style={{display: 'grid', gap: '10px', marginTop: '10px'}}>
+              <details className={styles.registrationDetails}>
+                <summary>{season?.canEditRegistrations ? 'Edit registration' : 'Roster options'}</summary>
+                <div className={styles.registrationPanel}>
+                  {season?.canEditRegistrations ? (
+                    <form action={saveRosterPlayerRegistration} className={styles.registrationForm}>
+                      <input name="playerId" type="hidden" value={player.id} />
+                      <label><span className={styles.muted}>Player name</span><input name="name" type="text" required maxLength={100} defaultValue={player.name} /></label>
+                      <label><span className={styles.muted}>PDGA #</span><input name="pdgaNumber" type="text" inputMode="numeric" pattern="[0-9]*" maxLength={10} defaultValue={player.pdgaNumber} /></label>
+                      <label><span className={styles.muted}>Male / Female</span><select name="gender" required defaultValue={player.gender === 'Male' || player.gender === 'Female' ? player.gender : ''}><option value="" disabled>Choose</option><option value="Male">Male</option><option value="Female">Female</option></select></label>
+                      <label className={styles.juniorField}><input name="isJunior" type="checkbox" value="true" defaultChecked={player.rosterCategory === 'Junior'} /><input name="isJunior" type="hidden" value="false" /><span className={styles.muted}>Junior</span></label>
+                      <button className={styles.primaryButton} type="submit">Save player</button>
+                    </form>
+                  ) : null}
+                  <form action={returnRosteredPlayerToCommissioner} className={styles.removeForm}>
                     <input name="playerId" type="hidden" value={player.id} />
-                    <label style={{display: 'grid', gap: '4px'}}><span className={styles.muted}>Player name</span><input name="name" type="text" required maxLength={100} defaultValue={player.name} /></label>
-                    <label style={{display: 'grid', gap: '4px'}}><span className={styles.muted}>PDGA #</span><input name="pdgaNumber" type="text" inputMode="numeric" pattern="[0-9]*" maxLength={10} defaultValue={player.pdgaNumber} /></label>
-                    <label style={{display: 'grid', gap: '4px'}}><span className={styles.muted}>Male / Female</span><select name="gender" required defaultValue={player.gender === 'Male' || player.gender === 'Female' ? player.gender : ''}><option value="" disabled>Choose</option><option value="Male">Male</option><option value="Female">Female</option></select></label>
-                    <label style={{display: 'flex', alignItems: 'center', gap: '8px'}}><input name="isJunior" type="checkbox" value="true" defaultChecked={player.rosterCategory === 'Junior'} style={{width: 'auto', minHeight: 'auto'}} /><input name="isJunior" type="hidden" value="false" /><span className={styles.muted}>Junior</span></label>
-                    <button className={styles.primaryButton} type="submit">Save player</button>
+                    <button className={styles.removeButton} type="submit">Remove from roster</button>
                   </form>
-                </details>
-              ) : null}
-              <form action={returnRosteredPlayerToCommissioner}>
-                <input name="playerId" type="hidden" value={player.id} />
-                <button type="submit">Remove</button>
-              </form>
+                </div>
+              </details>
             </article>
           )) : <p className={styles.empty}>No players are on this season roster yet.</p>}</div>
         </section>
