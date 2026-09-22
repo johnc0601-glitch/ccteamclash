@@ -3,13 +3,14 @@ import 'server-only';
 import {createClient} from '@/lib/supabase/server';
 import type {
   ClashPulseFactCandidate,
-  ClashPulseFactCategory,
   ClashPulseFactData,
   ClashPulseFactScope,
+  ClashPulseStoryType,
 } from '@/components/commissioner/clashPulseFacts';
 
-type RatedFact = {
-  sourceKey: string;
+type RatedMemberFact = {
+  contestId: string;
+  teamId: string;
   seasonId: string;
   seasonLabel: string;
   eventLabel: string;
@@ -17,7 +18,6 @@ type RatedFact = {
   playerName: string;
   teamName: string;
   opponentTeamName: string;
-  partnerName: string | null;
   opponentNames: string[];
   side: 'Home' | 'Away';
   format: 'Singles' | 'Doubles';
@@ -29,10 +29,31 @@ type RatedFact = {
   ciDelta: number;
 };
 
+type RatedStory = {
+  key: string;
+  seasonId: string;
+  seasonLabel: string;
+  eventLabel: string;
+  subjectIds: string[];
+  subjectNames: string[];
+  teamId: string;
+  teamName: string;
+  opponentNames: string[];
+  opponentTeamName: string;
+  side: 'Home' | 'Away';
+  format: 'Singles' | 'Doubles';
+  winProbability: number;
+  performanceVsExpected: number;
+  ciDeltas: number[];
+  clashIndexBefore: number;
+  opponentEffectiveCi: number;
+};
+
 type HistoricalFactRow = {
-  matchup_deduplication_key: string;
+  contest_id: string;
   season_id: string;
   player_id: string;
+  team_id: string;
   player_name: string;
   team_name: string;
   opponent_team_name: string;
@@ -44,15 +65,14 @@ type HistoricalFactRow = {
   win_probability: number | string;
   performance_vs_expected: number | string;
   ci_delta: number;
+  matchup_deduplication_key: string;
 };
 
 type HistoricalMatchupRow = {
   deduplication_key: string;
-  season_id: string;
   season_name: string;
   event_label: string;
   player_id: string;
-  partner_player_name: string | null;
   opponent_one_player_name: string | null;
   opponent_two_player_name: string | null;
 };
@@ -75,7 +95,8 @@ type LiveFactRow = {
 };
 
 const PAGE_SIZE = 1000;
-const CATEGORY_LIMIT = 5;
+const FILTER_LIMIT = 18;
+const TOP_FACT_LIMIT = 12;
 
 export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
   const supabase = await createClient();
@@ -85,12 +106,12 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
     loadPaged<HistoricalFactRow>(
       db,
       'historical_clash_contest_rating_facts',
-      'matchup_deduplication_key,season_id,player_id,player_name,team_name,opponent_team_name,side,format,outcome,clash_index_before,opponent_effective_ci,win_probability,performance_vs_expected,ci_delta',
+      'contest_id,season_id,player_id,team_id,player_name,team_name,opponent_team_name,side,format,outcome,clash_index_before,opponent_effective_ci,win_probability,performance_vs_expected,ci_delta,matchup_deduplication_key',
     ),
     loadPaged<HistoricalMatchupRow>(
       db,
       'historical_player_matchups',
-      'deduplication_key,season_id,season_name,event_label,player_id,partner_player_name,opponent_one_player_name,opponent_two_player_name',
+      'deduplication_key,season_name,event_label,player_id,opponent_one_player_name,opponent_two_player_name',
     ),
     loadPaged<LiveFactRow>(
       db,
@@ -104,10 +125,11 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
     matchupRows.map((row) => [`${row.deduplication_key}:${row.player_id}`, row]),
   );
 
-  const historicalFacts: RatedFact[] = historicalRows.map((row) => {
+  const historicalMembers: RatedMemberFact[] = historicalRows.map((row) => {
     const matchup = matchupByKey.get(`${row.matchup_deduplication_key}:${row.player_id}`);
     return {
-      sourceKey: row.matchup_deduplication_key,
+      contestId: row.contest_id,
+      teamId: row.team_id,
       seasonId: row.season_id,
       seasonLabel: shortSeason(matchup?.season_name ?? row.season_id),
       eventLabel: matchup?.event_label ?? 'Historical match',
@@ -115,7 +137,6 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
       playerName: row.player_name,
       teamName: row.team_name,
       opponentTeamName: row.opponent_team_name,
-      partnerName: matchup?.partner_player_name ?? null,
       opponentNames: [matchup?.opponent_one_player_name, matchup?.opponent_two_player_name].filter(Boolean) as string[],
       side: row.side,
       format: row.format,
@@ -128,35 +149,35 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
     };
   });
 
-  const liveFacts = liveRows.length ? await hydrateLiveFacts(db, liveRows, seasonRows.data ?? []) : [];
-  const allFacts = [...historicalFacts, ...liveFacts];
+  const liveMembers = liveRows.length
+    ? await hydrateLiveMembers(db, liveRows, seasonRows.data ?? [])
+    : [];
+
+  const allStories = groupWinningStories([...historicalMembers, ...liveMembers]);
   const activeSeason = (seasonRows.data ?? []).find((season: any) => season.active && !season.archived);
-  const seasonIds = [...new Set(allFacts.map((fact) => fact.seasonId))];
+  const seasonIds = [...new Set(allStories.map((story) => story.seasonId))];
+
   const scopes: ClashPulseFactScope[] = seasonIds
     .sort((a, b) => seasonSortValue(b) - seasonSortValue(a))
-    .map((seasonId) => {
-      const rows = allFacts.filter((fact) => fact.seasonId === seasonId);
-      return {
-        id: seasonId,
-        label: rows[0]?.seasonLabel ?? shortSeason(seasonId),
-        description: seasonId === activeSeason?.id
-          ? 'Current season published results'
-          : 'Verified league history',
-        candidates: buildCandidates(rows, seasonId),
-      };
-    })
+    .map((seasonId) => buildScope(
+      seasonId,
+      allStories.filter((story) => story.seasonId === seasonId),
+      seasonId === activeSeason?.id ? 'Current season published results' : 'Verified league history',
+    ))
     .filter((scope) => scope.candidates.length > 0);
 
-  if (allFacts.length) {
-    scopes.push({
-      id: 'all-time',
-      label: 'All-Time',
-      description: 'Best verified facts across recorded Team Clash history',
-      candidates: buildCandidates(allFacts, 'all-time'),
-    });
+  if (allStories.length) {
+    scopes.push(buildScope(
+      'all-time',
+      allStories,
+      'Best verified stories across recorded Team Clash history',
+      'All-Time',
+    ));
   }
 
-  const currentSeasonHasResults = Boolean(activeSeason?.id && allFacts.some((fact) => fact.seasonId === activeSeason.id));
+  const currentSeasonHasResults = Boolean(
+    activeSeason?.id && allStories.some((story) => story.seasonId === activeSeason.id),
+  );
   const latestHistorical = scopes.find((scope) => scope.id !== 'all-time' && scope.id !== activeSeason?.id);
 
   return {
@@ -168,13 +189,25 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
   };
 }
 
-async function hydrateLiveFacts(db: any, rows: LiveFactRow[], seasons: any[]): Promise<RatedFact[]> {
+async function hydrateLiveMembers(db: any, rows: LiveFactRow[], seasons: any[]): Promise<RatedMemberFact[]> {
   const contestIds = [...new Set(rows.map((row) => row.contest_id))];
   const matchIds = [...new Set(rows.map((row) => row.match_id))];
 
   const [players, matches] = await Promise.all([
-    selectInBatches<any>(db, 'launch_result_contest_players', 'contest_id,player_id,player_name,team_id,team_name,side', 'contest_id', contestIds),
-    selectInBatches<any>(db, 'launch_schedule_matches', 'id,season_id,round_id,date,home_team_id,away_team_id', 'id', matchIds),
+    selectInBatches<any>(
+      db,
+      'launch_result_contest_players',
+      'contest_id,player_id,player_name,team_id,team_name,side',
+      'contest_id',
+      contestIds,
+    ),
+    selectInBatches<any>(
+      db,
+      'launch_schedule_matches',
+      'id,season_id,round_id,date',
+      'id',
+      matchIds,
+    ),
   ]);
 
   const roundIds = [...new Set(matches.map((match) => match.round_id).filter(Boolean))] as string[];
@@ -188,34 +221,31 @@ async function hydrateLiveFacts(db: any, rows: LiveFactRow[], seasons: any[]): P
     list.push(player);
     playersByContest.set(player.contest_id, list);
   }
+
   const matchById = new Map(matches.map((match) => [match.id, match]));
   const roundById = new Map(rounds.map((round) => [round.id, round]));
   const seasonById = new Map(seasons.map((season: any) => [season.id, season]));
 
   return rows.map((row) => {
     const contestPlayers = playersByContest.get(row.contest_id) ?? [];
-    const teammate = row.format === 'Doubles'
-      ? contestPlayers.find((player) => player.team_id === row.team_id && player.player_id !== row.player_id)
-      : null;
     const opponents = contestPlayers.filter((player) => player.team_id !== row.team_id);
     const match = matchById.get(row.match_id);
     const round = match?.round_id ? roundById.get(match.round_id) : null;
     const season = match?.season_id ? seasonById.get(match.season_id) : null;
-    const eventLabel = round?.name
-      ?? (round?.number ? `Round ${round.number}` : null)
-      ?? match?.date
-      ?? 'Current season';
 
     return {
-      sourceKey: `live:${row.contest_id}:${row.team_id}`,
+      contestId: row.contest_id,
+      teamId: row.team_id,
       seasonId: match?.season_id ?? season?.id ?? 'current',
       seasonLabel: shortSeason(season?.name ?? match?.season_id ?? 'Current'),
-      eventLabel,
+      eventLabel: round?.name
+        ?? (round?.number ? `Round ${round.number}` : null)
+        ?? match?.date
+        ?? 'Current season',
       playerId: row.player_id,
       playerName: row.player_name,
       teamName: row.team_name,
       opponentTeamName: opponents[0]?.team_name ?? 'Opponent',
-      partnerName: teammate?.player_name ?? null,
       opponentNames: opponents.map((player) => player.player_name),
       side: row.side,
       format: row.format,
@@ -229,127 +259,210 @@ async function hydrateLiveFacts(db: any, rows: LiveFactRow[], seasons: any[]): P
   });
 }
 
-function buildCandidates(rows: RatedFact[], scopeId: string): ClashPulseFactCandidate[] {
-  const winningRows = rows.filter((row) => row.outcome === 'W');
-  const wins = uniqueMatchups(winningRows);
-  const candidates: ClashPulseFactCandidate[] = [];
+function groupWinningStories(rows: RatedMemberFact[]): RatedStory[] {
+  const groups = new Map<string, RatedMemberFact[]>();
 
-  addTop(candidates, scopeId, 'Upsets',
-    wins.filter((row) => row.winProbability < 0.5).sort((a, b) => a.winProbability - b.winProbability),
-    CATEGORY_LIMIT);
-  addTop(candidates, scopeId, 'CI Gaps',
-    wins.filter((row) => row.format === 'Singles' && ciGap(row) > 0).sort((a, b) => ciGap(b) - ciGap(a)),
-    CATEGORY_LIMIT);
-  addTop(candidates, scopeId, 'Above Expected',
-    [...wins].sort((a, b) => b.performanceVsExpected - a.performanceVsExpected),
-    CATEGORY_LIMIT);
-  addTop(candidates, scopeId, 'Road',
-    wins.filter((row) => row.side === 'Away').sort((a, b) => b.performanceVsExpected - a.performanceVsExpected),
-    CATEGORY_LIMIT);
-  addTop(candidates, scopeId, 'Home',
-    wins.filter((row) => row.side === 'Home').sort((a, b) => b.performanceVsExpected - a.performanceVsExpected),
-    CATEGORY_LIMIT);
-  addTop(candidates, scopeId, 'Singles',
-    wins.filter((row) => row.format === 'Singles').sort((a, b) => b.ciDelta - a.ciDelta || a.winProbability - b.winProbability),
-    CATEGORY_LIMIT);
-  addTop(candidates, scopeId, 'Doubles',
-    wins.filter((row) => row.format === 'Doubles').sort((a, b) => b.ciDelta - a.ciDelta || a.winProbability - b.winProbability),
-    CATEGORY_LIMIT);
-  addTop(candidates, scopeId, 'CI +/-',
-    winningRows.filter((row) => row.ciDelta > 0).sort((a, b) => b.ciDelta - a.ciDelta),
-    CATEGORY_LIMIT);
-  addTop(candidates, scopeId, 'Closest',
-    [...wins].sort((a, b) => Math.abs(a.winProbability - 0.5) - Math.abs(b.winProbability - 0.5)),
-    CATEGORY_LIMIT);
+  for (const row of rows) {
+    if (row.outcome !== 'W') continue;
+    const key = `${row.seasonId}:${row.contestId}:${row.teamId}`;
+    const existing = groups.get(key) ?? [];
+    existing.push(row);
+    groups.set(key, existing);
+  }
 
-  return candidates;
+  return [...groups.entries()].map(([key, members]) => {
+    const first = members[0];
+    const uniqueMembers = [...new Map(
+      members.map((member) => [member.playerId, member]),
+    ).values()].sort((a, b) => a.playerName.localeCompare(b.playerName));
+
+    return {
+      key,
+      seasonId: first.seasonId,
+      seasonLabel: first.seasonLabel,
+      eventLabel: first.eventLabel,
+      subjectIds: uniqueMembers.map((member) => member.playerId),
+      subjectNames: uniqueMembers.map((member) => member.playerName),
+      teamId: first.teamId,
+      teamName: first.teamName,
+      opponentNames: [...new Set(first.opponentNames)],
+      opponentTeamName: first.opponentTeamName,
+      side: first.side,
+      format: first.format,
+      winProbability: first.winProbability,
+      performanceVsExpected: first.performanceVsExpected,
+      ciDeltas: uniqueMembers.map((member) => member.ciDelta),
+      clashIndexBefore: first.clashIndexBefore,
+      opponentEffectiveCi: first.opponentEffectiveCi,
+    };
+  });
 }
 
-function addTop(
-  target: ClashPulseFactCandidate[],
-  scopeId: string,
-  category: ClashPulseFactCategory,
-  rows: RatedFact[],
-  limit: number,
-) {
-  for (const row of rows.slice(0, limit)) {
-    target.push(toCandidate(row, category, scopeId));
+function buildScope(
+  id: string,
+  stories: RatedStory[],
+  description: string,
+  labelOverride?: string,
+): ClashPulseFactScope {
+  const sorted = [...stories].sort((a, b) => storyScore(b) - storyScore(a));
+  const topStories = diversify(sorted, TOP_FACT_LIMIT, 1, 2);
+
+  const topicStories = new Map<ClashPulseStoryType, RatedStory[]>([
+    ['Upset', diversify(
+      sorted.filter((story) => topicsFor(story).includes('Upset'))
+        .sort((a, b) => a.winProbability - b.winProbability),
+      FILTER_LIMIT,
+      2,
+      4,
+    )],
+    ['CI Mover', diversify(
+      sorted.filter((story) => topicsFor(story).includes('CI Mover'))
+        .sort((a, b) => maxCiDelta(b) - maxCiDelta(a)),
+      FILTER_LIMIT,
+      2,
+      4,
+    )],
+    ['Close Match', diversify(
+      sorted.filter((story) => topicsFor(story).includes('Close Match'))
+        .sort((a, b) => Math.abs(a.winProbability - 0.5) - Math.abs(b.winProbability - 0.5)),
+      FILTER_LIMIT,
+      2,
+      4,
+    )],
+    ['Standout', diversify(
+      sorted.filter((story) => primaryStoryType(story) === 'Standout'),
+      FILTER_LIMIT,
+      2,
+      4,
+    )],
+  ]);
+
+  const selected = new Map<string, RatedStory>();
+  for (const story of topStories) selected.set(story.key, story);
+  for (const list of topicStories.values()) {
+    for (const story of list) selected.set(story.key, story);
   }
-}
 
-function toCandidate(row: RatedFact, category: ClashPulseFactCategory, scopeId: string): ClashPulseFactCandidate {
-  const player = category !== 'CI +/-' && row.format === 'Doubles' && row.partnerName
-    ? `${row.playerName} & ${row.partnerName}`
-    : row.playerName;
-  const opponent = row.opponentNames.length
-    ? row.opponentNames.join(' & ')
-    : row.opponentTeamName;
-  const probability = Math.max(0, Math.min(100, Math.round(row.winProbability * 100)));
-  const gap = Math.max(0, Math.round(ciGap(row)));
-  const performance = Math.round(row.performanceVsExpected * 100);
-  const baseDetail = `${row.seasonLabel} · ${row.eventLabel} · ${row.format} · vs ${opponent} (${row.opponentTeamName})`;
-
-  let headline = `${player} (${row.teamName}) beat ${opponent} (${row.opponentTeamName})`;
-  let value = `${probability}% WIN CHANCE`;
-  let pulseText = `${headline} with a ${probability}% pre-match win chance.`;
-
-  if (category === 'CI Gaps') {
-    headline = `${player} (${row.teamName}) overcame a ${gap}-point CI gap`;
-    value = `${gap} CI GAP`;
-    pulseText = `${player} (${row.teamName}) overcame a ${gap}-point CI gap against ${opponent} (${row.opponentTeamName}).`;
-  } else if (category === 'Above Expected') {
-    value = `+${performance} PTS VS EXPECTED`;
-    pulseText = `${player} (${row.teamName}) beat ${opponent} (${row.opponentTeamName}) after entering at ${probability}% win probability.`;
-  } else if (category === 'Road') {
-    headline = `${player} (${row.teamName}) won on the road`;
-    pulseText = `${player} (${row.teamName}) won on the road against ${opponent} (${row.opponentTeamName}) with a ${probability}% pre-match chance.`;
-  } else if (category === 'Home') {
-    headline = `${player} (${row.teamName}) defended home`;
-    pulseText = `${player} (${row.teamName}) won at home against ${opponent} (${row.opponentTeamName}).`;
-  } else if (category === 'Singles') {
-    value = signedCi(row.ciDelta);
-    pulseText = `${row.playerName} (${row.teamName}) beat ${opponent} (${row.opponentTeamName}) in singles and moved ${signedCi(row.ciDelta)}.`;
-  } else if (category === 'Doubles') {
-    value = signedCi(row.ciDelta);
-    pulseText = `${player} (${row.teamName}) beat ${opponent} (${row.opponentTeamName}) in doubles.`;
-  } else if (category === 'CI +/-') {
-    headline = `${player} (${row.teamName}) posted a ${signedCi(row.ciDelta)} result`;
-    value = signedCi(row.ciDelta);
-    pulseText = `${player} (${row.teamName}) gained ${signedCi(row.ciDelta)} against ${opponent} (${row.opponentTeamName}).`;
-  } else if (category === 'Closest') {
-    const other = 100 - probability;
-    value = `${probability}–${other}`;
-    headline = `${player} (${row.teamName}) won a near-even matchup`;
-    pulseText = `${player} (${row.teamName}) beat ${opponent} (${row.opponentTeamName}) in a near-even ${probability}–${other} matchup.`;
-  }
+  const candidates = [...selected.values()].map((story) => toCandidate(story, id));
 
   return {
-    id: `${scopeId}:${category}:${row.sourceKey}`,
-    category,
-    headline,
-    detail: baseDetail,
-    value,
-    pulseText: pulseText.slice(0, 240),
+    id,
+    label: labelOverride ?? stories[0]?.seasonLabel ?? shortSeason(id),
+    description,
+    candidates,
+    topFactIds: topStories.map((story) => `${id}:${story.key}`),
   };
 }
 
-function uniqueMatchups(rows: RatedFact[]): RatedFact[] {
-  const seen = new Set<string>();
-  const unique: RatedFact[] = [];
-  for (const row of rows) {
-    if (seen.has(row.sourceKey)) continue;
-    seen.add(row.sourceKey);
-    unique.push(row);
+function toCandidate(story: RatedStory, scopeId: string): ClashPulseFactCandidate {
+  const subject = story.subjectNames.join(' & ');
+  const opponent = story.opponentNames.length
+    ? story.opponentNames.join(' & ')
+    : story.opponentTeamName;
+  const probability = Math.max(0, Math.min(100, Math.round(story.winProbability * 100)));
+  const gap = Math.max(0, Math.round(story.opponentEffectiveCi - story.clashIndexBefore));
+  const type = primaryStoryType(story);
+  const topics = topicsFor(story);
+  const venue = story.side === 'Home' ? 'Home' : 'Road';
+  const delta = commonCiDelta(story);
+  const badges = [
+    story.format,
+    venue,
+    ...(story.winProbability < 0.5 ? [`${probability}% chance`] : []),
+    ...(story.format === 'Singles' && gap > 0 ? [`${gap} CI gap`] : []),
+    ...(delta !== null && delta > 0
+      ? [story.format === 'Doubles' ? `+${delta} CI each` : `+${delta} CI`]
+      : []),
+  ].slice(0, 5);
+
+  let headline = `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName})`;
+  let value = `${probability}% WIN CHANCE`;
+  let pulseText = `${headline}.`;
+
+  if (type === 'Upset') {
+    headline = `${subject} (${story.teamName}) upset ${opponent} (${story.opponentTeamName})`;
+    value = `${probability}% WIN CHANCE`;
+    pulseText = `${headline} after entering with a ${probability}% pre-match win chance.`;
+  } else if (type === 'CI Mover' && delta !== null) {
+    headline = `${subject} (${story.teamName}) posted a major CI gain`;
+    value = story.format === 'Doubles' ? `+${delta} CI EACH` : `+${delta} CI`;
+    pulseText = `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName}) and gained ${story.format === 'Doubles' ? `+${delta} CI each` : `+${delta} CI`}.`;
+  } else if (type === 'Close Match') {
+    const other = 100 - probability;
+    headline = `${subject} (${story.teamName}) won a near-even matchup`;
+    value = `${probability}–${other}`;
+    pulseText = `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName}) in a near-even ${probability}–${other} matchup.`;
   }
-  return unique;
+
+  return {
+    id: `${scopeId}:${story.key}`,
+    storyType: type,
+    topics,
+    headline,
+    detail: `${story.seasonLabel} · ${story.eventLabel} · vs ${opponent} (${story.opponentTeamName})`,
+    value,
+    badges,
+    pulseText: pulseText.slice(0, 240),
+    format: story.format,
+    venue,
+  };
 }
 
-function ciGap(row: RatedFact): number {
-  return row.opponentEffectiveCi - row.clashIndexBefore;
+function primaryStoryType(story: RatedStory): ClashPulseStoryType {
+  if (story.winProbability <= 0.35) return 'Upset';
+  if (maxCiDelta(story) >= 10) return 'CI Mover';
+  if (Math.abs(story.winProbability - 0.5) <= 0.08) return 'Close Match';
+  return 'Standout';
 }
 
-function signedCi(value: number): string {
-  return `${value >= 0 ? '+' : ''}${value} CI`;
+function topicsFor(story: RatedStory): ClashPulseStoryType[] {
+  const topics: ClashPulseStoryType[] = [];
+  if (story.winProbability < 0.5) topics.push('Upset');
+  if (maxCiDelta(story) >= 8) topics.push('CI Mover');
+  if (Math.abs(story.winProbability - 0.5) <= 0.08) topics.push('Close Match');
+  if (!topics.length || primaryStoryType(story) === 'Standout') topics.push('Standout');
+  return topics;
+}
+
+function storyScore(story: RatedStory): number {
+  const upset = story.winProbability < 0.5 ? (0.5 - story.winProbability) * 160 : 0;
+  const movement = Math.max(0, maxCiDelta(story)) * 2.2;
+  const aboveExpected = Math.max(0, story.performanceVsExpected) * 55;
+  const closeBonus = Math.abs(story.winProbability - 0.5) <= 0.05 ? 5 : 0;
+  return upset + movement + aboveExpected + closeBonus;
+}
+
+function diversify(
+  stories: RatedStory[],
+  limit: number,
+  maxPerSubject: number,
+  maxPerTeam: number,
+): RatedStory[] {
+  const selected: RatedStory[] = [];
+  const subjectCounts = new Map<string, number>();
+  const teamCounts = new Map<string, number>();
+
+  for (const story of stories) {
+    const subjectKey = [...story.subjectIds].sort().join(':');
+    if ((subjectCounts.get(subjectKey) ?? 0) >= maxPerSubject) continue;
+    if ((teamCounts.get(story.teamId) ?? 0) >= maxPerTeam) continue;
+
+    selected.push(story);
+    subjectCounts.set(subjectKey, (subjectCounts.get(subjectKey) ?? 0) + 1);
+    teamCounts.set(story.teamId, (teamCounts.get(story.teamId) ?? 0) + 1);
+    if (selected.length >= limit) break;
+  }
+
+  return selected;
+}
+
+function maxCiDelta(story: RatedStory): number {
+  return Math.max(...story.ciDeltas);
+}
+
+function commonCiDelta(story: RatedStory): number | null {
+  const unique = [...new Set(story.ciDeltas)];
+  return unique.length === 1 ? unique[0] : null;
 }
 
 function shortSeason(value: string): string {
@@ -365,10 +478,7 @@ function seasonSortValue(value: string): number {
 async function loadPaged<T>(db: any, table: string, columns: string): Promise<T[]> {
   const rows: T[] = [];
   for (let from = 0; ; from += PAGE_SIZE) {
-    const {data, error} = await db
-      .from(table)
-      .select(columns)
-      .range(from, from + PAGE_SIZE - 1);
+    const {data, error} = await db.from(table).select(columns).range(from, from + PAGE_SIZE - 1);
     if (error) throw error;
     const page = (data ?? []) as T[];
     rows.push(...page);
