@@ -361,53 +361,133 @@ function toCandidate(story: RatedStory): ClashPulseFactCandidate {
     : story.opponentTeamName;
   const probability = Math.max(0, Math.min(100, Math.round(story.winProbability * 100)));
   const gap = Math.max(0, Math.round(story.opponentEffectiveCi - story.clashIndexBefore));
-  const type = primaryStoryType(story);
-  const topics = topicsFor(story);
   const venue = story.side === 'Home' ? 'Home' : 'Road';
   const delta = commonCiDelta(story);
-  const badges = [
+  const primaryStoryType = primaryStoryType(story);
+  const topics = topicsFor(story);
+
+  const sharedBadges = [
     story.format,
     venue,
-    ...(type !== 'Upset' && type !== 'Close Match' && story.winProbability < 0.5
-      ? [`${probability}% chance`]
-      : []),
     ...(story.format === 'Singles' && gap > 0 ? [`${gap} CI gap`] : []),
-    ...(type !== 'CI Mover' && delta !== null && delta > 0
-      ? [story.format === 'Doubles' ? `+${delta} CI each` : `+${delta} CI`]
-      : []),
-  ].slice(0, 5);
+  ];
 
-  let headline = `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName})`;
-  let value = `${probability}% WIN CHANCE`;
-  let pulseText = `${headline}.`;
+  const angles: ClashPulseFactCandidate['angles'] = {};
 
-  if (type === 'Upset') {
-    headline = `${subject} (${story.teamName}) upset ${opponent} (${story.opponentTeamName})`;
-    value = `${probability}% WIN CHANCE`;
-    pulseText = `${headline} after entering with a ${probability}% pre-match win chance.`;
-  } else if (type === 'CI Mover' && delta !== null) {
-    headline = `${subject} (${story.teamName}) posted a major CI gain`;
-    value = story.format === 'Doubles' ? `+${delta} CI EACH` : `+${delta} CI`;
-    pulseText = `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName}) and gained ${story.format === 'Doubles' ? `+${delta} CI each` : `+${delta} CI`}.`;
-  } else if (type === 'Close Match') {
+  if (topics.includes('Upset')) {
+    angles.Upset = {
+      storyType: 'Upset',
+      headline: `${subject} (${story.teamName}) upset ${opponent} (${story.opponentTeamName})`,
+      value: `${probability}% WIN CHANCE`,
+      badges: [
+        ...sharedBadges,
+        ...(delta !== null && delta > 0
+          ? [story.format === 'Doubles' ? `+${delta} CI each` : `+${delta} CI`]
+          : []),
+      ].slice(0, 5),
+      pulseText: `${subject} (${story.teamName}) upset ${opponent} (${story.opponentTeamName}) after entering with a ${probability}% pre-match win chance.`.slice(0, 240),
+    };
+  }
+
+  if (topics.includes('CI Mover')) {
+    const movement = ciMovement(story);
+    angles['CI Mover'] = {
+      storyType: 'CI Mover',
+      headline: `${subject} (${story.teamName}) posted a major CI gain`,
+      value: movement.value,
+      badges: [
+        story.format,
+        venue,
+        ...(story.winProbability < 0.5 ? [`${probability}% chance`] : []),
+        ...(story.format === 'Singles' && gap > 0 ? [`${gap} CI gap`] : []),
+      ].slice(0, 5),
+      pulseText: `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName}) and ${movement.pulsePhrase}.`.slice(0, 240),
+    };
+  }
+
+  if (topics.includes('Close Match')) {
     const other = 100 - probability;
-    headline = `${subject} (${story.teamName}) won a near-even matchup`;
-    value = `${probability}–${other}`;
-    pulseText = `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName}) in a near-even ${probability}–${other} matchup.`;
+    angles['Close Match'] = {
+      storyType: 'Close Match',
+      headline: `${subject} (${story.teamName}) won a near-even matchup`,
+      value: `${probability}–${other}`,
+      badges: [
+        story.format,
+        venue,
+        ...(delta !== null && delta > 0
+          ? [story.format === 'Doubles' ? `+${delta} CI each` : `+${delta} CI`]
+          : []),
+      ].slice(0, 5),
+      pulseText: `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName}) in a near-even ${probability}–${other} matchup.`.slice(0, 240),
+    };
+  }
+
+  if (topics.includes('Standout')) {
+    angles.Standout = {
+      storyType: 'Standout',
+      headline: `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName})`,
+      value: standoutValue(story, probability),
+      badges: [
+        story.format,
+        venue,
+        ...(story.winProbability < 0.5 ? [`${probability}% chance`] : []),
+        ...(delta !== null && delta > 0
+          ? [story.format === 'Doubles' ? `+${delta} CI each` : `+${delta} CI`]
+          : []),
+      ].slice(0, 5),
+      pulseText: `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName}) in ${story.eventLabel}.`.slice(0, 240),
+    };
+  }
+
+  if (!angles[primaryStoryType]) {
+    angles[primaryStoryType] = {
+      storyType: primaryStoryType,
+      headline: `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName})`,
+      value: standoutValue(story, probability),
+      badges: sharedBadges.slice(0, 5),
+      pulseText: `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName}).`.slice(0, 240),
+    };
   }
 
   return {
     id: story.key,
-    storyType: type,
+    primaryStoryType,
     topics,
-    headline,
     detail: `${story.seasonLabel} · ${story.eventLabel} · vs ${opponent} (${story.opponentTeamName})`,
-    value,
-    badges,
-    pulseText: pulseText.slice(0, 240),
     format: story.format,
     venue,
+    angles,
   };
+}
+
+function ciMovement(story: RatedStory): {value: string; pulsePhrase: string} {
+  const common = commonCiDelta(story);
+  if (common !== null) {
+    if (story.format === 'Doubles') {
+      return {
+        value: `+${common} CI EACH`,
+        pulsePhrase: `each gained +${common} CI`,
+      };
+    }
+    return {
+      value: `+${common} CI`,
+      pulsePhrase: `gained +${common} CI`,
+    };
+  }
+
+  const pieces = story.subjectNames.map((name, index) => `${name} +${story.ciDeltas[index] ?? 0}`);
+  return {
+    value: pieces.join(' · '),
+    pulsePhrase: `posted CI gains of ${pieces.join(' and ')}`,
+  };
+}
+
+function standoutValue(story: RatedStory, probability: number): string {
+  const delta = commonCiDelta(story);
+  if (delta !== null && delta > 0) {
+    return story.format === 'Doubles' ? `+${delta} CI EACH` : `+${delta} CI`;
+  }
+  return `${probability}% WIN CHANCE`;
 }
 
 function primaryStoryType(story: RatedStory): ClashPulseStoryType {
