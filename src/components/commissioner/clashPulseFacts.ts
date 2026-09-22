@@ -8,6 +8,7 @@ export type ClashPulseContextFilter =
   | 'All'
   | 'Singles'
   | 'Doubles'
+  | 'Team'
   | 'Home'
   | 'Road';
 
@@ -24,7 +25,7 @@ export type ClashPulseFactCandidate = {
   primaryStoryType: ClashPulseStoryType;
   topics: ClashPulseStoryType[];
   detail: string;
-  format: 'Singles' | 'Doubles';
+  format: 'Singles' | 'Doubles' | 'Team';
   venue: 'Home' | 'Road';
   angles: Partial<Record<ClashPulseStoryType, ClashPulseFactAngle>>;
 };
