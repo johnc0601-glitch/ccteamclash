@@ -358,6 +358,13 @@ function buildScope(
       2,
       4,
     )],
+    ['Match Upset', diversify(
+      sorted.filter((story) => topicsFor(story).includes('Match Upset'))
+        .sort((a, b) => a.winProbability - b.winProbability),
+      FILTER_LIMIT,
+      2,
+      4,
+    )],
     ['CI Mover', diversify(
       sorted.filter((story) => topicsFor(story).includes('CI Mover'))
         .sort((a, b) => maxCiDelta(b) - maxCiDelta(a)),
@@ -406,14 +413,14 @@ function toCandidate(story: RatedStory): ClashPulseFactCandidate {
       : 'TEAM WIN';
     return {
       id: story.key,
-      primaryStoryType: 'Upset',
-      topics: ['Upset'],
+      primaryStoryType: 'Match Upset',
+      topics: ['Match Upset'],
       detail: `${story.seasonLabel} · ${story.eventLabel} · Team match · vs ${story.opponentTeamName}`,
       format: 'Team',
       venue,
       angles: {
-        Upset: {
-          storyType: 'Upset',
+        'Match Upset': {
+          storyType: 'Match Upset',
           headline: `${story.teamName} upset ${story.opponentTeamName}`,
           value: `${probability}% TEAM WIN CHANCE`,
           badges: ['TEAM MATCH', venue, score],
@@ -559,7 +566,7 @@ function standoutValue(story: RatedStory, probability: number): string {
 }
 
 function primaryStoryType(story: RatedStory): ClashPulseStoryType {
-  if (story.format === 'Team') return 'Upset';
+  if (story.format === 'Team') return 'Match Upset';
   if (story.winProbability <= 0.35) return 'Upset';
   if (maxCiDelta(story) >= 10) return 'CI Mover';
   if (Math.abs(story.winProbability - 0.5) <= 0.08) return 'Close Match';
@@ -567,7 +574,7 @@ function primaryStoryType(story: RatedStory): ClashPulseStoryType {
 }
 
 function topicsFor(story: RatedStory): ClashPulseStoryType[] {
-  if (story.format === 'Team') return ['Upset'];
+  if (story.format === 'Team') return ['Match Upset'];
   const topics: ClashPulseStoryType[] = [];
   if (story.winProbability < 0.5) topics.push('Upset');
   if (maxCiDelta(story) >= 8) topics.push('CI Mover');

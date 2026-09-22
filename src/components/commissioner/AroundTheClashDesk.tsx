@@ -10,7 +10,7 @@ import type {
 } from './clashPulseFacts';
 import styles from './AroundTheClashDesk.module.css';
 
-const storyTypes: ClashPulseStoryType[] = ['Upset', 'CI Mover', 'Close Match', 'Standout'];
+const storyTypes: ClashPulseStoryType[] = ['Upset', 'Match Upset', 'CI Mover', 'Close Match', 'Standout'];
 const contexts: ClashPulseContextFilter[] = ['All', 'Team', 'Singles', 'Doubles', 'Home', 'Road'];
 
 type CardView = {
@@ -363,13 +363,14 @@ function matchesContext(item: ClashPulseFactCandidate, context: ClashPulseContex
 
 function labelStoryType(type: ClashPulseStoryType): string {
   if (type === 'Upset') return 'Upsets';
+  if (type === 'Match Upset') return 'Match Upsets';
   if (type === 'CI Mover') return 'CI Movers';
   if (type === 'Close Match') return 'Close Matches';
   return 'Standouts';
 }
 
 function publicCategory(type: ClashPulseStoryType, format: 'Singles' | 'Doubles' | 'Team'): string {
-  if (type === 'Upset') return 'Upset';
+  if (type === 'Upset' || type === 'Match Upset') return 'Upset';
   if (type === 'CI Mover') return 'Clash Index';
   if (format === 'Doubles') return 'Doubles';
   return 'League';
