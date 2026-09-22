@@ -137,14 +137,14 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
           Each filter now shows its own statistic: Upsets shows win probability, CI Movers shows CI movement, and Close Matches shows matchup closeness. Selecting a different angle for the same contest replaces the earlier angle in your Pulse Queue.
           {' '}
           {factData.currentSeasonHasResults
-            ? 'Current-season published Matchday results are included.'
+            ? 'Latest Round is selected automatically; Season and All-Time remain available for broader history.'
             : '2026–27 has no published Matchday results yet, so these are verified historical stories.'}
         </div>
       </div>
 
       <div className={styles.controls}>
-        <span className={styles.filterLabel}>Season</span>
-        <div className={styles.scopeRow} aria-label="Fact season">
+        <span className={styles.filterLabel}>{factData.currentSeasonHasResults ? 'Scope' : 'Season'}</span>
+        <div className={styles.scopeRow} aria-label="Clash Pulse scope">
           {factData.scopes.map((scope) => (
             <button
               className={styles.filterButton}
