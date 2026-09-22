@@ -73,11 +73,11 @@
 
 @media (max-width: 640px) {
   .spacer {
-    height: calc(50px + env(safe-area-inset-bottom));
+    height: calc(55px + env(safe-area-inset-bottom));
   }
 
   .shell {
-    min-height: 50px;
+    min-height: 55px;
   }
 
   .brand {
