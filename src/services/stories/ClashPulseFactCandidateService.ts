@@ -205,7 +205,7 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
     : [];
   const currentSeasonHasResults = currentSeasonStories.length > 0;
 
-  const latestRound = currentSeasonHasResults
+  const latestRound = currentSeasonHasResults && activeSeason?.id
     ? await resolveLatestRoundScope(db, liveRows, activeSeason.id, currentSeasonStories)
     : null;
 
