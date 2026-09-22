@@ -363,7 +363,7 @@ function toCandidate(story: RatedStory): ClashPulseFactCandidate {
   const gap = Math.max(0, Math.round(story.opponentEffectiveCi - story.clashIndexBefore));
   const venue = story.side === 'Home' ? 'Home' : 'Road';
   const delta = commonCiDelta(story);
-  const primaryStoryType = primaryStoryType(story);
+  const primaryType = primaryStoryType(story);
   const topics = topicsFor(story);
 
   const sharedBadges = [
@@ -439,9 +439,9 @@ function toCandidate(story: RatedStory): ClashPulseFactCandidate {
     };
   }
 
-  if (!angles[primaryStoryType]) {
-    angles[primaryStoryType] = {
-      storyType: primaryStoryType,
+  if (!angles[primaryType]) {
+    angles[primaryType] = {
+      storyType: primaryType,
       headline: `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName})`,
       value: standoutValue(story, probability),
       badges: sharedBadges.slice(0, 5),
@@ -451,7 +451,7 @@ function toCandidate(story: RatedStory): ClashPulseFactCandidate {
 
   return {
     id: story.key,
-    primaryStoryType,
+    primaryStoryType: primaryType,
     topics,
     detail: `${story.seasonLabel} · ${story.eventLabel} · vs ${opponent} (${story.opponentTeamName})`,
     format: story.format,
