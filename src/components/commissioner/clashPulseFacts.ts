@@ -1,5 +1,6 @@
 export type ClashPulseStoryType =
   | 'Upset'
+  | 'Match Upset'
   | 'CI Mover'
   | 'Close Match'
   | 'Standout';
