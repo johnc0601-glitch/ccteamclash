@@ -1,6 +1,7 @@
 import 'server-only';
 
 import {createClient} from '@/lib/supabase/server';
+import {regularSeasonChanceOfVictoryFromExpectedPoints} from '@/services/teamStrength/TeamStrength';
 import type {
   ClashPulseFactCandidate,
   ClashPulseFactData,
@@ -20,11 +21,13 @@ type RatedMemberFact = {
   opponentTeamName: string;
   opponentNames: string[];
   side: 'Home' | 'Away';
-  format: 'Singles' | 'Doubles';
+  format: 'Singles' | 'Doubles' | 'Team';
   outcome: 'W' | 'L' | 'T';
   clashIndexBefore: number;
   opponentEffectiveCi: number;
   winProbability: number;
+  expectedPoints: number;
+  actualPoints: number;
   performanceVsExpected: number;
   ciDelta: number;
 };
@@ -47,6 +50,8 @@ type RatedStory = {
   ciDeltas: number[];
   clashIndexBefore: number;
   opponentEffectiveCi: number;
+  teamScore?: number;
+  opponentScore?: number;
 };
 
 type HistoricalFactRow = {
@@ -63,6 +68,8 @@ type HistoricalFactRow = {
   clash_index_before: number;
   opponent_effective_ci: number | string;
   win_probability: number | string;
+  expected_points: number | string;
+  actual_points: number | string;
   performance_vs_expected: number | string;
   ci_delta: number;
   matchup_deduplication_key: string;
@@ -70,7 +77,9 @@ type HistoricalFactRow = {
 
 type HistoricalMatchupRow = {
   deduplication_key: string;
+  season_id: string;
   season_name: string;
+  historical_team_match_id: number | null;
   event_label: string;
   player_id: string;
   opponent_one_player_name: string | null;
@@ -90,8 +99,21 @@ type LiveFactRow = {
   clash_index_before: number;
   opponent_effective_ci: number | string;
   win_probability: number | string;
+  expected_points: number | string;
+  actual_points: number | string;
   performance_vs_expected: number | string;
   ci_delta: number;
+};
+
+type HistoricalTeamMatchRow = {
+  id: number;
+  season_name: string;
+  event_label: string;
+  away_team_name: string;
+  home_team_name: string;
+  away_score: number | string | null;
+  home_score: number | string | null;
+  ci_venue: string | null;
 };
 
 const PAGE_SIZE = 1000;
@@ -102,21 +124,26 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
   const supabase = await createClient();
   const db = supabase as any;
 
-  const [historicalRows, matchupRows, liveRows, seasonRows] = await Promise.all([
+  const [historicalRows, matchupRows, historicalTeamMatches, liveRows, seasonRows] = await Promise.all([
     loadPaged<HistoricalFactRow>(
       db,
       'historical_clash_contest_rating_facts',
-      'contest_id,season_id,player_id,team_id,player_name,team_name,opponent_team_name,side,format,outcome,clash_index_before,opponent_effective_ci,win_probability,performance_vs_expected,ci_delta,matchup_deduplication_key',
+      'contest_id,season_id,player_id,team_id,player_name,team_name,opponent_team_name,side,format,outcome,clash_index_before,opponent_effective_ci,win_probability,expected_points,actual_points,performance_vs_expected,ci_delta,matchup_deduplication_key',
     ),
     loadPaged<HistoricalMatchupRow>(
       db,
       'historical_player_matchups',
-      'deduplication_key,season_name,event_label,player_id,opponent_one_player_name,opponent_two_player_name',
+      'deduplication_key,season_id,season_name,historical_team_match_id,event_label,player_id,opponent_one_player_name,opponent_two_player_name',
+    ),
+    loadPaged<HistoricalTeamMatchRow>(
+      db,
+      'historical_team_matches',
+      'id,season_name,event_label,away_team_name,home_team_name,away_score,home_score,ci_venue',
     ),
     loadPaged<LiveFactRow>(
       db,
       'clash_contest_rating_facts',
-      'contest_id,match_id,player_id,team_id,player_name,team_name,side,format,outcome,clash_index_before,opponent_effective_ci,win_probability,performance_vs_expected,ci_delta',
+      'contest_id,match_id,player_id,team_id,player_name,team_name,side,format,outcome,clash_index_before,opponent_effective_ci,win_probability,expected_points,actual_points,performance_vs_expected,ci_delta',
     ),
     db.from('launch_seasons').select('id,name,year,active,archived').order('year', {ascending: false}),
   ]);
@@ -144,6 +171,8 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
       clashIndexBefore: row.clash_index_before,
       opponentEffectiveCi: Number(row.opponent_effective_ci),
       winProbability: Number(row.win_probability),
+      expectedPoints: Number(row.expected_points),
+      actualPoints: Number(row.actual_points),
       performanceVsExpected: Number(row.performance_vs_expected),
       ciDelta: row.ci_delta,
     };
@@ -153,7 +182,19 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
     ? await hydrateLiveMembers(db, liveRows, seasonRows.data ?? [])
     : [];
 
-  const allStories = groupWinningStories([...historicalMembers, ...liveMembers]);
+  const historicalTeamStories = buildHistoricalTeamUpsetStories(
+    historicalRows,
+    matchupRows,
+    historicalTeamMatches,
+  );
+  const liveTeamStories = liveRows.length
+    ? await buildLiveTeamUpsetStories(db, liveRows, seasonRows.data ?? [])
+    : [];
+  const allStories = [
+    ...groupWinningStories([...historicalMembers, ...liveMembers]),
+    ...historicalTeamStories,
+    ...liveTeamStories,
+  ];
   const activeSeason = (seasonRows.data ?? []).find((season: any) => season.active && !season.archived);
   const seasonIds = [...new Set(allStories.map((story) => story.seasonId))];
 
@@ -253,6 +294,8 @@ async function hydrateLiveMembers(db: any, rows: LiveFactRow[], seasons: any[]):
       clashIndexBefore: row.clash_index_before,
       opponentEffectiveCi: Number(row.opponent_effective_ci),
       winProbability: Number(row.win_probability),
+      expectedPoints: Number(row.expected_points),
+      actualPoints: Number(row.actual_points),
       performanceVsExpected: Number(row.performance_vs_expected),
       ciDelta: row.ci_delta,
     };
@@ -355,6 +398,31 @@ function buildScope(
 }
 
 function toCandidate(story: RatedStory): ClashPulseFactCandidate {
+  if (story.format === 'Team') {
+    const probability = Math.max(0, Math.min(100, Math.round(story.winProbability * 100)));
+    const venue = story.side === 'Home' ? 'Home' : 'Road';
+    const score = story.teamScore != null && story.opponentScore != null
+      ? `${formatScore(story.teamScore)}–${formatScore(story.opponentScore)} FINAL`
+      : 'TEAM WIN';
+    return {
+      id: story.key,
+      primaryStoryType: 'Upset',
+      topics: ['Upset'],
+      detail: `${story.seasonLabel} · ${story.eventLabel} · Team match · vs ${story.opponentTeamName}`,
+      format: 'Team',
+      venue,
+      angles: {
+        Upset: {
+          storyType: 'Upset',
+          headline: `${story.teamName} upset ${story.opponentTeamName}`,
+          value: `${probability}% TEAM WIN CHANCE`,
+          badges: ['TEAM MATCH', venue, score],
+          pulseText: `${story.teamName} upset ${story.opponentTeamName}${story.teamScore != null && story.opponentScore != null ? ` ${formatScore(story.teamScore)}–${formatScore(story.opponentScore)}` : ''} after entering with a ${probability}% pre-match team win chance.`.slice(0, 240),
+        },
+      },
+    };
+  }
+
   const subject = story.subjectNames.join(' & ');
   const opponent = story.opponentNames.length
     ? story.opponentNames.join(' & ')
@@ -491,6 +559,7 @@ function standoutValue(story: RatedStory, probability: number): string {
 }
 
 function primaryStoryType(story: RatedStory): ClashPulseStoryType {
+  if (story.format === 'Team') return 'Upset';
   if (story.winProbability <= 0.35) return 'Upset';
   if (maxCiDelta(story) >= 10) return 'CI Mover';
   if (Math.abs(story.winProbability - 0.5) <= 0.08) return 'Close Match';
@@ -498,6 +567,7 @@ function primaryStoryType(story: RatedStory): ClashPulseStoryType {
 }
 
 function topicsFor(story: RatedStory): ClashPulseStoryType[] {
+  if (story.format === 'Team') return ['Upset'];
   const topics: ClashPulseStoryType[] = [];
   if (story.winProbability < 0.5) topics.push('Upset');
   if (maxCiDelta(story) >= 8) topics.push('CI Mover');
@@ -539,12 +609,238 @@ function diversify(
 }
 
 function maxCiDelta(story: RatedStory): number {
-  return Math.max(...story.ciDeltas);
+  return story.ciDeltas.length ? Math.max(...story.ciDeltas) : 0;
 }
 
 function commonCiDelta(story: RatedStory): number | null {
+  if (!story.ciDeltas.length) return null;
   const unique = [...new Set(story.ciDeltas)];
   return unique.length === 1 ? unique[0] : null;
+}
+
+function buildHistoricalTeamUpsetStories(
+  facts: HistoricalFactRow[],
+  matchups: HistoricalMatchupRow[],
+  matches: HistoricalTeamMatchRow[],
+): RatedStory[] {
+  const matchupByFact = new Map(
+    matchups.map((row) => [`${row.deduplication_key}:${row.player_id}`, row]),
+  );
+  const seasonIdByTeamMatch = new Map<number, string>();
+  for (const row of matchups) {
+    if (row.historical_team_match_id != null && !seasonIdByTeamMatch.has(row.historical_team_match_id)) {
+      seasonIdByTeamMatch.set(row.historical_team_match_id, row.season_id);
+    }
+  }
+
+  const aggregates = new Map<number, Map<string, Map<string, {format: 'Singles' | 'Doubles'; expected: number; actual: number}>>>();
+  for (const fact of facts) {
+    const matchup = matchupByFact.get(`${fact.matchup_deduplication_key}:${fact.player_id}`);
+    const teamMatchId = matchup?.historical_team_match_id;
+    if (teamMatchId == null) continue;
+
+    const byTeam = aggregates.get(teamMatchId) ?? new Map();
+    const byContest = byTeam.get(fact.team_name) ?? new Map();
+    const current = byContest.get(fact.contest_id);
+    const expected = Number(fact.expected_points);
+    const actual = Number(fact.actual_points);
+    if (!current || expected > current.expected) {
+      byContest.set(fact.contest_id, {
+        format: fact.format,
+        expected,
+        actual,
+      });
+    }
+    byTeam.set(fact.team_name, byContest);
+    aggregates.set(teamMatchId, byTeam);
+  }
+
+  const stories: RatedStory[] = [];
+  for (const match of matches) {
+    if (match.ci_venue === 'Neutral') continue;
+    const byTeam = aggregates.get(match.id);
+    if (!byTeam) continue;
+
+    const away = teamAggregate(byTeam.get(match.away_team_name));
+    const home = teamAggregate(byTeam.get(match.home_team_name));
+    if (!away || !home) continue;
+
+    const sourceAway = numericOrNull(match.away_score);
+    const sourceHome = numericOrNull(match.home_score);
+    const awayActual = sourceAway ?? away.actualPoints;
+    const homeActual = sourceHome ?? home.actualPoints;
+    if (awayActual === homeActual) continue;
+
+    const awayWon = awayActual > homeActual;
+    const winnerName = awayWon ? match.away_team_name : match.home_team_name;
+    const loserName = awayWon ? match.home_team_name : match.away_team_name;
+    const winnerExpected = awayWon ? away.expectedPoints : home.expectedPoints;
+    const loserExpected = awayWon ? home.expectedPoints : away.expectedPoints;
+    const winnerScore = awayWon ? awayActual : homeActual;
+    const loserScore = awayWon ? homeActual : awayActual;
+    const probability = regularSeasonChanceOfVictoryFromExpectedPoints(winnerExpected, loserExpected);
+    if (probability == null || probability >= 0.5) continue;
+
+    const seasonId = seasonIdByTeamMatch.get(match.id) ?? match.season_name;
+    stories.push({
+      key: `team:${seasonId}:${match.id}`,
+      seasonId,
+      seasonLabel: shortSeason(match.season_name),
+      eventLabel: match.event_label,
+      subjectIds: [`team:${winnerName}`],
+      subjectNames: [winnerName],
+      teamId: winnerName,
+      teamName: winnerName,
+      opponentNames: [],
+      opponentTeamName: loserName,
+      side: awayWon ? 'Away' : 'Home',
+      format: 'Team',
+      winProbability: probability,
+      performanceVsExpected: winnerScore - winnerExpected,
+      ciDeltas: [],
+      clashIndexBefore: 0,
+      opponentEffectiveCi: 0,
+      teamScore: winnerScore,
+      opponentScore: loserScore,
+    });
+  }
+  return stories;
+}
+
+async function buildLiveTeamUpsetStories(
+  db: any,
+  facts: LiveFactRow[],
+  seasons: any[],
+): Promise<RatedStory[]> {
+  const matchIds = [...new Set(facts.map((row) => row.match_id))];
+  if (!matchIds.length) return [];
+
+  const [matches, results] = await Promise.all([
+    selectInBatches<any>(db, 'launch_schedule_matches', 'id,season_id,round_id,date,home_team_id,away_team_id', 'id', matchIds),
+    selectInBatches<any>(db, 'launch_match_results', 'match_id,home_score,away_score,status', 'match_id', matchIds),
+  ]);
+
+  const roundIds = [...new Set(matches.map((match) => match.round_id).filter(Boolean))] as string[];
+  const rounds = roundIds.length
+    ? await selectInBatches<any>(db, 'launch_rounds', 'id,number,name,date', 'id', roundIds)
+    : [];
+  const roundById = new Map(rounds.map((round) => [round.id, round]));
+  const seasonById = new Map(seasons.map((season: any) => [season.id, season]));
+  const resultByMatch = new Map(results.filter((row) => row.status === 'Published').map((row) => [row.match_id, row]));
+
+  const aggregates = new Map<string, Map<string, Map<string, {format: 'Singles' | 'Doubles'; expected: number; actual: number; teamName: string}>>>();
+  for (const fact of facts) {
+    const byTeam = aggregates.get(fact.match_id) ?? new Map();
+    const byContest = byTeam.get(fact.team_id) ?? new Map();
+    const current = byContest.get(fact.contest_id);
+    const expected = Number(fact.expected_points);
+    const actual = Number(fact.actual_points);
+    if (!current || expected > current.expected) {
+      byContest.set(fact.contest_id, {
+        format: fact.format,
+        expected,
+        actual,
+        teamName: fact.team_name,
+      });
+    }
+    byTeam.set(fact.team_id, byContest);
+    aggregates.set(fact.match_id, byTeam);
+  }
+
+  const stories: RatedStory[] = [];
+  for (const match of matches) {
+    const result = resultByMatch.get(match.id);
+    if (!result) continue;
+    const round = match.round_id ? roundById.get(match.round_id) : null;
+    const eventLabel = round?.name
+      ?? (round?.number ? `Round ${round.number}` : null)
+      ?? match.date
+      ?? 'Current season';
+    if (/semi|champ|3rd|playoff/i.test(String(eventLabel))) continue;
+
+    const byTeam = aggregates.get(match.id);
+    if (!byTeam) continue;
+    const homeContests = byTeam.get(match.home_team_id);
+    const awayContests = byTeam.get(match.away_team_id);
+    const home = teamAggregate(homeContests);
+    const away = teamAggregate(awayContests);
+    if (!home || !away) continue;
+
+    const homeName = firstTeamName(homeContests);
+    const awayName = firstTeamName(awayContests);
+    if (!homeName || !awayName) continue;
+
+    const homeScore = Number(result.home_score);
+    const awayScore = Number(result.away_score);
+    if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore) || homeScore === awayScore) continue;
+
+    const homeWon = homeScore > awayScore;
+    const winnerName = homeWon ? homeName : awayName;
+    const loserName = homeWon ? awayName : homeName;
+    const winnerExpected = homeWon ? home.expectedPoints : away.expectedPoints;
+    const loserExpected = homeWon ? away.expectedPoints : home.expectedPoints;
+    const probability = regularSeasonChanceOfVictoryFromExpectedPoints(winnerExpected, loserExpected);
+    if (probability == null || probability >= 0.5) continue;
+
+    const season = seasonById.get(match.season_id);
+    stories.push({
+      key: `team:${match.season_id}:${match.id}`,
+      seasonId: match.season_id,
+      seasonLabel: shortSeason(season?.name ?? match.season_id),
+      eventLabel,
+      subjectIds: [`team:${homeWon ? match.home_team_id : match.away_team_id}`],
+      subjectNames: [winnerName],
+      teamId: homeWon ? match.home_team_id : match.away_team_id,
+      teamName: winnerName,
+      opponentNames: [],
+      opponentTeamName: loserName,
+      side: homeWon ? 'Home' : 'Away',
+      format: 'Team',
+      winProbability: probability,
+      performanceVsExpected: (homeWon ? homeScore : awayScore) - winnerExpected,
+      ciDeltas: [],
+      clashIndexBefore: 0,
+      opponentEffectiveCi: 0,
+      teamScore: homeWon ? homeScore : awayScore,
+      opponentScore: homeWon ? awayScore : homeScore,
+    });
+  }
+
+  return stories;
+}
+
+function teamAggregate(
+  contests: Map<string, {format: 'Singles' | 'Doubles'; expected: number; actual: number; teamName?: string}> | undefined,
+): {expectedPoints: number; actualPoints: number} | undefined {
+  if (!contests?.size) return undefined;
+  let expectedPoints = 0;
+  let actualPoints = 0;
+  for (const row of contests.values()) {
+    const weight = row.format === 'Doubles' ? 2 : 1;
+    expectedPoints += row.expected * weight;
+    actualPoints += row.actual * weight;
+  }
+  return {expectedPoints, actualPoints};
+}
+
+function firstTeamName(
+  contests: Map<string, {teamName?: string}> | undefined,
+): string | undefined {
+  if (!contests) return undefined;
+  for (const row of contests.values()) {
+    if (row.teamName) return row.teamName;
+  }
+  return undefined;
+}
+
+function numericOrNull(value: number | string | null): number | null {
+  if (value == null || value === '') return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function formatScore(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
 function shortSeason(value: string): string {
