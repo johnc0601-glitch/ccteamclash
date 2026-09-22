@@ -158,7 +158,6 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
     const matchup = matchupByKey.get(`${row.matchup_deduplication_key}:${row.player_id}`);
     return {
       contestId: row.contest_id,
-      matchId: row.match_id,
       teamId: row.team_id,
       seasonId: row.season_id,
       seasonLabel: shortSeason(matchup?.season_name ?? row.season_id),
@@ -369,6 +368,7 @@ async function hydrateLiveMembers(db: any, rows: LiveFactRow[], seasons: any[]):
 
     return {
       contestId: row.contest_id,
+      matchId: row.match_id,
       teamId: row.team_id,
       seasonId: match?.season_id ?? season?.id ?? 'current',
       seasonLabel: shortSeason(season?.name ?? match?.season_id ?? 'Current'),
