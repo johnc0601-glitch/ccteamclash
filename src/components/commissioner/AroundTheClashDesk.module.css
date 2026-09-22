@@ -312,6 +312,11 @@
   display: none;
 }
 
+.mobileQueueContents {
+  display: grid;
+  gap: 12px;
+}
+
 @media (max-width: 840px) {
   .workspace {
     display: block;
