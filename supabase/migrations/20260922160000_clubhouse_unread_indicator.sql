@@ -69,6 +69,20 @@ grant select, insert, update on public.launch_clubhouse_reads to authenticated;
 create or replace view public.launch_clubhouse_activity
 with (security_invoker = true)
 as
+with visible_posts as (
+  select ranked.*
+  from (
+    select
+      p.*,
+      row_number() over (
+        partition by p.season_id, p.team_id
+        order by p.created_at desc
+      ) as feed_rank
+    from public.launch_clubhouse_posts p
+    where p.deleted_at is null
+  ) ranked
+  where ranked.feed_rank <= 100
+)
 select
   p.id as activity_id,
   p.season_id,
@@ -76,8 +90,7 @@ select
   p.author_profile_id,
   p.created_at,
   'post'::text as activity_type
-from public.launch_clubhouse_posts p
-where p.deleted_at is null
+from visible_posts p
 
 union all
 
@@ -89,8 +102,7 @@ select
   c.created_at,
   'comment'::text as activity_type
 from public.launch_clubhouse_comments c
-join public.launch_clubhouse_posts p on p.id = c.post_id
-where c.deleted_at is null
-  and p.deleted_at is null;
+join visible_posts p on p.id = c.post_id
+where c.deleted_at is null;
 
 grant select on public.launch_clubhouse_activity to authenticated;
