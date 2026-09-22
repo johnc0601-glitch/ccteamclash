@@ -368,9 +368,11 @@ function toCandidate(story: RatedStory, scopeId: string): ClashPulseFactCandidat
   const badges = [
     story.format,
     venue,
-    ...(story.winProbability < 0.5 ? [`${probability}% chance`] : []),
+    ...(type !== 'Upset' && type !== 'Close Match' && story.winProbability < 0.5
+      ? [`${probability}% chance`]
+      : []),
     ...(story.format === 'Singles' && gap > 0 ? [`${gap} CI gap`] : []),
-    ...(delta !== null && delta > 0
+    ...(type !== 'CI Mover' && delta !== null && delta > 0
       ? [story.format === 'Doubles' ? `+${delta} CI each` : `+${delta} CI`]
       : []),
   ].slice(0, 5);
