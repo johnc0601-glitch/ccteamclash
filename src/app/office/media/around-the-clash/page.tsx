@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import {AroundTheClashDesk} from '@/components/commissioner/AroundTheClashDesk';
+import {ClashPulseLiveManager} from '@/components/commissioner/ClashPulseLiveManager';
 import {OfficePage} from '@/components/commissioner/OfficePage';
 
 export default function ClashPulsePreviewPage() {
@@ -18,6 +19,7 @@ export default function ClashPulsePreviewPage() {
         </header>
 
         <AroundTheClashDesk />
+        <ClashPulseLiveManager />
       </section>
     </OfficePage>
   );
