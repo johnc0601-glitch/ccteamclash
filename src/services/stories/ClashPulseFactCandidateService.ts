@@ -44,7 +44,7 @@ type RatedStory = {
   opponentNames: string[];
   opponentTeamName: string;
   side: 'Home' | 'Away';
-  format: 'Singles' | 'Doubles';
+  format: 'Singles' | 'Doubles' | 'Team';
   winProbability: number;
   performanceVsExpected: number;
   ciDeltas: number[];
