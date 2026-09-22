@@ -230,14 +230,15 @@ async function hydrateLiveFacts(db: any, rows: LiveFactRow[], seasons: any[]): P
 }
 
 function buildCandidates(rows: RatedFact[], scopeId: string): ClashPulseFactCandidate[] {
-  const wins = uniqueMatchups(rows.filter((row) => row.outcome === 'W'));
+  const winningRows = rows.filter((row) => row.outcome === 'W');
+  const wins = uniqueMatchups(winningRows);
   const candidates: ClashPulseFactCandidate[] = [];
 
   addTop(candidates, scopeId, 'Upsets',
     wins.filter((row) => row.winProbability < 0.5).sort((a, b) => a.winProbability - b.winProbability),
     CATEGORY_LIMIT);
   addTop(candidates, scopeId, 'CI Gaps',
-    wins.filter((row) => ciGap(row) > 0).sort((a, b) => ciGap(b) - ciGap(a)),
+    wins.filter((row) => row.format === 'Singles' && ciGap(row) > 0).sort((a, b) => ciGap(b) - ciGap(a)),
     CATEGORY_LIMIT);
   addTop(candidates, scopeId, 'Above Expected',
     [...wins].sort((a, b) => b.performanceVsExpected - a.performanceVsExpected),
@@ -255,7 +256,7 @@ function buildCandidates(rows: RatedFact[], scopeId: string): ClashPulseFactCand
     wins.filter((row) => row.format === 'Doubles').sort((a, b) => b.ciDelta - a.ciDelta || a.winProbability - b.winProbability),
     CATEGORY_LIMIT);
   addTop(candidates, scopeId, 'CI +/-',
-    wins.filter((row) => row.ciDelta > 0).sort((a, b) => b.ciDelta - a.ciDelta),
+    winningRows.filter((row) => row.ciDelta > 0).sort((a, b) => b.ciDelta - a.ciDelta),
     CATEGORY_LIMIT);
   addTop(candidates, scopeId, 'Closest',
     [...wins].sort((a, b) => Math.abs(a.winProbability - 0.5) - Math.abs(b.winProbability - 0.5)),
@@ -277,7 +278,7 @@ function addTop(
 }
 
 function toCandidate(row: RatedFact, category: ClashPulseFactCategory, scopeId: string): ClashPulseFactCandidate {
-  const player = row.format === 'Doubles' && row.partnerName
+  const player = category !== 'CI +/-' && row.format === 'Doubles' && row.partnerName
     ? `${row.playerName} & ${row.partnerName}`
     : row.playerName;
   const opponent = row.opponentNames.length
