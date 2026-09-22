@@ -11,6 +11,7 @@ import type {
 
 type RatedMemberFact = {
   contestId: string;
+  matchId?: string;
   teamId: string;
   seasonId: string;
   seasonLabel: string;
@@ -34,6 +35,7 @@ type RatedMemberFact = {
 
 type RatedStory = {
   key: string;
+  matchId?: string;
   seasonId: string;
   seasonLabel: string;
   eventLabel: string;
@@ -156,6 +158,7 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
     const matchup = matchupByKey.get(`${row.matchup_deduplication_key}:${row.player_id}`);
     return {
       contestId: row.contest_id,
+      matchId: row.match_id,
       teamId: row.team_id,
       seasonId: row.season_id,
       seasonLabel: shortSeason(matchup?.season_name ?? row.season_id),
@@ -198,14 +201,45 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
   const activeSeason = (seasonRows.data ?? []).find((season: any) => season.active && !season.archived);
   const seasonIds = [...new Set(allStories.map((story) => story.seasonId))];
 
-  const scopes: ClashPulseFactScope[] = seasonIds
-    .sort((a, b) => seasonSortValue(b) - seasonSortValue(a))
-    .map((seasonId) => buildScope(
+  const currentSeasonStories = activeSeason?.id
+    ? allStories.filter((story) => story.seasonId === activeSeason.id)
+    : [];
+  const currentSeasonHasResults = currentSeasonStories.length > 0;
+
+  const latestRound = currentSeasonHasResults
+    ? await resolveLatestRoundScope(db, liveRows, activeSeason.id, currentSeasonStories)
+    : null;
+
+  const scopes: ClashPulseFactScope[] = [];
+
+  if (latestRound) {
+    scopes.push(buildScope(
+      latestRound.id,
+      latestRound.stories,
+      latestRound.description,
+      'Latest Round',
+    ));
+  }
+
+  if (currentSeasonHasResults && activeSeason?.id) {
+    scopes.push(buildScope(
+      activeSeason.id,
+      currentSeasonStories,
+      'All published results from the current season',
+      'Season',
+    ));
+  }
+
+  for (const seasonId of seasonIds
+    .filter((seasonId) => seasonId !== activeSeason?.id)
+    .sort((a, b) => seasonSortValue(b) - seasonSortValue(a))) {
+    const scope = buildScope(
       seasonId,
       allStories.filter((story) => story.seasonId === seasonId),
-      seasonId === activeSeason?.id ? 'Current season published results' : 'Verified league history',
-    ))
-    .filter((scope) => scope.candidates.length > 0);
+      'Verified league history',
+    );
+    if (scope.candidates.length > 0) scopes.push(scope);
+  }
 
   if (allStories.length) {
     scopes.push(buildScope(
@@ -216,17 +250,76 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
     ));
   }
 
-  const currentSeasonHasResults = Boolean(
-    activeSeason?.id && allStories.some((story) => story.seasonId === activeSeason.id),
+  const latestHistorical = scopes.find((scope) =>
+    scope.id !== 'all-time'
+    && scope.id !== activeSeason?.id
+    && !scope.id.startsWith('latest-round:')
   );
-  const latestHistorical = scopes.find((scope) => scope.id !== 'all-time' && scope.id !== activeSeason?.id);
 
   return {
     scopes,
-    defaultScopeId: currentSeasonHasResults
-      ? activeSeason.id
-      : latestHistorical?.id ?? scopes[0]?.id ?? 'all-time',
+    defaultScopeId: latestRound?.id
+      ?? (currentSeasonHasResults && activeSeason?.id ? activeSeason.id : null)
+      ?? latestHistorical?.id
+      ?? scopes[0]?.id
+      ?? 'all-time',
     currentSeasonHasResults,
+  };
+}
+
+async function resolveLatestRoundScope(
+  db: any,
+  liveRows: LiveFactRow[],
+  activeSeasonId: string,
+  currentSeasonStories: RatedStory[],
+): Promise<{id: string; stories: RatedStory[]; description: string} | null> {
+  const matchIds = [...new Set(liveRows.map((row) => row.match_id))];
+  if (!matchIds.length) return null;
+
+  const matches = await selectInBatches<any>(
+    db,
+    'launch_schedule_matches',
+    'id,season_id,round_id,date',
+    'id',
+    matchIds,
+  );
+  const currentMatches = matches.filter((match) => match.season_id === activeSeasonId);
+  const roundIds = [...new Set(currentMatches.map((match) => match.round_id).filter(Boolean))] as string[];
+  if (!roundIds.length) return null;
+
+  const rounds = await selectInBatches<any>(
+    db,
+    'launch_rounds',
+    'id,number,name,date',
+    'id',
+    roundIds,
+  );
+  const latest = [...rounds].sort((a, b) => {
+    const numberDiff = Number(b.number ?? 0) - Number(a.number ?? 0);
+    if (numberDiff !== 0) return numberDiff;
+    return String(b.date ?? '').localeCompare(String(a.date ?? ''));
+  })[0];
+  if (!latest) return null;
+
+  const latestMatchIds = new Set(
+    currentMatches
+      .filter((match) => match.round_id === latest.id)
+      .map((match) => match.id),
+  );
+  const stories = currentSeasonStories.filter(
+    (story) => story.matchId && latestMatchIds.has(story.matchId),
+  );
+  if (!stories.length) return null;
+
+  const roundLabel = latest.name
+    ?? (latest.number ? `Round ${latest.number}` : null)
+    ?? latest.date
+    ?? 'Latest round';
+
+  return {
+    id: `latest-round:${latest.id}`,
+    stories,
+    description: `${roundLabel} published results`,
   };
 }
 
@@ -321,6 +414,7 @@ function groupWinningStories(rows: RatedMemberFact[]): RatedStory[] {
 
     return {
       key,
+      matchId: first.matchId,
       seasonId: first.seasonId,
       seasonLabel: first.seasonLabel,
       eventLabel: first.eventLabel,
@@ -805,6 +899,7 @@ async function buildLiveTeamUpsetStories(
     const season = seasonById.get(match.season_id);
     stories.push({
       key: `team:${match.season_id}:${match.id}`,
+      matchId: match.id,
       seasonId: match.season_id,
       seasonLabel: shortSeason(season?.name ?? match.season_id),
       eventLabel,
