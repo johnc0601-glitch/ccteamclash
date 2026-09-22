@@ -3,6 +3,7 @@
 import {useMemo, useState} from 'react';
 import type {
   ClashPulseContextFilter,
+  ClashPulseFactAngle,
   ClashPulseFactCandidate,
   ClashPulseFactData,
   ClashPulseStoryType,
@@ -12,11 +13,16 @@ import styles from './AroundTheClashDesk.module.css';
 const storyTypes: ClashPulseStoryType[] = ['Upset', 'CI Mover', 'Close Match', 'Standout'];
 const contexts: ClashPulseContextFilter[] = ['All', 'Singles', 'Doubles', 'Home', 'Road'];
 
+type CardView = {
+  candidate: ClashPulseFactCandidate;
+  angle: ClashPulseFactAngle;
+};
+
 export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
   const [scopeId, setScopeId] = useState(factData.defaultScopeId);
   const [storyType, setStoryType] = useState<ClashPulseStoryType | 'Top Facts'>('Top Facts');
   const [context, setContext] = useState<ClashPulseContextFilter>('All');
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<Record<string, ClashPulseStoryType>>({});
   const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState('');
@@ -34,37 +40,54 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
   const storyCounts = useMemo(() => {
     const counts = new Map<ClashPulseStoryType, number>();
     for (const item of activeScope?.candidates ?? []) {
-      for (const topic of item.topics) {
-        counts.set(topic, (counts.get(topic) ?? 0) + 1);
+      for (const type of storyTypes) {
+        if (item.angles[type]) counts.set(type, (counts.get(type) ?? 0) + 1);
       }
     }
     return counts;
   }, [activeScope]);
 
-  const visible = useMemo(() => {
+  const visible = useMemo<CardView[]>(() => {
     if (!activeScope) return [];
 
-    const source = storyType === 'Top Facts'
+    const candidates = storyType === 'Top Facts'
       ? activeScope.topFactIds
           .map((id) => activeScope.candidates.find((item) => item.id === id))
           .filter((item): item is ClashPulseFactCandidate => Boolean(item))
-      : activeScope.candidates.filter((item) => item.topics.includes(storyType));
+      : activeScope.candidates.filter((item) => Boolean(item.angles[storyType]));
 
-    return source.filter((item) => matchesContext(item, context));
+    return candidates
+      .filter((item) => matchesContext(item, context))
+      .map((candidate) => {
+        const angleType = storyType === 'Top Facts' ? candidate.primaryStoryType : storyType;
+        const angle = candidate.angles[angleType];
+        return angle ? {candidate, angle} : null;
+      })
+      .filter((item): item is CardView => Boolean(item));
   }, [activeScope, context, storyType]);
 
-  const selectedItems = selected
-    .map((id) => candidateById.get(id))
-    .filter((item): item is ClashPulseFactCandidate => Boolean(item));
+  const selectedItems = Object.entries(selected)
+    .map(([id, angleType]) => {
+      const candidate = candidateById.get(id);
+      const angle = candidate?.angles[angleType];
+      return candidate && angle ? {candidate, angle} : null;
+    })
+    .filter((item): item is CardView => Boolean(item));
 
-  function toggleSelected(id: string) {
-    setSelected((current) => current.includes(id)
-      ? current.filter((item) => item !== id)
-      : [...current, id]);
+  function toggleSelected(candidateId: string, angleType: ClashPulseStoryType) {
+    setSelected((current) => {
+      const next = {...current};
+      if (next[candidateId] === angleType) {
+        delete next[candidateId];
+      } else {
+        next[candidateId] = angleType;
+      }
+      return next;
+    });
   }
 
   function clearSelected() {
-    setSelected([]);
+    setSelected({});
     setMobileQueueOpen(false);
   }
 
@@ -79,8 +102,8 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
-            category: publicCategory(item.storyType, item.format),
-            text: item.pulseText,
+            category: publicCategory(item.angle.storyType, item.candidate.format),
+            text: item.angle.pulseText,
           }),
         });
         const payload = await response.json() as {error?: string};
@@ -110,8 +133,8 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
     <div className={styles.desk}>
       <div className={styles.previewNote}>
         <div>
-          <strong>One result, one story.</strong>{' '}
-          Statistical overlap is combined into badges, doubles partners share one card, and Top Facts limits repeat players/pairs and teams.
+          <strong>One result, multiple fact angles.</strong>{' '}
+          Each filter now shows its own statistic: Upsets shows win probability, CI Movers shows CI movement, and Close Matches shows matchup closeness. Selecting a different angle for the same contest replaces the earlier angle in your Pulse Queue.
           {' '}
           {factData.currentSeasonHasResults
             ? 'Current-season published Matchday results are included.'
@@ -139,8 +162,8 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
           ))}
         </div>
 
-        <span className={styles.filterLabel}>Story type</span>
-        <nav className={styles.categoryRow} aria-label="Clash Pulse story types">
+        <span className={styles.filterLabel}>Fact angle</span>
+        <nav className={styles.categoryRow} aria-label="Clash Pulse fact angles">
           <button
             className={styles.filterButton}
             type="button"
@@ -190,35 +213,39 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
           </header>
 
           <div className={styles.factList}>
-            {visible.map((item) => {
-              const isSelected = selected.includes(item.id);
+            {visible.map(({candidate, angle}) => {
+              const isSelected = selected[candidate.id] === angle.storyType;
+              const anotherAngleSelected = Boolean(selected[candidate.id]) && !isSelected;
               return (
                 <button
                   className={styles.factCard}
                   type="button"
-                  key={item.id}
-                  onClick={() => toggleSelected(item.id)}
+                  key={candidate.id}
+                  onClick={() => toggleSelected(candidate.id, angle.storyType)}
                   aria-pressed={isSelected}
                 >
                   <span className={styles.check} aria-hidden="true">{isSelected ? '✓' : '✓'}</span>
                   <span className={styles.factBody}>
                     <span className={styles.factMeta}>
-                      {labelStoryType(item.storyType)}
-                      <span className={styles.factValue}>{item.value}</span>
+                      {labelStoryType(angle.storyType)}
+                      <span className={styles.factValue}>{angle.value}</span>
                     </span>
-                    <strong className={styles.factHeadline}>{item.headline}</strong>
-                    <span className={styles.factDetail}>{item.detail}</span>
+                    <strong className={styles.factHeadline}>{angle.headline}</strong>
+                    <span className={styles.factDetail}>{candidate.detail}</span>
                     <span className={styles.badges}>
-                      {item.badges.map((badge) => (
+                      {angle.badges.map((badge) => (
                         <span className={styles.badge} key={badge}>{badge}</span>
                       ))}
+                      {anotherAngleSelected ? (
+                        <span className={styles.badge}>Tap to replace queued angle</span>
+                      ) : null}
                     </span>
                   </span>
                 </button>
               );
             })}
             {visible.length === 0 ? (
-              <p className={styles.queueEmpty}>No combined stories match these filters.</p>
+              <p className={styles.queueEmpty}>No facts match these filters.</p>
             ) : null}
           </div>
         </section>
@@ -226,7 +253,7 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
         <PulseQueue
           className={styles.queue}
           selectedItems={selectedItems}
-          onRemove={toggleSelected}
+          onRemove={(id, angleType) => toggleSelected(id, angleType)}
           onClear={clearSelected}
           onPublish={publishSelected}
           publishing={publishing}
@@ -252,7 +279,7 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
               <PulseQueue
                 className={styles.mobileQueueContents}
                 selectedItems={selectedItems}
-                onRemove={toggleSelected}
+                onRemove={(id, angleType) => toggleSelected(id, angleType)}
                 onClear={clearSelected}
                 onPublish={publishSelected}
                 publishing={publishing}
@@ -275,8 +302,8 @@ function PulseQueue({
   message,
   className,
 }: {
-  selectedItems: ClashPulseFactCandidate[];
-  onRemove: (id: string) => void;
+  selectedItems: CardView[];
+  onRemove: (id: string, angleType: ClashPulseStoryType) => void;
   onClear: () => void;
   onPublish: () => void;
   publishing: boolean;
@@ -293,20 +320,20 @@ function PulseQueue({
       </div>
 
       {selectedItems.length === 0 ? (
-        <p className={styles.queueEmpty}>Tap a story to collect it here. Each contest can only appear once in the queue.</p>
+        <p className={styles.queueEmpty}>Tap the specific fact angle you want to publish. Each contest can only occupy one queue slot.</p>
       ) : (
         <div className={styles.queueItems}>
-          {selectedItems.map((item) => (
-            <div className={styles.queueItem} key={item.id}>
+          {selectedItems.map(({candidate, angle}) => (
+            <div className={styles.queueItem} key={candidate.id}>
               <div>
-                <strong>{item.headline}</strong>
-                <small>{labelStoryType(item.storyType)} · {item.value}</small>
+                <strong>{angle.headline}</strong>
+                <small>{labelStoryType(angle.storyType)} · {angle.value}</small>
               </div>
               <button
                 className={styles.removeButton}
                 type="button"
-                onClick={() => onRemove(item.id)}
-                aria-label={`Remove ${item.headline} from Pulse Queue`}
+                onClick={() => onRemove(candidate.id, angle.storyType)}
+                aria-label={`Remove ${angle.headline} from Pulse Queue`}
               >
                 ×
               </button>
