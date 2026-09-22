@@ -43,6 +43,9 @@ export function ClashPulseLiveManager() {
 
   useEffect(() => {
     void load();
+    const handleUpdate = () => void load();
+    window.addEventListener('clash-pulse-updated', handleUpdate);
+    return () => window.removeEventListener('clash-pulse-updated', handleUpdate);
   }, [load]);
 
   async function publish(event: FormEvent<HTMLFormElement>) {
