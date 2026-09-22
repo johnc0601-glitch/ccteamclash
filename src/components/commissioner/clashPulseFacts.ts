@@ -1,21 +1,26 @@
-export type ClashPulseFactCategory =
-  | 'Upsets'
-  | 'CI Gaps'
-  | 'Above Expected'
-  | 'Road'
-  | 'Home'
+export type ClashPulseStoryType =
+  | 'Upset'
+  | 'CI Mover'
+  | 'Close Match'
+  | 'Standout';
+
+export type ClashPulseContextFilter =
+  | 'All'
   | 'Singles'
   | 'Doubles'
-  | 'CI +/-'
-  | 'Closest';
+  | 'Home'
+  | 'Road';
 
 export type ClashPulseFactCandidate = {
   id: string;
-  category: ClashPulseFactCategory;
+  storyType: ClashPulseStoryType;
   headline: string;
   detail: string;
   value: string;
+  badges: string[];
   pulseText: string;
+  format: 'Singles' | 'Doubles';
+  venue: 'Home' | 'Road';
 };
 
 export type ClashPulseFactScope = {
@@ -23,6 +28,7 @@ export type ClashPulseFactScope = {
   label: string;
   description: string;
   candidates: ClashPulseFactCandidate[];
+  topFactIds: string[];
 };
 
 export type ClashPulseFactData = {
