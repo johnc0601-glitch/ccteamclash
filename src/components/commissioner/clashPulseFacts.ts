@@ -14,6 +14,7 @@ export type ClashPulseContextFilter =
 export type ClashPulseFactCandidate = {
   id: string;
   storyType: ClashPulseStoryType;
+  topics: ClashPulseStoryType[];
   headline: string;
   detail: string;
   value: string;
