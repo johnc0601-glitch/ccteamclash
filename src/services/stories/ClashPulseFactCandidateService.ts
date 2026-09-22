@@ -411,6 +411,14 @@ function toCandidate(story: RatedStory): ClashPulseFactCandidate {
     const score = story.teamScore != null && story.opponentScore != null
       ? `${formatScore(story.teamScore)}–${formatScore(story.opponentScore)} FINAL`
       : 'TEAM WIN';
+    const isEstimatedHistoricalProbability = story.seasonLabel === '2024–25';
+    const probabilityValue = isEstimatedHistoricalProbability
+      ? `MODEL EST. ${probability}% WIN CHANCE`
+      : `${probability}% TEAM WIN CHANCE`;
+    const probabilityText = isEstimatedHistoricalProbability
+      ? `the rated-matchup model estimated a ${probability}% pre-match team win chance`
+      : `a ${probability}% pre-match team win chance`;
+
     return {
       id: story.key,
       primaryStoryType: 'Match Upset',
@@ -422,9 +430,14 @@ function toCandidate(story: RatedStory): ClashPulseFactCandidate {
         'Match Upset': {
           storyType: 'Match Upset',
           headline: `${story.teamName} upset ${story.opponentTeamName}`,
-          value: `${probability}% TEAM WIN CHANCE`,
-          badges: ['TEAM MATCH', venue, score],
-          pulseText: `${story.teamName} upset ${story.opponentTeamName}${story.teamScore != null && story.opponentScore != null ? ` ${formatScore(story.teamScore)}–${formatScore(story.opponentScore)}` : ''} after entering with a ${probability}% pre-match team win chance.`.slice(0, 240),
+          value: probabilityValue,
+          badges: [
+            'TEAM MATCH',
+            venue,
+            score,
+            ...(isEstimatedHistoricalProbability ? ['RATED-MATCHUP MODEL'] : []),
+          ],
+          pulseText: `${story.teamName} upset ${story.opponentTeamName}${story.teamScore != null && story.opponentScore != null ? ` ${formatScore(story.teamScore)}–${formatScore(story.opponentScore)}` : ''} after entering with ${probabilityText}.`.slice(0, 240),
         },
       },
     };
