@@ -26,7 +26,8 @@
 }
 
 .scopeRow,
-.categoryRow {
+.categoryRow,
+.contextRow {
   display: flex;
   gap: 8px;
   overflow-x: auto;
@@ -35,7 +36,8 @@
 }
 
 .scopeRow::-webkit-scrollbar,
-.categoryRow::-webkit-scrollbar {
+.categoryRow::-webkit-scrollbar,
+.contextRow::-webkit-scrollbar {
   display: none;
 }
 
@@ -65,6 +67,26 @@
   font-weight: 950;
   letter-spacing: .08em;
   text-transform: uppercase;
+}
+
+.contextButton {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cc-text-muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.contextButton[aria-pressed="true"] {
+  border-color: var(--cc-gold);
+  color: var(--cc-gold);
+  background: color-mix(in srgb, var(--cc-gold) 8%, transparent);
 }
 
 .workspace {
@@ -193,6 +215,28 @@
   margin-left: 4px;
   color: var(--cc-body-text);
   font-weight: 900;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 999px;
+  background: var(--cc-surface);
+  color: var(--cc-text-muted);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .035em;
+  text-transform: uppercase;
 }
 
 .queue {
