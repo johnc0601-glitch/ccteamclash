@@ -12,6 +12,7 @@ import {
   setClubhouseAttendance,
   toggleClubhousePin,
 } from './actions';
+import {ClubhouseReadMarker} from './ClubhouseReadMarker';
 import styles from './Clubhouse.module.css';
 
 type Props = {searchParams?: Promise<Record<string, string | string[] | undefined>>};
@@ -96,10 +97,25 @@ export default async function ClubhousePage({searchParams}: Props) {
   const notGoing = playerIds.filter((id: string) => attendance.get(id) === 'NotPlaying');
   const undecided = playerIds.filter((id: string) => !attendance.has(id));
   const ownStatus = attendance.get(context.playerId) ?? 'Unconfirmed';
+  const activityTimes = [
+    ...(posts ?? []).map((post: any) => String(post.created_at)),
+    ...(commentResult.data ?? []).map((comment: any) => String(comment.created_at)),
+  ].filter(Boolean);
+  const readThrough = activityTimes.length
+    ? activityTimes.reduce((latest, value) => value > latest ? value : latest)
+    : new Date().toISOString();
 
   return (
     <main>
       <SiteHeader />
+      {!context.isCommissionerReview ? (
+        <ClubhouseReadMarker
+          profileId={context.profileId}
+          seasonId={context.seasonId}
+          teamId={context.teamId}
+          readThrough={readThrough}
+        />
+      ) : null}
       <section className={styles.page} style={brandStyle}>
         <div className="shell">
           <header className={styles.hero}>

@@ -3,14 +3,14 @@
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {useCallback, useEffect, useRef} from 'react';
-import {useHeaderAccess} from '@/components/HeaderAccessProvider';
+import {ClubhouseUnreadDisc, useHeaderAccess} from '@/components/HeaderAccessProvider';
 
 const FACEBOOK_GROUP_URL = 'https://facebook.com/groups/780013754161635/';
 
 export function MobileNav() {
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
-  const {role, hasClubhouse} = useHeaderAccess();
+  const {role, hasClubhouse, clubhouseHasUnread} = useHeaderAccess();
   const canOpenOffice = role === 'commissioner';
   const canOpenCaptain = role === 'captain';
 
@@ -47,7 +47,12 @@ export function MobileNav() {
         {(hasClubhouse || canOpenOffice || canOpenCaptain) ? (
           <div className="mobile-nav-group mobile-nav-tools">
             <span>Tools</span>
-            {hasClubhouse ? <Link href="/clubhouse" onClick={closeMenu}>Clubhouse</Link> : null}
+            {hasClubhouse ? (
+              <Link className="clubhouse-nav-link" href="/clubhouse" onClick={closeMenu}>
+                Clubhouse
+                {clubhouseHasUnread ? <ClubhouseUnreadDisc /> : null}
+              </Link>
+            ) : null}
             {canOpenOffice ? <Link href="/admin" onClick={closeMenu}>Create post</Link> : null}
             {canOpenOffice ? <Link href="/office" onClick={closeMenu}>Office</Link> : null}
             {canOpenCaptain ? <Link href="/captain" onClick={closeMenu}>Captain</Link> : null}
