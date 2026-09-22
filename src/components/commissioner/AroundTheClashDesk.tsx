@@ -1,23 +1,20 @@
 'use client';
 
 import {useMemo, useState} from 'react';
+import styles from './AroundTheClashDesk.module.css';
 
-type Scope = 'Current Round' | 'Match' | 'Season' | 'All-Time';
-type Category = 'Upsets' | 'CI Gaps' | 'Above Expected' | 'Road' | 'Home' | 'Singles' | 'Doubles' | 'CI +/-' | 'Closest';
+type Category = 'All' | 'Upsets' | 'CI Gaps' | 'Above Expected' | 'Road' | 'Home' | 'Singles' | 'Doubles' | 'CI +/-' | 'Closest';
 
 type PreviewStat = {
   id: string;
   headline: string;
   detail: string;
   value: string;
-  category: Category;
+  category: Exclude<Category, 'All'>;
 };
 
-const scopes: Scope[] = ['Current Round', 'Match', 'Season', 'All-Time'];
-const categories: Category[] = ['Upsets', 'CI Gaps', 'Above Expected', 'Road', 'Home', 'Singles', 'Doubles', 'CI +/-', 'Closest'];
+const categories: Category[] = ['All', 'Upsets', 'CI Gaps', 'Above Expected', 'Road', 'Home', 'Singles', 'Doubles', 'CI +/-', 'Closest'];
 
-// Deliberately labeled fixtures: these exercise the commissioner workflow without
-// presenting invented league results as real data. Replace with rated Matchday rows.
 const fixtures: PreviewStat[] = [
   {id: 'upset-1', category: 'Upsets', headline: 'Lower-CI side wins', detail: 'Preview fixture · ranked by pre-match expectation', value: '18% win chance'},
   {id: 'upset-2', category: 'Upsets', headline: 'Road underdog takes the point', detail: 'Preview fixture · singles', value: '27% win chance'},
@@ -32,79 +29,171 @@ const fixtures: PreviewStat[] = [
 ];
 
 export function AroundTheClashDesk() {
-  const [scope, setScope] = useState<Scope>('Current Round');
-  const [category, setCategory] = useState<Category>('Upsets');
+  const [category, setCategory] = useState<Category>('All');
   const [selected, setSelected] = useState<string[]>([]);
+  const [queueOpen, setQueueOpen] = useState(false);
 
-  const visible = useMemo(() => fixtures.filter((item) => item.category === category), [category]);
-  const selectedItems = fixtures.filter((item) => selected.includes(item.id));
+  const counts = useMemo(() => {
+    const next = new Map<Category, number>();
+    next.set('All', fixtures.length);
+    for (const item of fixtures) {
+      next.set(item.category, (next.get(item.category) ?? 0) + 1);
+    }
+    return next;
+  }, []);
+
+  const visible = useMemo(
+    () => category === 'All' ? fixtures : fixtures.filter((item) => item.category === category),
+    [category],
+  );
+
+  const selectedItems = useMemo(
+    () => fixtures.filter((item) => selected.includes(item.id)),
+    [selected],
+  );
 
   function toggleSelected(id: string) {
     setSelected((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   }
 
+  function clearSelection() {
+    setSelected([]);
+    setQueueOpen(false);
+  }
+
   return (
-    <div style={{display: 'grid', gap: 16}}>
-      <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}} aria-label="Stats scope">
-        {scopes.map((item) => (
-          <button key={item} type="button" onClick={() => setScope(item)} aria-pressed={scope === item} style={{fontWeight: scope === item ? 800 : 500}}>
-            {item}
-          </button>
-        ))}
-      </div>
-
-      <div style={{fontSize: 13, opacity: .75}}>Viewing: <strong>{scope}</strong> · Preview fixtures</div>
-
-      <nav style={{display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4}} aria-label="Around the Clash categories">
-        {categories.map((item) => (
-          <button key={item} type="button" onClick={() => setCategory(item)} aria-pressed={category === item} style={{whiteSpace: 'nowrap', borderRadius: 999, fontWeight: category === item ? 800 : 500}}>
-            {item}
-          </button>
-        ))}
-      </nav>
-
-      <section style={{border: '1px solid rgba(127,127,127,.35)', borderRadius: 12, overflow: 'hidden'}}>
-        <header style={{padding: 16, borderBottom: '1px solid rgba(127,127,127,.25)'}}>
-          <h3 style={{margin: 0}}>{category}</h3>
-        </header>
-        <div>
-          {visible.map((item, index) => {
-            const isSelected = selected.includes(item.id);
-            return (
-              <article key={item.id} style={{display: 'grid', gridTemplateColumns: '36px minmax(0,1fr) auto', gap: 12, alignItems: 'center', padding: 14, borderTop: index ? '1px solid rgba(127,127,127,.2)' : undefined}}>
-                <strong style={{fontSize: 18, textAlign: 'center'}}>{index + 1}</strong>
-                <div style={{minWidth: 0}}>
-                  <strong>{item.headline}</strong>
-                  <div style={{fontSize: 13, opacity: .72, marginTop: 3}}>{item.detail}</div>
-                </div>
-                <div style={{display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end'}}>
-                  <strong>{item.value}</strong>
-                  <button type="button" onClick={() => toggleSelected(item.id)}>{isSelected ? 'Remove' : 'Add'}</button>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+    <div className={styles.desk}>
+      <section className={styles.intro}>
+        <strong>Clash Pulse fact selection</strong>
+        <p>Tap any interesting fact to add it to the Pulse Queue. Selection stays with you while you move between categories.</p>
       </section>
 
-      <aside style={{borderTop: '1px solid rgba(127,127,127,.35)', paddingTop: 14}}>
-        <div style={{display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center'}}>
-          <strong>Selected stories ({selectedItems.length})</strong>
-          {selectedItems.length > 0 && <button type="button" onClick={() => setSelected([])}>Clear</button>}
-        </div>
-        {selectedItems.length === 0 ? (
-          <p style={{marginBottom: 0}}>Add ranked results here while reviewing the round. This becomes the handoff into recap writing.</p>
-        ) : (
-          <div style={{display: 'grid', gap: 8, marginTop: 10}}>
-            {selectedItems.map((item) => (
-              <div key={item.id} style={{display: 'flex', justifyContent: 'space-between', gap: 12, border: '1px solid rgba(127,127,127,.25)', borderRadius: 8, padding: 10}}>
-                <span><strong>{item.headline}</strong><br /><small>{item.category} · {item.value}</small></span>
-                <button type="button" onClick={() => toggleSelected(item.id)}>Remove</button>
-              </div>
-            ))}
-          </div>
-        )}
+      <div className={styles.toolbar}>
+        <nav className={styles.filters} aria-label="Clash Pulse fact categories">
+          {categories.filter((item) => (counts.get(item) ?? 0) > 0).map((item) => (
+            <button
+              className={styles.filter}
+              key={item}
+              type="button"
+              onClick={() => setCategory(item)}
+              aria-pressed={category === item}
+            >
+              {item} {counts.get(item) ?? 0}
+            </button>
+          ))}
+        </nav>
+        <span className={styles.selectionCount}>{selectedItems.length} selected</span>
+      </div>
+
+      <div className={styles.workspace}>
+        <section className={styles.factList} aria-label="Verified fact candidates">
+          {visible.map((item) => {
+            const isSelected = selected.includes(item.id);
+            return (
+              <button
+                className={styles.factButton}
+                type="button"
+                key={item.id}
+                aria-pressed={isSelected}
+                onClick={() => toggleSelected(item.id)}
+              >
+                <span className={styles.factCard}>
+                  <span className={styles.check} aria-hidden="true">{isSelected ? '✓' : '•'}</span>
+                  <span className={styles.factBody}>
+                    <span className={styles.factTopline}>
+                      <span className={styles.category}>{item.category}</span>
+                    </span>
+                    <strong className={styles.headline}>{item.headline}</strong>
+                    <span className={styles.detail}>{item.detail}</span>
+                    <span className={styles.value}>{item.value}</span>
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+          {visible.length === 0 ? <p className={styles.empty}>No facts in this category.</p> : null}
+        </section>
+
+        <aside className={styles.queue} aria-label="Pulse Queue">
+          <QueueContents
+            selectedItems={selectedItems}
+            onRemove={toggleSelected}
+            onClear={clearSelection}
+          />
+        </aside>
+      </div>
+
+      <div className={styles.mobileDock} aria-label="Pulse Queue summary">
+        <strong>{selectedItems.length} selected</strong>
+        <button type="button" onClick={() => setQueueOpen((open) => !open)}>
+          {queueOpen ? 'Close queue' : 'View queue'}
+        </button>
+      </div>
+
+      <aside className={styles.mobileDrawer} hidden={!queueOpen} aria-label="Pulse Queue">
+        <QueueContents
+          selectedItems={selectedItems}
+          onRemove={toggleSelected}
+          onClear={clearSelection}
+        />
       </aside>
     </div>
+  );
+}
+
+function QueueContents({
+  selectedItems,
+  onRemove,
+  onClear,
+}: {
+  selectedItems: PreviewStat[];
+  onRemove: (id: string) => void;
+  onClear: () => void;
+}) {
+  return (
+    <>
+      <div className={styles.queueHeader}>
+        <strong>Pulse Queue · {selectedItems.length}</strong>
+        {selectedItems.length ? <button className={styles.clear} type="button" onClick={onClear}>Clear</button> : null}
+      </div>
+
+      <p className={styles.queueHint}>
+        Review the facts you want to send to Clash Pulse. Live publishing remains disabled while this page is using preview fixtures.
+      </p>
+
+      {selectedItems.length ? (
+        <div className={styles.queueItems}>
+          {selectedItems.map((item) => (
+            <div className={styles.queueItem} key={item.id}>
+              <span>
+                <strong>{item.headline}</strong>
+                <small>{item.category} · {item.value}</small>
+              </span>
+              <button
+                className={styles.remove}
+                type="button"
+                onClick={() => onRemove(item.id)}
+                aria-label={`Remove ${item.headline} from Pulse Queue`}
+                title="Remove"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className={styles.previewNote}>Tap a fact card to add it here.</p>
+      )}
+
+      <button className={styles.publish} type="button" disabled>
+        Publish to Clash Pulse
+      </button>
+      <p className={styles.previewNote}>Publishing will be enabled when verified live facts replace these clearly labeled preview fixtures.</p>
+
+      <section className={styles.liveSection}>
+        <strong>Live on Clash Pulse · 0</strong>
+        <p>No public Clash Pulse facts are live yet.</p>
+      </section>
+    </>
   );
 }
