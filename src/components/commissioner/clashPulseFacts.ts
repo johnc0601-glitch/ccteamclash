@@ -11,17 +11,22 @@ export type ClashPulseContextFilter =
   | 'Home'
   | 'Road';
 
-export type ClashPulseFactCandidate = {
-  id: string;
+export type ClashPulseFactAngle = {
   storyType: ClashPulseStoryType;
-  topics: ClashPulseStoryType[];
   headline: string;
-  detail: string;
   value: string;
   badges: string[];
   pulseText: string;
+};
+
+export type ClashPulseFactCandidate = {
+  id: string;
+  primaryStoryType: ClashPulseStoryType;
+  topics: ClashPulseStoryType[];
+  detail: string;
   format: 'Singles' | 'Doubles';
   venue: 'Home' | 'Road';
+  angles: Partial<Record<ClashPulseStoryType, ClashPulseFactAngle>>;
 };
 
 export type ClashPulseFactScope = {
