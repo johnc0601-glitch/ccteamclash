@@ -36,12 +36,12 @@ export default function OfficeMediaPage() {
           <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap'}}>
             <div>
               <div style={{display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap'}}>
-                <strong>Around the Clash</strong>
+                <strong>Clash Pulse</strong>
                 <span style={{fontSize: 11, fontWeight: 800, letterSpacing: '.08em', border: '1px solid currentColor', borderRadius: 999, padding: '2px 7px'}}>PREVIEW</span>
               </div>
-              <p style={{margin: '6px 0 0'}}>Browse ranked Matchday statistics and collect the best items for round coverage.</p>
+              <p style={{margin: '6px 0 0'}}>Review interesting league facts and build the queue that will feed the public Clash Pulse bar.</p>
             </div>
-            <Link href="/office/media/around-the-clash">Open stats desk</Link>
+            <Link href="/office/media/around-the-clash">Open Clash Pulse</Link>
           </div>
         </section>
       </div>
