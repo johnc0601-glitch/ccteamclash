@@ -1,17 +1,22 @@
 import Link from 'next/link';
 import type {ReactNode} from 'react';
 import {ClashCountdown} from '@/components/ClashCountdown';
+import {ClashPulse} from '@/components/ClashPulse';
 import {HomeMatchCarousel} from '@/components/HomeMatchCarousel';
 import {Intro} from '@/components/intro/Intro';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchCard} from '@/components/MatchCard';
 import {getHomepageData} from '@/services/home/HomepageDataService';
+import {getHomepageClashPulseItems} from '@/services/home/ClashPulseService';
 import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
 
 export const revalidate = 60;
 
 export default async function Home() {
-  const homepageData = await getHomepageData();
+  const [homepageData, clashPulseItems] = await Promise.all([
+    getHomepageData(),
+    getHomepageClashPulseItems(),
+  ]);
   const {storyData, teams: teamLogos, homeEvents, feedPreviews} = homepageData;
   const lead = storyData.lead;
 
@@ -69,6 +74,7 @@ export default async function Home() {
 
       <Footer />
       <Intro />
+      <ClashPulse items={clashPulseItems} />
     </main>
   );
 }

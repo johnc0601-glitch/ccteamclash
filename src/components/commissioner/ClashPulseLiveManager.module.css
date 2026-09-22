@@ -1,0 +1,200 @@
+.manager {
+  display: grid;
+  gap: 16px;
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid var(--cc-card-border);
+  border-top: 4px solid var(--cc-gold);
+  border-radius: 8px;
+  background: var(--cc-card-bg);
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.heading span {
+  color: var(--cc-gold);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.heading h3 {
+  margin: 5px 0 6px;
+  font-size: 24px;
+  text-transform: uppercase;
+}
+
+.heading p {
+  max-width: 660px;
+  margin: 0;
+  color: var(--cc-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.heading > strong {
+  padding: 5px 9px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 999px;
+  color: var(--cc-gold);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.form label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.form label > span {
+  color: var(--cc-text-muted);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.form select,
+.form textarea {
+  width: 100%;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 6px;
+  background: var(--cc-surface);
+  color: var(--cc-text);
+  font: inherit;
+}
+
+.form select {
+  min-height: 44px;
+  padding: 0 10px;
+}
+
+.form textarea {
+  min-height: 78px;
+  padding: 10px;
+  resize: vertical;
+}
+
+.factField {
+  position: relative;
+}
+
+.factField small {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  color: var(--cc-text-muted);
+  font-size: 9px;
+}
+
+.form > button {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--cc-gold);
+  color: var(--cc-on-accent);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.form > button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.message {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.liveList {
+  display: grid;
+  gap: 8px;
+}
+
+.empty {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed var(--cc-card-border);
+  border-radius: 7px;
+  color: var(--cc-text-muted);
+  font-size: 12px;
+}
+
+.liveItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1px solid var(--cc-panel-border);
+  border-radius: 7px;
+  background: var(--cc-surface);
+}
+
+.liveItem span,
+.liveItem strong,
+.liveItem small {
+  display: block;
+}
+
+.liveItem span {
+  color: var(--cc-gold);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.liveItem strong {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.liveItem small {
+  margin-top: 4px;
+  color: var(--cc-text-muted);
+  font-size: 9px;
+}
+
+.liveItem button {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--cc-text);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+@media (max-width: 820px) {
+  .form {
+    grid-template-columns: 1fr;
+  }
+
+  .form > button {
+    min-height: 46px;
+  }
+}
