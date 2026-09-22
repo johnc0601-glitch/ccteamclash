@@ -168,6 +168,7 @@ export function AroundTheClashDesk() {
         {mobileQueueOpen && selectedItems.length > 0 ? (
           <div className={styles.mobileQueuePanel}>
             <PulseQueue
+              className={styles.mobileQueueContents}
               selectedItems={selectedItems}
               onRemove={toggleSelected}
               onClear={clearSelected}
