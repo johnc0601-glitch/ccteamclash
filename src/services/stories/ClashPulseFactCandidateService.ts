@@ -343,18 +343,18 @@ function buildScope(
     for (const story of list) selected.set(story.key, story);
   }
 
-  const candidates = [...selected.values()].map((story) => toCandidate(story, id));
+  const candidates = [...selected.values()].map((story) => toCandidate(story));
 
   return {
     id,
     label: labelOverride ?? stories[0]?.seasonLabel ?? shortSeason(id),
     description,
     candidates,
-    topFactIds: topStories.map((story) => `${id}:${story.key}`),
+    topFactIds: topStories.map((story) => story.key),
   };
 }
 
-function toCandidate(story: RatedStory, scopeId: string): ClashPulseFactCandidate {
+function toCandidate(story: RatedStory): ClashPulseFactCandidate {
   const subject = story.subjectNames.join(' & ');
   const opponent = story.opponentNames.length
     ? story.opponentNames.join(' & ')
@@ -397,7 +397,7 @@ function toCandidate(story: RatedStory, scopeId: string): ClashPulseFactCandidat
   }
 
   return {
-    id: `${scopeId}:${story.key}`,
+    id: story.key,
     storyType: type,
     topics,
     headline,
