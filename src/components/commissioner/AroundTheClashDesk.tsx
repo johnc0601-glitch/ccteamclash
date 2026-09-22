@@ -11,7 +11,7 @@ import type {
 import styles from './AroundTheClashDesk.module.css';
 
 const storyTypes: ClashPulseStoryType[] = ['Upset', 'CI Mover', 'Close Match', 'Standout'];
-const contexts: ClashPulseContextFilter[] = ['All', 'Singles', 'Doubles', 'Home', 'Road'];
+const contexts: ClashPulseContextFilter[] = ['All', 'Team', 'Singles', 'Doubles', 'Home', 'Road'];
 
 type CardView = {
   candidate: ClashPulseFactCandidate;
@@ -197,7 +197,7 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
               onClick={() => setContext(item)}
               aria-pressed={context === item}
             >
-              {item === 'All' ? 'All Results' : item}
+              {item === 'All' ? 'All Results' : item === 'Team' ? 'Team Matches' : item}
             </button>
           ))}
         </div>
@@ -357,7 +357,7 @@ function PulseQueue({
 
 function matchesContext(item: ClashPulseFactCandidate, context: ClashPulseContextFilter): boolean {
   if (context === 'All') return true;
-  if (context === 'Singles' || context === 'Doubles') return item.format === context;
+  if (context === 'Singles' || context === 'Doubles' || context === 'Team') return item.format === context;
   return item.venue === context;
 }
 
@@ -368,7 +368,7 @@ function labelStoryType(type: ClashPulseStoryType): string {
   return 'Standouts';
 }
 
-function publicCategory(type: ClashPulseStoryType, format: 'Singles' | 'Doubles'): string {
+function publicCategory(type: ClashPulseStoryType, format: 'Singles' | 'Doubles' | 'Team'): string {
   if (type === 'Upset') return 'Upset';
   if (type === 'CI Mover') return 'Clash Index';
   if (format === 'Doubles') return 'Doubles';
