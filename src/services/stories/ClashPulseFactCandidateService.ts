@@ -435,7 +435,7 @@ function toCandidate(story: RatedStory): ClashPulseFactCandidate {
           ? [story.format === 'Doubles' ? `+${delta} CI each` : `+${delta} CI`]
           : []),
       ].slice(0, 5),
-      pulseText: `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName}) in ${story.eventLabel}.`.slice(0, 240),
+      pulseText: (story.format === 'Doubles' ? `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName}) — ${probability}% pre-match win chance.` : `${subject} (${story.teamName}) beat ${opponent} (${story.opponentTeamName}) in ${story.eventLabel}.`).slice(0, 240),
     };
   }
 
