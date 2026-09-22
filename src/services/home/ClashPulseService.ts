@@ -25,7 +25,26 @@ export async function getHomepageClashPulseItems(): Promise<ClashPulseItem[]> {
   return (data ?? []).map((row: any) => ({
     id: String(row.id),
     category: String(row.category),
-    text: String(row.fact_text),
+    text: shortenPulseTeamNames(String(row.fact_text)),
     publishedAt: String(row.published_at),
   }));
+}
+
+
+const TEAM_NAME_REPLACEMENTS: Array<[RegExp, string]> = [
+  [/Hayneous OG[’']s/g, "OG's"],
+  [/Cougar Country/g, 'CC'],
+  [/Dark Knights/g, 'DK'],
+  [/Kure Beach/g, 'KB'],
+  [/Beast Mode/g, 'BM'],
+  [/Wild Turkey/g, 'WT'],
+  [/Riptide/g, 'RIP'],
+  [/Ninjas/g, 'NIN'],
+];
+
+function shortenPulseTeamNames(text: string): string {
+  return TEAM_NAME_REPLACEMENTS.reduce(
+    (value, [pattern, replacement]) => value.replace(pattern, replacement),
+    text,
+  );
 }
