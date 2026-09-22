@@ -152,30 +152,31 @@ export function AroundTheClashDesk() {
         />
       </div>
 
-      <div className={styles.mobileQueue}>
-        <div className={styles.mobileQueueSummary}>
-          <strong>Pulse Queue · {selectedItems.length}</strong>
-          <button
-            className={styles.mobileQueueButton}
-            type="button"
-            onClick={() => setMobileQueueOpen((current) => !current)}
-            disabled={selectedItems.length === 0}
-            aria-expanded={mobileQueueOpen}
-          >
-            {mobileQueueOpen ? 'Hide queue' : 'View queue'}
-          </button>
-        </div>
-        {mobileQueueOpen && selectedItems.length > 0 ? (
-          <div className={styles.mobileQueuePanel}>
-            <PulseQueue
-              className={styles.mobileQueueContents}
-              selectedItems={selectedItems}
-              onRemove={toggleSelected}
-              onClear={clearSelected}
-            />
+      {selectedItems.length > 0 ? (
+        <div className={styles.mobileQueue}>
+          <div className={styles.mobileQueueSummary}>
+            <strong>Pulse Queue · {selectedItems.length}</strong>
+            <button
+              className={styles.mobileQueueButton}
+              type="button"
+              onClick={() => setMobileQueueOpen((current) => !current)}
+              aria-expanded={mobileQueueOpen}
+            >
+              {mobileQueueOpen ? 'Hide queue' : 'View queue'}
+            </button>
           </div>
-        ) : null}
-      </div>
+          {mobileQueueOpen ? (
+            <div className={styles.mobileQueuePanel}>
+              <PulseQueue
+                className={styles.mobileQueueContents}
+                selectedItems={selectedItems}
+                onRemove={toggleSelected}
+                onClear={clearSelected}
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
