@@ -1,4 +1,5 @@
-import {createClient} from '@/lib/supabase/server';
+import {unstable_cache} from 'next/cache';
+import {createPublicClient} from '@/lib/supabase/public';
 
 export type ClashPulseItem = {
   id: string;
@@ -7,27 +8,35 @@ export type ClashPulseItem = {
   publishedAt: string;
 };
 
+const getCachedHomepageClashPulseItems = unstable_cache(
+  async (): Promise<ClashPulseItem[]> => {
+    const supabase = createPublicClient();
+    const {data, error} = await (supabase as any)
+      .from('clash_pulse_items')
+      .select('id,category,fact_text,published_at')
+      .eq('is_active', true)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .order('published_at', {ascending: false})
+      .limit(10);
+
+    if (error) {
+      console.error('[clash-pulse] Homepage read failed', {message: error.message});
+      return [];
+    }
+
+    return (data ?? []).map((row: any) => ({
+      id: String(row.id),
+      category: String(row.category),
+      text: shortenPulseTeamNames(String(row.fact_text)),
+      publishedAt: String(row.published_at),
+    }));
+  },
+  ['homepage-clash-pulse-v1'],
+  {revalidate: 30, tags: ['public:clash-pulse']},
+);
+
 export async function getHomepageClashPulseItems(): Promise<ClashPulseItem[]> {
-  const supabase = await createClient();
-  const {data, error} = await (supabase as any)
-    .from('clash_pulse_items')
-    .select('id,category,fact_text,published_at')
-    .eq('is_active', true)
-    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
-    .order('published_at', {ascending: false})
-    .limit(10);
-
-  if (error) {
-    console.error('[clash-pulse] Homepage read failed', {message: error.message});
-    return [];
-  }
-
-  return (data ?? []).map((row: any) => ({
-    id: String(row.id),
-    category: String(row.category),
-    text: shortenPulseTeamNames(String(row.fact_text)),
-    publishedAt: String(row.published_at),
-  }));
+  return getCachedHomepageClashPulseItems();
 }
 
 
