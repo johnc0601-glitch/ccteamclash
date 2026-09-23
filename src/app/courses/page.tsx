@@ -2,7 +2,7 @@ import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {getPublicDirectoryData} from '@/services/public/PublicDirectoryDataService';
 import styles from './Courses.module.css';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function CoursesPage() {
   const {courses, teams} = await getPublicDirectoryData();
