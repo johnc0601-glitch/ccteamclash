@@ -20,7 +20,7 @@ const getCachedStatsPageData = unstable_cache(
   },
   ['public-stats-page-data-v1'],
   {
-    revalidate: 60,
+    revalidate: 86_400,
     tags: ['public:stats', 'public:players', 'public:teams', 'public:season'],
   },
 );

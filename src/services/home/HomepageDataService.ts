@@ -10,7 +10,7 @@ import type {HomepageStory, HomepageStoryData} from '@/services/stories/Homepage
 const MATCH_DISPLAY_WINDOW_DAYS = 14;
 const HOME_STORY_COLUMNS = 'id,slug,title,published_at,image,body,featured';
 const LATEST_STORY_COUNT = 2;
-const HOMEPAGE_CACHE_SECONDS = 60;
+const HOMEPAGE_CACHE_SECONDS = 86_400;
 
 export type HomepageData = {
   storyData: HomepageStoryData;

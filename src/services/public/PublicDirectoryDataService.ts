@@ -6,7 +6,7 @@ import {hasSupabaseConfig} from '@/lib/supabase';
 import {createPublicClient} from '@/lib/supabase/public';
 import type {Team} from '@/models/Team';
 
-const PUBLIC_DIRECTORY_CACHE_SECONDS = 60;
+const PUBLIC_DIRECTORY_CACHE_SECONDS = 86_400;
 
 export type PublicDirectoryData = {
   teams: Team[];
