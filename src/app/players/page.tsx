@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import {unstable_cache} from 'next/cache';
 import {LazyPublicPlayerDirectory} from '@/components/players/LazyPublicPlayerDirectory';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
@@ -78,21 +77,9 @@ export default async function PlayersPage({searchParams}: PlayersPageProps) {
     <>
       <SiteHeader />
       <main className={`shell page-shell ${styles.page}`}>
-        <header className={styles.pageHeader}>
-          <span className="eyebrow">Player directory</span>
-          <h1>Players</h1>
-          <p>
-            Look up one player for their current team, season and career record,
-            format splits, and match-by-match history.
-          </p>
-          <div className={styles.statsGuide}>
-            <div>
-              <strong>Want to compare the league?</strong>
-              <span>Stats is the league-wide view for CI, records, rankings, and team filters.</span>
-            </div>
-            <Link href="/stats">Open Stats →</Link>
-          </div>
-        </header>
+        <span className="eyebrow">League players</span>
+        <h1>Players</h1>
+        <p className="intro">Search for a player, then open their row for season stats, career totals, and match history.</p>
         {notice ? <p className={styles.notice}>{notice}</p> : null}
         {error ? <p className={styles.error} role="alert">{error}</p> : null}
         <LazyPublicPlayerDirectory
