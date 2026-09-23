@@ -60,9 +60,12 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
       <SiteHeader />
       <main className={`shell page-shell ${styles.page}`}>
         <header className={styles.pageHeader}>
-          <span className="eyebrow">League statistics</span>
-          <h1>Stats</h1>
-          <p>Player performance by season or across the full recorded Coastal Clash history.</p>
+          <span className="eyebrow">League players</span>
+          <div className={styles.pageTitleRow}>
+            <h1>Players</h1>
+            <Link className={styles.playerSearchLink} href="/players">Find Player →</Link>
+          </div>
+          <p>Player rankings and performance by season or across the full recorded Coastal Clash history.</p>
         </header>
         <div className={helpStyles.explainer}>
           <span><strong>CI — Clash Index</strong> is Coastal Clash&apos;s match-play player rating.</span>
@@ -70,7 +73,7 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
         </div>
         {showProductionArchiveNotice ? (
           <p className={styles.archiveNotice} role="note">
-            Stats are shown from the production archive. Live data on this preview deployment may differ.
+            Player statistics are shown from the production archive. Live data on this preview deployment may differ.
           </p>
         ) : null}
         <StatsTable
