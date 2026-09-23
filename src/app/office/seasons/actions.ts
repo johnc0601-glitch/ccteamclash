@@ -98,6 +98,10 @@ async function getCommissionerSeasonContext(): Promise<CommissionerSeasonContext
 function revalidateSeasonSurfaces() {
   revalidateTag('public:schedule', 'max');
   revalidateTag('public:homepage', 'max');
+  revalidateTag('public:season', 'max');
+  revalidateTag('public:players', 'max');
+  revalidateTag('public:stats', 'max');
+  revalidateTag('public:teams', 'max');
   revalidatePath('/');
   revalidatePath('/office/seasons');
   revalidatePath('/schedule');

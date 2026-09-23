@@ -1,6 +1,6 @@
 'use server';
 
-import {revalidatePath} from 'next/cache';
+import {revalidatePath, revalidateTag} from 'next/cache';
 import {redirect} from 'next/navigation';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import {LaunchService} from '@/domain/launch/LaunchService';
@@ -290,5 +290,11 @@ function readRating(value: string): number | null {
 }
 
 function revalidatePeoplePages() {
+  revalidateTag('public:players', 'max');
+  revalidateTag('public:stats', 'max');
+  revalidateTag('public:teams', 'max');
   revalidatePath(PLAYERS_PATH);
+  revalidatePath('/players');
+  revalidatePath('/stats');
+  revalidatePath('/teams');
 }

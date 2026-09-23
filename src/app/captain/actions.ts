@@ -1,6 +1,6 @@
 'use server';
 
-import {revalidatePath} from 'next/cache';
+import {revalidatePath, revalidateTag} from 'next/cache';
 import {redirect} from 'next/navigation';
 import {createClient} from '@/lib/supabase/server';
 
@@ -79,6 +79,7 @@ export async function saveRosterPlayerRegistration(formData: FormData) {
   );
   if (updateError) redirect(`/captain?error=${encodeURIComponent(updateError.message)}`);
 
+  revalidateRosterCaches();
   revalidatePath('/captain');
   revalidatePath('/office/players');
   revalidatePath('/players');
@@ -102,6 +103,7 @@ export async function returnRosteredPlayerToCommissioner(formData: FormData) {
   );
   if (returnError) redirect(`/captain?error=${encodeURIComponent(returnError.message)}`);
 
+  revalidateRosterCaches();
   revalidatePath('/captain');
   revalidatePath('/office/players');
   revalidatePath('/players');
@@ -176,6 +178,11 @@ export async function saveTeamAppearance(formData: FormData) {
     .eq('id', teamId);
   if (updateError) redirect(`/captain?error=${encodeURIComponent(updateError.message)}`);
 
+  revalidateTag('public:teams', 'max');
+  revalidateTag('public:homepage', 'max');
+  revalidateTag('public:schedule', 'max');
+  revalidatePath('/');
+  revalidatePath('/schedule');
   revalidatePath('/captain');
   revalidatePath('/teams');
   revalidatePath(`/teams/${teamId}`);
@@ -212,6 +219,7 @@ async function reviewTeamApplication(formData: FormData, status: 'Approved' | 'R
   );
   if (reviewError) redirect(`/captain?error=${encodeURIComponent(reviewError.message)}`);
 
+  revalidateRosterCaches();
   revalidatePath('/captain');
   revalidatePath('/office/players');
   revalidatePath('/players');
@@ -219,6 +227,12 @@ async function reviewTeamApplication(formData: FormData, status: 'Approved' | 'R
   redirect(`/captain?notice=${encodeURIComponent(
     status === 'Approved' ? 'Player approved and added to your roster.' : 'Season registration rejected.',
   )}`);
+}
+
+function revalidateRosterCaches() {
+  revalidateTag('public:players', 'max');
+  revalidateTag('public:stats', 'max');
+  revalidateTag('public:teams', 'max');
 }
 
 function readFormValue(formData: FormData, key: string): string {
