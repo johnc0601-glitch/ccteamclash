@@ -18,7 +18,7 @@ const getCachedStatsPageData = unstable_cache(
     });
     return pageService.getPageData(requestedSeason);
   },
-  ['public-stats-page-data-v3'],
+  ['public-stats-page-data-v4'],
   {
     revalidate: 86_400,
     tags: ['public:stats', 'public:players', 'public:teams', 'public:season'],
