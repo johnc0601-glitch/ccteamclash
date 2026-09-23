@@ -32,7 +32,7 @@ const getCachedHomepageClashPulseItems = unstable_cache(
     }));
   },
   ['homepage-clash-pulse-v1'],
-  {revalidate: 30, tags: ['public:clash-pulse']},
+  {revalidate: 3_600, tags: ['public:clash-pulse']},
 );
 
 export async function getHomepageClashPulseItems(): Promise<ClashPulseItem[]> {

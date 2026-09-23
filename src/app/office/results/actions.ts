@@ -154,6 +154,9 @@ async function getCommissionerAccess() {
 function revalidateResultSurfaces(matchId: string) {
   revalidateTag('public:homepage', 'max');
   revalidateTag('public:schedule', 'max');
+  revalidateTag('public:stats', 'max');
+  revalidateTag('public:players', 'max');
+  revalidateTag('public:teams', 'max');
   revalidatePath('/');
   revalidatePath('/standings');
   revalidatePath('/stats');

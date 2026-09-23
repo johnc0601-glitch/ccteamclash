@@ -1,6 +1,6 @@
 'use server';
 
-import {revalidatePath} from 'next/cache';
+import {revalidatePath, revalidateTag} from 'next/cache';
 import {redirect} from 'next/navigation';
 import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCiArchiveReplay';
@@ -165,6 +165,9 @@ export async function loadPlayerMatchHistory(
 }
 
 function revalidateCaptainPlayerPages() {
+  revalidateTag('public:players', 'max');
+  revalidateTag('public:stats', 'max');
+  revalidateTag('public:teams', 'max');
   revalidatePath('/players');
   revalidatePath('/captain');
   revalidatePath('/office/players');
