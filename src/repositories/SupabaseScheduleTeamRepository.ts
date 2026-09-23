@@ -5,6 +5,7 @@ import type {TeamAlias, TeamRepository} from '@/repositories/TeamRepository';
 
 type Client = SupabaseClient<Database>;
 type Row = Database['public']['Tables']['launch_teams']['Row'];
+type BrandedRow = Row & {primary_color?: string | null; secondary_color?: string | null};
 
 export class SupabaseScheduleTeamRepository implements TeamRepository {
   constructor(private readonly supabase: Client) {}
@@ -67,6 +68,7 @@ function normalize(value: string): string {
 }
 
 function toTeam(row: Row): Team {
+  const branded = row as BrandedRow;
   return {
     id: row.id,
     name: row.name,
@@ -76,8 +78,8 @@ function toTeam(row: Row): Team {
     captain: '',
     homeCourse: '',
     logo: row.logo,
-    primaryColor: row.primary_color ?? '',
-    secondaryColor: row.secondary_color ?? '',
+    primaryColor: branded.primary_color ?? '',
+    secondaryColor: branded.secondary_color ?? '',
     website: '',
     facebook: '',
     description: '',
