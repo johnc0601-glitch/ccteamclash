@@ -46,8 +46,9 @@ export default function ClashIndexPage() {
 
           <h2>Starting CI</h2>
           <p>
-            New players generally start from their PDGA rating when one is available. Returning players begin a new season with a rating based mostly on their previous Clash Index, with a smaller influence from their current PDGA rating.
+            New players start from their PDGA rating when one is available. Returning players use 50% of their prior final CI and 50% of their PDGA rating when its effective date is after their final Clash match of the previous season. Otherwise, the blend is 80% prior CI and 20% PDGA. Without a PDGA rating, their prior final CI carries forward.
           </p>
+          <p>Season rollover is separate from CI earned through match results. If the rating date is unknown, the 80/20 blend applies.</p>
 
           <h2>CI vs. PDGA Rating</h2>
           <p>

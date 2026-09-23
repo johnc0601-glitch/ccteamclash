@@ -8,6 +8,8 @@ export type ClashDivision = 'Open' | 'Women';
 export type ClashSeasonResetInput = {
   priorClashIndex?: number | null;
   pdgaRating?: number | null;
+  pdgaRatingEffectiveDate?: string | null;
+  priorFinalMatchDate?: string | null;
   division: ClashDivision;
 };
 
@@ -22,15 +24,17 @@ export function clashProvisionalCi(division: ClashDivision): number {
  * PDGA is an external anchor, not an earned CI movement, so this reset must
  * never be included in season or career CI +/- totals.
  *
- * 2025-26 historical validation (509 contests / 480 decisive) found an 80/20
- * prior-CI/PDGA blend slightly more predictive than more aggressive stale-PDGA
- * carryover variants. If PDGA is unavailable, prior CI carries forward intact.
+ * PDGA effective after the player's final prior-season match uses 50/50.
+ * Equal, older, missing, or invalid dates use 80/20. If PDGA is unavailable,
+ * prior CI carries forward intact. Dates are calendar dates, not sync times.
  * New players seed from PDGA when available, otherwise the hardcoded division
  * provisional baseline: Open 825, Women 700.
  */
 export function clashSeasonStartCi({
   priorClashIndex,
   pdgaRating,
+  pdgaRatingEffectiveDate,
+  priorFinalMatchDate,
   division,
 }: ClashSeasonResetInput): number {
   if (priorClashIndex == null) {
@@ -39,5 +43,17 @@ export function clashSeasonStartCi({
   if (pdgaRating == null) {
     return priorClashIndex;
   }
+  const effective = calendarDate(pdgaRatingEffectiveDate);
+  const lastMatch = calendarDate(priorFinalMatchDate);
+  if (effective && lastMatch && effective > lastMatch) {
+    return Math.round((priorClashIndex + pdgaRating) / 2);
+  }
   return Math.round(priorClashIndex * RETURNING_CI_WEIGHT + pdgaRating * RETURNING_PDGA_WEIGHT);
+}
+
+/** Accept only real ISO calendar dates; never roll invalid dates into another month. */
+export function calendarDate(value: string | null | undefined): string | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value ? value : null;
 }

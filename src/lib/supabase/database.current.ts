@@ -200,6 +200,10 @@ type LaunchSeasonRosterMembershipsTable = {
 };
 
 type CurrentFunctions = {
+  apply_clash_season_rollover: {
+    Args: {target_season_id: string; target_player_id?: string | null; preview_only?: boolean};
+    Returns: import('./database').Json;
+  };
   add_launch_season_roster_member: {
     Args: {
       target_player_id: string;
@@ -243,7 +247,12 @@ type CurrentFunctions = {
 
 export type Database = Omit<LegacyDatabase, 'public'> & {
   public: Omit<LegacyPublic, 'Tables' | 'Functions'> & {
-    Tables: LegacyPublic['Tables'] & {
+    Tables: Omit<LegacyPublic['Tables'], 'launch_players'> & {
+      launch_players: Omit<LegacyPublic['Tables']['launch_players'], 'Row' | 'Insert' | 'Update'> & {
+        Row: LegacyPublic['Tables']['launch_players']['Row'] & {pdga_rating_effective_date: string | null};
+        Insert: LegacyPublic['Tables']['launch_players']['Insert'] & {pdga_rating_effective_date?: string | null};
+        Update: LegacyPublic['Tables']['launch_players']['Update'] & {pdga_rating_effective_date?: string | null};
+      };
       launch_player_applications: LaunchPlayerApplicationsTable;
       launch_season_roster_memberships: LaunchSeasonRosterMembershipsTable;
       launch_season_teams: LaunchSeasonTeamsTable;

@@ -1,6 +1,7 @@
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {createPdgaClient, PdgaRequestError, type PdgaClient} from '@/lib/pdga/client';
 import {createClient} from '@/lib/supabase/server';
+import {pdgaRatingUpdate} from '@/lib/pdga/ratingUpdate';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,6 +14,7 @@ type PlayerRow = {
   id: string;
   pdga_number: string | number | null;
   pdga_rating: number | null;
+  pdga_rating_effective_date: string | null;
 };
 
 type SyncStatus = 'updated' | 'unchanged' | 'no-current-rating' | 'not-found' | 'deferred' | 'error';
@@ -43,7 +45,7 @@ export async function POST() {
 
   const {data: players, error: playerError} = await supabase
     .from('launch_players')
-    .select('id,pdga_number,pdga_rating')
+    .select('id,pdga_number,pdga_rating,pdga_rating_effective_date')
     .eq('active', true);
 
   if (playerError) {
@@ -173,8 +175,8 @@ async function syncPlayer(
       };
     }
 
-    const parsedRating = pdgaPlayer.rating ? Number.parseInt(pdgaPlayer.rating, 10) : null;
-    if (!parsedRating || !Number.isFinite(parsedRating)) {
+    const parsedRating = Number(pdgaPlayer.rating);
+    if (!Number.isInteger(parsedRating) || parsedRating <= 0) {
       return {
         playerId: player.id,
         pdgaNumber,
@@ -184,7 +186,8 @@ async function syncPlayer(
       };
     }
 
-    if (parsedRating === previousRating) {
+    const update = pdgaRatingUpdate(player, pdgaPlayer);
+    if (!update) {
       return {
         playerId: player.id,
         pdgaNumber,
@@ -196,7 +199,7 @@ async function syncPlayer(
 
     const {error: updateError} = await supabase
       .from('launch_players')
-      .update({pdga_rating: parsedRating, updated_at: new Date().toISOString()})
+      .update({...update, updated_at: new Date().toISOString()})
       .eq('id', player.id);
 
     if (updateError) throw updateError;

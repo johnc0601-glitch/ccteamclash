@@ -35,6 +35,26 @@ export function PdgaRatingSyncButton() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
+  const [rolloverPreview, setRolloverPreview] = useState<Array<{playerId: string; name: string; previousCi: number | null; startingCi: number; rule: string}> | null>(null);
+
+  async function handleRollover(apply: boolean) {
+    setLoading(true);
+    setMessage(null);
+    setIsError(false);
+    try {
+      const response = await fetch('/api/commissioner/ci/rollover', {method: apply ? 'POST' : 'GET'});
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? 'CI rollover failed.');
+      setRolloverPreview(apply ? null : result.players);
+      setMessage(apply ? `Starting CI saved for ${result.players.length} players.` : 'Review the starting CIs below, then apply before the season starts.');
+    } catch (error) {
+      setRolloverPreview(null);
+      setMessage(error instanceof Error ? error.message : 'CI rollover failed.');
+      setIsError(true);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function runSync(): Promise<SyncResponse> {
     const response = await fetch('/api/commissioner/pdga/sync', {method: 'POST'});
@@ -46,6 +66,7 @@ export function PdgaRatingSyncButton() {
   }
 
   async function handleSync() {
+    setRolloverPreview(null);
     setLoading(true);
     setMessage(null);
     setIsError(false);
@@ -64,6 +85,7 @@ export function PdgaRatingSyncButton() {
   }
 
   async function handleImport() {
+    setRolloverPreview(null);
     setLoading(true);
     setMessage(null);
     setIsError(false);
@@ -131,6 +153,16 @@ export function PdgaRatingSyncButton() {
           {message}
         </p>
       ) : null}
+      <div className="mt-4 border-t border-slate-200 pt-4">
+        <p className="text-sm text-slate-600">Season starting CI: 50/50 when the PDGA rating is newer than the player’s final prior-season match; otherwise 80/20. No PDGA carries CI forward; new players start from PDGA.</p>
+        <button type="button" disabled={loading} onClick={() => handleRollover(false)} className="mt-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold disabled:opacity-60">Preview starting CI</button>
+        {rolloverPreview ? <div className="mt-3">
+          <div className="max-h-80 overflow-auto"><table className="w-full text-left text-sm"><thead><tr><th>Player</th><th>Current CI</th><th>Starting CI</th></tr></thead><tbody>
+            {rolloverPreview.map((player) => <tr key={player.playerId}><td>{player.name}</td><td>{player.previousCi ?? '—'}</td><td>{player.startingCi}</td></tr>)}
+          </tbody></table></div>
+          <button type="button" disabled={loading} onClick={() => handleRollover(true)} className="mt-3 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">Apply starting CI</button>
+        </div> : null}
+      </div>
     </section>
   );
 }

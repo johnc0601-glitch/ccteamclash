@@ -303,6 +303,7 @@ function toPlayer(row: PlayerRow): LaunchPlayer {
     gender: row.gender as LaunchPlayer['gender'],
     pdgaNumber: row.pdga_number,
     pdgaRating: row.pdga_rating,
+    pdgaRatingEffectiveDate: row.pdga_rating_effective_date,
     clashIndex: rating.clash_index ?? null,
     clashIndexProvisional: rating.clash_index_provisional ?? false,
     currentTeamId: row.current_team_id,
@@ -313,7 +314,7 @@ function toPlayer(row: PlayerRow): LaunchPlayer {
   };
 }
 
-function fromPlayer(player: LaunchPlayer): PlayerRow {
+function fromPlayer(player: LaunchPlayer): Tables['launch_players']['Insert'] {
   return {
     id: player.id,
     name: player.name,
