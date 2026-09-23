@@ -13,6 +13,9 @@ export type StatsRow = {
   playerName: string;
   teamName: string;
   teamNames: string[];
+  currentTeamId?: string;
+  currentTeamName?: string;
+  currentTeamPrimaryColor?: string;
   gender: 'Open' | 'Women';
   matchesPlayed: number;
   wins: number;
