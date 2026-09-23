@@ -36,9 +36,8 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // Session-sensitive routes refresh/verify the token before server code uses
-  // it. Most public league pages keep personalized navigation client-side, but
-  // /players also renders captain free-agent controls on the server and must refresh auth.
+  // Session-sensitive routes refresh/verify the token before server code uses it.
+  // Public league pages keep personalized access state client-side.
   await supabase.auth.getClaims();
 
   const matchReference = readMatchReference(request.nextUrl.pathname);
@@ -91,7 +90,6 @@ export const config = {
     '/admin/:path*',
     '/captain/:path*',
     '/office/:path*',
-    '/players',
     '/matches/:path*',
     '/api/:path*',
     '/auth/:path*',

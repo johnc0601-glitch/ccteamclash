@@ -10,9 +10,9 @@ const FACEBOOK_GROUP_URL = 'https://facebook.com/groups/780013754161635/';
 export function MobileNav() {
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
-  const {role, hasClubhouse, clubhouseHasUnread} = useHeaderAccess();
+  const {role, canCaptainManage, hasClubhouse, clubhouseHasUnread} = useHeaderAccess();
   const canOpenOffice = role === 'commissioner';
-  const canOpenCaptain = role === 'captain';
+  const canOpenCaptain = canCaptainManage;
 
   const closeMenu = useCallback(() => {
     if (detailsRef.current) detailsRef.current.open = false;

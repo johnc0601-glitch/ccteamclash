@@ -10,6 +10,7 @@ type HeaderRole = 'commissioner' | 'captain' | null;
 type HeaderAccessState = {
   isSignedIn: boolean;
   role: HeaderRole;
+  canCaptainManage: boolean;
   hasClubhouse: boolean;
   clubhouseHasUnread: boolean;
 };
@@ -17,6 +18,7 @@ type HeaderAccessState = {
 const EMPTY_ACCESS: HeaderAccessState = {
   isSignedIn: false,
   role: null,
+  canCaptainManage: false,
   hasClubhouse: false,
   clubhouseHasUnread: false,
 };
@@ -44,6 +46,7 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
         setAccess({
           isSignedIn: true,
           role: null,
+          canCaptainManage: false,
           hasClubhouse: false,
           clubhouseHasUnread: false,
         });
@@ -51,7 +54,7 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
 
       const {data: profile} = await supabase
         .from('launch_profiles')
-        .select('id,role,status,player_id')
+        .select('id,role,status,player_id,captain_team_id')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -60,12 +63,16 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
         setAccess({
           isSignedIn: true,
           role: null,
+          canCaptainManage: false,
           hasClubhouse: false,
           clubhouseHasUnread: false,
         });
         return;
       }
 
+      const canCaptainManage = (
+        profile.role === 'Captain' || profile.role === 'Commissioner'
+      ) && Boolean(profile.captain_team_id);
       let hasClubhouse = false;
       let clubhouseHasUnread = false;
 
@@ -121,11 +128,11 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
 
       if (!mounted) return;
       if (profile.role === 'Commissioner') {
-        setAccess({isSignedIn: true, role: 'commissioner', hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: 'commissioner', canCaptainManage, hasClubhouse, clubhouseHasUnread});
       } else if (profile.role === 'Captain') {
-        setAccess({isSignedIn: true, role: 'captain', hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: 'captain', canCaptainManage, hasClubhouse, clubhouseHasUnread});
       } else {
-        setAccess({isSignedIn: true, role: null, hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: null, canCaptainManage, hasClubhouse, clubhouseHasUnread});
       }
     };
 
@@ -168,9 +175,9 @@ export function ClubhouseUnreadDisc() {
 }
 
 export function DesktopRoleLinks() {
-  const {role, hasClubhouse, clubhouseHasUnread} = useHeaderAccess();
+  const {role, canCaptainManage, hasClubhouse, clubhouseHasUnread} = useHeaderAccess();
   const canOpenOffice = role === 'commissioner';
-  const canOpenCaptain = role === 'captain';
+  const canOpenCaptain = canCaptainManage;
 
   if (!canOpenOffice && !canOpenCaptain && !hasClubhouse) return null;
 

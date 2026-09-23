@@ -2,6 +2,7 @@
 
 import {useState} from 'react';
 import {captainAddListedPlayer, loadPublicPlayerProfile} from '@/app/players/actions';
+import {useHeaderAccess} from '@/components/HeaderAccessProvider';
 import {PublicPlayerProfileCard} from '@/components/players/PublicPlayerProfileCard';
 import type {PlayerProfile} from '@/services/playerProfiles';
 import type {PublicPlayerSearchEntry} from '@/services/public/PublicPlayerService';
@@ -12,7 +13,6 @@ type LazyPublicPlayerDirectoryProps = {
   initialPlayerId?: string;
   initialSearch?: string;
   initialProfile?: PlayerProfile;
-  canAddUnassignedPlayers?: boolean;
 };
 
 function normalizeSearchText(value: string): string {
@@ -24,8 +24,8 @@ export function LazyPublicPlayerDirectory({
   initialPlayerId = '',
   initialSearch = '',
   initialProfile,
-  canAddUnassignedPlayers = false,
 }: LazyPublicPlayerDirectoryProps) {
+  const {canCaptainManage} = useHeaderAccess();
   const [search, setSearch] = useState(initialSearch);
   const [selectedPlayerId, setSelectedPlayerId] = useState(initialPlayerId.trim());
   const [profiles, setProfiles] = useState<Record<string, PlayerProfile | null>>(
@@ -87,7 +87,7 @@ export function LazyPublicPlayerDirectory({
           const profile = profiles[player.id];
           const isLoading = loading[player.id] === true;
           const error = errors[player.id];
-          const isAddable = canAddUnassignedPlayers && player.teamName === 'Unassigned';
+          const isAddable = canCaptainManage && player.teamName === 'Unassigned';
           const openFromLink = selectedPlayerId
             ? player.id === selectedPlayerId
             : normalizedInitialSearch.length > 0

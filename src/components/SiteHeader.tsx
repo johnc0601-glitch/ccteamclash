@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import {DesktopRoleLinks, HeaderAccessProvider} from '@/components/HeaderAccessProvider';
+import {DesktopRoleLinks} from '@/components/HeaderAccessProvider';
 import {MobileAccountLink} from '@/components/MobileAccountLink';
 import {MobileNav} from '@/components/MobileNav';
 import {BRAND_LOGO, BRAND_NAME, BRAND_TAGLINE, FOOTER_COPY} from '@/shared/constants';
@@ -29,7 +29,6 @@ function FacebookLink({size = 20}: {size?: number}) {
 
 export function SiteHeader() {
   return (
-    <HeaderAccessProvider>
       <header className="site-header">
         <div className="primary-header">
           <div className="shell nav-wrap primary-nav-wrap">
@@ -61,7 +60,6 @@ export function SiteHeader() {
           </div>
         </div>
       </header>
-    </HeaderAccessProvider>
   );
 }
 

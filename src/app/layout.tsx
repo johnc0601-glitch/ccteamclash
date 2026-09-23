@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
+import { HeaderAccessProvider } from "@/components/HeaderAccessProvider";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/shared/constants";
 import "./globals.css";
 import "./theme.css";
@@ -18,7 +19,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body>
-        {children}
+        <HeaderAccessProvider>
+          {children}
+        </HeaderAccessProvider>
         <Analytics />
       </body>
     </html>

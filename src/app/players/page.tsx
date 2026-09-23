@@ -2,7 +2,6 @@ import {unstable_cache} from 'next/cache';
 import {LazyPublicPlayerDirectory} from '@/components/players/LazyPublicPlayerDirectory';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {createPublicPlayerService} from '@/core/createPublicPlayerService';
-import {createClient} from '@/lib/supabase/server';
 import {createProfileFromPublicPlayerView} from '@/services/playerProfiles';
 import type {
   PublicPlayerSearchEntry,
@@ -49,13 +48,11 @@ export default async function PlayersPage({searchParams}: PlayersPageProps) {
   const error = readParam(query.error);
   const service = createPublicPlayerService();
   const searchIndexPromise = getCachedPlayerSearchIndex();
-  const captainPickupAccessPromise = getCaptainPickupAccess();
   const directPlayerPromise = initialPlayerId
     ? service.getAll('all', initialPlayerId)
     : Promise.resolve([]);
   let searchIndex = await searchIndexPromise;
   let initialViews = await directPlayerPromise;
-  const canAddUnassignedPlayers = await captainPickupAccessPromise;
 
   if (!initialPlayerId && initialSearch) {
     const normalizedInitialSearch = normalizeSearchText(initialSearch);
@@ -90,33 +87,11 @@ export default async function PlayersPage({searchParams}: PlayersPageProps) {
           initialPlayerId={initialPlayerId ?? ''}
           initialSearch={initialSearch ?? ''}
           initialProfile={initialProfile}
-          canAddUnassignedPlayers={canAddUnassignedPlayers}
         />
       </main>
       <Footer />
     </>
   );
-}
-
-async function getCaptainPickupAccess(): Promise<boolean> {
-  try {
-    const supabase = await createClient();
-    const {data: {user}} = await supabase.auth.getUser();
-    if (!user) return false;
-
-    const {data: profile, error} = await (supabase as any)
-      .from('launch_profiles')
-      .select('role, status, captain_team_id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    return !error
-      && profile?.status === 'Approved'
-      && profile?.role === 'Captain'
-      && Boolean(profile.captain_team_id);
-  } catch {
-    return false;
-  }
 }
 
 const getCachedPlayerSearchIndex = unstable_cache(
