@@ -1,3 +1,4 @@
+import {revalidatePath, revalidateTag} from 'next/cache';
 import type {Team} from '@/models/Team';
 import type {TeamQuery, TeamInput, TeamServiceResult} from '@/types/team';
 import {
@@ -63,6 +64,19 @@ async function teamResponse(result: TeamServiceResult<Team | string>) {
     return Response.json(result, {status: 400});
   }
 
+  invalidatePublicTeams();
   const teams = await getStoredTeams();
   return Response.json({...result, teams});
+}
+
+function invalidatePublicTeams(): void {
+  revalidateTag('public:teams', 'max');
+  revalidateTag('public:homepage', 'max');
+  revalidateTag('public:schedule', 'max');
+  revalidatePath('/');
+  revalidatePath('/teams');
+  revalidatePath('/schedule');
+  revalidatePath('/standings');
+  revalidatePath('/stats');
+  revalidatePath('/players');
 }

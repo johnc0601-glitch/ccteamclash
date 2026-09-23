@@ -1,3 +1,4 @@
+import {revalidatePath, revalidateTag} from 'next/cache';
 import {StoryAccessError, requireStoryCommissioner} from '@/services/stories/StoryEditorAccess';
 
 export const runtime = 'nodejs';
@@ -80,6 +81,7 @@ export async function POST(request: Request) {
       .single();
 
     if (error) throw error;
+    invalidatePublicPulse();
     return Response.json({item: mapItem(data)}, {status: 201});
   } catch (error) {
     return failure(error);
@@ -102,8 +104,15 @@ export async function DELETE(request: Request) {
       .eq('id', id);
 
     if (error) throw error;
+    invalidatePublicPulse();
     return Response.json({removed: true});
   } catch (error) {
     return failure(error);
   }
+}
+
+
+function invalidatePublicPulse(): void {
+  revalidateTag('public:clash-pulse', 'max');
+  revalidatePath('/');
 }

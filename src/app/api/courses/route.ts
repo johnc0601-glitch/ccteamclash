@@ -71,5 +71,9 @@ async function courseResponse(result: Awaited<ReturnType<typeof createStoredCour
 
 function invalidatePublicCourses(): void {
   revalidateTag('public:courses', 'max');
+  revalidateTag('public:homepage', 'max');
+  revalidateTag('public:schedule', 'max');
+  revalidatePath('/');
   revalidatePath('/courses');
+  revalidatePath('/schedule');
 }
