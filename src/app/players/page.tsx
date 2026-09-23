@@ -1,6 +1,7 @@
+import {unstable_cache} from 'next/cache';
 import {LazyPublicPlayerDirectory} from '@/components/players/LazyPublicPlayerDirectory';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
-import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
+import {createPublicPlayerService} from '@/core/createPublicPlayerService';
 import {createClient} from '@/lib/supabase/server';
 import {createProfileFromPublicPlayerView} from '@/services/playerProfiles';
 import type {
@@ -46,8 +47,8 @@ export default async function PlayersPage({searchParams}: PlayersPageProps) {
   const initialSearch = readParam(query.search);
   const notice = readParam(query.notice);
   const error = readParam(query.error);
-  const service = await createServerPublicPlayerService();
-  const searchIndexPromise = service.getSearchIndex();
+  const service = createPublicPlayerService();
+  const searchIndexPromise = getCachedPlayerSearchIndex();
   const captainPickupAccessPromise = getCaptainPickupAccess();
   const directPlayerPromise = initialPlayerId
     ? service.getAll('all', initialPlayerId)
@@ -117,6 +118,15 @@ async function getCaptainPickupAccess(): Promise<boolean> {
     return false;
   }
 }
+
+const getCachedPlayerSearchIndex = unstable_cache(
+  async () => createPublicPlayerService().getSearchIndex(),
+  ['public-player-search-index-v1'],
+  {
+    revalidate: 60,
+    tags: ['public:players', 'public:stats', 'public:teams', 'public:season'],
+  },
+);
 
 function readParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
