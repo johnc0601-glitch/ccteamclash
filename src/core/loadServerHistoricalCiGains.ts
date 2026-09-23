@@ -109,7 +109,7 @@ export async function loadServerHistoricalCiGains(seasonId?: string): Promise<Ma
 
 const loadCachedHistoricalCiFacts = unstable_cache(
   async (seasonId?: string) => loadAllHistoricalCiFacts(await createHistoricalStatsReadClient(), seasonId),
-  ['historical-ci-facts-v1'],
+  ['historical-ci-facts-v2'],
   {revalidate: 3600, tags: [HISTORICAL_STATS_CACHE_TAG]},
 );
 
