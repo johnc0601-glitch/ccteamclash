@@ -1,7 +1,7 @@
 'use client';
 
-import {useState} from 'react';
-import {captainAddListedPlayer, loadPublicPlayerProfile} from '@/app/players/actions';
+import {useEffect, useState} from 'react';
+import {captainAddListedPlayer, loadCaptainPickupAccess, loadPublicPlayerProfile} from '@/app/players/actions';
 import {useHeaderAccess} from '@/components/HeaderAccessProvider';
 import {PublicPlayerProfileCard} from '@/components/players/PublicPlayerProfileCard';
 import type {PlayerProfile} from '@/services/playerProfiles';
@@ -25,7 +25,11 @@ export function LazyPublicPlayerDirectory({
   initialSearch = '',
   initialProfile,
 }: LazyPublicPlayerDirectoryProps) {
-  const {canCaptainManage} = useHeaderAccess();
+  const {role, canCaptainManage: headerCanCaptainManage} = useHeaderAccess();
+  const [recoveredCaptainAccess, setRecoveredCaptainAccess] = useState<{canManage: boolean; teamName?: string}>({
+    canManage: false,
+  });
+  const canCaptainManage = headerCanCaptainManage || recoveredCaptainAccess.canManage;
   const [search, setSearch] = useState(initialSearch);
   const [selectedPlayerId, setSelectedPlayerId] = useState(initialPlayerId.trim());
   const [profiles, setProfiles] = useState<Record<string, PlayerProfile | null>>(
@@ -44,6 +48,19 @@ export function LazyPublicPlayerDirectory({
         ? player.id === selectedPlayerId
         : [player.name, player.pdgaNumber]
           .some((value) => normalizeSearchText(value).includes(normalizedSearch)));
+
+  useEffect(() => {
+    if (headerCanCaptainManage || (role !== 'captain' && role !== 'commissioner')) return;
+
+    let cancelled = false;
+    void loadCaptainPickupAccess().then((access) => {
+      if (!cancelled) setRecoveredCaptainAccess(access);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [headerCanCaptainManage, role]);
 
   async function loadProfile(player: PublicPlayerSearchEntry) {
     if (profiles[player.id] !== undefined || loading[player.id]) return;
@@ -122,7 +139,7 @@ export function LazyPublicPlayerDirectory({
                       <strong>Available player</strong>
                       <span>Add this listed player directly to your current season roster.</span>
                     </div>
-                    <button type="submit">Add to Team</button>
+                    <button type="submit">{recoveredCaptainAccess.teamName ? `Add to ${recoveredCaptainAccess.teamName}` : 'Add to Team'}</button>
                   </form>
                 ) : null}
                 {profile ? <PublicPlayerProfileCard profile={profile} /> : null}
