@@ -1,6 +1,6 @@
 'use server';
 
-import {revalidatePath} from 'next/cache';
+import {revalidatePath, revalidateTag} from 'next/cache';
 import {headers} from 'next/headers';
 import {redirect} from 'next/navigation';
 import {createClient} from '@/lib/supabase/server';
@@ -320,6 +320,8 @@ async function currentFeedBefore(
 }
 
 function refresh(matchId: string, matchHref: string) {
+  revalidateTag('public:match-feed', 'max');
+  revalidateTag('public:homepage', 'max');
   revalidatePath(`/matches/${matchId}`);
   revalidatePath(matchHref);
   revalidatePath('/');
