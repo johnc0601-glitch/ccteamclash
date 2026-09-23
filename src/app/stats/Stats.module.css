@@ -340,8 +340,22 @@
   text-decoration: none;
 }
 
+.teamPlayerLink {
+  box-sizing: border-box;
+  padding: 1px 6px;
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 1px rgba(23, 25, 26, .14);
+  line-height: 16px;
+  vertical-align: middle;
+}
+
 .playerLink:hover {
   color: var(--cc-gold, #b88900);
+}
+
+.teamPlayerLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .smallSample {
