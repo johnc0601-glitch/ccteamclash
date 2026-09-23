@@ -49,6 +49,11 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
 
 function CaptainDashboard({events, pendingApplications, roster, season, team}: {events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; roster: CaptainRosterPlayer[]; season: CaptainSeason | null; team: LaunchTeam}) {
   const upcomingEvents = events.filter((event) => event.bucket === 'upcoming');
+  const rosterCounts = {
+    women: roster.filter((player) => player.rosterCategory === 'Women').length,
+    men: roster.filter((player) => player.rosterCategory === 'Men').length,
+    junior: roster.filter((player) => player.rosterCategory === 'Junior').length,
+  };
   const primaryColor = team.primaryColor || '#006f71';
   const secondaryColor = team.secondaryColor || '#f4f6f2';
 
@@ -56,7 +61,11 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
     <>
       <div className={styles.summaryGrid}>
         <SummaryCard label="Team" value={team.name} />
-        <SummaryCard label="Roster" value={`${roster.length} players`} />
+        <SummaryCard
+          label="Roster"
+          value={`${roster.length} players`}
+          detail={`${rosterCounts.women} Women · ${rosterCounts.men} Men · ${rosterCounts.junior} Junior`}
+        />
         <SummaryCard label="Confirm" value={`${pendingApplications.length} pending`} />
         <SummaryCard label="Upcoming" value={`${upcomingEvents.length} matches`} />
       </div>
@@ -180,7 +189,15 @@ function easternDateKey(date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
-function SummaryCard({label, value}: {label: string; value: string}) {return <article className={styles.quickCard}><span>{label}</span><strong>{value}</strong></article>;}
+function SummaryCard({label, value, detail}: {label: string; value: string; detail?: string}) {
+  return (
+    <article className={styles.quickCard}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {detail ? <small className={styles.quickCardMeta}>{detail}</small> : null}
+    </article>
+  );
+}
 function AccessMessage({message}: {message: string}) {return <section className={styles.alert}><strong>{message}</strong><p className={styles.muted}>Sign in with the account your commissioner approved for captain access.</p><Link href="/account">Open account page</Link></section>;}
 
 async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: CaptainRosterPlayer[]; events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; season: CaptainSeason | null} | {ok: false; message: string}> {
