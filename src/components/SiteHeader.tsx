@@ -42,9 +42,8 @@ export function SiteHeader() {
             <nav className="desktop-nav primary-nav" aria-label="Primary navigation">
               <Link href="/schedule">Schedule</Link>
               <Link href="/standings">Standings</Link>
-              <Link href="/stats">Stats</Link>
+              <Link href="/stats">Players</Link>
               <Link href="/teams">Teams</Link>
-              <Link href="/players">Players</Link>
               <Link href="/stories">Stories</Link>
               <Link href="/courses">Courses</Link>
               <Link href="/history">History</Link>
@@ -77,7 +76,7 @@ export function Footer() {
         <div className="footer-links">
           <Link href="/schedule">Schedule</Link>
           <Link href="/standings">Standings</Link>
-          <Link href="/stats">Stats</Link>
+          <Link href="/stats">Players</Link>
           <Link href="/history">History</Link>
           <Link href="/teams">Teams</Link>
           <Link href="/courses">Courses</Link>
