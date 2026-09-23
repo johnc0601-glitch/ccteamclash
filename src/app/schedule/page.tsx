@@ -4,7 +4,7 @@ import {createPublicStandingsService} from '@/core/createPublicStandingsService'
 import type {TeamStanding} from '@/services/standings/StandingsTypes';
 import styles from './schedule.module.css';
 
-export const revalidate = 60;
+export const revalidate = 21_600;
 
 function formatRecord(standing: TeamStanding | undefined): string {
   if (!standing) return '0–0';

@@ -2,7 +2,7 @@ import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {StandingsTable} from '@/components/standings/StandingsTable';
 import {createPublicStandingsService} from '@/core/createPublicStandingsService';
 
-export const revalidate = 60;
+export const revalidate = 21_600;
 
 export default async function StandingsPage() {
   const standings = await createPublicStandingsService().getActiveSeasonStandings();

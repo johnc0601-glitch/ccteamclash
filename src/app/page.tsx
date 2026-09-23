@@ -10,7 +10,7 @@ import {getHomepageData} from '@/services/home/HomepageDataService';
 import {getHomepageClashPulseItems} from '@/services/home/ClashPulseService';
 import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
 
-export const revalidate = 60;
+export const revalidate = 21_600;
 
 export default async function Home() {
   const [homepageData, clashPulseItems] = await Promise.all([
