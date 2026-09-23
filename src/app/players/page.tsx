@@ -98,7 +98,7 @@ const getCachedPlayerSearchIndex = unstable_cache(
   async () => createPublicPlayerService().getSearchIndex(),
   ['public-player-search-index-v1'],
   {
-    revalidate: 60,
+    revalidate: 86_400,
     tags: ['public:players', 'public:stats', 'public:teams', 'public:season'],
   },
 );
