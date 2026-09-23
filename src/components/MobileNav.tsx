@@ -62,12 +62,11 @@ export function MobileNav() {
           <span>Season</span>
           <Link href="/schedule" onClick={closeMenu}>Schedule</Link>
           <Link href="/standings" onClick={closeMenu}>Standings</Link>
-          <Link href="/stats" onClick={closeMenu}>Stats</Link>
+          <Link href="/stats" onClick={closeMenu}>Players</Link>
         </div>
         <div className="mobile-nav-group">
           <span>League</span>
           <Link href="/teams" onClick={closeMenu}>Teams</Link>
-          <Link href="/players" onClick={closeMenu}>Players</Link>
           <Link href="/stories" onClick={closeMenu}>Stories</Link>
           <Link href="/courses" onClick={closeMenu}>Courses</Link>
           <Link href="/history" onClick={closeMenu}>History</Link>
