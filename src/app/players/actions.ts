@@ -39,6 +39,42 @@ export async function loadPublicPlayerProfile(playerId: string): Promise<PlayerP
   return view ? createProfileFromPublicPlayerView(view) : null;
 }
 
+export async function loadCaptainPickupAccess(): Promise<{canManage: boolean; teamName?: string}> {
+  try {
+    const supabase = await createClient();
+    const {data: {user}, error: userError} = await supabase.auth.getUser();
+    if (userError || !user) return {canManage: false};
+
+    const {data: profile, error: profileError} = await (supabase as any)
+      .from('launch_profiles')
+      .select('role,status,captain_team_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (
+      profileError
+      || profile?.status !== 'Approved'
+      || (profile?.role !== 'Captain' && profile?.role !== 'Commissioner')
+      || !profile?.captain_team_id
+    ) {
+      return {canManage: false};
+    }
+
+    const {data: team} = await (supabase as any)
+      .from('launch_teams')
+      .select('name')
+      .eq('id', profile.captain_team_id)
+      .maybeSingle();
+
+    return {
+      canManage: true,
+      teamName: typeof team?.name === 'string' ? team.name : undefined,
+    };
+  } catch {
+    return {canManage: false};
+  }
+}
+
 export async function captainAddListedPlayer(formData: FormData) {
   const playerId = readFormValue(formData, 'playerId');
   const returnSearch = readFormValue(formData, 'returnSearch').slice(0, 100);
