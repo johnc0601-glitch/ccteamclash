@@ -7,6 +7,28 @@
   margin-bottom: 20px;
 }
 
+.pageTitleRow {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.playerSearchLink {
+  flex: 0 0 auto;
+  margin-bottom: 7px;
+  color: var(--cc-gold, #b88900);
+  font-size: 10px;
+  font-weight: 900;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.playerSearchLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .pageHeader h1 {
   margin: 4px 0 8px;
   color: #17191a;
@@ -382,6 +404,14 @@
 @media (max-width: 760px) {
   .pageHeader {
     margin-bottom: 14px;
+  }
+
+  .pageTitleRow {
+    gap: 10px;
+  }
+
+  .playerSearchLink {
+    margin-bottom: 5px;
   }
 
   .archiveNotice {
