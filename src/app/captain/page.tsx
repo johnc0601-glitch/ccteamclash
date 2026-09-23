@@ -126,7 +126,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
                 <span className={styles.rosterMeta}>
                   <span>CI: {formatClashIndex(player)}</span>
                   <span>{player.gender}</span>
-                  <span>{player.rosterCategory === 'Junior' ? 'Junior' : 'Adult'}</span>
+                  {player.rosterCategory === 'Junior' ? <span>Junior</span> : null}
                   <span>{player.pdgaNumber ? `PDGA #${player.pdgaNumber}` : 'No PDGA #'}</span>
                 </span>
               </div>
