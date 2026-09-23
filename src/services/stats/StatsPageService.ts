@@ -37,6 +37,15 @@ export class StatsPageService {
     if (requestedSeason === 'overall') throw new InvalidStatsSeasonError();
     const statsSnapshot = await this.dependencies.getSnapshot();
     const {playerViews} = statsSnapshot;
+    const currentTeamByPlayerId = new Map(
+      playerViews.flatMap((view) => view.currentTeamId && view.currentTeamName && view.currentTeamPrimaryColor
+        ? [[view.player.id, {
+            currentTeamId: view.currentTeamId,
+            currentTeamName: view.currentTeamName,
+            currentTeamPrimaryColor: view.currentTeamPrimaryColor,
+          }] as const]
+        : []),
+    );
     const activeSeasonId = playerViews.find((view) => view.currentSeasonId)?.currentSeasonId;
     const activeSeasonName = playerViews.find((view) => view.currentSeasonId)?.currentSeasonName;
     const historicalOptions: StatsGroupOption[] = this.dependencies.getHistoricalArchives().map((archive) => ({
@@ -103,6 +112,14 @@ export class StatsPageService {
       }
     }
     if (!selectedGroup) throw new InvalidStatsSeasonError();
+
+    selectedGroup = {
+      ...selectedGroup,
+      rows: selectedGroup.rows.map((row) => {
+        const currentTeam = currentTeamByPlayerId.get(row.playerId);
+        return currentTeam ? {...row, ...currentTeam} : row;
+      }),
+    };
 
     return {
       selectedGroup,

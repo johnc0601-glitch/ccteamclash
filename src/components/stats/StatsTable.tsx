@@ -196,9 +196,22 @@ export function StatsTable({group, groupOptions, initialView, fullRowCount, team
             <SortableHeader label="D +/-" sort="doublesCiGain" active={sortKey} direction={direction} onSort={toggleSort} />
           </tr></thead>
           <tbody>
-            {rankedRows.map(({row, rank}) => (
+            {rankedRows.map(({row, rank}) => {
+              const teamPillStyle = getTeamPillStyle(row.currentTeamPrimaryColor);
+              return (
               <tr key={`${group.id}-${row.playerId}`}>
-                <td><span className={styles.rank}>{rank}</span><Link className={styles.playerLink} href={`/players?player=${encodeURIComponent(row.playerId)}`}>{row.playerName}</Link></td>
+                <td>
+                  <span className={styles.rank}>{rank}</span>
+                  <Link
+                    className={`${styles.playerLink}${teamPillStyle ? ` ${styles.teamPlayerLink}` : ''}`}
+                    href={`/players?player=${encodeURIComponent(row.playerId)}`}
+                    style={teamPillStyle}
+                    title={row.currentTeamName ? `Current team: ${row.currentTeamName}` : undefined}
+                    aria-label={row.currentTeamName ? `${row.playerName}, current team ${row.currentTeamName}` : undefined}
+                  >
+                    {row.playerName}
+                  </Link>
+                </td>
                 <td><strong>{formatCi(row.clashIndex)}</strong></td>
                 <td>{row.matchesPlayed}</td>
                 <td>{row.wins}</td>
@@ -210,7 +223,8 @@ export function StatsTable({group, groupOptions, initialView, fullRowCount, team
                 <td>{formatCiGain(row.singlesCiGain)}</td>
                 <td>{formatCiGain(row.doublesCiGain)}</td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
         {!rows.length ? <p className={styles.emptyState}>No players match these filters.</p> : null}
@@ -276,4 +290,33 @@ function formatCiGain(value: number | undefined): string {
   if (value > 0) return `+${value}`;
   if (value < 0) return `−${Math.abs(value)}`;
   return '0';
+}
+
+function getTeamPillStyle(color: string | undefined): {backgroundColor: string; color: string} | undefined {
+  const normalized = normalizeHexColor(color);
+  if (!normalized) return undefined;
+  return {
+    backgroundColor: normalized,
+    color: readableTextColor(normalized),
+  };
+}
+
+function normalizeHexColor(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  const short = /^#([0-9a-f]{3})$/i.exec(trimmed);
+  if (short) {
+    const [r, g, b] = short[1].split('');
+    return `#${r}${r}${g}${g}${b}${b}`;
+  }
+  return /^#[0-9a-f]{6}$/i.test(trimmed) ? trimmed : undefined;
+}
+
+function readableTextColor(hex: string): string {
+  const r = Number.parseInt(hex.slice(1, 3), 16) / 255;
+  const g = Number.parseInt(hex.slice(3, 5), 16) / 255;
+  const b = Number.parseInt(hex.slice(5, 7), 16) / 255;
+  const linear = (value: number) => value <= .03928 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
+  const luminance = .2126 * linear(r) + .7152 * linear(g) + .0722 * linear(b);
+  return luminance > .179 ? '#17191a' : '#fffdf6';
 }

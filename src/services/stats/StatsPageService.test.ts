@@ -18,7 +18,11 @@ const snapshot = {
       id: 'player-1', name: 'Player One', teamId: 'team-1', pdgaNumber: '', pdgaRating: null,
       clashIndex: 900, gender: 'Male', active: true, createdAt: '', updatedAt: '',
     },
-    teamName: 'Team One', currentSeasonId: 'live-season', currentSeasonName: 'Coastal Clash 2026-2027',
+    teamName: 'Team One',
+    currentTeamId: 'team-1',
+    currentTeamName: 'Team One',
+    currentTeamPrimaryColor: '#123456',
+    currentSeasonId: 'live-season', currentSeasonName: 'Coastal Clash 2026-2027',
     currentStatistics: {
       playerId: 'player-1', playerName: 'Player One', seasonId: 'live-season', teamIds: ['team-1'],
       matchesPlayed: 3, finalsQualified: false,
@@ -58,6 +62,9 @@ test('historical Stats scopes every historical loader to the selected season', a
   const {service, calls} = createService();
   const result = await service.getPageData('historical-season');
   assert.equal(result.selectedGroup.id, 'historical-season');
+  assert.equal(result.selectedGroup.rows[0]?.currentTeamId, 'team-1');
+  assert.equal(result.selectedGroup.rows[0]?.currentTeamName, 'Team One');
+  assert.equal(result.selectedGroup.rows[0]?.currentTeamPrimaryColor, '#123456');
   assert.deepEqual(calls, {ci: ['historical-season'], groups: ['historical-season'], gender: 1});
 });
 

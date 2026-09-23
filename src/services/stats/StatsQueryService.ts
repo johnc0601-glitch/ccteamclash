@@ -8,6 +8,9 @@ import type {PlayerStatistics} from '@/services/statistics';
 export type StatsPlayerView = {
   player: Player;
   teamName: string;
+  currentTeamId?: string;
+  currentTeamName?: string;
+  currentTeamPrimaryColor?: string;
   currentSeasonId?: string;
   currentSeasonName: string;
   currentStatistics?: PlayerStatistics;
@@ -42,6 +45,7 @@ export class StatsQueryService {
     ]);
     const genderByPlayerId = new Map(allPlayers.map((player) => [player.id, player.gender]));
     const teamNames = new Map(teams.map((team) => [team.id, team.name]));
+    const teamsById = new Map(teams.map((team) => [team.id, team]));
     const allPlayerIds = allPlayers.map((player) => player.id);
     const snapshot = activeSeason
       ? await this.statistics.getPlayerSeasonStatisticsSnapshot(allPlayerIds, activeSeason.id)
@@ -61,6 +65,7 @@ export class StatsQueryService {
 
     const playerViews = players.map((player): StatsPlayerView => {
       const currentStatistics = statisticsByPlayer.get(player.id);
+      const currentTeam = player.active && player.teamId ? teamsById.get(player.teamId) : undefined;
       const currentCiMovement = snapshot.ciMovements.get(player.id);
       const attributedTeamIds = new Set(currentStatistics?.teamIds ?? []);
       if (player.active && player.teamId) attributedTeamIds.add(player.teamId);
@@ -70,6 +75,9 @@ export class StatsQueryService {
       return {
         player,
         teamName: attributedTeamNames.length ? attributedTeamNames.join(' / ') : 'Unassigned',
+        currentTeamId: currentTeam?.id,
+        currentTeamName: currentTeam?.name,
+        currentTeamPrimaryColor: currentTeam?.primaryColor,
         currentSeasonId: activeSeason?.id,
         currentSeasonName: activeSeason?.name ?? 'Current season',
         currentStatistics: currentStatistics?.matchesPlayed ? currentStatistics : undefined,
