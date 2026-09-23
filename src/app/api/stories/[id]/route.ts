@@ -1,3 +1,4 @@
+import {revalidatePath, revalidateTag} from 'next/cache';
 import {StoryAccessError, requireStoryCommissioner} from '@/services/stories/StoryEditorAccess';
 import {
   StoryConflictError,
@@ -18,6 +19,7 @@ export async function PATCH(request: Request, {params}: RouteContext) {
     const payload = await request.json() as {story?: unknown; revision?: unknown};
     const revision = parseRevision(payload.revision);
     const story = await updateStory(id, revision, payload.story, profile.id);
+    invalidatePublicStories(story.slug);
     return Response.json({story});
   } catch (error) {
     return storyErrorResponse(error, 'Story could not be saved.');
@@ -31,6 +33,7 @@ export async function DELETE(request: Request, {params}: RouteContext) {
     const payload = await request.json() as {revision?: unknown};
     const revision = parseRevision(payload.revision);
     const story = await archiveStory(id, revision, profile.id);
+    invalidatePublicStories(story.slug);
     return Response.json({story});
   } catch (error) {
     return storyErrorResponse(error, 'Story could not be archived.');
@@ -57,4 +60,13 @@ function storyErrorResponse(error: unknown, fallback: string) {
 
   const message = error instanceof Error ? error.message : fallback;
   return Response.json({error: message}, {status: 500});
+}
+
+
+function invalidatePublicStories(slug?: string): void {
+  revalidateTag('public:stories', 'max');
+  revalidateTag('public:homepage', 'max');
+  revalidatePath('/');
+  revalidatePath('/stories');
+  if (slug) revalidatePath(`/stories/${encodeURIComponent(slug)}`);
 }

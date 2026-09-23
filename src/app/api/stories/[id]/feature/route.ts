@@ -1,3 +1,4 @@
+import {revalidatePath, revalidateTag} from 'next/cache';
 import {StoryAccessError, requireStoryCommissioner} from '@/services/stories/StoryEditorAccess';
 import {StoryConflictError, StoryValidationError} from '@/services/stories/StoryService';
 import {featurePublishedStory} from '@/services/stories/HomepageFeatureService';
@@ -14,6 +15,11 @@ export async function POST(request: Request, {params}: RouteContext) {
     const payload = await request.json() as {revision?: unknown};
     const revision = parseRevision(payload.revision);
     const story = await featurePublishedStory(id, revision, profile.id);
+    revalidateTag('public:stories', 'max');
+    revalidateTag('public:homepage', 'max');
+    revalidatePath('/');
+    revalidatePath('/stories');
+    revalidatePath(`/stories/${encodeURIComponent(story.slug)}`);
     return Response.json({story});
   } catch (error) {
     if (error instanceof StoryAccessError) {

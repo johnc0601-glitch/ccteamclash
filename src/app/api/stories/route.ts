@@ -1,3 +1,4 @@
+import {revalidatePath, revalidateTag} from 'next/cache';
 import {StoryAccessError, requireStoryCommissioner} from '@/services/stories/StoryEditorAccess';
 import {StoryValidationError, createStory, getManagedStories} from '@/services/stories/StoryService';
 
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
     const {profile} = await requireStoryCommissioner();
     const payload = await request.json() as {story?: unknown};
     const story = await createStory(payload.story, profile.id);
+    invalidatePublicStories(story.slug);
     return Response.json({story}, {status: 201});
   } catch (error) {
     return storyErrorResponse(error, 'Story could not be created.');
@@ -35,4 +37,13 @@ function storyErrorResponse(error: unknown, fallback: string) {
 
   const message = error instanceof Error ? error.message : fallback;
   return Response.json({error: message}, {status: 500});
+}
+
+
+function invalidatePublicStories(slug?: string): void {
+  revalidateTag('public:stories', 'max');
+  revalidateTag('public:homepage', 'max');
+  revalidatePath('/');
+  revalidatePath('/stories');
+  if (slug) revalidatePath(`/stories/${encodeURIComponent(slug)}`);
 }
