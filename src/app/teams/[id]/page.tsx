@@ -3,6 +3,7 @@ import {notFound} from 'next/navigation';
 import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
+import {TeamHubNav} from './TeamHubNav';
 import {LazyTeamRosterDirectory} from '@/components/teams/LazyTeamRosterDirectory';
 import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
@@ -116,6 +117,7 @@ export default async function TeamPage({params}: TeamPageProps) {
         <div className="shell">
           <Link className={styles.back} href="/teams">Back to teams</Link>
           <ClientTeamBanner initialTeam={team} />
+          <TeamHubNav teamId={team.id} />
 
           {seasonTitles.length ? (
             <section className={styles.championBanner} aria-label="Season championships">
@@ -125,7 +127,7 @@ export default async function TeamPage({params}: TeamPageProps) {
             </section>
           ) : null}
 
-          <section className={styles.overview}>
+          <section id="overview" className={styles.overview}>
             <div className={styles.recordBlock}>
               <span>{historicalStatistics?.seasonName ?? activeSeason?.name ?? 'Current season'}</span>
               <strong>{displayStatistics ? formatRecord(displayStatistics.record) : '0-0'}</strong>
@@ -155,7 +157,7 @@ export default async function TeamPage({params}: TeamPageProps) {
 
           {team.description ? <p className={styles.description}>{team.description}</p> : null}
 
-          <section className={styles.section}>
+          <section id="schedule" className={styles.section}>
             <header className={styles.sectionHeader}>
               <span>Team schedule</span>
               <h2>Matchdays</h2>
@@ -164,7 +166,7 @@ export default async function TeamPage({params}: TeamPageProps) {
             <TeamSchedule events={teamEvents} courseDirections={courseDirections} />
           </section>
 
-          <section className={styles.section}>
+          <section id="roster" className={styles.section}>
             <header className={styles.sectionHeader}>
               <span>Current team</span>
               <h2>Roster</h2>
@@ -186,7 +188,7 @@ export default async function TeamPage({params}: TeamPageProps) {
             )}
           </section>
 
-          <section className={styles.section}>
+          <section id="history" className={styles.section}>
             <header className={styles.sectionHeader}>
               <span>League record</span>
               <h2>Season history</h2>
