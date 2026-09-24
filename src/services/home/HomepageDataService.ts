@@ -16,6 +16,7 @@ export type HomepageData = {
   storyData: HomepageStoryData;
   teams: Team[];
   homeEvents: PublicScheduleEvent[];
+  homeRoundLabel: string;
   feedPreviews: Map<string, HomepageMatchFeedPreview>;
 };
 
@@ -75,7 +76,7 @@ const getCachedHomepageRows = unstable_cache(
       db.from('launch_teams').select('*').order('name', {ascending: true}),
       db.from('launch_courses').select('id,name,map_url'),
       db.from('launch_schedules').select('id,published').eq('published', true),
-      db.from('launch_rounds').select('id,schedule_id,date,published').eq('published', true),
+      db.from('launch_rounds').select('id,schedule_id,number,name,date,published').eq('published', true),
       db
         .from('launch_schedule_matches')
         .select('id,round_id,home_team_id,away_team_id,course_id,date,time,status'),
@@ -109,7 +110,7 @@ const getCachedHomepageRows = unstable_cache(
       previews: previewsResult.data ?? [],
     };
   },
-  ['public-homepage-rows-v3'],
+  ['public-homepage-rows-v4'],
   {
     revalidate: HOMEPAGE_CACHE_SECONDS,
     tags: ['public:homepage', 'public:stories', 'public:teams', 'public:schedule', 'public:match-feed'],
@@ -157,6 +158,11 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
       .map((row: any) => [clean(row.id), clean(row.date)] as const)
       .filter(([id, date]) => Boolean(id && date)),
   );
+  const roundLabels = new Map<string, string>(
+    publishedRounds
+      .map((row: any) => [clean(row.id), formatRoundLabel(row)] as const)
+      .filter(([id, label]) => Boolean(id && label)),
+  );
 
   const events: HomepageScheduleEvent[] = rows.matches
     .filter((row: any) => publishedRoundIds.has(clean(row.round_id)))
@@ -182,6 +188,7 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
       : [];
   }
 
+  const homeRoundLabel = homeEvents[0] ? roundLabels.get(homeEvents[0].roundId) ?? '' : '';
   const homeMatchIds = new Set(homeEvents.map((event) => event.id));
   const feedPreviews = new Map<string, HomepageMatchFeedPreview>();
   for (const row of rows.previews) {
@@ -200,7 +207,7 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
     });
   }
 
-  return {storyData, teams, homeEvents, feedPreviews};
+  return {storyData, teams, homeEvents, homeRoundLabel, feedPreviews};
 }
 
 function mapPublicEvent(
@@ -283,6 +290,13 @@ function formatEventTime(value: string): string {
     hour: 'numeric',
     minute: '2-digit',
   }).format(new Date(2000, 0, 1, hours, minutes));
+}
+
+function formatRoundLabel(row: any): string {
+  const name = clean(row.name);
+  const number = Number(row.number);
+  if (/^(semi-?finals?|championship|finals?)$/i.test(name)) return name;
+  return Number.isFinite(number) && number > 0 ? `Round ${number}` : name;
 }
 
 function mapHomepageStory(row: any): HomepageStory {
