@@ -196,24 +196,33 @@ export function DesktopRoleLinks() {
   const canOpenOffice = role === 'commissioner';
   const canOpenCaptain = canCaptainManage;
   const teamDestination = currentTeamId ?? captainTeamId;
+  const hasTools = hasClubhouse || canOpenOffice || canOpenCaptain;
 
-  if (!canOpenOffice && !canOpenCaptain && !hasClubhouse && !teamDestination) return null;
+  if (!teamDestination && !hasTools) return null;
 
   return (
     <>
       <span className="primary-nav-separator" aria-hidden="true" />
       {teamDestination ? (
-        <Link className="desktop-role-link" href={`/teams/${encodeURIComponent(teamDestination)}`}>My Team</Link>
-      ) : null}
-      {hasClubhouse ? (
-        <Link className="desktop-role-link clubhouse-nav-link" href="/clubhouse">
-          Clubhouse
+        <Link
+          className="desktop-role-link clubhouse-nav-link"
+          href={`/teams/${encodeURIComponent(teamDestination)}`}
+        >
+          My Team
           {clubhouseHasUnread ? <ClubhouseUnreadDisc /> : null}
         </Link>
       ) : null}
-      {canOpenOffice ? <Link className="desktop-role-link" href="/admin">Create post</Link> : null}
-      {canOpenOffice ? <Link className="desktop-role-link" href="/office">Office</Link> : null}
-      {canOpenCaptain ? <Link className="desktop-role-link" href="/captain">Captain</Link> : null}
+      {hasTools ? (
+        <details className="desktop-more">
+          <summary>Tools</summary>
+          <div className="desktop-more-menu">
+            {hasClubhouse ? <Link href="/clubhouse">Clubhouse</Link> : null}
+            {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
+            {canOpenOffice ? <Link href="/admin">Create post</Link> : null}
+            {canOpenOffice ? <Link href="/office">Office</Link> : null}
+          </div>
+        </details>
+      ) : null}
     </>
   );
 }
