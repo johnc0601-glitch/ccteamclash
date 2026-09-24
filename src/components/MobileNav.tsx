@@ -44,18 +44,23 @@ export function MobileNav() {
     <details ref={detailsRef} className="mobile-nav">
       <summary aria-label="Menu"><span aria-hidden="true">☰</span></summary>
       <nav>
-        {(hasClubhouse || canOpenOffice || canOpenCaptain) ? (
+        {(hasClubhouse || canOpenCaptain) ? (
           <div className="mobile-nav-group mobile-nav-tools">
-            <span>Tools</span>
+            <span>My Team</span>
             {hasClubhouse ? (
               <Link className="clubhouse-nav-link" href="/clubhouse" onClick={closeMenu}>
                 Clubhouse
                 {clubhouseHasUnread ? <ClubhouseUnreadDisc /> : null}
               </Link>
             ) : null}
-            {canOpenOffice ? <Link href="/admin" onClick={closeMenu}>Create post</Link> : null}
-            {canOpenOffice ? <Link href="/office" onClick={closeMenu}>Office</Link> : null}
             {canOpenCaptain ? <Link href="/captain" onClick={closeMenu}>Captain</Link> : null}
+          </div>
+        ) : null}
+        {canOpenOffice ? (
+          <div className="mobile-nav-group mobile-nav-tools">
+            <span>Commissioner</span>
+            <Link href="/admin" onClick={closeMenu}>Create post</Link>
+            <Link href="/office" onClick={closeMenu}>Office</Link>
           </div>
         ) : null}
         <div className="mobile-nav-group">
