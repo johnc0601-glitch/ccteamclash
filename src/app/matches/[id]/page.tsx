@@ -3,6 +3,8 @@ import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
 import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
+import {MatchPreview} from '@/components/matches/MatchPreview';
+import {PwaMatchdayHub} from '@/components/matches/PwaMatchdayHub';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
@@ -190,37 +192,58 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     <>
       <SiteHeader />
       <main className={styles.page} style={pageBackground}>
-        <MatchHero matchday={matchday} />
+        <div className="browser-match-hero">
+          <MatchHero matchday={matchday} />
+        </div>
+        <PwaMatchdayHub
+          matchday={matchday}
+          match={match}
+          result={publishedResult}
+          prediction={matchPrediction}
+          attendance={personalAttendance}
+          hasManagedRoster={managedRosters.length > 0}
+        />
+        <MatchPreview matchId={matchId} />
         <div className={`shell ${styles.content}`}>
           {matchPrediction ? (
+            <div id="prediction">
             <MatchPredictionCard
               prediction={matchPrediction}
               awayTeamName={matchday.awayTeam.name}
               homeTeamName={matchday.homeTeam.name}
             />
+            </div>
           ) : null}
 
+          <div id="scoreboard">
           <MatchScoreboard matchday={matchday} result={publishedResult} contests={publishedResult ? contests : []} />
+          </div>
 
           {personalAttendance ? (
+            <div id="availability">
             <PersonalAttendanceCard attendance={personalAttendance} notice={readParam(query.attendanceNotice)} error={readParam(query.attendanceError)} />
+            </div>
           ) : null}
 
           {managedRosters.length ? (
+            <div id="captain-roster">
             <CaptainRosterPanel
               rosters={managedRosters}
               teamNames={{[matchday.awayTeam.id]: matchday.awayTeam.name, [matchday.homeTeam.id]: matchday.homeTeam.name}}
               notice={readParam(query.captainNotice)}
               error={readParam(query.captainError)}
             />
+            </div>
           ) : null}
 
+          <div id="match-feed">
           <MatchFeed
             matchId={matchId}
             matchDate={match.date}
             notice={readParam(query.feedNotice)}
             error={readParam(query.feedError)}
           />
+          </div>
 
           {lockedControls.canUnlockRoster && officialSnapshot?.status === 'complete' ? (
             <CommissionerRosterUnlockPanel
@@ -230,6 +253,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             />
           ) : null}
 
+          <div id="match-rosters">
           <MatchRosterBoard
             matchday={matchday}
             official={officialSnapshot}
@@ -237,6 +261,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             availability={availability ?? undefined}
             availabilityUnavailable={availabilityUnavailable}
           />
+          </div>
 
           {lockedControls.rosterExport?.ok ? <OfficialRosterExportPanel exportData={lockedControls.rosterExport.data} /> : null}
         </div>
