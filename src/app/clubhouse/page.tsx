@@ -4,6 +4,8 @@ import {redirect} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {createClient} from '@/lib/supabase/server';
 import {getClubhouseContext} from '@/lib/clubhouse';
+import {getMutedProfileIds} from '@/lib/profileMutes';
+import {MuteMemberControl} from '@/components/social/MuteMemberControl';
 import {
   addClubhouseComment,
   createClubhousePost,
@@ -40,6 +42,9 @@ export default async function ClubhousePage({searchParams}: Props) {
     redirect('/account');
   }
   const db = supabase as any;
+  const mutedProfileIds = context.isCommissionerReview
+    ? new Set<string>()
+    : await getMutedProfileIds(supabase as any, context.profileId);
   const brandStyle = {
     '--clubhouse-accent': context.teamPrimaryColor,
     '--clubhouse-secondary': context.teamSecondaryColor,
@@ -72,8 +77,9 @@ export default async function ClubhousePage({searchParams}: Props) {
   const teamIds = [...new Set(teamMatchRows.flatMap((match) => [match.home_team_id, match.away_team_id]).filter(Boolean))];
   const courseIds = [...new Set(teamMatchRows.map((match) => match.course_id).filter(Boolean))];
   const playerIds = (rosterRows ?? []).map((row: any) => row.player_id);
-  const postIds = (posts ?? []).map((post: any) => post.id);
-  const profileIds = (posts ?? []).map((post: any) => post.author_profile_id);
+  const visiblePosts = (posts ?? []).filter((post: any) => !mutedProfileIds.has(post.author_profile_id));
+  const postIds = visiblePosts.map((post: any) => post.id);
+  const profileIds = visiblePosts.map((post: any) => post.author_profile_id);
 
   const [teamResult, courseResult, playerResult, attendanceResult, commentResult, reactionResult] = await Promise.all([
     teamIds.length ? db.from('launch_teams').select('id,name').in('id', teamIds) : Promise.resolve({data: []}),
@@ -83,6 +89,8 @@ export default async function ClubhousePage({searchParams}: Props) {
     postIds.length ? db.from('launch_clubhouse_comments').select('id,post_id,author_profile_id,parent_comment_id,body,created_at').in('post_id', postIds).is('deleted_at', null).order('created_at', {ascending: true}) : Promise.resolve({data: []}),
     postIds.length ? db.from('launch_clubhouse_post_reactions').select('post_id,profile_id,reaction_type').in('post_id', postIds) : Promise.resolve({data: []}),
   ]);
+
+  const visibleComments = (commentResult.data ?? []).filter((comment: any) => !mutedProfileIds.has(comment.author_profile_id));
 
   const {data: moderationEvents} = (context.isCaptain || context.isCommissioner)
     ? await db
@@ -94,7 +102,7 @@ export default async function ClubhousePage({searchParams}: Props) {
       .limit(20)
     : {data: []};
 
-  const commentAuthorIds = (commentResult.data ?? []).map((comment: any) => comment.author_profile_id);
+  const commentAuthorIds = visibleComments.map((comment: any) => comment.author_profile_id);
   const moderationProfileIds = (moderationEvents ?? []).flatMap((event: any) => [
     event.content_author_profile_id,
     event.moderator_profile_id,
@@ -115,8 +123,8 @@ export default async function ClubhousePage({searchParams}: Props) {
   const undecided = playerIds.filter((id: string) => !attendance.has(id));
   const ownStatus = attendance.get(context.playerId) ?? 'Unconfirmed';
   const activityTimes = [
-    ...(posts ?? []).map((post: any) => String(post.created_at)),
-    ...(commentResult.data ?? []).map((comment: any) => String(comment.created_at)),
+    ...visiblePosts.map((post: any) => String(post.created_at)),
+    ...visibleComments.map((comment: any) => String(comment.created_at)),
   ].filter(Boolean);
   const readThrough = activityTimes.length
     ? activityTimes.reduce((latest, value) => value > latest ? value : latest)
@@ -249,8 +257,8 @@ export default async function ClubhousePage({searchParams}: Props) {
           ) : null}
 
           <section className={styles.feed}>
-            {(posts ?? []).map((post: any) => {
-              const comments = (commentResult.data ?? []).filter((comment: any) => comment.post_id === post.id);
+            {visiblePosts.map((post: any) => {
+              const comments = visibleComments.filter((comment: any) => comment.post_id === post.id);
               const reactions = (reactionResult.data ?? []).filter((reaction: any) => reaction.post_id === post.id);
               const isOwnPost = post.author_profile_id === context.profileId;
               const canManage = !context.isCommissionerReview && (context.isCaptain || context.isCommissioner || isOwnPost);
@@ -272,6 +280,13 @@ export default async function ClubhousePage({searchParams}: Props) {
                       return <form action={reactToClubhousePost} key={key}><input type="hidden" name="postId" value={post.id}/><button data-active={active} name="reactionType" value={key}>{icon}{count ? ` ${count}` : ''}</button></form>;
                     })}
                     {!context.isCommissionerReview && (context.isCaptain || context.isCommissioner) ? <form action={toggleClubhousePin}><input type="hidden" name="postId" value={post.id}/><input type="hidden" name="pinned" value={post.pinned_at ? 'true' : 'false'}/><button>{post.pinned_at ? 'Unpin' : 'Pin'}</button></form> : null}
+                    {!isOwnPost ? (
+                      <MuteMemberControl
+                        profileId={post.author_profile_id}
+                        returnTo={`/clubhouse#post-${post.id}`}
+                        compact
+                      />
+                    ) : null}
                     {canManage ? (
                       <RemovalControl
                         kind="post"
@@ -288,7 +303,10 @@ export default async function ClubhousePage({searchParams}: Props) {
                         <div className={styles.comment} key={comment.id}>
                           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'10px'}}>
                             <strong>{authors.get(comment.author_profile_id) ?? 'Member'}</strong>
-                            {canManageComment ? <RemovalControl kind="comment" id={comment.id} isOwn={isOwnComment} compact /> : null}
+                            <span style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                              {!isOwnComment ? <MuteMemberControl profileId={comment.author_profile_id} returnTo={`/clubhouse#post-${post.id}`} compact /> : null}
+                              {canManageComment ? <RemovalControl kind="comment" id={comment.id} isOwn={isOwnComment} compact /> : null}
+                            </span>
                           </div>
                           <p>{comment.body}</p>
                           {comments.filter((reply: any) => reply.parent_comment_id === comment.id).map((reply: any) => {
@@ -298,7 +316,10 @@ export default async function ClubhousePage({searchParams}: Props) {
                               <div className={styles.reply} key={reply.id}>
                                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'10px'}}>
                                   <strong>{authors.get(reply.author_profile_id) ?? 'Member'}</strong>
-                                  {canManageReply ? <RemovalControl kind="comment" id={reply.id} isOwn={isOwnReply} compact /> : null}
+                                  <span style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                                    {!isOwnReply ? <MuteMemberControl profileId={reply.author_profile_id} returnTo={`/clubhouse#post-${post.id}`} compact /> : null}
+                                    {canManageReply ? <RemovalControl kind="comment" id={reply.id} isOwn={isOwnReply} compact /> : null}
+                                  </span>
                                 </div>
                                 <span>{reply.body}</span>
                               </div>
@@ -313,7 +334,7 @@ export default async function ClubhousePage({searchParams}: Props) {
                 </article>
               );
             })}
-            {!(posts ?? []).length ? <p className={styles.empty}>No posts yet.</p> : null}
+            {!visiblePosts.length ? <p className={styles.empty}>No visible posts yet.</p> : null}
           </section>
 
           {(context.isCaptain || context.isCommissioner) ? (
