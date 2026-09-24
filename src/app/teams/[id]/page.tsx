@@ -4,6 +4,7 @@ import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory'
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
 import {TeamHubNav} from './TeamHubNav';
+import {TeamNextMatchActions} from './TeamNextMatchActions';
 import {LazyTeamRosterDirectory} from '@/components/teams/LazyTeamRosterDirectory';
 import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
@@ -15,6 +16,7 @@ import {
   getHistoricalTeamSeedSummary,
 } from '@/data/historicalSeed';
 import type {TeamScheduleEvent} from '@/domain/schedule/ScheduleService';
+import {isMatchAttendanceOpen} from '@/domain/match-roster/MatchRosterLock';
 import {getStoredCourses} from '@/services/courses/CourseStore';
 import {getStoredTeamById} from '@/services/teams/TeamStore';
 import {buildPublicTeamRoster} from '@/services/public/PublicRosterService';
@@ -76,6 +78,8 @@ export default async function TeamPage({params}: TeamPageProps) {
     scheduleService.getTeamNextEvent(team.id),
     scheduleService.getTeamEvents(team.id),
   ]);
+  const nextMatchRecord = nextMatch ? await scheduleService.getMatch(nextMatch.id) : undefined;
+  const nextMatchAvailabilityOpen = nextMatchRecord ? isMatchAttendanceOpen(nextMatchRecord) : false;
   const roster = activeSeason && launchPlayers
     ? []
     : launchPlayers
@@ -118,7 +122,14 @@ export default async function TeamPage({params}: TeamPageProps) {
           <Link className={styles.back} href="/teams">Back to teams</Link>
           <ClientTeamBanner initialTeam={team} />
           <TeamHubNav teamId={team.id} />
-          {nextMatch ? <NextMatchCard event={nextMatch} courseDirections={courseDirections} /> : null}
+          {nextMatch ? (
+            <NextMatchCard
+              event={nextMatch}
+              teamId={team.id}
+              availabilityOpen={nextMatchAvailabilityOpen}
+              courseDirections={courseDirections}
+            />
+          ) : null}
 
           {seasonTitles.length ? (
             <section className={styles.championBanner} aria-label="Season championships">
@@ -268,8 +279,10 @@ function findDirections(courseName: string, courseDirections: Map<string, string
   return undefined;
 }
 
-function NextMatchCard({event, courseDirections}: {
+function NextMatchCard({event, teamId, availabilityOpen, courseDirections}: {
   event: TeamScheduleEvent;
+  teamId: string;
+  availabilityOpen: boolean;
   courseDirections: Map<string, string>;
 }) {
   const directions = findDirections(event.course, courseDirections);
@@ -284,7 +297,11 @@ function NextMatchCard({event, courseDirections}: {
           {directions ? <a href={directions} target="_blank" rel="noreferrer">{event.course}</a> : event.course}
         </p>
       </div>
-      <Link href={event.href}>Matchday</Link>
+      <TeamNextMatchActions
+        teamId={teamId}
+        matchHref={event.href}
+        availabilityOpen={availabilityOpen}
+      />
     </div>
   );
 }
