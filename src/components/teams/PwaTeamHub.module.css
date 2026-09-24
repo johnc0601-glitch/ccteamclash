@@ -56,3 +56,42 @@
 .actions a { min-height: 82px; padding: 13px; display: grid; align-content: center; gap: 4px; border: 1px solid #ddd8cd; border-radius: 12px; background: #fff; box-shadow: 0 8px 20px rgba(13,17,18,.055); }
 .actions b { color: #1b2021; font-size: 13px; }
 .actions span { color: #747b78; font-size: 10px; }
+
+
+.announcement {
+  padding: 15px 16px;
+  display: grid;
+  gap: 5px;
+  border: 1px solid color-mix(in srgb, var(--team-primary) 48%, #d9d4c8);
+  border-left: 4px solid var(--team-primary);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(13,17,18,.06);
+}
+.announcement > span {
+  color: var(--cc-gold-ink);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.announcement > strong {
+  color: #171b1c;
+  font-size: 15px;
+}
+.announcement > p {
+  margin: 0;
+  overflow: hidden;
+  color: #656c69;
+  display: -webkit-box;
+  font-size: 11px;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.announcement > b {
+  margin-top: 3px;
+  color: var(--cc-gold-ink);
+  font-size: 9px;
+  text-transform: uppercase;
+}
