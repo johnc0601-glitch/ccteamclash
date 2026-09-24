@@ -1278,3 +1278,103 @@ td,
     padding-bottom: 30px;
   }
 }
+
+
+/* Full matchup slate: all next-round matches visible without swiping. */
+.home-match-slate {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.home-match-card-slate {
+  min-height: 190px;
+  padding: 16px 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(145px, .75fr);
+  grid-template-areas:
+    "matchup details"
+    "footer footer";
+  align-items: center;
+  gap: 12px 18px;
+}
+.home-match-card-slate .story-matchup {
+  grid-area: matchup;
+  margin: 0;
+}
+.home-match-card-slate .match-logo-frame {
+  width: 58px;
+  height: 58px;
+  border-radius: 9px;
+  font-size: 19px;
+}
+.home-match-card-slate .match-team-link {
+  gap: 8px;
+  padding: 4px 2px;
+}
+.home-match-card-slate .match-team-link strong {
+  font-size: 11px;
+  line-height: 1.12;
+}
+.home-match-card-slate .match-details {
+  grid-area: details;
+  margin: 0;
+  padding: 2px 0 2px 16px;
+  border-top: 0;
+  border-left: 1px solid var(--cc-panel-border);
+}
+.home-match-card-slate .match-details p {
+  margin: 7px 0;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.home-match-card-slate .match-details p:first-child {
+  display: none;
+}
+.home-match-card-slate .match-details span {
+  display: block;
+  min-width: 0;
+  margin: 0 0 2px;
+  font-size: 9px;
+}
+.home-match-card-slate .match-card-footer {
+  grid-area: footer;
+  min-height: 32px;
+  padding-top: 10px;
+  justify-content: flex-end;
+  border-top: 1px solid var(--cc-panel-border);
+}
+.home-match-card-slate .match-card-footer .gold-link {
+  font-size: 11px;
+  text-transform: uppercase;
+}
+@media (max-width: 760px) {
+  .home-match-slate {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .home-match-card-slate {
+    min-height: 172px;
+    grid-template-columns: minmax(0, 1fr) minmax(118px, .58fr);
+    gap: 10px 12px;
+  }
+  .home-match-card-slate .match-logo-frame {
+    width: 52px;
+    height: 52px;
+  }
+}
+@media (max-width: 390px) {
+  .home-match-card-slate {
+    padding: 14px;
+    grid-template-columns: minmax(0, 1fr) 108px;
+  }
+  .home-match-card-slate .match-logo-frame {
+    width: 46px;
+    height: 46px;
+  }
+  .home-match-card-slate .match-team-link strong {
+    font-size: 10px;
+  }
+  .home-match-card-slate .match-details {
+    padding-left: 10px;
+  }
+}
