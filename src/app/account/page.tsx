@@ -463,6 +463,7 @@ function MemberProfile({
           <span className={styles.eyebrow}>Privacy & account</span>
           <p>Control social-content visibility or remove your website login while preserving official league results and player history.</p>
           <div className={styles.privacyActions}>
+            <Link className={styles.privacyLink} href="/account/notifications">Notifications</Link>
             <Link className={styles.privacyLink} href="/account/mutes">Muted members</Link>
             <Link className={styles.deleteAccountLink} href="/account/delete">Delete account</Link>
           </div>
