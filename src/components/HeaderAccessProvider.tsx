@@ -13,6 +13,7 @@ type HeaderAccessState = {
   canCaptainManage: boolean;
   hasClubhouse: boolean;
   clubhouseHasUnread: boolean;
+  activeTeamId: string | null;
 };
 
 const EMPTY_ACCESS: HeaderAccessState = {
@@ -21,6 +22,7 @@ const EMPTY_ACCESS: HeaderAccessState = {
   canCaptainManage: false,
   hasClubhouse: false,
   clubhouseHasUnread: false,
+  activeTeamId: null,
 };
 
 const HeaderAccessContext = createContext<HeaderAccessState>(EMPTY_ACCESS);
@@ -49,6 +51,7 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
           canCaptainManage: false,
           hasClubhouse: false,
           clubhouseHasUnread: false,
+          activeTeamId: null,
         });
       }
 
@@ -66,6 +69,7 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
           canCaptainManage: false,
           hasClubhouse: false,
           clubhouseHasUnread: false,
+          activeTeamId: null,
         });
         return;
       }
@@ -75,6 +79,7 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
       ) && Boolean(profile.captain_team_id);
       let hasClubhouse = false;
       let clubhouseHasUnread = false;
+      let activeTeamId: string | null = null;
 
       if (profile.player_id) {
         const {data: season} = await db
@@ -97,6 +102,7 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
             .maybeSingle();
 
           if (membership?.team_id) {
+            activeTeamId = membership.team_id;
             hasClubhouse = true;
 
             const {data: readState} = await db
@@ -128,11 +134,11 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
 
       if (!mounted) return;
       if (profile.role === 'Commissioner') {
-        setAccess({isSignedIn: true, role: 'commissioner', canCaptainManage, hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: 'commissioner', canCaptainManage, hasClubhouse, clubhouseHasUnread, activeTeamId});
       } else if (profile.role === 'Captain') {
-        setAccess({isSignedIn: true, role: 'captain', canCaptainManage, hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: 'captain', canCaptainManage, hasClubhouse, clubhouseHasUnread, activeTeamId});
       } else {
-        setAccess({isSignedIn: true, role: null, canCaptainManage, hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: null, canCaptainManage, hasClubhouse, clubhouseHasUnread, activeTeamId});
       }
     };
 
