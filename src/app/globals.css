@@ -1273,3 +1273,15 @@ td,
     display: none !important;
   }
 }
+
+
+@media (max-width: 800px) {
+  html[data-display-mode="standalone"] .browser-team-overview {
+    display: none !important;
+  }
+
+  html[data-display-mode="standalone"] #schedule,
+  html[data-display-mode="standalone"] #roster {
+    scroll-margin-top: 86px;
+  }
+}
