@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import {useEffect, useMemo, useState} from 'react';
+import {type CSSProperties, useEffect, useMemo, useState} from 'react';
 import {useHeaderAccess} from '@/components/HeaderAccessProvider';
 import {createClient} from '@/lib/supabase/client';
 import styles from './PwaHomeDashboard.module.css';
@@ -129,7 +129,7 @@ export function PwaHomeDashboard({
       {featuredMatch ? (
         <article
           className={styles.matchHero}
-          style={ownTeam ? {'--team-accent': ownTeam.primaryColor} as React.CSSProperties : undefined}
+          style={ownTeam ? {'--team-accent': ownTeam.primaryColor} as CSSProperties : undefined}
         >
           <div className={styles.matchTeams}>
             <TeamIdentity team={awayTeam} fallback={featuredMatch.away} />
