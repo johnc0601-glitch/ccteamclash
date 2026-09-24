@@ -1246,3 +1246,23 @@ td,
   text-decoration-color: var(--cc-gold-soft);
   text-underline-offset: 3px;
 }
+
+
+/* Installed PWA shell: preserve the website header brand while replacing browser actions/footer with app navigation. */
+@media (max-width: 800px) {
+  html[data-display-mode="standalone"] .mobile-header-actions {
+    display: none !important;
+  }
+
+  html[data-display-mode="standalone"] .site-header .primary-nav-wrap {
+    justify-content: center;
+  }
+
+  html[data-display-mode="standalone"] .site-header .brand {
+    margin-inline: auto;
+  }
+
+  html[data-display-mode="standalone"] footer {
+    display: none;
+  }
+}
