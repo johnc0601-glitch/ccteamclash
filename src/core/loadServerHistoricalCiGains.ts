@@ -5,7 +5,6 @@ import {unstable_cache} from 'next/cache';
 import {createHistoricalStatsReadClient} from '@/core/createHistoricalStatsReadClient';
 import {HISTORICAL_STATS_CACHE_TAG} from '@/core/historicalStatsCacheTag';
 import {loadServerHistoricalCiArchiveReplay} from '@/core/loadServerHistoricalCiArchiveReplay';
-import {replaceHistoricalCiArchiveReplay} from '@/core/persistHistoricalCiArchiveReplay';
 import {CLASH_MODEL_VERSION} from '@/domain/story-engine/ClashPrediction';
 import {formatHistoricalCiReplayFailure} from '@/services/statistics/HistoricalCiReplayDiagnostic';
 import {selectHistoricalCiReplaySummaries} from '@/services/statistics/HistoricalCiReplaySelection';
@@ -211,20 +210,6 @@ async function loadHistoricalCiGainsFromReplay(
       replayError: error instanceof Error ? error.message : String(error),
     });
     throw new Error(diagnostic);
-  }
-
-  try {
-    const rebuilt = await replaceHistoricalCiArchiveReplay(replay);
-    console.info('[stats] Historical CI ledger rebuilt from deterministic replay', {
-      reason,
-      facts: rebuilt.insertedFacts,
-      algorithmVersion: CLASH_MODEL_VERSION,
-    });
-  } catch (error) {
-    console.error('[stats] Historical CI ledger rebuild failed; serving deterministic replay', {
-      reason,
-      rebuildError: error instanceof Error ? error.message : String(error),
-    });
   }
 
   return selectHistoricalCiReplaySummaries(replay.seasons, requestedSeasonId);
