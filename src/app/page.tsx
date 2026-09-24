@@ -2,7 +2,6 @@ import Link from 'next/link';
 import type {ReactNode} from 'react';
 import {ClashCountdown} from '@/components/ClashCountdown';
 import {ClashPulse} from '@/components/ClashPulse';
-import {HomeMatchCarousel} from '@/components/HomeMatchCarousel';
 import {createPublicStandingsService} from '@/core/createPublicStandingsService';
 import {Intro} from '@/components/intro/Intro';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
@@ -20,7 +19,7 @@ export default async function Home() {
     createPublicStandingsService().getActiveSeasonStandings(),
   ]);
   const showStandingsSnapshot = Boolean(standings?.entries.some((entry) => entry.gamesPlayed > 0));
-  const {storyData, teams: teamLogos, homeEvents, feedPreviews} = homepageData;
+  const {storyData, teams: teamLogos, homeEvents} = homepageData;
   const lead = storyData.lead;
 
   return (
@@ -31,13 +30,13 @@ export default async function Home() {
       <section className="shell home-matches-section home-matches-primary">
         <div className="home-matches-heading">
           <span className="panel-title">Next up</span>
-          <h2>Next Clash matches</h2>
+          <h2>{homeEvents[0]?.date ? `Next Clash — ${homeEvents[0].date}` : 'Next Clash matches'}</h2>
         </div>
-        <HomeMatchCarousel count={homeEvents.length}>
+        <div className="home-match-slate">
           {homeEvents.map((match) => (
-            <MatchCard key={match.id} match={match} teams={teamLogos} feedPreview={feedPreviews.get(match.id)} />
+            <MatchCard key={match.id} match={match} teams={teamLogos} variant="slate" />
           ))}
-        </HomeMatchCarousel>
+        </div>
       </section>
 
       {showStandingsSnapshot && standings ? (
