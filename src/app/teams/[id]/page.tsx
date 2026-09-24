@@ -169,7 +169,7 @@ export default async function TeamPage({params}: TeamPageProps) {
           <section id="roster" className={styles.section}>
             <header className={styles.sectionHeader}>
               <span>Current team</span>
-              <h2>Roster</h2>
+              <h2>Roster / Stats</h2>
               <p>{rosterCount} {rosterCount === 1 ? 'player' : 'players'}</p>
             </header>
             {activeSeason && launchPlayers ? (
