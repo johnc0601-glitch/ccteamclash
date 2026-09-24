@@ -21,6 +21,7 @@ export function PwaTeamHub({
   isOwnTeam,
   canManage,
   attendance,
+  announcement,
 }: {
   team: Team;
   nextMatch?: TeamScheduleEvent;
@@ -30,6 +31,7 @@ export function PwaTeamHub({
   isOwnTeam: boolean;
   canManage: boolean;
   attendance: Attendance;
+  announcement?: {id: string; title: string; body: string} | null;
 }) {
   const brandStyle = {
     '--team-primary': team.primaryColor || '#c89b2b',
@@ -79,6 +81,15 @@ export function PwaTeamHub({
           ) : null}
           <Link className={styles.matchLink} href={nextMatch.href}>Open Matchday</Link>
         </article>
+      ) : null}
+
+      {isOwnTeam && announcement ? (
+        <Link className={styles.announcement} href={`/clubhouse#post-${announcement.id}`}>
+          <span>Captain announcement</span>
+          <strong>{announcement.title || 'Team update'}</strong>
+          <p>{announcement.body}</p>
+          <b>Open Clubhouse →</b>
+        </Link>
       ) : null}
 
       <nav className={styles.actions} aria-label="Team shortcuts">
