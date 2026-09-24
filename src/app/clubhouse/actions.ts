@@ -59,20 +59,28 @@ export async function setClubhouseAttendance(formData: FormData) {
 export async function createClubhousePost(formData: FormData) {
   const title = value(formData, 'title');
   const body = value(formData, 'body');
+  const requestedType = value(formData, 'postType');
   if (!body) redirect('/clubhouse?error=Write something before posting.');
+
   const {supabase, context} = await requireContext();
+  const canAnnounce = context.isCaptain || context.isCommissioner;
+  const postType = requestedType === 'announcement' && canAnnounce ? 'announcement' : 'discussion';
   const db = supabase as any;
+
   const {error} = await db.from('launch_clubhouse_posts').insert({
     season_id: context.seasonId,
     team_id: context.teamId,
     author_profile_id: context.profileId,
     title: title || null,
     body,
+    post_type: postType,
+    pinned_at: postType === 'announcement' ? new Date().toISOString() : null,
   });
   if (error) redirect('/clubhouse?error=Post could not be saved.');
   revalidatePath('/clubhouse');
   revalidatePath('/office/clubhouses');
-  redirect('/clubhouse?notice=Posted.');
+  revalidatePath(`/teams/${context.teamId}`);
+  redirect(`/clubhouse?notice=${postType === 'announcement' ? 'Captain announcement posted.' : 'Posted.'}`);
 }
 
 export async function deleteClubhousePost(formData: FormData) {
