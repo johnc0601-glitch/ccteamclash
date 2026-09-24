@@ -101,3 +101,65 @@
     padding-left: 11px;
   }
 }
+
+
+/* Team Hub refinement: keep navigation close and surface the next matchup. */
+.nextMatch {
+  margin-top: 0;
+  margin-bottom: 24px;
+}
+.nextMatch > a {
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .page {
+    padding-top: 18px;
+  }
+  .hubNav {
+    position: sticky;
+    top: 118px;
+    z-index: 8;
+    min-height: 46px;
+    margin-bottom: 14px;
+    border-top: 1px solid var(--cc-light-border);
+    box-shadow: 0 8px 22px rgba(0,0,0,.08);
+  }
+  .hubNav a {
+    min-height: 34px;
+    padding-right: 10px;
+    padding-left: 10px;
+    font-size: 9px;
+  }
+  .nextMatch {
+    margin-bottom: 18px;
+    padding: 16px;
+    gap: 12px;
+  }
+  .nextMatch h3 {
+    margin: 4px 0 6px;
+    font-size: 22px;
+  }
+  .nextMatch p {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .nextMatch > a {
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 10px;
+  }
+  .section {
+    margin-top: 46px;
+  }
+  .sectionHeader {
+    margin-bottom: 16px;
+  }
+  .sectionHeader h2 {
+    font-size: 28px;
+  }
+  .description {
+    margin-top: 22px;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+}
