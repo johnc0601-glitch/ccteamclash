@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import {PlayerRecordSelect} from '@/components/launch/PlayerRecordSelect';
 import {ThemeToggle} from '@/components/ThemeToggle';
+import {InstallTeamClashCard} from '@/components/InstallTeamClashCard';
 import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {ensureLaunchSignupProfile} from '@/domain/launch/LaunchAccountSetup';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
@@ -459,6 +460,7 @@ function MemberProfile({
         <h2>Theme</h2>
         <p>Choose how Team Clash looks on this device.</p>
         <div className={styles.themeAction}><ThemeToggle /></div>
+        <InstallTeamClashCard />
         <div className={styles.accountPrivacy}>
           <span className={styles.eyebrow}>Privacy & account</span>
           <p>Control social-content visibility or remove your website login while preserving official league results and player history.</p>
