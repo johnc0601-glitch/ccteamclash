@@ -38,7 +38,7 @@ export async function enqueueCaptainAnnouncementNotifications(
 
   if (profileError) throw profileError;
 
-  const candidateProfileIds = (profileRows ?? [])
+  const candidateProfileIds: string[] = (profileRows ?? [])
     .map((row: {id: string}) => row.id)
     .filter((id: string) => id !== input.authorProfileId);
   if (!candidateProfileIds.length) return 0;
@@ -66,12 +66,12 @@ export async function enqueueCaptainAnnouncementNotifications(
     ]),
   );
 
-  const recipients = candidateProfileIds.filter((profileId: string) =>
+  const recipients: string[] = candidateProfileIds.filter((profileId: string) =>
     subscribed.has(profileId) && preferenceMap.get(profileId) !== false);
   if (!recipients.length) return 0;
 
   const announcementTitle = input.title.trim() || 'Captain announcement';
-  const rows = recipients.map((profileId) => ({
+  const rows = recipients.map((profileId: string) => ({
     profile_id: profileId,
     category: 'captain_announcements',
     title: `${input.teamName}: ${announcementTitle}`.slice(0, 180),
