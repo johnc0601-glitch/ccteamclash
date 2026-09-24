@@ -19,7 +19,7 @@ export default async function Home() {
     createPublicStandingsService().getActiveSeasonStandings(),
   ]);
   const showStandingsSnapshot = Boolean(standings?.entries.some((entry) => entry.gamesPlayed > 0));
-  const {storyData, teams: teamLogos, homeEvents} = homepageData;
+  const {storyData, teams: teamLogos, homeEvents, homeRoundLabel} = homepageData;
   const lead = storyData.lead;
 
   return (
@@ -29,8 +29,8 @@ export default async function Home() {
 
       <section className="shell home-matches-section home-matches-primary">
         <div className="home-matches-heading">
-          <span className="panel-title">Next up</span>
-          <h2>{homeEvents[0]?.date ? `Next Clash — ${homeEvents[0].date}` : 'Next Clash matches'}</h2>
+          <span className="panel-title">{homeRoundLabel || 'Next round'}</span>
+          <h2>Next Clash</h2>
         </div>
         <div className="home-match-slate">
           {homeEvents.map((match) => (
