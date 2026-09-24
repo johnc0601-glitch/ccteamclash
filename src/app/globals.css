@@ -1287,3 +1287,20 @@ td,
     scroll-margin-top: 86px;
   }
 }
+
+
+@media (max-width: 800px) and (display-mode: standalone) {
+  .browser-match-hero {
+    display: none !important;
+  }
+
+  #prediction,
+  #scoreboard,
+  #availability,
+  #captain-roster,
+  #match-feed,
+  #match-rosters,
+  #match-preview {
+    scroll-margin-top: 78px;
+  }
+}
