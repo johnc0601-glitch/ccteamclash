@@ -37,8 +37,18 @@ export async function proxy(request: NextRequest) {
   );
 
   // Session-sensitive routes refresh/verify the token before server code uses it.
-  // Public league pages keep personalized access state client-side.
-  await supabase.auth.getClaims();
+  // Public league pages keep personalized access state client-side. A rotated or
+  // revoked refresh token is a normal signed-out state, not a request failure.
+  try {
+    const {error} = await supabase.auth.getClaims();
+    if (error) {
+      if (!isRefreshTokenNotFound(error)) throw error;
+      pendingCookies = clearStaleSupabaseAuthCookies(request, url, pendingCookies);
+    }
+  } catch (error) {
+    if (!isRefreshTokenNotFound(error)) throw error;
+    pendingCookies = clearStaleSupabaseAuthCookies(request, url, pendingCookies);
+  }
 
   const matchReference = readMatchReference(request.nextUrl.pathname);
   if (matchReference) {
@@ -67,6 +77,37 @@ export async function proxy(request: NextRequest) {
   }
 
   return applySupabaseState(NextResponse.next({request}), pendingCookies, pendingHeaders);
+}
+
+function isRefreshTokenNotFound(error: unknown): boolean {
+  return typeof error === 'object'
+    && error !== null
+    && 'code' in error
+    && (error as {code?: unknown}).code === 'refresh_token_not_found';
+}
+
+function clearStaleSupabaseAuthCookies(
+  request: NextRequest,
+  supabaseUrl: string,
+  cookies: CookieUpdate[],
+): CookieUpdate[] {
+  const projectRef = new URL(supabaseUrl).hostname.split('.')[0];
+  const authCookiePrefix = `sb-${projectRef}-auth-token`;
+  const staleCookieNames = request.cookies.getAll()
+    .map(({name}) => name)
+    .filter((name) => name.startsWith(authCookiePrefix));
+  if (!staleCookieNames.length) return cookies;
+
+  const staleCookieSet = new Set(staleCookieNames);
+  staleCookieNames.forEach((name) => request.cookies.delete(name));
+  return [
+    ...cookies.filter(({name}) => !staleCookieSet.has(name)),
+    ...staleCookieNames.map((name) => ({
+      name,
+      value: '',
+      options: {path: '/', maxAge: 0},
+    })),
+  ];
 }
 
 function readMatchReference(pathname: string): string | undefined {
