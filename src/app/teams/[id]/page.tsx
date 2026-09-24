@@ -112,6 +112,18 @@ export default async function TeamPage({params}: TeamPageProps) {
   const appAttendance = isOwnTeam && nextMatch
     ? await getTeamAttendanceSummary(supabase, nextMatch.id, team.id, viewerContext?.playerId ?? '', rosterCount)
     : null;
+  const {data: latestAnnouncement} = isOwnTeam
+    ? await (supabase as any)
+      .from('launch_clubhouse_posts')
+      .select('id,title,body')
+      .eq('season_id', viewerContext?.seasonId)
+      .eq('team_id', team.id)
+      .eq('post_type', 'announcement')
+      .is('deleted_at', null)
+      .order('created_at', {ascending: false})
+      .limit(1)
+      .maybeSingle()
+    : {data: null};
   const historicalHistory = getHistoricalTeamSeasonSummaries(team.id);
   const seasonTitles = getHistoricalTeamSeasonTitles(team.id);
   const history = seasonStatistics.filter(({statistics}) => statistics.matchesPlayed > 0);
@@ -134,6 +146,11 @@ export default async function TeamPage({params}: TeamPageProps) {
             isOwnTeam={isOwnTeam}
             canManage={canManageTeam}
             attendance={appAttendance}
+            announcement={latestAnnouncement ? {
+              id: latestAnnouncement.id,
+              title: latestAnnouncement.title ?? '',
+              body: latestAnnouncement.body ?? '',
+            } : null}
           />
           <div className="browser-team-overview">
           <Link className={styles.back} href="/teams">Back to teams</Link>
