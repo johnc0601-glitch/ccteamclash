@@ -14,7 +14,7 @@ type Tab = {
 
 export function AppBottomNav() {
   const pathname = usePathname();
-  const {activeTeamId} = useHeaderAccess();
+  const {activeTeamId, clubhouseHasUnread} = useHeaderAccess();
   const teamHref = activeTeamId ? `/teams/${encodeURIComponent(activeTeamId)}` : '/teams';
 
   const tabs: Tab[] = [
@@ -44,8 +44,12 @@ export function AppBottomNav() {
             href={tab.href}
             className={tab.active ? styles.active : undefined}
             aria-current={tab.active ? 'page' : undefined}
+            data-tab={tab.icon}
           >
-            <TabIcon name={tab.icon} />
+            <span className={styles.iconWrap}>
+              <TabIcon name={tab.icon} />
+              {tab.icon === 'team' && clubhouseHasUnread ? <i className={styles.unreadDot} aria-label="New Clubhouse activity" /> : null}
+            </span>
             <span>{tab.label}</span>
           </Link>
         ))}
