@@ -10,9 +10,17 @@ const FACEBOOK_GROUP_URL = 'https://facebook.com/groups/780013754161635/';
 export function MobileNav() {
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
-  const {role, canCaptainManage, hasClubhouse, clubhouseHasUnread} = useHeaderAccess();
+  const {
+    role,
+    canCaptainManage,
+    hasClubhouse,
+    clubhouseHasUnread,
+    currentTeamId,
+    captainTeamId,
+  } = useHeaderAccess();
   const canOpenOffice = role === 'commissioner';
   const canOpenCaptain = canCaptainManage;
+  const teamDestination = currentTeamId ?? captainTeamId;
 
   const closeMenu = useCallback(() => {
     if (detailsRef.current) detailsRef.current.open = false;
@@ -44,9 +52,12 @@ export function MobileNav() {
     <details ref={detailsRef} className="mobile-nav">
       <summary aria-label="Menu"><span aria-hidden="true">☰</span></summary>
       <nav>
-        {(hasClubhouse || canOpenCaptain) ? (
+        {(teamDestination || hasClubhouse || canOpenCaptain) ? (
           <div className="mobile-nav-group mobile-nav-tools">
             <span>My Team</span>
+            {teamDestination ? (
+              <Link href={`/teams/${encodeURIComponent(teamDestination)}`} onClick={closeMenu}>Team home</Link>
+            ) : null}
             {hasClubhouse ? (
               <Link className="clubhouse-nav-link" href="/clubhouse" onClick={closeMenu}>
                 Clubhouse
