@@ -1,0 +1,82 @@
+.page {
+  max-width: 900px;
+}
+
+.primary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 34px;
+}
+
+.card {
+  position: relative;
+  min-height: 150px;
+  padding: 24px;
+  border: 1px solid var(--cc-panel-border);
+  border-radius: var(--cc-radius-md);
+  background: var(--cc-surface);
+  box-shadow: var(--cc-card-shadow);
+}
+
+.card strong {
+  display: block;
+  color: var(--cc-text);
+  font-size: 24px;
+}
+
+.card span {
+  display: block;
+  max-width: 85%;
+  margin-top: 10px;
+  color: var(--cc-text-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.card b {
+  position: absolute;
+  right: 22px;
+  bottom: 20px;
+  color: var(--cc-gold);
+  font-size: 22px;
+}
+
+.more {
+  margin-top: 38px;
+  padding-top: 28px;
+  border-top: 1px solid var(--cc-panel-border);
+}
+
+.more h2 {
+  margin: 0 0 16px;
+  color: var(--cc-text);
+  font-size: 20px;
+}
+
+.more div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.more a {
+  padding: 10px 13px;
+  border: 1px solid var(--cc-panel-border);
+  border-radius: var(--cc-radius-sm);
+  background: var(--cc-surface);
+  color: var(--cc-body-text);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .primary {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    min-height: 126px;
+  }
+}
