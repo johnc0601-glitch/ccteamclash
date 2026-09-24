@@ -69,7 +69,7 @@ export function PwaHomeDashboard({
   story: PwaHomeStory;
   pulse: PwaHomePulse[];
 }) {
-  const {isSignedIn, activeTeamId, playerId, clubhouseHasUnread} = useHeaderAccess();
+  const {isSignedIn, activeTeamId, activeSeasonId, playerId, clubhouseHasUnread} = useHeaderAccess();
   const [attendance, setAttendance] = useState<AttendanceSummary | null>(null);
   const [pulseIndex, setPulseIndex] = useState(0);
 
@@ -94,23 +94,36 @@ export function PwaHomeDashboard({
     }
     let cancelled = false;
     const supabase = createClient();
-    void (supabase as any)
-      .from('launch_match_attendance')
-      .select('player_id,status')
-      .eq('match_id', ownMatch.id)
-      .eq('team_id', activeTeamId)
-      .then(({data}: {data: Array<{player_id: string; status: string}> | null}) => {
-        if (cancelled) return;
-        const rows = data ?? [];
-        setAttendance({
-          yes: rows.filter((row) => row.status === 'Playing').length,
-          no: rows.filter((row) => row.status === 'NotPlaying').length,
-          unknown: rows.filter((row) => row.status === 'Unconfirmed').length,
-          own: playerId ? rows.find((row) => row.player_id === playerId)?.status ?? null : null,
-        });
+    const db = supabase as any;
+    void Promise.all([
+      db
+        .from('launch_match_attendance')
+        .select('player_id,status')
+        .eq('match_id', ownMatch.id)
+        .eq('team_id', activeTeamId),
+      activeSeasonId
+        ? db
+          .from('launch_season_roster_memberships')
+          .select('player_id')
+          .eq('season_id', activeSeasonId)
+          .eq('team_id', activeTeamId)
+          .eq('status', 'Active')
+        : Promise.resolve({data: []}),
+    ]).then(([attendanceResult, rosterResult]) => {
+      if (cancelled) return;
+      const rows = (attendanceResult.data ?? []) as Array<{player_id: string; status: string}>;
+      const rosterCount = (rosterResult.data ?? []).length;
+      const yes = rows.filter((row) => row.status === 'Playing').length;
+      const no = rows.filter((row) => row.status === 'NotPlaying').length;
+      setAttendance({
+        yes,
+        no,
+        unknown: Math.max(0, rosterCount - yes - no),
+        own: playerId ? rows.find((row) => row.player_id === playerId)?.status ?? null : null,
       });
+    });
     return () => { cancelled = true; };
-  }, [activeTeamId, ownMatch?.id, playerId]);
+  }, [activeSeasonId, activeTeamId, ownMatch?.id, playerId]);
 
   const homeTeam = featuredMatch ? teamsById.get(featuredMatch.homeTeamId) ?? null : null;
   const awayTeam = featuredMatch ? teamsById.get(featuredMatch.awayTeamId) ?? null : null;
