@@ -284,7 +284,7 @@ function NextMatchCard({event, courseDirections}: {
           {directions ? <a href={directions} target="_blank" rel="noreferrer">{event.course}</a> : event.course}
         </p>
       </div>
-      <Link href={event.href}>Match page</Link>
+      <Link href={event.href}>Matchday</Link>
     </div>
   );
 }
