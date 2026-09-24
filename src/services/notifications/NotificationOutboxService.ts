@@ -135,7 +135,7 @@ export async function enqueuePublishedResultNotifications(matchId: string) {
     .eq('status', 'Active');
   if (rosterError) throw rosterError;
 
-  const playerIds: string[] = [...new Set(
+  const playerIds: string[] = [...new Set<string>(
     (rosterRows ?? []).map((row: {player_id: string}) => row.player_id),
   )];
   if (!playerIds.length) return 0;
