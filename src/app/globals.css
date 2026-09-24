@@ -1406,3 +1406,79 @@ td,
     line-height: 1;
   }
 }
+
+
+/* Slate refinement: denser sports-schedule rows. */
+.home-match-card-slate {
+  min-height: 148px;
+  padding: 14px 16px;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  grid-template-areas:
+    "matchup details"
+    "matchup footer";
+  gap: 4px 14px;
+}
+.home-match-card-slate .story-matchup {
+  align-self: center;
+}
+.home-match-card-slate .story-matchup > b {
+  font-size: 16px;
+  letter-spacing: 0;
+}
+.home-match-card-slate .match-logo-frame {
+  width: 50px;
+  height: 50px;
+}
+.home-match-card-slate .match-team-link {
+  gap: 6px;
+}
+.home-match-card-slate .match-details {
+  align-self: end;
+  padding: 0 0 2px 12px;
+}
+.home-match-card-slate .match-details p {
+  margin: 4px 0;
+  font-size: 11px;
+}
+.home-match-card-slate .match-details span {
+  margin-bottom: 1px;
+  font-size: 8px;
+  letter-spacing: .05em;
+}
+.home-match-card-slate .match-card-footer {
+  min-height: 0;
+  padding: 2px 0 0 12px;
+  justify-content: flex-start;
+  align-self: start;
+  border-top: 0;
+}
+.home-match-card-slate .match-card-footer .gold-link {
+  font-size: 10px;
+}
+@media (max-width: 760px) {
+  .home-match-card-slate {
+    min-height: 136px;
+    padding: 12px 14px;
+    grid-template-columns: minmax(0, 1fr) 118px;
+    gap: 2px 10px;
+  }
+  .home-match-card-slate .match-logo-frame {
+    width: 46px;
+    height: 46px;
+  }
+  .home-match-card-slate .match-details {
+    padding-left: 9px;
+  }
+  .home-match-card-slate .match-card-footer {
+    padding-left: 9px;
+  }
+}
+@media (max-width: 390px) {
+  .home-match-card-slate {
+    grid-template-columns: minmax(0, 1fr) 104px;
+  }
+  .home-match-card-slate .match-logo-frame {
+    width: 42px;
+    height: 42px;
+  }
+}
