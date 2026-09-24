@@ -34,7 +34,7 @@ export function MatchCard({match, teams, feedPreview, variant = 'default'}: Matc
           <TeamMatchLogo name={match.away} logo={awayTeam?.logo} />
           <strong>{match.away}</strong>
         </Link>
-        <b>VS</b>
+        <b>{variant === 'slate' ? '@' : 'VS'}</b>
         <Link className="match-team-link" href={`/teams/${encodeURIComponent(match.homeTeamId)}`}>
           <TeamMatchLogo name={match.home} logo={homeTeam?.logo} />
           <strong>{match.home}</strong>
