@@ -562,3 +562,17 @@
   .commentForm button,
   .replyForm button { align-self: flex-end; }
 }
+
+
+.post[data-post-type="announcement"] {
+  border-color: color-mix(in srgb, var(--clubhouse-accent) 58%, var(--cc-card-border));
+  border-top: 4px solid var(--clubhouse-accent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--clubhouse-accent) 8%, var(--cc-card-bg)), var(--cc-card-bg) 42%);
+}
+
+.post[data-post-type="announcement"] .postTop b {
+  color: var(--cc-gold);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
