@@ -3,6 +3,7 @@ import type {ReactNode} from 'react';
 import {ClashCountdown} from '@/components/ClashCountdown';
 import {ClashPulse} from '@/components/ClashPulse';
 import {HomeMatchCarousel} from '@/components/HomeMatchCarousel';
+import {createPublicStandingsService} from '@/core/createPublicStandingsService';
 import {Intro} from '@/components/intro/Intro';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchCard} from '@/components/MatchCard';
@@ -13,10 +14,12 @@ import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresenta
 export const revalidate = 21_600;
 
 export default async function Home() {
-  const [homepageData, clashPulseItems] = await Promise.all([
+  const [homepageData, clashPulseItems, standings] = await Promise.all([
     getHomepageData(),
     getHomepageClashPulseItems(),
+    createPublicStandingsService().getActiveSeasonStandings(),
   ]);
+  const showStandingsSnapshot = Boolean(standings?.entries.some((entry) => entry.gamesPlayed > 0));
   const {storyData, teams: teamLogos, homeEvents, feedPreviews} = homepageData;
   const lead = storyData.lead;
 
@@ -24,6 +27,40 @@ export default async function Home() {
     <main className="home-page">
       <SiteHeader />
       <ClashCountdown />
+
+      <section className="shell home-matches-section home-matches-primary">
+        <div className="home-matches-heading">
+          <span className="panel-title">Next up</span>
+          <h2>Next Clash matches</h2>
+        </div>
+        <HomeMatchCarousel count={homeEvents.length}>
+          {homeEvents.map((match) => (
+            <MatchCard key={match.id} match={match} teams={teamLogos} feedPreview={feedPreviews.get(match.id)} />
+          ))}
+        </HomeMatchCarousel>
+      </section>
+
+      {showStandingsSnapshot && standings ? (
+        <section className="shell home-league-snapshot" aria-label="Current standings snapshot">
+          <article className="dark-panel story-home-card compact-standings home-standings-snapshot">
+            <div className="panel-heading">
+              <span className="panel-title">Current standings</span>
+              <Link href="/standings">View all -&gt;</Link>
+            </div>
+            <div className="mini-table-head"><span>Team</span><span>W-L</span><span>Diff</span></div>
+            {standings.entries.slice(0, 4).map((entry) => (
+              <div className="mini-standing" key={entry.team.id}>
+                <span>
+                  <b>{entry.rank}</b>
+                  <Link href={`/teams/${entry.team.id}`}>{entry.team.shortName || entry.team.name}</Link>
+                </span>
+                <span>{entry.wins}-{entry.losses}</span>
+                <span>{entry.pointDifferential > 0 ? `+${entry.pointDifferential}` : entry.pointDifferential}</span>
+              </div>
+            ))}
+          </article>
+        </section>
+      ) : null}
 
       {lead ? (
         <section className="story-home-hero">
@@ -38,18 +75,6 @@ export default async function Home() {
           </div>
         </section>
       ) : null}
-
-      <section className="shell home-matches-section">
-        <div className="home-matches-heading">
-          <span className="panel-title">League schedule</span>
-          <h2>This month&apos;s matches</h2>
-        </div>
-        <HomeMatchCarousel count={homeEvents.length}>
-          {homeEvents.map((match) => (
-            <MatchCard key={match.id} match={match} teams={teamLogos} feedPreview={feedPreviews.get(match.id)} />
-          ))}
-        </HomeMatchCarousel>
-      </section>
 
       <section className="shell story-home-bottom">
         <section className="dark-panel latest-panel">
