@@ -1246,3 +1246,35 @@ td,
   text-decoration-color: var(--cc-gold-soft);
   text-underline-offset: 3px;
 }
+
+
+/* Sports IA preview: activity-first homepage hierarchy. */
+.home-matches-section.home-matches-primary {
+  margin-top: 28px;
+  margin-bottom: 38px;
+  padding-top: 12px;
+}
+.home-league-snapshot {
+  padding: 0 0 42px;
+}
+.home-standings-snapshot {
+  width: min(100%, 560px);
+  min-height: 0;
+  margin: 0 auto;
+}
+.home-standings-snapshot .panel-heading {
+  margin-bottom: 8px;
+}
+.home-page .story-home-hero {
+  margin-top: 0;
+}
+@media (max-width: 680px) {
+  .home-matches-section.home-matches-primary {
+    margin-top: 18px;
+    margin-bottom: 28px;
+    padding-top: 6px;
+  }
+  .home-league-snapshot {
+    padding-bottom: 30px;
+  }
+}
