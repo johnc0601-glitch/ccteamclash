@@ -44,7 +44,7 @@ export function PwaMatchdayHub({
         <Team
           name={matchday.awayTeam.name}
           logo={matchday.awayTeam.logo}
-          score={result?.awayScore}
+          score={result?.awayScore ?? undefined}
           side="away"
         />
         <div className={styles.center}>
@@ -54,7 +54,7 @@ export function PwaMatchdayHub({
         <Team
           name={matchday.homeTeam.name}
           logo={matchday.homeTeam.logo}
-          score={result?.homeScore}
+          score={result?.homeScore ?? undefined}
           side="home"
         />
       </div>
