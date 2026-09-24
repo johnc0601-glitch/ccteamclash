@@ -459,6 +459,11 @@ function MemberProfile({
         <h2>Theme</h2>
         <p>Choose how Team Clash looks on this device.</p>
         <div className={styles.themeAction}><ThemeToggle /></div>
+        <div className={styles.accountPrivacy}>
+          <span className={styles.eyebrow}>Privacy & account</span>
+          <p>Remove your website login while preserving official league results and player history.</p>
+          <Link className={styles.deleteAccountLink} href="/account/delete">Delete account</Link>
+        </div>
       </article>
     </section>
   );
