@@ -6,6 +6,7 @@ import {PlayerAvailabilityService} from '@/domain/match-roster/PlayerAvailabilit
 import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
 import {createClient} from '@/lib/supabase/server';
 import {getOwnClubhouseContext} from '@/lib/clubhouse';
+import {enqueueCaptainAnnouncementNotifications} from '@/services/notifications/NotificationOutboxService';
 
 const MODERATION_REASONS = new Set(['Spam', 'Harassment', 'Inappropriate', 'Off-topic', 'Other']);
 
@@ -67,16 +68,40 @@ export async function createClubhousePost(formData: FormData) {
   const postType = requestedType === 'announcement' && canAnnounce ? 'announcement' : 'discussion';
   const db = supabase as any;
 
-  const {error} = await db.from('launch_clubhouse_posts').insert({
-    season_id: context.seasonId,
-    team_id: context.teamId,
-    author_profile_id: context.profileId,
-    title: title || null,
-    body,
-    post_type: postType,
-    pinned_at: postType === 'announcement' ? new Date().toISOString() : null,
-  });
-  if (error) redirect('/clubhouse?error=Post could not be saved.');
+  const {data: createdPost, error} = await db
+    .from('launch_clubhouse_posts')
+    .insert({
+      season_id: context.seasonId,
+      team_id: context.teamId,
+      author_profile_id: context.profileId,
+      title: title || null,
+      body,
+      post_type: postType,
+      pinned_at: postType === 'announcement' ? new Date().toISOString() : null,
+    })
+    .select('id')
+    .single();
+  if (error || !createdPost) redirect('/clubhouse?error=Post could not be saved.');
+
+  if (postType === 'announcement') {
+    try {
+      await enqueueCaptainAnnouncementNotifications({
+        seasonId: context.seasonId,
+        teamId: context.teamId,
+        teamName: context.teamName,
+        postId: createdPost.id,
+        title,
+        body,
+        authorProfileId: context.profileId,
+      });
+    } catch (notificationError) {
+      console.error('Captain announcement notification could not be queued.', {
+        postId: createdPost.id,
+        teamId: context.teamId,
+        error: notificationError,
+      });
+    }
+  }
   revalidatePath('/clubhouse');
   revalidatePath('/office/clubhouses');
   revalidatePath(`/teams/${context.teamId}`);
