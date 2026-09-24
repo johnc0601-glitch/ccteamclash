@@ -45,6 +45,7 @@ export async function PersonalAttendanceCard({
 
   return (
     <section
+      id="availability"
       className={styles.attendanceCard}
       aria-labelledby="personal-attendance-heading"
       style={{padding: '16px 18px', gap: '12px'}}
