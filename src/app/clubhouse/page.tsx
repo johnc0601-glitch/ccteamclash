@@ -57,10 +57,11 @@ export default async function ClubhousePage({searchParams}: Props) {
       .eq('team_id', context.teamId)
       .eq('status', 'Active'),
     db.from('launch_clubhouse_posts')
-      .select('id,author_profile_id,title,body,pinned_at,created_at,updated_at')
+      .select('id,author_profile_id,title,body,post_type,pinned_at,created_at,updated_at')
       .eq('season_id', context.seasonId)
       .eq('team_id', context.teamId)
       .is('deleted_at', null)
+      .order('pinned_at', {ascending: false, nullsFirst: false})
       .order('created_at', {ascending: false})
       .limit(100),
   ]);
@@ -231,6 +232,15 @@ export default async function ClubhousePage({searchParams}: Props) {
                 <p>Only your current team and league commissioners can see this conversation.</p>
               </div>
               <form action={createClubhousePost}>
+                {(context.isCaptain || context.isCommissioner) ? (
+                  <label style={{display:'grid',gap:'5px',fontSize:'11px',fontWeight:900,textTransform:'uppercase'}}>
+                    Post type
+                    <select name="postType" defaultValue="discussion">
+                      <option value="discussion">Team discussion</option>
+                      <option value="announcement">Captain announcement</option>
+                    </select>
+                  </label>
+                ) : <input type="hidden" name="postType" value="discussion" />}
                 <input name="title" maxLength={120} placeholder="Optional title" />
                 <textarea name="body" maxLength={3000} rows={4} placeholder="Share something with your team" required />
                 <button type="submit">Post</button>
@@ -245,10 +255,10 @@ export default async function ClubhousePage({searchParams}: Props) {
               const isOwnPost = post.author_profile_id === context.profileId;
               const canManage = !context.isCommissionerReview && (context.isCaptain || context.isCommissioner || isOwnPost);
               return (
-                <article className={`${styles.post} ${post.pinned_at ? styles.pinned : ''}`} key={post.id}>
+                <article id={`post-${post.id}`} className={`${styles.post} ${post.pinned_at ? styles.pinned : ''}`} data-post-type={post.post_type} key={post.id}>
                   <div className={styles.postTop}>
                     <div><strong>{authors.get(post.author_profile_id) ?? 'Member'}</strong><span>{new Date(post.created_at).toLocaleString()}</span></div>
-                    {post.pinned_at ? <b>Pinned</b> : null}
+                    {post.post_type === 'announcement' ? <b>Captain announcement</b> : post.pinned_at ? <b>Pinned</b> : null}
                   </div>
                   {post.title ? <h3>{post.title}</h3> : null}
                   <p>{post.body}</p>
