@@ -1,7 +1,7 @@
 .dashboard { display: none; }
 
-@media (max-width: 800px) {
-  :global(html[data-display-mode='standalone']) .dashboard {
+@media (max-width: 800px) and (display-mode: standalone) {
+  .dashboard {
     display: grid;
     gap: 16px;
     padding: 18px 14px 28px;
