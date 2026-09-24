@@ -112,3 +112,11 @@
 .muteList strong { color: var(--cc-light-text); }
 .muteList span { color: var(--cc-light-muted); font-size: 11px; }
 .muteList .secondaryButton { min-height: 36px; }
+
+.notificationForm { margin-top: 16px; display: grid; gap: 0; }
+.notificationToggle { min-height: 66px; padding: 12px 0; display: flex; align-items: center; justify-content: space-between; gap: 18px; border-top: 1px solid var(--cc-light-border); cursor: pointer; }
+.notificationToggle > span { display: grid; gap: 4px; }
+.notificationToggle strong { color: var(--cc-light-text); font-size: 13px; }
+.notificationToggle small { color: var(--cc-light-muted); font-size: 11px; line-height: 1.35; }
+.notificationToggle input { width: 22px; height: 22px; flex: 0 0 auto; accent-color: var(--cc-gold); }
+.notificationForm .primaryButton { margin-top: 18px; }
