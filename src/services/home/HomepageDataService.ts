@@ -109,7 +109,7 @@ const getCachedHomepageRows = unstable_cache(
       previews: previewsResult.data ?? [],
     };
   },
-  ['public-homepage-rows-v3'],
+  ['public-homepage-rows-v4'],
   {
     revalidate: HOMEPAGE_CACHE_SECONDS,
     tags: ['public:homepage', 'public:stories', 'public:teams', 'public:schedule', 'public:match-feed'],
