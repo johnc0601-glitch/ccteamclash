@@ -118,6 +118,7 @@ export default async function TeamPage({params}: TeamPageProps) {
           <Link className={styles.back} href="/teams">Back to teams</Link>
           <ClientTeamBanner initialTeam={team} />
           <TeamHubNav teamId={team.id} />
+          {nextMatch ? <NextMatchCard event={nextMatch} courseDirections={courseDirections} /> : null}
 
           {seasonTitles.length ? (
             <section className={styles.championBanner} aria-label="Season championships">
@@ -162,7 +163,6 @@ export default async function TeamPage({params}: TeamPageProps) {
               <span>Team schedule</span>
               <h2>Matchdays</h2>
             </header>
-            {nextMatch ? <NextMatchCard event={nextMatch} courseDirections={courseDirections} /> : null}
             <TeamSchedule events={teamEvents} courseDirections={courseDirections} />
           </section>
 
