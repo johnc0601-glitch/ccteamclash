@@ -66,7 +66,7 @@ export async function enqueueCaptainAnnouncementNotifications(
     ]),
   );
 
-  const recipients = candidateProfileIds.filter((profileId) =>
+  const recipients = candidateProfileIds.filter((profileId: string) =>
     subscribed.has(profileId) && preferenceMap.get(profileId) !== false);
   if (!recipients.length) return 0;
 
