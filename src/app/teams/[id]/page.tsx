@@ -110,7 +110,7 @@ export default async function TeamPage({params}: TeamPageProps) {
   const isOwnTeam = viewerContext?.teamId === team.id;
   const canManageTeam = Boolean(isOwnTeam && (viewerContext?.isCaptain || viewerContext?.isCommissioner));
   const appAttendance = isOwnTeam && nextMatch
-    ? await getTeamAttendanceSummary(supabase, nextMatch.id, team.id, viewerContext?.playerId ?? '')
+    ? await getTeamAttendanceSummary(supabase, nextMatch.id, team.id, viewerContext?.playerId ?? '', rosterCount)
     : null;
   const historicalHistory = getHistoricalTeamSeasonSummaries(team.id);
   const seasonTitles = getHistoricalTeamSeasonTitles(team.id);
@@ -352,6 +352,7 @@ async function getTeamAttendanceSummary(
   matchId: string,
   teamId: string,
   playerId: string,
+  rosterCount: number,
 ): Promise<TeamAttendanceSummary> {
   const {data} = await (supabase as any)
     .from('launch_match_attendance')
@@ -360,10 +361,12 @@ async function getTeamAttendanceSummary(
     .eq('team_id', teamId);
 
   const rows = (data ?? []) as Array<{player_id: string; status: string}>;
+  const yes = rows.filter((row) => row.status === 'Playing').length;
+  const no = rows.filter((row) => row.status === 'NotPlaying').length;
   return {
-    yes: rows.filter((row) => row.status === 'Playing').length,
-    no: rows.filter((row) => row.status === 'NotPlaying').length,
-    unknown: rows.filter((row) => row.status === 'Unconfirmed').length,
+    yes,
+    no,
+    unknown: Math.max(0, rosterCount - yes - no),
     own: playerId ? rows.find((row) => row.player_id === playerId)?.status ?? null : null,
   };
 }
