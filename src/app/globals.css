@@ -1266,3 +1266,10 @@ td,
     display: none;
   }
 }
+
+
+@media (max-width: 800px) {
+  html[data-display-mode="standalone"] .browser-home-content {
+    display: none !important;
+  }
+}
