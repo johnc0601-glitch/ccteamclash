@@ -45,3 +45,59 @@
 .matchHistoryWrap a { color: var(--cc-gold-ink); font-weight: 950; text-transform: uppercase; }
 @media (max-width: 850px) { .overview { grid-template-columns: 1fr 1.5fr; } .teamInfo { grid-column: 1 / -1; border-top: 1px solid var(--cc-light-border); border-left: 0; } }
 @media (max-width: 560px) { .page { padding-top: 28px; } .overview { grid-template-columns: 1fr; } .overview dl { grid-template-columns: repeat(3, minmax(0, 1fr)); } .teamInfo { grid-column: auto; } .nextMatch { align-items: flex-start; flex-direction: column; } .nextMatch h3 { font-size: 25px; } }
+
+
+.hubNav {
+  min-height: 50px;
+  margin: 0 0 22px;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  border: 1px solid var(--cc-light-border);
+  border-top: 0;
+  background: var(--cc-light-surface);
+  box-shadow: var(--cc-shadow-card);
+  scrollbar-width: none;
+}
+.hubNav::-webkit-scrollbar { display: none; }
+.hubNav a {
+  min-height: 38px;
+  padding: 0 13px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  border-radius: 5px;
+  color: var(--cc-light-muted);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.hubNav a:hover,
+.hubNav a:focus-visible {
+  background: rgba(0,0,0,.05);
+  color: var(--cc-gold-ink);
+}
+.hubNav .privateHubLink {
+  border: 1px solid var(--cc-gold-soft);
+  color: var(--cc-gold-ink);
+}
+.section,
+.overview {
+  scroll-margin-top: 96px;
+}
+@media (max-width: 560px) {
+  .hubNav {
+    margin-right: -6px;
+    margin-left: -6px;
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+  .hubNav a {
+    padding-right: 11px;
+    padding-left: 11px;
+  }
+}
