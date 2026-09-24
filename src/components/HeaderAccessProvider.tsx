@@ -185,15 +185,26 @@ export function ClubhouseUnreadDisc() {
 }
 
 export function DesktopRoleLinks() {
-  const {role, canCaptainManage, hasClubhouse, clubhouseHasUnread} = useHeaderAccess();
+  const {
+    role,
+    canCaptainManage,
+    hasClubhouse,
+    clubhouseHasUnread,
+    currentTeamId,
+    captainTeamId,
+  } = useHeaderAccess();
   const canOpenOffice = role === 'commissioner';
   const canOpenCaptain = canCaptainManage;
+  const teamDestination = currentTeamId ?? captainTeamId;
 
-  if (!canOpenOffice && !canOpenCaptain && !hasClubhouse) return null;
+  if (!canOpenOffice && !canOpenCaptain && !hasClubhouse && !teamDestination) return null;
 
   return (
     <>
       <span className="primary-nav-separator" aria-hidden="true" />
+      {teamDestination ? (
+        <Link className="desktop-role-link" href={`/teams/${encodeURIComponent(teamDestination)}`}>My Team</Link>
+      ) : null}
       {hasClubhouse ? (
         <Link className="desktop-role-link clubhouse-nav-link" href="/clubhouse">
           Clubhouse
