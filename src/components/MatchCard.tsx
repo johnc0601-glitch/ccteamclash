@@ -45,17 +45,17 @@ export function MatchCard({match, teams, feedPreview}: MatchCardProps) {
         <p><span>COURSE</span>{match.course}</p>
       </div>
       {feedPreview ? (
-        <Link href={`${match.href}#match-feed`} className={styles.activity}>
+        <a href={`${match.href}#match-feed`} className={styles.activity}>
           <div className={styles.activityText}>
             <strong>{feedPreview.author} posted{feedPreview.imageUrl ? ' a photo' : ''}</strong>
             {feedPreview.excerpt ? <p>{feedPreview.excerpt}</p> : null}
             <span>{feedPreview.commentCount} comments · {feedPreview.reactionCount} reactions</span>
           </div>
           {feedPreview.imageUrl ? <img src={feedPreview.imageUrl} alt="Latest match post" className={styles.thumb} /> : null}
-        </Link>
+        </a>
       ) : null}
       <div className="match-card-footer">
-        <Link href={match.href} className="gold-link">View match -&gt;</Link>
+        <a href={match.href} className="gold-link">View match -&gt;</a>
       </div>
     </article>
   );
