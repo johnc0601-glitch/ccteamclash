@@ -1249,39 +1249,41 @@ td,
 
 
 /* Installed PWA shell: preserve the website header brand while replacing browser actions/footer with app navigation. */
-@media (max-width: 800px) {
-  html[data-display-mode="standalone"] .mobile-header-actions {
+@media (max-width: 800px) and (display-mode: standalone) {
+  .mobile-header-actions {
     display: none !important;
   }
 
-  html[data-display-mode="standalone"] .site-header .primary-nav-wrap {
+  .site-header .primary-nav-wrap {
+    grid-template-columns: 1fr;
     justify-content: center;
   }
 
-  html[data-display-mode="standalone"] .site-header .brand {
+  .site-header .brand {
     margin-inline: auto;
+    justify-self: center;
   }
 
-  html[data-display-mode="standalone"] footer {
+  footer {
     display: none;
   }
 }
 
 
-@media (max-width: 800px) {
-  html[data-display-mode="standalone"] .browser-home-content {
+@media (max-width: 800px) and (display-mode: standalone) {
+  .browser-home-content {
     display: none !important;
   }
 }
 
 
-@media (max-width: 800px) {
-  html[data-display-mode="standalone"] .browser-team-overview {
+@media (max-width: 800px) and (display-mode: standalone) {
+  .browser-team-overview {
     display: none !important;
   }
 
-  html[data-display-mode="standalone"] #schedule,
-  html[data-display-mode="standalone"] #roster {
+  #schedule,
+  #roster {
     scroll-margin-top: 86px;
   }
 }
