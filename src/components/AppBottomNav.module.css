@@ -3,8 +3,8 @@
   display: none;
 }
 
-@media (max-width: 800px) {
-  :global(html[data-display-mode='standalone']) .nav {
+@media (max-width: 800px) and (display-mode: standalone) {
+  .nav {
     position: fixed;
     right: 0;
     bottom: 0;
@@ -20,7 +20,7 @@
     backdrop-filter: blur(16px);
   }
 
-  :global(html[data-display-mode='standalone']) .nav a {
+  .nav a {
     display: grid;
     min-width: 0;
     place-items: center;
@@ -33,7 +33,7 @@
     letter-spacing: .02em;
   }
 
-  :global(html[data-display-mode='standalone']) .nav svg {
+  .nav svg {
     width: 23px;
     height: 23px;
     fill: none;
@@ -43,11 +43,11 @@
     stroke-linejoin: round;
   }
 
-  :global(html[data-display-mode='standalone']) .nav a.active {
+  .nav a.active {
     color: var(--cc-gold);
   }
 
-  :global(html[data-display-mode='standalone']) .spacer {
+  .spacer {
     display: block;
     height: calc(72px + env(safe-area-inset-bottom));
   }
