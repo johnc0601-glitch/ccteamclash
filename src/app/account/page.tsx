@@ -461,8 +461,11 @@ function MemberProfile({
         <div className={styles.themeAction}><ThemeToggle /></div>
         <div className={styles.accountPrivacy}>
           <span className={styles.eyebrow}>Privacy & account</span>
-          <p>Remove your website login while preserving official league results and player history.</p>
-          <Link className={styles.deleteAccountLink} href="/account/delete">Delete account</Link>
+          <p>Control social-content visibility or remove your website login while preserving official league results and player history.</p>
+          <div className={styles.privacyActions}>
+            <Link className={styles.privacyLink} href="/account/mutes">Muted members</Link>
+            <Link className={styles.deleteAccountLink} href="/account/delete">Delete account</Link>
+          </div>
         </div>
       </article>
     </section>
