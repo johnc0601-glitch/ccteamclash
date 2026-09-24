@@ -185,13 +185,18 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const lockedControls = locked && officialSnapshot?.status === 'complete'
     ? resolveLockedControls(actor, match, officialSnapshot.rosters)
     : {canUnlockRoster: false};
+  const isCompleted = matchday.lifecycle === 'Completed';
 
   return (
     <>
       <SiteHeader />
       <main className={styles.page} style={pageBackground}>
         <MatchHero matchday={matchday} />
-        <div className={`shell ${styles.content}`}>
+        <div className={`shell ${styles.content}`} data-lifecycle={matchday.lifecycle}>
+          {isCompleted ? (
+            <MatchScoreboard matchday={matchday} result={publishedResult} contests={publishedResult ? contests : []} />
+          ) : null}
+
           {matchPrediction ? (
             <MatchPredictionCard
               prediction={matchPrediction}
@@ -199,8 +204,6 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
               homeTeamName={matchday.homeTeam.name}
             />
           ) : null}
-
-          <MatchScoreboard matchday={matchday} result={publishedResult} contests={publishedResult ? contests : []} />
 
           {personalAttendance ? (
             <PersonalAttendanceCard attendance={personalAttendance} notice={readParam(query.attendanceNotice)} error={readParam(query.attendanceError)} />
@@ -214,6 +217,14 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
               error={readParam(query.captainError)}
             />
           ) : null}
+
+          <MatchRosterBoard
+            matchday={matchday}
+            official={officialSnapshot}
+            rosterUnavailable={rosterUnavailable}
+            availability={availability ?? undefined}
+            availabilityUnavailable={availabilityUnavailable}
+          />
 
           <MatchFeed
             matchId={matchId}
@@ -229,14 +240,6 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
               openTeamIds={openUnlockTeamIds}
             />
           ) : null}
-
-          <MatchRosterBoard
-            matchday={matchday}
-            official={officialSnapshot}
-            rosterUnavailable={rosterUnavailable}
-            availability={availability ?? undefined}
-            availabilityUnavailable={availabilityUnavailable}
-          />
 
           {lockedControls.rosterExport?.ok ? <OfficialRosterExportPanel exportData={lockedControls.rosterExport.data} /> : null}
         </div>
