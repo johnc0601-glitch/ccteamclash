@@ -23,7 +23,7 @@ export function PwaMeHub({
   const canCaptainManage = role === 'Captain' || Boolean(captainTeamId);
 
   return (
-    <section className={styles.hub} aria-label="Team Clash app profile">
+    <section className={styles.hub} data-pwa-surface="me" aria-label="Team Clash app profile">
       <header className={styles.identity}>
         <div>
           <span>Me</span>
