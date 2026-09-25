@@ -19,7 +19,7 @@ export async function saveNotificationPreferences(formData: FormData) {
 
   const payload = {
     profile_id: profile.id,
-    match_reminders: formData.has('matchReminders'),
+    match_reminders: false,
     roster_deadline: formData.has('rosterDeadline'),
     matchday_open: formData.has('matchdayOpen'),
     results_ci: formData.has('resultsCi'),
