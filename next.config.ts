@@ -1,8 +1,19 @@
 import type { NextConfig } from "next";
 
+const isAppSurface = process.env.NEXT_PUBLIC_APP_SURFACE === "true";
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
+      ...(isAppSurface
+        ? [{
+            source: "/:path*",
+            headers: [{
+              key: "X-Robots-Tag",
+              value: "noindex, nofollow",
+            }],
+          }]
+        : []),
       {
         source: "/sw.js",
         headers: [
