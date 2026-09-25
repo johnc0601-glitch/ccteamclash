@@ -4,24 +4,13 @@ import Link from 'next/link';
 import {useEffect} from 'react';
 import {usePathname} from 'next/navigation';
 import {useHeaderAccess} from '@/components/HeaderAccessProvider';
+import {getAppShellTabs, type AppTabIcon} from '@/components/appShellState';
 import styles from './AppBottomNav.module.css';
-
-type Tab = {
-  label: string;
-  href: string;
-  active: boolean;
-  icon: 'home' | 'team' | 'matchday' | 'league' | 'me';
-};
 
 export function AppBottomNav() {
   const pathname = usePathname();
   const {activeTeamId, clubhouseHasUnread} = useHeaderAccess();
-  const teamHref = activeTeamId ? `/teams/${encodeURIComponent(activeTeamId)}` : '/teams';
-  const isOwnTeamRoute = Boolean(activeTeamId && pathname === teamHref);
-  const isOtherTeamRoute = Boolean(
-    activeTeamId
-      && (pathname === '/teams' || (pathname.startsWith('/teams/') && !isOwnTeamRoute)),
-  );
+  const tabs = getAppShellTabs(pathname, activeTeamId);
 
   useEffect(() => {
     if (!window.matchMedia('(display-mode: standalone)').matches) return;
@@ -37,27 +26,6 @@ export function AppBottomNav() {
       void badgeNavigator.clearAppBadge?.().catch(() => undefined);
     }
   }, [clubhouseHasUnread]);
-
-  const tabs: Tab[] = [
-    {label: 'Home', href: '/', active: pathname === '/', icon: 'home'},
-    {
-      label: 'Team',
-      href: teamHref,
-      active: pathname === '/clubhouse' || pathname.startsWith('/captain') || (activeTeamId ? isOwnTeamRoute : pathname === '/teams'),
-      icon: 'team',
-    },
-    {label: 'Matchday', href: '/matchday', active: pathname === '/matchday' || pathname.startsWith('/matches/'), icon: 'matchday'},
-    {
-      label: 'League',
-      href: '/league',
-      active: pathname === '/league'
-        || isOtherTeamRoute
-        || ['/standings', '/stats', '/players', '/schedule', '/stories', '/courses', '/history', '/playoffs']
-          .some((route) => pathname === route || pathname.startsWith(`${route}/`)),
-      icon: 'league',
-    },
-    {label: 'Me', href: '/account', active: pathname === '/account' || pathname.startsWith('/account/') || pathname.startsWith('/auth/'), icon: 'me'},
-  ];
 
   const exitPreviewHref = pathname + '?appPreview=0';
 
@@ -86,7 +54,7 @@ export function AppBottomNav() {
   );
 }
 
-function TabIcon({name}: {name: Tab['icon']}) {
+function TabIcon({name}: {name: AppTabIcon}) {
   if (name === 'home') return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2v8.3H14v-5h-4v5H3z"/></svg>;
   if (name === 'team') return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="9" r="3"/><circle cx="16.5" cy="8" r="2.5"/><path d="M2.5 19c.7-3.3 2.5-5 5.5-5s4.8 1.7 5.5 5M13 14.5c1-.8 2.1-1.2 3.5-1.2 2.7 0 4.3 1.5 5 4.5"/></svg>;
   if (name === 'matchday') return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 4 10 16M17 4 7 20M5 7h14M5 17h14"/></svg>;
