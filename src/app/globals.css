@@ -1304,3 +1304,40 @@ td,
     scroll-margin-top: 78px;
   }
 }
+
+
+/* Vercel-only browser app review mode. Real production browser mode is unchanged. */
+@media (max-width: 800px) {
+  html[data-app-preview="true"] .mobile-header-actions,
+  html[data-app-preview="true"] .browser-home-content,
+  html[data-app-preview="true"] .browser-team-overview,
+  html[data-app-preview="true"] .browser-match-hero,
+  html[data-app-preview="true"] footer {
+    display: none !important;
+  }
+
+  html[data-app-preview="true"] .site-header .primary-nav-wrap {
+    grid-template-columns: 1fr;
+    justify-content: center;
+  }
+
+  html[data-app-preview="true"] .site-header .brand {
+    margin-inline: auto;
+    justify-self: center;
+  }
+
+  html[data-app-preview="true"] #schedule,
+  html[data-app-preview="true"] #roster {
+    scroll-margin-top: 86px;
+  }
+
+  html[data-app-preview="true"] #prediction,
+  html[data-app-preview="true"] #scoreboard,
+  html[data-app-preview="true"] #availability,
+  html[data-app-preview="true"] #captain-roster,
+  html[data-app-preview="true"] #match-feed,
+  html[data-app-preview="true"] #match-rosters,
+  html[data-app-preview="true"] #match-preview {
+    scroll-margin-top: 78px;
+  }
+}
