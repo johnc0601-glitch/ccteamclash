@@ -11,6 +11,7 @@ export function AppBottomNav() {
   const pathname = usePathname();
   const {activeTeamId, clubhouseHasUnread} = useHeaderAccess();
   const tabs = getAppShellTabs(pathname, activeTeamId);
+  const appSurface = process.env.NEXT_PUBLIC_APP_SURFACE === 'true';
 
   useEffect(() => {
     if (!window.matchMedia('(display-mode: standalone)').matches) return;
@@ -31,7 +32,7 @@ export function AppBottomNav() {
 
   return (
     <>
-      <Link className={styles.previewExit} href={exitPreviewHref}>Staging · Exit</Link>
+      {!appSurface ? <Link className={styles.previewExit} href={exitPreviewHref}>Staging · Exit</Link> : null}
       <nav className={styles.nav} aria-label="Team Clash app navigation">
         {tabs.map((tab) => (
           <Link
