@@ -34,7 +34,7 @@ export function PwaMatchdayHub({
   } as CSSProperties;
 
   return (
-    <section className={styles.hub} style={style} aria-label="Matchday overview">
+    <section className={styles.hub} data-pwa-surface="matchday" style={style} aria-label="Matchday overview">
       <div className={styles.state}>
         <span data-phase={phase}>{phaseCopy.label}</span>
         <strong>{phaseCopy.detail}</strong>
