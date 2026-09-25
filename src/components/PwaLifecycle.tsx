@@ -1,6 +1,7 @@
 'use client';
 
 import {useEffect} from 'react';
+import {resolveAppPreviewState} from '@/components/appPreviewState';
 
 type NavigatorWithStandalone = Navigator & {
   standalone?: boolean;
@@ -33,22 +34,21 @@ export function PwaLifecycle() {
     };
 
     const syncAppPreview = () => {
-      const previewHost = window.location.hostname.endsWith('.vercel.app')
-        || window.location.hostname === 'localhost'
-        || window.location.hostname === '127.0.0.1';
       const params = new URLSearchParams(window.location.search);
+      const state = resolveAppPreviewState({
+        hostname: window.location.hostname,
+        queryValue: params.get('appPreview'),
+        persisted: window.localStorage.getItem('team-clash-app-preview') === '1',
+        standalone: isStandaloneDisplay(),
+      });
 
-      if (previewHost && params.get('appPreview') === '1') {
+      if (state.persisted) {
         window.localStorage.setItem('team-clash-app-preview', '1');
-      } else if (params.get('appPreview') === '0') {
+      } else {
         window.localStorage.removeItem('team-clash-app-preview');
       }
 
-      const enabled = previewHost
-        && window.localStorage.getItem('team-clash-app-preview') === '1'
-        && !isStandaloneDisplay();
-
-      if (enabled) {
+      if (state.enabled) {
         root.dataset.appPreview = 'true';
       } else {
         delete root.dataset.appPreview;
