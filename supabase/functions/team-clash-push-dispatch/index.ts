@@ -206,35 +206,21 @@ Deno.serve(async (req: Request) => {
 });
 
 async function createApplicationServer(config: DeliveryConfig) {
-  const publicBytes = base64UrlToBytes(config.public_key);
-  if (publicBytes.length !== 65 || publicBytes[0] !== 4) {
-    throw new Error("Invalid VAPID public key.");
+  let exportedVapidKeys: webpush.ExportedVapidKeys;
+  try {
+    exportedVapidKeys = JSON.parse(config.private_key) as webpush.ExportedVapidKeys;
+  } catch {
+    throw new Error("Stored VAPID key export is invalid JSON.");
   }
 
-  const privateBytes = base64UrlToBytes(config.private_key);
-  if (privateBytes.length !== 32) {
-    throw new Error("Invalid VAPID private key.");
+  const vapidKeys = await webpush.importVapidKeys(exportedVapidKeys, {
+    extractable: false,
+  });
+
+  const derivedPublicKey = await webpush.exportApplicationServerKey(vapidKeys);
+  if (normalizeBase64Url(derivedPublicKey) !== normalizeBase64Url(config.public_key)) {
+    throw new Error("Stored VAPID public/private keys do not match.");
   }
-
-  const publicJwk: JsonWebKey = {
-    kty: "EC",
-    crv: "P-256",
-    alg: "ES256",
-    x: bytesToBase64Url(publicBytes.slice(1, 33)),
-    y: bytesToBase64Url(publicBytes.slice(33, 65)),
-    key_ops: ["verify"],
-    ext: true,
-  };
-  const privateJwk: JsonWebKey = {
-    ...publicJwk,
-    d: bytesToBase64Url(privateBytes),
-    key_ops: ["sign"],
-  };
-
-  const vapidKeys = await webpush.importVapidKeys({
-    publicKey: publicJwk,
-    privateKey: privateJwk,
-  }, {extractable: false});
 
   return webpush.ApplicationServer.new({
     contactInformation: config.subject || "https://ccteamclash.com",
@@ -273,18 +259,3 @@ function normalizeBase64Url(value: string) {
   return value.trim().replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
 }
 
-function base64UrlToBytes(value: string) {
-  const normalized = normalizeBase64Url(value);
-  const padded = normalized + "=".repeat((4 - normalized.length % 4) % 4);
-  const binary = atob(padded.replaceAll("-", "+").replaceAll("_", "/"));
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
-}
-
-function bytesToBase64Url(bytes: Uint8Array) {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary)
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replaceAll("=", "");
-}
