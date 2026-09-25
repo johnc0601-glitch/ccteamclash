@@ -259,3 +259,109 @@
     padding: 12px 14px;
   }
 }
+
+
+/* Installed/app-preview density: keep the league hub scannable like a mobile sports app. */
+@media (max-width: 800px) and (display-mode: standalone) {
+  .snapshot {
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .primary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .card {
+    min-height: 94px;
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .card strong {
+    font-size: 16px;
+  }
+
+  .card span {
+    max-width: 100%;
+    margin-top: 5px;
+    padding-right: 12px;
+    font-size: 10px;
+    line-height: 1.3;
+  }
+
+  .card b {
+    right: 12px;
+    bottom: 9px;
+    font-size: 16px;
+  }
+
+  .more {
+    margin-top: 22px;
+    padding-top: 18px;
+  }
+
+  .more h2 {
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+
+  .more a {
+    padding: 8px 10px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 800px) {
+  :global(html[data-app-preview='true']) .snapshot {
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  :global(html[data-app-preview='true']) .primary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  :global(html[data-app-preview='true']) .card {
+    min-height: 94px;
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  :global(html[data-app-preview='true']) .card strong {
+    font-size: 16px;
+  }
+
+  :global(html[data-app-preview='true']) .card span {
+    max-width: 100%;
+    margin-top: 5px;
+    padding-right: 12px;
+    font-size: 10px;
+    line-height: 1.3;
+  }
+
+  :global(html[data-app-preview='true']) .card b {
+    right: 12px;
+    bottom: 9px;
+    font-size: 16px;
+  }
+
+  :global(html[data-app-preview='true']) .more {
+    margin-top: 22px;
+    padding-top: 18px;
+  }
+
+  :global(html[data-app-preview='true']) .more h2 {
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+
+  :global(html[data-app-preview='true']) .more a {
+    padding: 8px 10px;
+    font-size: 9px;
+  }
+}
