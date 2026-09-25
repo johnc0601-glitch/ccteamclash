@@ -1341,3 +1341,32 @@ td,
     scroll-margin-top: 78px;
   }
 }
+
+
+@media (max-width: 800px) and (display-mode: standalone) {
+  .browser-captain-header,
+  .browser-captain-summary {
+    display: none !important;
+  }
+
+  #season-requests,
+  #team-roster,
+  #team-appearance,
+  #upcoming-matches {
+    scroll-margin-top: 78px;
+  }
+}
+
+@media (max-width: 800px) {
+  html[data-app-preview="true"] .browser-captain-header,
+  html[data-app-preview="true"] .browser-captain-summary {
+    display: none !important;
+  }
+
+  html[data-app-preview="true"] #season-requests,
+  html[data-app-preview="true"] #team-roster,
+  html[data-app-preview="true"] #team-appearance,
+  html[data-app-preview="true"] #upcoming-matches {
+    scroll-margin-top: 78px;
+  }
+}
