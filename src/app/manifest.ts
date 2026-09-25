@@ -21,5 +21,28 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: 'any',
       },
     ],
+    shortcuts: [
+      {
+        name: 'Matchday',
+        short_name: 'Matchday',
+        description: 'Open your next Team Clash match.',
+        url: '/matchday',
+        icons: [{src: '/pwa/team-clash-app-icon.svg', sizes: 'any', type: 'image/svg+xml'}],
+      },
+      {
+        name: 'Schedule',
+        short_name: 'Schedule',
+        description: 'Open the current Team Clash schedule.',
+        url: '/schedule',
+        icons: [{src: '/pwa/team-clash-app-icon.svg', sizes: 'any', type: 'image/svg+xml'}],
+      },
+      {
+        name: 'League',
+        short_name: 'League',
+        description: 'Standings, players, teams, and league information.',
+        url: '/league',
+        icons: [{src: '/pwa/team-clash-app-icon.svg', sizes: 'any', type: 'image/svg+xml'}],
+      },
+    ],
   };
 }
