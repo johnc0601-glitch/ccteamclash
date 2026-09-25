@@ -55,3 +55,9 @@ export function dateInEastern(date: Date) {
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${values.year}-${values.month}-${values.day}`;
 }
+
+
+export function formatPwaPredictionPercent(probability: number): number {
+  if (!Number.isFinite(probability)) return 0;
+  return Math.max(0, Math.min(100, Math.round(probability * 100)));
+}
