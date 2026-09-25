@@ -3,6 +3,7 @@ import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
 import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
+import {MatchPreview} from '@/components/matches/MatchPreview';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
@@ -194,44 +195,65 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
         <MatchHero matchday={matchday} />
         <div className={`shell ${styles.content}`} data-lifecycle={matchday.lifecycle}>
           {isCompleted ? (
-            <MatchScoreboard matchday={matchday} result={publishedResult} contests={publishedResult ? contests : []} />
-          ) : null}
+            <>
+              <MatchScoreboard matchday={matchday} result={publishedResult} contests={publishedResult ? contests : []} />
 
-          {matchPrediction ? (
-            <MatchPredictionCard
-              prediction={matchPrediction}
-              awayTeamName={matchday.awayTeam.name}
-              homeTeamName={matchday.homeTeam.name}
-            />
-          ) : null}
+              <MatchFeed
+                matchId={matchId}
+                matchDate={match.date}
+                notice={readParam(query.feedNotice)}
+                error={readParam(query.feedError)}
+              />
 
-          {personalAttendance ? (
-            <PersonalAttendanceCard attendance={personalAttendance} notice={readParam(query.attendanceNotice)} error={readParam(query.attendanceError)} />
-          ) : null}
+              <MatchRosterBoard
+                matchday={matchday}
+                official={officialSnapshot}
+                rosterUnavailable={rosterUnavailable}
+                availability={availability ?? undefined}
+                availabilityUnavailable={availabilityUnavailable}
+              />
+            </>
+          ) : (
+            <>
+              {matchPrediction ? (
+                <MatchPredictionCard
+                  prediction={matchPrediction}
+                  awayTeamName={matchday.awayTeam.name}
+                  homeTeamName={matchday.homeTeam.name}
+                />
+              ) : null}
 
-          {managedRosters.length ? (
-            <CaptainRosterPanel
-              rosters={managedRosters}
-              teamNames={{[matchday.awayTeam.id]: matchday.awayTeam.name, [matchday.homeTeam.id]: matchday.homeTeam.name}}
-              notice={readParam(query.captainNotice)}
-              error={readParam(query.captainError)}
-            />
-          ) : null}
+              {personalAttendance ? (
+                <PersonalAttendanceCard attendance={personalAttendance} notice={readParam(query.attendanceNotice)} error={readParam(query.attendanceError)} />
+              ) : null}
 
-          <MatchRosterBoard
-            matchday={matchday}
-            official={officialSnapshot}
-            rosterUnavailable={rosterUnavailable}
-            availability={availability ?? undefined}
-            availabilityUnavailable={availabilityUnavailable}
-          />
+              {managedRosters.length ? (
+                <CaptainRosterPanel
+                  rosters={managedRosters}
+                  teamNames={{[matchday.awayTeam.id]: matchday.awayTeam.name, [matchday.homeTeam.id]: matchday.homeTeam.name}}
+                  notice={readParam(query.captainNotice)}
+                  error={readParam(query.captainError)}
+                />
+              ) : null}
 
-          <MatchFeed
-            matchId={matchId}
-            matchDate={match.date}
-            notice={readParam(query.feedNotice)}
-            error={readParam(query.feedError)}
-          />
+              <MatchRosterBoard
+                matchday={matchday}
+                official={officialSnapshot}
+                rosterUnavailable={rosterUnavailable}
+                availability={availability ?? undefined}
+                availabilityUnavailable={availabilityUnavailable}
+              />
+
+              <MatchPreview matchId={matchId} />
+
+              <MatchFeed
+                matchId={matchId}
+                matchDate={match.date}
+                notice={readParam(query.feedNotice)}
+                error={readParam(query.feedError)}
+              />
+            </>
+          )}
 
           {lockedControls.canUnlockRoster && officialSnapshot?.status === 'complete' ? (
             <CommissionerRosterUnlockPanel
