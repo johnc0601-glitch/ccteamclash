@@ -27,6 +27,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/pwa/team-clash-app-icon.svg",
+    apple: "/pwa/team-clash-app-icon-192.png",
   },
   robots: IS_APP_SURFACE
     ? {
