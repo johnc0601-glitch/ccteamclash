@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {getPwaMatchdayPhaseCopy, resolvePwaMatchdayPhase} from '@/components/matches/PwaMatchdayPhase';
+import {
+  formatPwaPredictionPercent,
+  getPwaMatchdayPhaseCopy,
+  resolvePwaMatchdayPhase,
+} from '@/components/matches/PwaMatchdayPhase';
 
 const reference = new Date('2026-10-03T16:00:00.000Z');
 
@@ -27,4 +31,11 @@ test('preserves official disruption statuses', () => {
 test('phase copy does not imply unsupported live scoring', () => {
   assert.equal(getPwaMatchdayPhaseCopy('today').label, 'Matchday · Today');
   assert.match(getPwaMatchdayPhaseCopy('awaiting').detail, /official results/i);
+});
+
+
+test('formats model probabilities as whole display percentages', () => {
+  assert.equal(formatPwaPredictionPercent(0.39466544504), 39);
+  assert.equal(formatPwaPredictionPercent(0.60533455496), 61);
+  assert.equal(formatPwaPredictionPercent(0.999), 100);
 });
