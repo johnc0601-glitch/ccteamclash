@@ -68,37 +68,106 @@
 .meta > * + *::before { content: '•'; margin-right: 16px; color: var(--cc-gold); }
 
 .prediction {
-  padding: 12px 13px;
+  padding: 11px 13px 10px;
   display: grid;
-  grid-template-columns: minmax(74px,1fr) minmax(112px,1.3fr) minmax(74px,1fr);
-  align-items: center;
-  gap: 8px;
-  border: 1px solid rgba(255,255,255,.1);
+  gap: 7px;
+  border: 1px solid rgba(255,255,255,.12);
   border-radius: 10px;
-  background: rgba(255,255,255,.045);
+  background: rgba(255,255,255,.055);
 }
-.prediction > div:first-child,
-.prediction > div:nth-child(3) { min-width: 0; display: flex; gap: 6px; align-items: center; }
-.prediction > div:nth-child(3) { justify-content: flex-end; }
-.prediction span { max-width: 72px; overflow: hidden; color: #c4cbc8; font-size: 8px; font-weight: 950; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
-.prediction strong { flex: 0 0 auto; color: #fff; font-size: 14px; font-variant-numeric: tabular-nums; }
-.predictionTrack { height: 9px; overflow: hidden; border: 1px solid rgba(255,255,255,.14); border-radius: 99px; background: var(--pwa-home); box-shadow: inset 0 1px 2px rgba(0,0,0,.35); }
-.predictionTrack i { display: block; height: 100%; background: var(--pwa-away); }
-.prediction small { grid-column: 1 / -1; color: #aeb6b2; font-size: 8px; font-weight: 850; letter-spacing: .04em; text-align: center; text-transform: uppercase; }
+.predictionSides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.predictionSides > div {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.predictionSides > div:last-child {
+  justify-content: flex-end;
+}
+.prediction span {
+  min-width: 0;
+  overflow: hidden;
+  color: #c8cfcc;
+  font-size: 9px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.prediction strong {
+  flex: 0 0 auto;
+  color: #fff;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.predictionTrack {
+  height: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.17);
+  border-radius: 99px;
+  background: var(--pwa-home);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.35);
+}
+.predictionTrack i {
+  display: block;
+  height: 100%;
+  background: var(--pwa-away);
+}
+.prediction small {
+  color: #aeb6b2;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: .05em;
+  text-align: center;
+  text-transform: uppercase;
+}
 
 .personal {
-  padding: 10px 12px;
-  display: grid;
-  grid-template-columns: 1fr auto auto;
+  min-height: 54px;
+  padding: 9px 12px;
+  display: flex;
   align-items: center;
-  gap: 10px;
-  border: 1px solid rgba(255,255,255,.1);
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(255,255,255,.12);
   border-radius: 10px;
-  background: rgba(255,255,255,.045);
+  background: rgba(255,255,255,.055);
 }
-.personal span { color: #bcc4c0; font-size: 8px; font-weight: 950; text-transform: uppercase; }
-.personal strong { color: #fff; font-size: 13px; }
-.personal a, .personal em { color: var(--cc-gold); font-size: 9px; font-style: normal; font-weight: 950; text-transform: uppercase; }
+.personal > div {
+  display: grid;
+  gap: 2px;
+}
+.personal span {
+  color: #bfc7c3;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.personal strong {
+  color: #fff;
+  font-size: 15px;
+}
+.personal a,
+.personal em {
+  min-height: 28px;
+  padding: 0 9px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(200,155,43,.35);
+  border-radius: 999px;
+  background: rgba(200,155,43,.08);
+  color: var(--cc-gold);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 950;
+  text-transform: uppercase;
+}
 
 .shortcuts {
   display: flex;
@@ -114,10 +183,10 @@
   padding: 0 12px;
   display: inline-grid;
   place-items: center;
-  border: 1px solid rgba(255,255,255,.22);
+  border: 1px solid rgba(255,255,255,.26);
   border-radius: 999px;
-  background: rgba(255,255,255,.07);
-  color: #dce2df;
+  background: rgba(255,255,255,.085);
+  color: #f1f4f2;
   font-size: 9px;
   font-weight: 950;
   text-transform: uppercase;
@@ -141,13 +210,12 @@
 }
 
 @media (max-width: 390px) {
-  .prediction {
-    grid-template-columns: minmax(64px,1fr) minmax(92px,1.15fr) minmax(64px,1fr);
-    gap: 6px;
+  .predictionSides {
+    gap: 8px;
   }
 
   .prediction span {
-    max-width: 54px;
+    max-width: 76px;
   }
 
   .shortcuts a,
