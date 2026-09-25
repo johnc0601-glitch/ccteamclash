@@ -91,7 +91,30 @@ function CaptainDashboard({events, pendingApplications, roster, season, team, ro
           <CaptainApprovalQueue applications={pendingApplications} />
         </section>
 
-        <section className={styles.panel}>
+        <section className={styles.panel} id="upcoming-matches">
+          <header className={styles.panelHeader}><span>Matchdays</span><h2>Upcoming matches</h2><p className={styles.muted}>Use this section to know where your team is playing next.</p></header>
+          <div className={styles.list}>{upcomingEvents.length ? upcomingEvents.map((event) => (
+            <article className={styles.row} key={event.id}>
+              <div className={styles.matchHeading}><strong>vs {event.opponent}</strong><span className={styles.sideLabel}>{event.isHome ? 'Home' : 'Away'}</span></div>
+              <span className={styles.muted}>{event.date} / {event.time}</span><span className={styles.muted}>{event.course}</span>
+              <Link href={getCaptainRosterHref(event.href)}>Manage Match Roster</Link>
+            </article>
+          )) : <p className={styles.empty}>No upcoming matches are posted for your team yet.</p>}</div>
+        </section>
+
+        <section className={styles.panel} id="team-roster">
+          <header className={styles.panelHeader}><span>Roster</span><h2>{team.name}</h2><p className={styles.muted}>{season?.canEditRegistrations ? 'Tap Edit registration to update player details or remove a player from your roster.' : 'Registration details are locked for this season. Open Roster options to request a removal or reassignment.'}</p></header>
+          <div className={styles.list}>{roster.length ? roster.map((player) => (
+            <article className={styles.row} key={player.id}>
+              <div className={styles.playerIdentity}>
+                <strong className={styles.playerName}>{player.name}</strong>
+                <span className={styles.rosterMeta}>
+                  <span>CI: {formatClashIndex(player)}</span>
+                  <span>{player.gender}</span>
+                  {player.rosterCategory === 'Junior' ? <span>Junior</span> : null}
+                  <span>{player.pdgaNumber ? `PDGA #${player.pdgaNumber}` : 'No PDGA #'}</span>
+                </span>
+                <section className={styles.panel}>
           <header className={styles.panelHeader}>
             <span>Season information</span>
             <h2>{season?.name ?? 'Current season'}</h2>
@@ -130,30 +153,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team, ro
           </form>
         </section>
 
-        <section className={styles.panel} id="upcoming-matches">
-          <header className={styles.panelHeader}><span>Matchdays</span><h2>Upcoming matches</h2><p className={styles.muted}>Use this section to know where your team is playing next.</p></header>
-          <div className={styles.list}>{upcomingEvents.length ? upcomingEvents.map((event) => (
-            <article className={styles.row} key={event.id}>
-              <div className={styles.matchHeading}><strong>vs {event.opponent}</strong><span className={styles.sideLabel}>{event.isHome ? 'Home' : 'Away'}</span></div>
-              <span className={styles.muted}>{event.date} / {event.time}</span><span className={styles.muted}>{event.course}</span>
-              <Link href={getCaptainRosterHref(event.href)}>Manage Match Roster</Link>
-            </article>
-          )) : <p className={styles.empty}>No upcoming matches are posted for your team yet.</p>}</div>
-        </section>
-
-        <section className={styles.panel} id="team-roster">
-          <header className={styles.panelHeader}><span>Roster</span><h2>{team.name}</h2><p className={styles.muted}>{season?.canEditRegistrations ? 'Tap Edit registration to update player details or remove a player from your roster.' : 'Registration details are locked for this season. Open Roster options to request a removal or reassignment.'}</p></header>
-          <div className={styles.list}>{roster.length ? roster.map((player) => (
-            <article className={styles.row} key={player.id}>
-              <div className={styles.playerIdentity}>
-                <strong className={styles.playerName}>{player.name}</strong>
-                <span className={styles.rosterMeta}>
-                  <span>CI: {formatClashIndex(player)}</span>
-                  <span>{player.gender}</span>
-                  {player.rosterCategory === 'Junior' ? <span>Junior</span> : null}
-                  <span>{player.pdgaNumber ? `PDGA #${player.pdgaNumber}` : 'No PDGA #'}</span>
-                </span>
-              </div>
+      </div>
               <details className={styles.registrationDetails}>
                 <summary>{season?.canEditRegistrations ? 'Edit registration' : 'Roster options'}</summary>
                 <div className={styles.registrationPanel}>
