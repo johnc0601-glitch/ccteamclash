@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {PlayerRecordSelect} from '@/components/launch/PlayerRecordSelect';
 import {ThemeToggle} from '@/components/ThemeToggle';
 import {InstallTeamClashCard} from '@/components/InstallTeamClashCard';
+import {PwaMeHub} from '@/components/account/PwaMeHub';
 import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {ensureLaunchSignupProfile} from '@/domain/launch/LaunchAccountSetup';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
@@ -278,6 +279,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
           application={application}
           establishedRegistration={establishedRegistration}
           playerStats={playerStats}
+          email={user.email ?? ''}
         />
       ) : (
         <article className={styles.panel}>
@@ -299,6 +301,7 @@ function MemberProfile({
   application,
   establishedRegistration,
   playerStats,
+  email,
 }: {
   players: LaunchPlayer[];
   profile: LaunchProfile;
@@ -308,6 +311,7 @@ function MemberProfile({
   application: RegistrationApplication | null;
   establishedRegistration: EstablishedRegistration;
   playerStats: AccountPlayerStats | null;
+  email: string;
 }) {
   const linkedPlayer = players.find((player) => player.id === profile.playerId);
   const playerSetupComplete = Boolean(linkedPlayer && playedBefore !== null);
@@ -375,7 +379,18 @@ function MemberProfile({
   const gender = application?.gender || linkedPlayer?.gender || establishedRegistration?.gender || '—';
 
   return (
-    <section className={styles.grid}>
+    <>
+      <PwaMeHub
+        displayName={linkedPlayer?.name ?? profile.displayName}
+        email={email}
+        role={profile.role}
+        teamName={teamName}
+        teamId={linkedPlayer?.currentTeamId ?? null}
+        clashIndex={linkedPlayer?.clashIndex}
+        pdgaRating={linkedPlayer?.pdgaRating}
+        captainTeamId={profile.captainTeamId}
+      />
+      <section className={styles.grid}>
       <article className={`${styles.panel} ${styles.profilePanel}`}>
         <div className={styles.profileHeading}>
           <div>
@@ -471,7 +486,8 @@ function MemberProfile({
           </div>
         </div>
       </article>
-    </section>
+      </section>
+    </>
   );
 }
 
