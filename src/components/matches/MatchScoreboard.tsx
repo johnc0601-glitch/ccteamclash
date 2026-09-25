@@ -30,8 +30,8 @@ export function MatchScoreboard({
         </div>
       </div>
 
-      <details className={styles.scoreDetails}>
-        <summary>{result ? 'View full scoring' : 'Scoring'}</summary>
+      <details className={styles.scoreDetails} open={Boolean(result)}>
+        <summary>{result ? 'Full scoring' : 'Scoring'}</summary>
         {result ? (
           <div className={styles.scoreSheet}>
             <ContestSection title="Singles" contests={singles} />
