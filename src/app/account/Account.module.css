@@ -259,3 +259,46 @@
   font-weight: 950;
   text-transform: uppercase;
 }
+
+
+/* In the installed/app-preview Me screen, keep legacy account controls behind
+   the explicit Account settings entry instead of stacking them below the app hub. */
+@media (max-width: 800px) and (display-mode: standalone) {
+  .accountBar.appAccountDetails,
+  .grid.appAccountDetails {
+    display: none;
+  }
+
+  .accountBar.appAccountDetailsOpen {
+    display: flex;
+  }
+
+  .grid.appAccountDetailsOpen {
+    display: grid;
+    gap: 12px;
+  }
+
+  .grid.appAccountDetailsOpen .panel {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 800px) {
+  :global(html[data-app-preview='true']) .accountBar.appAccountDetails,
+  :global(html[data-app-preview='true']) .grid.appAccountDetails {
+    display: none;
+  }
+
+  :global(html[data-app-preview='true']) .accountBar.appAccountDetailsOpen {
+    display: flex;
+  }
+
+  :global(html[data-app-preview='true']) .grid.appAccountDetailsOpen {
+    display: grid;
+    gap: 12px;
+  }
+
+  :global(html[data-app-preview='true']) .grid.appAccountDetailsOpen .panel {
+    padding: 20px;
+  }
+}
