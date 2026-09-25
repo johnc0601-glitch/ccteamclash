@@ -90,3 +90,12 @@
   .logo { width: 68px; height: 68px; }
   .logo img { width: 60px; height: 60px; }
 }
+
+@media (max-width: 800px) {
+  :global(html[data-app-preview='true']) .dashboard {
+    display: grid;
+    gap: 16px;
+    padding: 18px 14px 28px;
+    background: linear-gradient(180deg, #0d1112 0, #111718 290px, #f4f0e6 290px, #f4f0e6 100%);
+  }
+}
