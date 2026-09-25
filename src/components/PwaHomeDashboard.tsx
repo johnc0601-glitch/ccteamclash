@@ -130,7 +130,7 @@ export function PwaHomeDashboard({
   const played = standings.some((entry) => entry.gamesPlayed > 0);
 
   return (
-    <section className={styles.dashboard} aria-label="Team Clash app home">
+    <section className={styles.dashboard} data-pwa-surface="home" aria-label="Team Clash app home">
       <div className={styles.topline}>
         <div>
           <span className={styles.eyebrow}>{ownMatch ? 'Your next match' : 'Next in Team Clash'}</span>
