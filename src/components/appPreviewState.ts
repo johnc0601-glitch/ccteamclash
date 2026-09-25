@@ -14,12 +14,21 @@ export function resolveAppPreviewState({
   queryValue,
   persisted,
   standalone,
+  appSurface = false,
 }: {
   hostname: string;
   queryValue: string | null;
   persisted: boolean;
   standalone: boolean;
+  appSurface?: boolean;
 }): AppPreviewState {
+  if (appSurface) {
+    return {
+      persisted: false,
+      enabled: true,
+    };
+  }
+
   const previewHost = isAppPreviewHost(hostname);
   let nextPersisted = persisted;
 
