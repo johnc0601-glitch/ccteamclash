@@ -118,3 +118,12 @@
 }
 .shortcuts a:first-child { border-color: rgba(255,196,0,.42); color: var(--cc-gold); }
 .scheduleLink { border-radius: 8px; color: var(--cc-gold); }
+
+@media (max-width: 800px) {
+  :global(html[data-app-preview='true']) .hub {
+    display: grid;
+    gap: 12px;
+    padding: 16px 14px 8px;
+    color: #fff;
+  }
+}
