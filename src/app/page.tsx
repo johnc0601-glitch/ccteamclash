@@ -32,6 +32,20 @@ export default async function Home() {
         <HomeYourMatch />
       </section>
 
+      {lead ? (
+        <section className="story-home-hero">
+          <StoryPhoto className="story-home-photo" image={lead.image} />
+          <div className="story-home-content">
+            <span className="eyebrow">Featured story</span>
+            <h1>{lead.title}</h1>
+            <p>{getStoryPreview(lead)}</p>
+            <div className="home-actions">
+              <Link href={`/stories/${lead.slug}`} className="button gold-button">Read story <span>-&gt;</span></Link>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <section className="shell home-matches-section home-matches-primary">
         <div className="home-matches-heading">
           <span className="panel-title">{homeRoundLabel || 'Next round'}</span>
@@ -63,20 +77,6 @@ export default async function Home() {
               </div>
             ))}
           </article>
-        </section>
-      ) : null}
-
-      {lead ? (
-        <section className="story-home-hero">
-          <StoryPhoto className="story-home-photo" image={lead.image} />
-          <div className="story-home-content">
-            <span className="eyebrow">Featured story</span>
-            <h1>{lead.title}</h1>
-            <p>{getStoryPreview(lead)}</p>
-            <div className="home-actions">
-              <Link href={`/stories/${lead.slug}`} className="button gold-button">Read story <span>-&gt;</span></Link>
-            </div>
-          </div>
         </section>
       ) : null}
 
