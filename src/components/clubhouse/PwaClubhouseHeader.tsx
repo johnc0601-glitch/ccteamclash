@@ -12,7 +12,7 @@ export function PwaClubhouseHeader({
 }: {
   teamId: string;
   teamName: string;
-  teamLogo: string;
+  teamLogo: string | null;
   seasonName: string;
   matchHref: string | null;
   isCaptain: boolean;
