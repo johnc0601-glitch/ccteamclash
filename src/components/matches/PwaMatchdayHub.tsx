@@ -77,20 +77,32 @@ export function PwaMatchdayHub({
 
       {prediction?.state === 'calculated' && awayPercent !== null && homePercent !== null ? (
         <div className={styles.prediction}>
-          <div><span>{matchday.awayTeam.team?.shortName || matchday.awayTeam.name}</span><strong>{awayPercent}%</strong></div>
+          <div className={styles.predictionSides}>
+            <div>
+              <span>{matchday.awayTeam.team?.shortName || matchday.awayTeam.name}</span>
+              <strong>{awayPercent}%</strong>
+            </div>
+            <div>
+              <strong>{homePercent}%</strong>
+              <span>{matchday.homeTeam.team?.shortName || matchday.homeTeam.name}</span>
+            </div>
+          </div>
           <div className={styles.predictionTrack} aria-label={`${matchday.awayTeam.name} ${awayPercent}%, ${matchday.homeTeam.name} ${homePercent}%`}>
             <i style={{width: `${awayPercent}%`}} />
           </div>
-          <div><strong>{homePercent}%</strong><span>{matchday.homeTeam.team?.shortName || matchday.homeTeam.name}</span></div>
           <small>{prediction.stageLabel}</small>
         </div>
       ) : null}
 
       {attendance ? (
         <div className={styles.personal}>
-          <span>Your availability</span>
-          <strong>{attendance.status === 'Playing' ? 'Yes' : attendance.status === 'NotPlaying' ? 'No' : 'Not answered'}</strong>
-          {attendance.attendanceOpen ? <a href="#availability">Change</a> : <em>Locked</em>}
+          <div>
+            <span>Your availability</span>
+            <strong>{attendance.status === 'Playing' ? 'Yes' : attendance.status === 'NotPlaying' ? 'No' : 'Not answered'}</strong>
+          </div>
+          {attendance.attendanceOpen
+            ? <a href="#availability">Change</a>
+            : <em>Locked</em>}
         </div>
       ) : null}
 
