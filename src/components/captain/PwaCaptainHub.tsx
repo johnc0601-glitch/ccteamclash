@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type {CSSProperties} from 'react';
 import type {LaunchTeam} from '@/domain/launch/LaunchData';
 import type {TeamScheduleEvent} from '@/domain/schedule/ScheduleService';
+import {getCaptainRosterHref} from '@/services/matches/CaptainRosterNavigation';
 import styles from './PwaCaptainHub.module.css';
 
 export function PwaCaptainHub({
@@ -65,7 +66,7 @@ export function PwaCaptainHub({
             <p>{nextMatch.date} · {nextMatch.time}</p>
             <p>{nextMatch.course}</p>
           </div>
-          <Link className={styles.primaryAction} href={`${nextMatch.href}?manage=roster#captain-roster`}>
+          <Link className={styles.primaryAction} href={getCaptainRosterHref(nextMatch.href)}>
             Manage match roster
           </Link>
         </article>
