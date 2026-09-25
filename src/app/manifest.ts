@@ -20,6 +20,12 @@ export default function manifest(): MetadataRoute.Manifest {
         type: 'image/svg+xml',
         purpose: 'any',
       },
+      {
+        src: '/pwa/team-clash-app-icon.svg',
+        sizes: 'any',
+        type: 'image/svg+xml',
+        purpose: 'maskable',
+      },
     ],
     shortcuts: [
       {
