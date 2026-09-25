@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { HeaderAccessProvider } from "@/components/HeaderAccessProvider";
 import { PwaLifecycle } from "@/components/PwaLifecycle";
 import { AppBottomNav } from "@/components/AppBottomNav";
+import { AppConnectivityBanner } from "@/components/AppConnectivityBanner";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/shared/constants";
 import "./globals.css";
 import "./theme.css";
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <PwaLifecycle />
         <HeaderAccessProvider>
           {children}
+          <AppConnectivityBanner />
           <AppBottomNav />
         </HeaderAccessProvider>
         <Analytics />
