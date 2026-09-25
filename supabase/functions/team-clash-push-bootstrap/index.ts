@@ -37,17 +37,14 @@ Deno.serve(async (req: Request) => {
   const keys = await generateVapidKeys({extractable: true});
   const exported = await exportVapidKeys(keys);
   const publicKey = await exportApplicationServerKey(keys);
-  const privateKey = exported.privateKey.d;
-  if (!privateKey) {
-    return Response.json({error: "VAPID private scalar was not exportable"}, {status: 500});
-  }
+  const privateKeyExport = JSON.stringify(exported);
 
   const dispatchToken = base64Url(crypto.getRandomValues(new Uint8Array(32)));
   const dispatchUrl = supabaseUrl + "/functions/v1/team-clash-push-dispatch";
 
   const {error} = await admin.rpc("initialize_push_delivery_config", {
     p_public_key: publicKey,
-    p_private_key: privateKey,
+    p_private_key: privateKeyExport,
     p_dispatch_token: dispatchToken,
     p_dispatch_url: dispatchUrl,
     p_subject: "https://ccteamclash.com",
