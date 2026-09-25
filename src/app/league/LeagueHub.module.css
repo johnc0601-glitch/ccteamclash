@@ -80,3 +80,182 @@
     min-height: 126px;
   }
 }
+
+
+.snapshot {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, .85fr);
+  gap: 14px;
+  margin-top: 30px;
+}
+
+.roundCard,
+.standingsCard {
+  overflow: hidden;
+  border: 1px solid var(--cc-panel-border);
+  border-radius: var(--cc-radius-md);
+  background: var(--cc-surface);
+  box-shadow: var(--cc-card-shadow);
+}
+
+.roundCard > header,
+.standingsCard > header {
+  padding: 16px 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--cc-panel-border);
+}
+
+.roundCard > header div,
+.standingsCard > header div {
+  display: grid;
+  gap: 3px;
+}
+
+.roundCard > header span,
+.standingsCard > header span {
+  color: var(--cc-gold);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.roundCard > header strong,
+.standingsCard > header strong {
+  color: var(--cc-text);
+  font-size: 17px;
+}
+
+.roundCard > header a,
+.standingsCard > header a {
+  color: var(--cc-gold);
+  font-size: 9px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.roundMatches {
+  display: grid;
+}
+
+.roundMatch {
+  padding: 13px 18px;
+  display: grid;
+  gap: 4px;
+  border-bottom: 1px solid var(--cc-panel-border);
+}
+
+.roundMatch:last-child {
+  border-bottom: 0;
+}
+
+.roundMatch > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.roundMatch strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--cc-text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roundMatch span {
+  color: var(--cc-text-muted);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.roundMatch small {
+  color: var(--cc-text-muted);
+  font-size: 10px;
+}
+
+.standingList {
+  margin: 0;
+  padding: 8px 18px 14px;
+  display: grid;
+  list-style: none;
+}
+
+.standingList li {
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: 22px minmax(0,1fr) 42px 38px;
+  align-items: center;
+  gap: 7px;
+  border-bottom: 1px solid var(--cc-panel-border);
+  color: var(--cc-body-text);
+  font-size: 11px;
+}
+
+.standingList li:last-child {
+  border-bottom: 0;
+}
+
+.standingList b {
+  color: var(--cc-text-muted);
+}
+
+.standingList span {
+  overflow: hidden;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.standingList strong,
+.standingList small {
+  text-align: right;
+}
+
+.standingList small {
+  color: var(--cc-text-muted);
+}
+
+.preseason {
+  padding: 22px 18px 24px;
+  display: grid;
+  gap: 7px;
+}
+
+.preseason strong {
+  color: var(--cc-text);
+  font-size: 20px;
+}
+
+.preseason span,
+.preseason small,
+.empty {
+  color: var(--cc-text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.empty {
+  padding: 20px 18px;
+}
+
+@media (max-width: 720px) {
+  .snapshot {
+    grid-template-columns: 1fr;
+  }
+
+  .roundCard > header,
+  .standingsCard > header {
+    padding: 14px;
+  }
+
+  .roundMatch {
+    padding: 12px 14px;
+  }
+}
