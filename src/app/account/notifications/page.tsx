@@ -3,7 +3,7 @@ import {redirect} from 'next/navigation';
 import {createClient} from '@/lib/supabase/server';
 import {PushPermissionCard} from '@/components/notifications/PushPermissionCard';
 import {AccountPageLayout, readAccountParam} from '../AccountPageLayout';
-import {saveNotificationPreferences} from './actions';
+import {queueTestNotification, saveNotificationPreferences} from './actions';
 import styles from '../Account.module.css';
 
 type Props = {
@@ -59,6 +59,12 @@ export default async function NotificationsPage({searchParams}: Props) {
         <span className={styles.eyebrow}>This device</span>
         <h2>Push alerts</h2>
         <PushPermissionCard activeDeviceCount={activeDeviceCount ?? 0} />
+        {(activeDeviceCount ?? 0) > 0 ? (
+          <form action={queueTestNotification} className={styles.pushTestForm}>
+            <button className={styles.secondaryButton} type="submit">Send test notification</button>
+            <span>Queues a real staging push. Delivery usually occurs within two minutes.</span>
+          </form>
+        ) : null}
       </article>
 
       <article className={styles.panel} style={{marginTop:'16px'}}>
