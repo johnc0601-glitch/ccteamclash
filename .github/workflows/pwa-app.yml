@@ -17,6 +17,8 @@ on:
       - 'src/app/clubhouse/**'
       - 'src/components/matches/PwaMatchdayHub.*'
       - 'src/components/matches/PwaMatchdayPhase*'
+      - 'src/services/matches/CaptainRosterNavigation*'
+      - 'src/services/matches/CaptainRosterNavigation*'
       - 'src/components/teams/PwaTeamHub.*'
       - 'src/app/manifest.ts'
       - 'public/sw.js'
