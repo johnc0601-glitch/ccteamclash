@@ -191,7 +191,7 @@
   font-weight: 950;
   text-transform: uppercase;
 }
-.shortcuts a:first-child { border-color: rgba(255,196,0,.42); color: var(--cc-gold); }
+.primaryShortcut { border-color: rgba(255,196,0,.48) !important; background: rgba(200,155,43,.11) !important; color: var(--cc-gold) !important; }
 .scheduleLink { border-radius: 8px; color: var(--cc-gold); }
 
 @media (max-width: 800px) {
