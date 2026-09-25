@@ -185,8 +185,9 @@
 @media (max-width: 800px) {
   :global(html[data-app-preview='true']) .previewExit {
     position: fixed;
+    top: 8px;
     right: 8px;
-    bottom: calc(73px + env(safe-area-inset-bottom));
+    bottom: auto;
     z-index: 121;
     display: inline-flex;
     min-height: 22px;
@@ -194,10 +195,10 @@
     align-items: center;
     border: 1px solid rgba(200,155,43,.42);
     border-radius: 999px;
-    background: rgba(9,11,12,.94);
+    background: rgba(9,11,12,.9);
     color: var(--cc-gold);
     box-shadow: 0 4px 12px rgba(0,0,0,.18);
-    opacity: .86;
+    opacity: .78;
     font-size: 7px;
     font-weight: 950;
     letter-spacing: .05em;
