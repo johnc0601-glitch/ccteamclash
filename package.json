@@ -22,7 +22,7 @@
     "test:matchday": "node --loader ./scripts/ts-paths-loader.mjs --test src/services/matches/MatchFeedLifecycle.test.ts src/services/matches/PublicAvailability.test.ts src/services/matches/MatchPublicIdentity.test.ts",
     "test:team-strength": "node --loader ./scripts/ts-paths-loader.mjs --test src/services/teamStrength/*.test.ts",
     "seed:launch:sql": "node --loader ./scripts/ts-paths-loader.mjs scripts/generate_launch_seed_sql.mjs",
-    "test:pwa": "node --loader ./scripts/ts-paths-loader.mjs --test src/components/appShellState.test.ts src/components/appPreviewState.test.ts src/components/matches/PwaMatchdayPhase.test.ts"
+    "test:pwa": "node --loader ./scripts/ts-paths-loader.mjs --test src/components/appShellState.test.ts src/components/appPreviewState.test.ts src/components/matches/PwaMatchdayPhase.test.ts src/services/matches/CaptainRosterNavigation.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
