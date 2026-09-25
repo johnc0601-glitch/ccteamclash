@@ -7,6 +7,7 @@ import {isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
 import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
 import {createClient} from '@/lib/supabase/server';
 import {getPublicMatchHref} from '@/services/matches/MatchPublicIdentity';
+import {getCaptainRosterHref} from '@/services/matches/CaptainRosterNavigation';
 
 const MANAGER_STATUSES = new Set(['Scheduled', 'Postponed', 'Rain Delay']);
 type BatchStatus = MatchAttendanceStatus | 'Unconfirmed';
@@ -19,12 +20,12 @@ export async function saveCaptainRosterAvailabilityBatch(formData: FormData) {
   if (!matchId || !teamId || !rawChanges) redirect('/captain?error=Match, team, and availability changes are required.');
   const {publicMatchPath, path, context} = await getManagementNavigation(matchId);
   const changes = parseBatchChanges(rawChanges);
-  if (!changes?.length) redirect(`${path}&captainNotice=${encodeURIComponent('No roster changes to save.')}#captain-roster`);
-  if (!context || !context.teamIds.includes(teamId)) redirect(`${path}&captainError=${encodeURIComponent('You cannot manage that team roster.')}#captain-roster`);
+  redirect(getCaptainRosterHref(path, {captainNotice: 'No roster changes to save.'}));
+  redirect(getCaptainRosterHref(path, {captainError: 'You cannot manage that team roster.'}));
 
   const teamPlayers = await context.repository.getTeamAttendance(matchId, teamId);
   const allowedPlayerIds = new Set(teamPlayers.map((player) => player.playerId));
-  if (changes.some((change) => !allowedPlayerIds.has(change.playerId))) redirect(`${path}&captainError=${encodeURIComponent('One or more players are not on the roster you manage.')}#captain-roster`);
+  redirect(getCaptainRosterHref(path, {captainError: 'One or more players are not on the roster you manage.'}));
 
   if (context.overrideTeamIds.has(teamId)) {
     try {
@@ -36,11 +37,11 @@ export async function saveCaptainRosterAvailabilityBatch(formData: FormData) {
       if (error) throw error;
     } catch (error) {
       console.error('Unlocked captain roster save failed.', {matchId, teamId, changeCount: changes.length, errorClass: error instanceof Error ? error.name : 'UnknownError'});
-      redirect(`${path}&captainError=${encodeURIComponent('Roster changes could not be saved.')}#captain-roster`);
+      redirect(getCaptainRosterHref(path, {captainError: 'Roster changes could not be saved.'}));
     }
     revalidatePath(publicMatchPath);
     revalidatePath('/captain');
-    redirect(`${publicMatchPath}?manage=roster&captainNotice=${encodeURIComponent('Roster updated and locked again.')}#captain-roster`);
+    redirect(getCaptainRosterHref(publicMatchPath, {captainNotice: 'Roster updated and locked again.'}));
   }
 
   const attendanceClient = context.supabase as any;
@@ -57,10 +58,10 @@ export async function saveCaptainRosterAvailabilityBatch(formData: FormData) {
     }
   } catch (error) {
     console.error('Captain batch availability update failed.', {matchId, teamId, changeCount: changes.length, errorClass: error instanceof Error ? error.name : 'UnknownError'});
-    redirect(`${path}&captainError=${encodeURIComponent('Roster changes could not be saved.')}#captain-roster`);
+    redirect(getCaptainRosterHref(path, {captainError: 'Roster changes could not be saved.'}));
   }
   revalidatePath(publicMatchPath);
-  redirect(`${path}&captainNotice=${encodeURIComponent(`${changes.length} roster change${changes.length === 1 ? '' : 's'} saved.`)}#captain-roster`);
+  redirect(getCaptainRosterHref(path, {captainNotice: `${changes.length} roster change${changes.length === 1 ? '' : 's'} saved.`}));
 }
 
 export async function setCaptainRosterAvailability(formData: FormData) {
@@ -69,18 +70,18 @@ export async function setCaptainRosterAvailability(formData: FormData) {
   const status = readFormValue(formData, 'status');
   if (!matchId || !playerId || (status !== 'Playing' && status !== 'NotPlaying')) redirect('/captain?error=Match, player, and availability are required.');
   const {publicMatchPath, path, context} = await getManagementNavigation(matchId);
-  if (!context) redirect(`${path}&captainError=${encodeURIComponent('Roster management is closed for this match.')}#captain-roster`);
+  redirect(getCaptainRosterHref(path, {captainError: 'Roster management is closed for this match.'}));
   const team = await findManagedPlayerTeam(context, playerId);
-  if (!team) redirect(`${path}&captainError=${encodeURIComponent('That player is not on a team you manage for this match.')}#captain-roster`);
-  if (context.overrideTeamIds.has(team)) redirect(`${path}&captainError=${encodeURIComponent('Use Save roster to apply the correction and lock it again.')}#captain-roster`);
+  redirect(getCaptainRosterHref(path, {captainError: 'That player is not on a team you manage for this match.'}));
+  redirect(getCaptainRosterHref(path, {captainError: 'Use Save roster to apply the correction and lock it again.'}));
   try {
     await context.repository.saveAttendance({matchId, teamId: team, playerId, status: status as MatchAttendanceStatus, updatedBy: context.actor.profileId});
   } catch (error) {
     console.error('Captain availability update failed.', {matchId, playerId, errorClass: error instanceof Error ? error.name : 'UnknownError'});
-    redirect(`${path}&captainError=${encodeURIComponent('Player availability could not be saved.')}#captain-roster`);
+    redirect(getCaptainRosterHref(path, {captainError: 'Player availability could not be saved.'}));
   }
   revalidatePath(publicMatchPath);
-  redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was updated.')}#captain-roster`);
+  redirect(getCaptainRosterHref(path, {captainNotice: 'Player availability was updated.'}));
 }
 
 export async function clearCaptainRosterAvailability(formData: FormData) {
@@ -88,20 +89,20 @@ export async function clearCaptainRosterAvailability(formData: FormData) {
   const playerId = readFormValue(formData, 'playerId');
   if (!matchId || !playerId) redirect('/captain?error=Match and player are required.');
   const {publicMatchPath, path, context} = await getManagementNavigation(matchId);
-  if (!context) redirect(`${path}&captainError=${encodeURIComponent('Roster management is closed for this match.')}#captain-roster`);
+  redirect(getCaptainRosterHref(path, {captainError: 'Roster management is closed for this match.'}));
   const team = await findManagedPlayerTeam(context, playerId);
-  if (!team) redirect(`${path}&captainError=${encodeURIComponent('That player is not on a team you manage for this match.')}#captain-roster`);
-  if (context.overrideTeamIds.has(team)) redirect(`${path}&captainError=${encodeURIComponent('Use Save roster to apply the correction and lock it again.')}#captain-roster`);
+  redirect(getCaptainRosterHref(path, {captainError: 'That player is not on a team you manage for this match.'}));
+  redirect(getCaptainRosterHref(path, {captainError: 'Use Save roster to apply the correction and lock it again.'}));
   try {
     const attendanceClient = context.supabase as any;
     const {error} = await attendanceClient.from('launch_match_attendance').delete().eq('match_id', matchId).eq('team_id', team).eq('player_id', playerId);
     if (error) throw error;
   } catch (error) {
     console.error('Captain availability reset failed.', {matchId, playerId, errorClass: error instanceof Error ? error.name : 'UnknownError'});
-    redirect(`${path}&captainError=${encodeURIComponent('Player availability could not be reset.')}#captain-roster`);
+    redirect(getCaptainRosterHref(path, {captainError: 'Player availability could not be reset.'}));
   }
   revalidatePath(publicMatchPath);
-  redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was reset to unconfirmed.')}#captain-roster`);
+  redirect(getCaptainRosterHref(path, {captainNotice: 'Player availability was reset to unconfirmed.'}));
 }
 
 export async function confirmCaptainManagedRoster(formData: FormData) {
@@ -109,7 +110,7 @@ export async function confirmCaptainManagedRoster(formData: FormData) {
   const teamId = readFormValue(formData, 'teamId');
   if (!matchId || !teamId) redirect('/captain?error=Match and team are required.');
   const {publicMatchPath, path, context} = await getManagementNavigation(matchId);
-  if (!context || !context.teamIds.includes(teamId)) redirect(`${path}&captainError=${encodeURIComponent('You cannot confirm that team roster.')}#captain-roster`);
+  redirect(getCaptainRosterHref(path, {captainError: 'You cannot confirm that team roster.'}));
   try {
     if (context.overrideTeamIds.has(teamId)) {
       const {error} = await (context.supabase as any).rpc('captain_confirm_unlocked_match_roster', {target_match_id: matchId, target_team_id: teamId});
@@ -119,11 +120,11 @@ export async function confirmCaptainManagedRoster(formData: FormData) {
     }
   } catch (error) {
     console.error('Captain roster confirmation failed.', {matchId, teamId, errorClass: error instanceof Error ? error.name : 'UnknownError'});
-    redirect(`${path}&captainError=${encodeURIComponent('The roster could not be confirmed.')}#captain-roster`);
+    redirect(getCaptainRosterHref(path, {captainError: 'The roster could not be confirmed.'}));
   }
   revalidatePath(publicMatchPath);
   revalidatePath('/captain');
-  redirect(`${publicMatchPath}?manage=roster&captainNotice=${encodeURIComponent(context.overrideTeamIds.has(teamId) ? 'Match roster confirmed and locked again.' : 'Match roster confirmed.')}#captain-roster`);
+  redirect(getCaptainRosterHref(publicMatchPath, {captainNotice: context.overrideTeamIds.has(teamId) ? 'Match roster confirmed and locked again.' : 'Match roster confirmed.'}));
 }
 
 type ManagementContext = {
@@ -143,7 +144,7 @@ async function getManagementNavigation(matchId: string): Promise<{
   const supabase = await createClient();
   const publicMatchPath = await getPublicMatchHref(supabase, matchId);
   const context = await getManagementContext(matchId, supabase);
-  return {publicMatchPath, path: `${publicMatchPath}?manage=roster`, context};
+  return {publicMatchPath, path: publicMatchPath, context};
 }
 
 async function getManagementContext(
