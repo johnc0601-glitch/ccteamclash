@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'src/components/AppBottomNav.*'
+      - 'src/components/AppConnectivityBanner.*'
+      - 'src/components/AppConnectivityBanner.*'
       - 'src/components/PwaLifecycle.*'
       - 'src/components/PwaHomeDashboard.*'
       - 'src/components/appShellState*'
