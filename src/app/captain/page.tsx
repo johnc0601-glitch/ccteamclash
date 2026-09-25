@@ -8,6 +8,7 @@ import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
 import {returnRosteredPlayerToCommissioner, saveRosterPlayerRegistration, saveTeamAppearance} from './actions';
 import {CaptainApprovalQueue} from './CaptainApprovalQueue';
+import {PwaCaptainHub} from '@/components/captain/PwaCaptainHub';
 import styles from './Captain.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -30,7 +31,7 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
       <SiteHeader />
       <section className={styles.page}>
         <div className="shell">
-          <header className={styles.header}>
+          <header className={`${styles.header} browser-captain-header`}>
             <span>Captain home</span>
             <h1>Team control</h1>
             <p>See your roster and match schedule from one simple captain screen.</p>
@@ -57,9 +58,21 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
   const primaryColor = team.primaryColor || '#006f71';
   const secondaryColor = team.secondaryColor || '#f4f6f2';
 
+  const nextMatch = upcomingEvents[0] ?? null;
+
   return (
     <>
-      <div className={styles.summaryGrid}>
+      <PwaCaptainHub
+        team={team}
+        nextMatch={nextMatch}
+        rosterCount={roster.length}
+        women={rosterCounts.women}
+        men={rosterCounts.men}
+        junior={rosterCounts.junior}
+        pendingCount={pendingApplications.length}
+      />
+
+      <div className={`${styles.summaryGrid} browser-captain-summary`}>
         <SummaryCard label="Team" value={team.name} />
         <SummaryCard
           label="Roster"
@@ -91,7 +104,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
           ) : null}
         </section>
 
-        <section className={styles.panel}>
+        <section className={styles.panel} id="team-appearance">
           <header className={styles.panelHeader}>
             <span>Team appearance</span>
             <h2>Brand your team</h2>
@@ -115,7 +128,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
           </form>
         </section>
 
-        <section className={styles.panel}>
+        <section className={styles.panel} id="upcoming-matches">
           <header className={styles.panelHeader}><span>Matchdays</span><h2>Upcoming matches</h2><p className={styles.muted}>Use this section to know where your team is playing next.</p></header>
           <div className={styles.list}>{upcomingEvents.length ? upcomingEvents.map((event) => (
             <article className={styles.row} key={event.id}>
@@ -126,7 +139,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
           )) : <p className={styles.empty}>No upcoming matches are posted for your team yet.</p>}</div>
         </section>
 
-        <section className={styles.panel}>
+        <section className={styles.panel} id="team-roster">
           <header className={styles.panelHeader}><span>Roster</span><h2>{team.name}</h2><p className={styles.muted}>{season?.canEditRegistrations ? 'Tap Edit registration to update player details or remove a player from your roster.' : 'Registration details are locked for this season. Open Roster options to request a removal or reassignment.'}</p></header>
           <div className={styles.list}>{roster.length ? roster.map((player) => (
             <article className={styles.row} key={player.id}>
