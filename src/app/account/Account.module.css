@@ -123,3 +123,116 @@
 
 .pushTestForm { margin-top: 14px; padding-top: 14px; display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; border-top: 1px solid var(--cc-light-border); }
 .pushTestForm span { color: var(--cc-light-muted); font-size: 10px; line-height: 1.4; }
+
+
+.appSubHeader {
+  display: none;
+}
+
+@media (max-width: 800px) and (display-mode: standalone) {
+  .shell {
+    padding-top: 18px;
+    padding-bottom: 30px;
+  }
+
+  .browserAccountHeader {
+    display: none !important;
+  }
+
+  .appSubHeader {
+    margin-bottom: 14px;
+    display: grid;
+    gap: 11px;
+  }
+
+  .appSubHeader > a {
+    width: fit-content;
+    color: var(--cc-gold-ink);
+    font-size: 9px;
+    font-weight: 950;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  .appSubHeader > div {
+    padding: 14px 16px;
+    display: grid;
+    gap: 4px;
+    border: 1px solid #ddd8cd;
+    border-left: 4px solid var(--cc-gold);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 20px rgba(13,17,18,.055);
+  }
+
+  .appSubHeader span {
+    color: var(--cc-gold-ink);
+    font-size: 8px;
+    font-weight: 950;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+  }
+
+  .appSubHeader strong {
+    color: #1b2021;
+    font-family: var(--cc-font-display);
+    font-size: 25px;
+    font-style: italic;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+}
+
+@media (max-width: 800px) {
+  :global(html[data-app-preview='true']) .shell {
+    padding-top: 18px;
+    padding-bottom: 30px;
+  }
+
+  :global(html[data-app-preview='true']) .browserAccountHeader {
+    display: none !important;
+  }
+
+  :global(html[data-app-preview='true']) .appSubHeader {
+    margin-bottom: 14px;
+    display: grid;
+    gap: 11px;
+  }
+
+  :global(html[data-app-preview='true']) .appSubHeader > a {
+    width: fit-content;
+    color: var(--cc-gold-ink);
+    font-size: 9px;
+    font-weight: 950;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  :global(html[data-app-preview='true']) .appSubHeader > div {
+    padding: 14px 16px;
+    display: grid;
+    gap: 4px;
+    border: 1px solid #ddd8cd;
+    border-left: 4px solid var(--cc-gold);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 20px rgba(13,17,18,.055);
+  }
+
+  :global(html[data-app-preview='true']) .appSubHeader span {
+    color: var(--cc-gold-ink);
+    font-size: 8px;
+    font-weight: 950;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+  }
+
+  :global(html[data-app-preview='true']) .appSubHeader strong {
+    color: #1b2021;
+    font-family: var(--cc-font-display);
+    font-size: 25px;
+    font-style: italic;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+}
