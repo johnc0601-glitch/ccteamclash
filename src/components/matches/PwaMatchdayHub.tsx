@@ -5,9 +5,8 @@ import type {Match} from '@/domain/schedule/Match';
 import type {PersonalAttendance} from '@/domain/match-roster/MatchAttendance';
 import type {PublicMatchday} from '@/services/matches/MatchdayService';
 import type {PublicMatchPrediction} from '@/services/teamStrength/PublicMatchPrediction';
+import {getPwaMatchdayPhaseCopy, resolvePwaMatchdayPhase} from '@/components/matches/PwaMatchdayPhase';
 import styles from './PwaMatchdayHub.module.css';
-
-type Phase = 'upcoming' | 'today' | 'awaiting' | 'final' | 'postponed' | 'cancelled' | 'rain';
 
 export function PwaMatchdayHub({
   matchday,
@@ -24,8 +23,8 @@ export function PwaMatchdayHub({
   attendance: PersonalAttendance | undefined;
   hasManagedRoster: boolean;
 }) {
-  const phase = resolvePhase(match, Boolean(result));
-  const phaseCopy = getPhaseCopy(phase);
+  const phase = resolvePwaMatchdayPhase(match, Boolean(result));
+  const phaseCopy = getPwaMatchdayPhaseCopy(phase);
   const awayChance = prediction?.state === 'calculated' ? prediction.awayChanceOfVictory : null;
   const homeChance = prediction?.state === 'calculated' ? prediction.homeChanceOfVictory : null;
   const style = {
@@ -125,42 +124,6 @@ function Team({
       {score !== undefined ? <b>{score}</b> : <small>{side === 'away' ? 'Away' : 'Home'}</small>}
     </div>
   );
-}
-
-function resolvePhase(match: Match, hasResult: boolean): Phase {
-  if (hasResult || match.status === 'Completed') return 'final';
-  if (match.status === 'Postponed') return 'postponed';
-  if (match.status === 'Cancelled') return 'cancelled';
-  if (match.status === 'Rain Delay') return 'rain';
-  if (!match.date) return 'upcoming';
-
-  const easternToday = dateInEastern(new Date());
-  if (match.date === easternToday) return 'today';
-  if (match.date < easternToday) return 'awaiting';
-  return 'upcoming';
-}
-
-function getPhaseCopy(phase: Phase) {
-  switch (phase) {
-    case 'today': return {label: 'Matchday · Today', detail: 'Roster, scoring, feed, and photos in one place'};
-    case 'awaiting': return {label: 'Awaiting results', detail: 'Matchday is complete; official results have not been published yet'};
-    case 'final': return {label: 'Final', detail: 'Official Team Clash result'};
-    case 'postponed': return {label: 'Postponed', detail: 'This match has been postponed'};
-    case 'cancelled': return {label: 'Cancelled', detail: 'This match has been cancelled'};
-    case 'rain': return {label: 'Rain delay', detail: 'Match status is currently a rain delay'};
-    default: return {label: 'Upcoming Matchday', detail: 'Get ready: availability, prediction, roster, and course'};
-  }
-}
-
-function dateInEastern(date: Date) {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(date);
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
 }
 
 function initials(name: string) {
