@@ -120,7 +120,10 @@ export default async function TeamPage({params}: TeamPageProps) {
       <main className={styles.page}>
         <div className="shell">
           <Link className={styles.back} href="/teams">Back to teams</Link>
-          <ClientTeamBanner initialTeam={team} />
+          <ClientTeamBanner
+            initialTeam={team}
+            championSeasons={seasonTitles.map((title) => title.seasonName)}
+          />
           <TeamHubNav teamId={team.id} />
           {nextMatch ? (
             <NextMatchCard
@@ -131,13 +134,6 @@ export default async function TeamPage({params}: TeamPageProps) {
             />
           ) : null}
 
-          {seasonTitles.length ? (
-            <section className={styles.championBanner} aria-label="Season championships">
-              <span>Season champion</span>
-              <strong>{seasonTitles.map((title) => title.seasonName.replace('Coastal Clash Match Play ', '')).join(' / ')}</strong>
-              <small>{team.name} won {seasonTitles.length === 1 ? 'this season' : 'these seasons'}.</small>
-            </section>
-          ) : null}
 
           <section id="overview" className={styles.overview}>
             <div className={styles.recordBlock}>
@@ -180,7 +176,7 @@ export default async function TeamPage({params}: TeamPageProps) {
           <section id="roster" className={styles.section}>
             <header className={styles.sectionHeader}>
               <span>Current team</span>
-              <h2>Roster / Stats</h2>
+              <h2>Roster</h2>
               <p>{rosterCount} {rosterCount === 1 ? 'player' : 'players'}</p>
             </header>
             {activeSeason && launchPlayers ? (
