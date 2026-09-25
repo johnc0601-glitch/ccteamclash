@@ -95,3 +95,11 @@
   font-size: 9px;
   text-transform: uppercase;
 }
+
+@media (max-width: 800px) {
+  :global(html[data-app-preview='true']) .hub {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+}
