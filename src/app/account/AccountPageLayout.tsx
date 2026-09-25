@@ -12,6 +12,7 @@ type AccountPageLayoutProps = {
   title: string;
   appBackHref?: string;
   appBackLabel?: string;
+  hideHeaderInApp?: boolean;
 };
 
 export function AccountPageLayout({
@@ -24,6 +25,7 @@ export function AccountPageLayout({
   title,
   appBackHref,
   appBackLabel = 'Me',
+  hideHeaderInApp = false,
 }: AccountPageLayoutProps) {
   return (
     <main>
@@ -39,7 +41,7 @@ export function AccountPageLayout({
               </div>
             </header>
           ) : null}
-          <header className={appBackHref ? `${styles.header} ${styles.browserAccountHeader}` : styles.header}>
+          <header className={appBackHref || hideHeaderInApp ? `${styles.header} ${styles.browserAccountHeader}` : styles.header}>
             <span className={styles.eyebrow}>{eyebrow}</span>
             <h1>{title}</h1>
             <p>{description}</p>
