@@ -4,6 +4,7 @@ import {PlayerAvailabilityService} from '@/domain/match-roster/PlayerAvailabilit
 import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
 import {setOwnPlayerAvailability} from '@/app/matches/[id]/playerAvailabilityActions';
 import {createClient} from '@/lib/supabase/server';
+import {getCaptainRosterHref} from '@/services/matches/CaptainRosterNavigation';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 
 export async function PersonalAttendanceCard({
@@ -101,7 +102,7 @@ export async function PersonalAttendanceCard({
         </form>
         {canManageRoster ? (
           <Link
-            href="?manage=roster#captain-roster"
+            href={getCaptainRosterHref('')}
             style={{
               alignItems: 'center',
               border: '1px solid var(--cc-teal)',
