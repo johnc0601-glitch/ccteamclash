@@ -45,13 +45,13 @@ export async function setCaptainMatchAttendance(formData: FormData) {
   try {
     result = await service.setTeamAttendance(userId, matchId, playerId, status);
   } catch {
-    redirect(`${path}&captainError=${encodeURIComponent('Player attendance could not be saved.')}`);
+    redirect(`${path}&captainError=${encodeURIComponent('Player attendance could not be saved.')}#captain-roster`);
   }
-  if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(result.message)}#captain-roster`);
 
   revalidatePath(`/matches/${matchId}`);
   revalidatePath(matchHref);
-  redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was updated.')}`);
+  redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was updated.')}#captain-roster`);
 }
 
 export async function clearCaptainMatchAttendance(formData: FormData) {
@@ -67,7 +67,7 @@ export async function clearCaptainMatchAttendance(formData: FormData) {
     && roster.players.some((player) => player.playerId === playerId)
   ));
   if (!authorizedRoster) {
-    redirect(`${path}&captainError=${encodeURIComponent('That player cannot be reset for this match.')}`);
+    redirect(`${path}&captainError=${encodeURIComponent('That player cannot be reset for this match.')}#captain-roster`);
   }
 
   try {
@@ -80,12 +80,12 @@ export async function clearCaptainMatchAttendance(formData: FormData) {
       .eq('player_id', playerId);
     if (error) throw error;
   } catch {
-    redirect(`${path}&captainError=${encodeURIComponent('Player attendance could not be reset.')}`);
+    redirect(`${path}&captainError=${encodeURIComponent('Player attendance could not be reset.')}#captain-roster`);
   }
 
   revalidatePath(`/matches/${matchId}`);
   revalidatePath(matchHref);
-  redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was reset to unconfirmed.')}`);
+  redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was reset to unconfirmed.')}#captain-roster`);
 }
 
 export async function confirmCaptainMatchRoster(formData: FormData) {
@@ -99,14 +99,14 @@ export async function confirmCaptainMatchRoster(formData: FormData) {
   try {
     result = await service.confirmTeamRoster(userId, matchId, teamId);
   } catch {
-    redirect(`${path}&captainError=${encodeURIComponent('The roster could not be confirmed.')}`);
+    redirect(`${path}&captainError=${encodeURIComponent('The roster could not be confirmed.')}#captain-roster`);
   }
-  if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(result.message)}#captain-roster`);
 
   revalidatePath(`/matches/${matchId}`);
   revalidatePath(matchHref);
   revalidatePath('/captain');
-  redirect(`${path}&captainNotice=${encodeURIComponent('Match roster confirmed.')}`);
+  redirect(`${path}&captainNotice=${encodeURIComponent('Match roster confirmed.')}#captain-roster`);
 }
 
 export async function addCommissionerSnapshotPlayer(formData: FormData) {
