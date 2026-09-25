@@ -35,19 +35,19 @@ export async function emailCaptainUnconfirmed(formData: FormData) {
     || !match
     || !isPlayerAttendanceOpen(match)
   ) {
-    redirect(`${path}&captainError=${encodeURIComponent('Unconfirmed reminders are not available for this match.')}`);
+    redirect(`${path}&captainError=${encodeURIComponent('Unconfirmed reminders are not available for this match.')}#captain-roster`);
   }
 
   const service = new MatchRosterService(new SeasonAwareMatchRosterRepository(supabase));
   const managedRosters = await service.getManagedTeamRosters(user.id, matchId);
   const roster = managedRosters.find((item) => item.teamId === actor.captainTeamId);
   if (!roster?.attendanceOpen) {
-    redirect(`${path}&captainError=${encodeURIComponent('Unconfirmed reminders are not available yet.')}`);
+    redirect(`${path}&captainError=${encodeURIComponent('Unconfirmed reminders are not available yet.')}#captain-roster`);
   }
 
   const unconfirmed = roster.players.filter((player) => player.status === 'Unconfirmed');
   if (!unconfirmed.length) {
-    redirect(`${path}&captainNotice=${encodeURIComponent('No unconfirmed players remain.')}`);
+    redirect(`${path}&captainNotice=${encodeURIComponent('No unconfirmed players remain.')}#captain-roster`);
   }
 
   const {data: reminderAllowed, error: reminderLimitError} = await (supabase as any).rpc(
@@ -60,10 +60,10 @@ export async function emailCaptainUnconfirmed(formData: FormData) {
       captainTeamId: actor.captainTeamId,
       errorClass: reminderLimitError.code ?? 'UnknownError',
     });
-    redirect(`${path}&captainError=${encodeURIComponent('Reminder sending is temporarily unavailable.')}`);
+    redirect(`${path}&captainError=${encodeURIComponent('Reminder sending is temporarily unavailable.')}#captain-roster`);
   }
   if (!reminderAllowed) {
-    redirect(`${path}&captainError=${encodeURIComponent('Reminder limit reached for this match. Try again later.')}`);
+    redirect(`${path}&captainError=${encodeURIComponent('Reminder limit reached for this match. Try again later.')}#captain-roster`);
   }
 
   try {
@@ -88,7 +88,7 @@ export async function emailCaptainUnconfirmed(formData: FormData) {
     );
     const recipients = buildCaptainReminderRecipients(roster.players, emailByPlayerId);
     if (!recipients.length) {
-      redirect(`${path}&captainError=${encodeURIComponent('None of the unconfirmed players have a linked email account.')}`);
+      redirect(`${path}&captainError=${encodeURIComponent('None of the unconfirmed players have a linked email account.')}#captain-roster`);
     }
 
     const teamIds = [match.awayTeamId, match.homeTeamId].filter((id): id is string => Boolean(id));
@@ -126,7 +126,7 @@ export async function emailCaptainUnconfirmed(formData: FormData) {
     const notice = missingCount > 0
       ? `Reminder sent to ${recipients.length} unconfirmed player${recipients.length === 1 ? '' : 's'}. ${missingCount} player${missingCount === 1 ? '' : 's'} had no linked email.`
       : `Reminder sent to ${recipients.length} unconfirmed player${recipients.length === 1 ? '' : 's'}.`;
-    redirect(`${path}&captainNotice=${encodeURIComponent(notice)}`);
+    redirect(`${path}&captainNotice=${encodeURIComponent(notice)}#captain-roster`);
   } catch (error) {
     if (isRedirectError(error)) throw error;
     console.error('Captain unconfirmed reminder failed.', {
@@ -134,7 +134,7 @@ export async function emailCaptainUnconfirmed(formData: FormData) {
       captainTeamId: actor.captainTeamId,
       errorClass: error instanceof Error ? error.name : 'UnknownError',
     });
-    redirect(`${path}&captainError=${encodeURIComponent('Unconfirmed reminders could not be sent.')}`);
+    redirect(`${path}&captainError=${encodeURIComponent('Unconfirmed reminders could not be sent.')}#captain-roster`);
   }
 }
 
