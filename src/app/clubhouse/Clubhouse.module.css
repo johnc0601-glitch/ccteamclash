@@ -562,3 +562,171 @@
   .commentForm button,
   .replyForm button { align-self: flex-end; }
 }
+
+
+.post[data-post-type="announcement"] {
+  border-color: color-mix(in srgb, var(--clubhouse-accent) 58%, var(--cc-card-border));
+  border-top: 4px solid var(--clubhouse-accent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--clubhouse-accent) 8%, var(--cc-card-bg)), var(--cc-card-bg) 42%);
+}
+
+.post[data-post-type="announcement"] .postTop b {
+  color: var(--cc-gold);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+
+.heroAside {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+.heroLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px 10px;
+}
+.heroLinks a {
+  color: rgba(255,255,255,.74);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.inlineControl {
+  position: relative;
+}
+.inlineControl > summary {
+  cursor: pointer;
+  color: var(--cc-muted);
+  font-size: 10px;
+  font-weight: 900;
+  list-style: none;
+  text-transform: uppercase;
+}
+.inlineControl > summary::-webkit-details-marker { display: none; }
+.inlineForm {
+  position: absolute;
+  z-index: 30;
+  right: 0;
+  width: min(320px, calc(100vw - 44px));
+  padding: 10px;
+  display: grid;
+  gap: 7px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 8px;
+  background: var(--cc-surface);
+  box-shadow: 0 14px 32px rgba(0,0,0,.26);
+}
+.inlineForm input,
+.inlineForm textarea,
+.inlineForm select,
+.composer select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 6px;
+  padding: 8px 9px;
+  background: var(--cc-surface-deep);
+  color: var(--cc-text);
+  font: inherit;
+}
+.inlineForm button {
+  min-height: 34px;
+  border: 1px solid var(--clubhouse-accent);
+  border-radius: 6px;
+  background: var(--clubhouse-accent);
+  color: #111;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 950;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.moderationStack {
+  display: grid;
+  gap: 18px;
+}
+.moderationHeading {
+  margin: 0 0 10px;
+  color: var(--cc-heading);
+  font-size: 13px;
+  text-transform: uppercase;
+}
+.moderationList {
+  display: grid;
+  gap: 8px;
+}
+.reportCard,
+.auditRow {
+  padding: 11px 12px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 8px;
+  background: var(--cc-surface-deep);
+}
+.reportCard > div {
+  display: grid;
+  gap: 3px;
+}
+.reportCard strong,
+.auditRow strong {
+  color: var(--cc-heading);
+  font-size: 12px;
+}
+.reportCard span,
+.auditRow span {
+  color: var(--cc-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+.reportCard p {
+  margin: 5px 0 0;
+  color: var(--cc-text);
+  font-size: 12px;
+}
+.reportActions {
+  margin-top: 6px;
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.reportActions button {
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 5px;
+  background: var(--cc-card-bg);
+  color: var(--cc-heading);
+  font: inherit;
+  font-size: 9px;
+  font-weight: 950;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+@media (max-width: 560px) {
+  .heroAside {
+    justify-items: center;
+  }
+  .heroLinks {
+    justify-content: center;
+  }
+  .inlineForm {
+    right: auto;
+    left: 0;
+  }
+  .postTools .inlineForm {
+    left: 0;
+  }
+  .reportCard {
+    padding: 10px;
+  }
+}
