@@ -47,7 +47,9 @@ export async function setCaptainMatchAttendance(formData: FormData) {
   } catch {
     redirect(getCaptainRosterHref(matchHref, {captainError: 'Player attendance could not be saved.'}));
   }
-  redirect(getCaptainRosterHref(matchHref, {captainError: result.message}));
+  if (!result.ok) {
+    redirect(getCaptainRosterHref(matchHref, {captainError: result.message}));
+  }
 
   revalidatePath(`/matches/${matchId}`);
   revalidatePath(matchHref);
@@ -99,7 +101,9 @@ export async function confirmCaptainMatchRoster(formData: FormData) {
   } catch {
     redirect(getCaptainRosterHref(matchHref, {captainError: 'The roster could not be confirmed.'}));
   }
-  redirect(getCaptainRosterHref(matchHref, {captainError: result.message}));
+  if (!result.ok) {
+    redirect(getCaptainRosterHref(matchHref, {captainError: result.message}));
+  }
 
   revalidatePath(`/matches/${matchId}`);
   revalidatePath(matchHref);
