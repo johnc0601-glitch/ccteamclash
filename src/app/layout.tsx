@@ -12,6 +12,7 @@ import "./canonical-theme.css";
 import "./matchday-theme.css";
 import "./responsive-header-fix.css";
 
+// Dedicated app deployments override the public site URL and app-surface flag in Vercel.
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://ccteamclash.com";
 const IS_APP_SURFACE = process.env.NEXT_PUBLIC_APP_SURFACE === "true";
 
