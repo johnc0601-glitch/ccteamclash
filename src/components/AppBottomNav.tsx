@@ -17,6 +17,11 @@ export function AppBottomNav() {
   const pathname = usePathname();
   const {activeTeamId, clubhouseHasUnread} = useHeaderAccess();
   const teamHref = activeTeamId ? `/teams/${encodeURIComponent(activeTeamId)}` : '/teams';
+  const isOwnTeamRoute = Boolean(activeTeamId && pathname === teamHref);
+  const isOtherTeamRoute = Boolean(
+    activeTeamId
+      && (pathname === '/teams' || (pathname.startsWith('/teams/') && !isOwnTeamRoute)),
+  );
 
   useEffect(() => {
     if (!window.matchMedia('(display-mode: standalone)').matches) return;
@@ -38,14 +43,17 @@ export function AppBottomNav() {
     {
       label: 'Team',
       href: teamHref,
-      active: pathname === '/clubhouse' || pathname.startsWith('/captain') || (activeTeamId ? pathname === teamHref : pathname === '/teams'),
+      active: pathname === '/clubhouse' || pathname.startsWith('/captain') || (activeTeamId ? isOwnTeamRoute : pathname === '/teams'),
       icon: 'team',
     },
     {label: 'Matchday', href: '/matchday', active: pathname === '/matchday' || pathname.startsWith('/matches/'), icon: 'matchday'},
     {
       label: 'League',
       href: '/league',
-      active: pathname === '/league' || ['/standings', '/stats', '/schedule', '/stories', '/courses', '/history', '/playoffs'].some((route) => pathname === route || pathname.startsWith(`${route}/`)),
+      active: pathname === '/league'
+        || isOtherTeamRoute
+        || ['/standings', '/stats', '/players', '/schedule', '/stories', '/courses', '/history', '/playoffs']
+          .some((route) => pathname === route || pathname.startsWith(`${route}/`)),
       icon: 'league',
     },
     {label: 'Me', href: '/account', active: pathname === '/account' || pathname.startsWith('/account/') || pathname.startsWith('/auth/'), icon: 'me'},
