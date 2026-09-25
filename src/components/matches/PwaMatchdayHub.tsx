@@ -27,6 +27,8 @@ export function PwaMatchdayHub({
   const phaseCopy = getPwaMatchdayPhaseCopy(phase);
   const awayChance = prediction?.state === 'calculated' ? prediction.awayChanceOfVictory : null;
   const homeChance = prediction?.state === 'calculated' ? prediction.homeChanceOfVictory : null;
+  const awayPercent = awayChance === null ? null : Math.round(awayChance * 100);
+  const homePercent = homeChance === null ? null : Math.round(homeChance * 100);
   const style = {
     '--pwa-away': matchday.awayTeam.team?.primaryColor || '#0b4fb3',
     '--pwa-home': matchday.homeTeam.team?.primaryColor || '#a20b78',
@@ -69,13 +71,13 @@ export function PwaMatchdayHub({
         )}
       </div>
 
-      {prediction?.state === 'calculated' && awayChance !== null && homeChance !== null ? (
+      {prediction?.state === 'calculated' && awayPercent !== null && homePercent !== null ? (
         <div className={styles.prediction}>
-          <div><span>{matchday.awayTeam.name}</span><strong>{awayChance}%</strong></div>
-          <div className={styles.predictionTrack}>
-            <i style={{width: `${awayChance}%`}} />
+          <div><span>{matchday.awayTeam.shortName || matchday.awayTeam.name}</span><strong>{awayPercent}%</strong></div>
+          <div className={styles.predictionTrack} aria-label={`${matchday.awayTeam.name} ${awayPercent}%, ${matchday.homeTeam.name} ${homePercent}%`}>
+            <i style={{width: `${awayPercent}%`}} />
           </div>
-          <div><strong>{homeChance}%</strong><span>{matchday.homeTeam.name}</span></div>
+          <div><strong>{homePercent}%</strong><span>{matchday.homeTeam.shortName || matchday.homeTeam.name}</span></div>
           <small>{prediction.stageLabel}</small>
         </div>
       ) : null}
