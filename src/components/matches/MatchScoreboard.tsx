@@ -23,7 +23,7 @@ export function MatchScoreboard({
           <span className={styles.teamName}>{matchday.awayTeam.name}</span>
           <strong className={styles.scoreValue}>{awayScore}</strong>
         </div>
-        <span className={styles.scoreMiddle}>VS</span>
+        <span className={styles.scoreMiddle}>{result ? 'Final' : 'VS'}</span>
         <div className={styles.teamScore}>
           <span className={styles.teamName}>{matchday.homeTeam.name}</span>
           <strong className={styles.scoreValue}>{homeScore}</strong>
