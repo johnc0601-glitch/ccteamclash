@@ -11,7 +11,7 @@ type Props = {
 };
 
 const DEFAULTS = {
-  match_reminders: true,
+  match_reminders: false,
   roster_deadline: true,
   matchday_open: true,
   results_ci: true,
@@ -73,7 +73,13 @@ export default async function NotificationsPage({searchParams}: Props) {
         <span className={styles.eyebrow}>Alert types</span>
         <h2>What matters</h2>
         <form className={styles.notificationForm} action={saveNotificationPreferences}>
-          <NotificationToggle name="matchReminders" checked={prefs.match_reminders} title="Match reminder" detail="A useful reminder before your next Clash." />
+          <div className={styles.notificationPending}>
+            <span>
+              <strong>Match reminder</strong>
+              <small>Reminder timing has not been scheduled yet.</small>
+            </span>
+            <b>Not scheduled</b>
+          </div>
           <NotificationToggle name="rosterDeadline" checked={prefs.roster_deadline} title="Roster deadline" detail="Availability or captain roster deadlines that need action." />
           <NotificationToggle name="matchdayOpen" checked={prefs.matchday_open} title="Matchday" detail="When the Matchday experience becomes current for your team." />
           <NotificationToggle name="resultsCi" checked={prefs.results_ci} title="Results & CI" detail="Published match results and meaningful CI updates." />
