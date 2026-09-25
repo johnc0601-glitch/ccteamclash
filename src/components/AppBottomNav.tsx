@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import {useEffect} from 'react';
 import {usePathname} from 'next/navigation';
 import {useHeaderAccess} from '@/components/HeaderAccessProvider';
 import styles from './AppBottomNav.module.css';
@@ -16,6 +17,21 @@ export function AppBottomNav() {
   const pathname = usePathname();
   const {activeTeamId, clubhouseHasUnread} = useHeaderAccess();
   const teamHref = activeTeamId ? `/teams/${encodeURIComponent(activeTeamId)}` : '/teams';
+
+  useEffect(() => {
+    if (!window.matchMedia('(display-mode: standalone)').matches) return;
+
+    const badgeNavigator = navigator as Navigator & {
+      setAppBadge?: (contents?: number) => Promise<void>;
+      clearAppBadge?: () => Promise<void>;
+    };
+
+    if (clubhouseHasUnread) {
+      void badgeNavigator.setAppBadge?.(1).catch(() => undefined);
+    } else {
+      void badgeNavigator.clearAppBadge?.().catch(() => undefined);
+    }
+  }, [clubhouseHasUnread]);
 
   const tabs: Tab[] = [
     {label: 'Home', href: '/', active: pathname === '/', icon: 'home'},
