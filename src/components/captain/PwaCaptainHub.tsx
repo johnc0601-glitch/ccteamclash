@@ -13,6 +13,7 @@ export function PwaCaptainHub({
   men,
   junior,
   pendingCount,
+  rosterConfirmed,
 }: {
   team: LaunchTeam;
   nextMatch: TeamScheduleEvent | null;
@@ -21,6 +22,7 @@ export function PwaCaptainHub({
   men: number;
   junior: number;
   pendingCount: number;
+  rosterConfirmed: boolean;
 }) {
   const brandStyle = {
     '--captain-primary': team.primaryColor || '#c89b2b',
@@ -65,9 +67,12 @@ export function PwaCaptainHub({
             <h2>{nextMatch.isHome ? 'vs' : 'at'} {nextMatch.opponent}</h2>
             <p>{nextMatch.date} · {nextMatch.time}</p>
             <p>{nextMatch.course}</p>
+            <strong className={rosterConfirmed ? styles.confirmed : styles.needsConfirmation}>
+              {rosterConfirmed ? 'Roster confirmed' : 'Roster not confirmed'}
+            </strong>
           </div>
           <Link className={styles.primaryAction} href={getCaptainRosterHref(nextMatch.href)}>
-            Manage match roster
+            {rosterConfirmed ? 'Review match roster' : 'Manage match roster'}
           </Link>
         </article>
       ) : (
