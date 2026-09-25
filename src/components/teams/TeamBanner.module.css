@@ -5,3 +5,60 @@
 .banner span { margin-bottom: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
 .banner strong { font-size: clamp(26px, 5vw, 48px); text-transform: uppercase; }
 @media (max-width: 560px) { .banner { align-items: flex-start; flex-direction: column; } }
+
+
+.identity {
+  min-width: 0;
+  padding-right: 76px;
+}
+.championBadges {
+  position: absolute !important;
+  z-index: 2 !important;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  gap: 7px;
+}
+.championBadge {
+  width: 54px;
+  height: 54px;
+  margin: 0 !important;
+  display: grid !important;
+  place-items: center;
+  align-content: center;
+  gap: 1px;
+  border: 2px solid #d5a900;
+  border-radius: 50%;
+  background: rgba(7, 9, 10, .72);
+  color: #f0c642;
+  box-shadow: 0 4px 14px rgba(0,0,0,.25);
+}
+.championBadge svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+.championBadge small {
+  color: #fff;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .03em;
+  line-height: 1;
+}
+@media (max-width: 560px) {
+  .identity {
+    padding-right: 62px;
+  }
+  .championBadges {
+    top: 12px;
+    right: 12px;
+  }
+  .championBadge {
+    width: 48px;
+    height: 48px;
+  }
+  .championBadge svg {
+    width: 19px;
+    height: 19px;
+  }
+}
