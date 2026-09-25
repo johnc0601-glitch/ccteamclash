@@ -39,3 +39,11 @@ test('formats model probabilities as whole display percentages', () => {
   assert.equal(formatPwaPredictionPercent(0.60533455496), 61);
   assert.equal(formatPwaPredictionPercent(0.999), 100);
 });
+
+
+test('rounds prediction probabilities into clean whole percentages', () => {
+  assert.equal(formatPwaPredictionPercent(0.39466544504), 39);
+  assert.equal(formatPwaPredictionPercent(0.60533455496), 61);
+  assert.equal(formatPwaPredictionPercent(0), 0);
+  assert.equal(formatPwaPredictionPercent(1), 100);
+});
