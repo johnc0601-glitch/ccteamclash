@@ -120,3 +120,6 @@
 .notificationToggle small { color: var(--cc-light-muted); font-size: 11px; line-height: 1.35; }
 .notificationToggle input { width: 22px; height: 22px; flex: 0 0 auto; accent-color: var(--cc-gold); }
 .notificationForm .primaryButton { margin-top: 18px; }
+
+.pushTestForm { margin-top: 14px; padding-top: 14px; display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; border-top: 1px solid var(--cc-light-border); }
+.pushTestForm span { color: var(--cc-light-muted); font-size: 10px; line-height: 1.4; }
