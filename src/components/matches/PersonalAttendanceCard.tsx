@@ -101,7 +101,7 @@ export async function PersonalAttendanceCard({
         </form>
         {canManageRoster ? (
           <Link
-            href="?manage=roster"
+            href="?manage=roster#captain-roster"
             style={{
               alignItems: 'center',
               border: '1px solid var(--cc-teal)',
