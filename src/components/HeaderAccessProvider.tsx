@@ -13,6 +13,8 @@ type HeaderAccessState = {
   canCaptainManage: boolean;
   hasClubhouse: boolean;
   clubhouseHasUnread: boolean;
+  currentTeamId: string | null;
+  captainTeamId: string | null;
 };
 
 const EMPTY_ACCESS: HeaderAccessState = {
@@ -21,6 +23,8 @@ const EMPTY_ACCESS: HeaderAccessState = {
   canCaptainManage: false,
   hasClubhouse: false,
   clubhouseHasUnread: false,
+  currentTeamId: null,
+  captainTeamId: null,
 };
 
 const HeaderAccessContext = createContext<HeaderAccessState>(EMPTY_ACCESS);
@@ -49,6 +53,8 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
           canCaptainManage: false,
           hasClubhouse: false,
           clubhouseHasUnread: false,
+          currentTeamId: null,
+          captainTeamId: null,
         });
       }
 
@@ -66,6 +72,8 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
           canCaptainManage: false,
           hasClubhouse: false,
           clubhouseHasUnread: false,
+          currentTeamId: null,
+          captainTeamId: null,
         });
         return;
       }
@@ -75,6 +83,7 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
       ) && Boolean(profile.captain_team_id);
       let hasClubhouse = false;
       let clubhouseHasUnread = false;
+      let currentTeamId: string | null = null;
 
       if (profile.player_id) {
         const {data: season} = await db
@@ -97,6 +106,7 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
             .maybeSingle();
 
           if (membership?.team_id) {
+            currentTeamId = membership.team_id;
             hasClubhouse = true;
 
             const {data: readState} = await db
@@ -128,11 +138,11 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
 
       if (!mounted) return;
       if (profile.role === 'Commissioner') {
-        setAccess({isSignedIn: true, role: 'commissioner', canCaptainManage, hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: 'commissioner', canCaptainManage, hasClubhouse, clubhouseHasUnread, currentTeamId, captainTeamId: profile.captain_team_id ?? null});
       } else if (profile.role === 'Captain') {
-        setAccess({isSignedIn: true, role: 'captain', canCaptainManage, hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: 'captain', canCaptainManage, hasClubhouse, clubhouseHasUnread, currentTeamId, captainTeamId: profile.captain_team_id ?? null});
       } else {
-        setAccess({isSignedIn: true, role: null, canCaptainManage, hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: null, canCaptainManage, hasClubhouse, clubhouseHasUnread, currentTeamId, captainTeamId: profile.captain_team_id ?? null});
       }
     };
 
@@ -175,24 +185,44 @@ export function ClubhouseUnreadDisc() {
 }
 
 export function DesktopRoleLinks() {
-  const {role, canCaptainManage, hasClubhouse, clubhouseHasUnread} = useHeaderAccess();
+  const {
+    role,
+    canCaptainManage,
+    hasClubhouse,
+    clubhouseHasUnread,
+    currentTeamId,
+    captainTeamId,
+  } = useHeaderAccess();
   const canOpenOffice = role === 'commissioner';
   const canOpenCaptain = canCaptainManage;
+  const teamDestination = currentTeamId ?? captainTeamId;
+  const hasTools = hasClubhouse || canOpenOffice || canOpenCaptain;
 
-  if (!canOpenOffice && !canOpenCaptain && !hasClubhouse) return null;
+  if (!teamDestination && !hasTools) return null;
 
   return (
     <>
       <span className="primary-nav-separator" aria-hidden="true" />
-      {hasClubhouse ? (
-        <Link className="desktop-role-link clubhouse-nav-link" href="/clubhouse">
-          Clubhouse
+      {teamDestination ? (
+        <Link
+          className="desktop-role-link clubhouse-nav-link"
+          href={`/teams/${encodeURIComponent(teamDestination)}`}
+        >
+          My Team
           {clubhouseHasUnread ? <ClubhouseUnreadDisc /> : null}
         </Link>
       ) : null}
-      {canOpenOffice ? <Link className="desktop-role-link" href="/admin">Create post</Link> : null}
-      {canOpenOffice ? <Link className="desktop-role-link" href="/office">Office</Link> : null}
-      {canOpenCaptain ? <Link className="desktop-role-link" href="/captain">Captain</Link> : null}
+      {hasTools ? (
+        <details className="desktop-more">
+          <summary>Tools</summary>
+          <div className="desktop-more-menu">
+            {hasClubhouse ? <Link href="/clubhouse">Clubhouse</Link> : null}
+            {canOpenCaptain ? <Link href="/captain">Captain</Link> : null}
+            {canOpenOffice ? <Link href="/admin">Create post</Link> : null}
+            {canOpenOffice ? <Link href="/office">Office</Link> : null}
+          </div>
+        </details>
+      ) : null}
     </>
   );
 }

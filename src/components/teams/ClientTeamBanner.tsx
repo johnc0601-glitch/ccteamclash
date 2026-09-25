@@ -3,6 +3,7 @@ import {TeamBanner} from '@/components/teams/TeamBanner';
 
 type ClientTeamBannerProps = {
   initialTeam: Team;
+  championSeasons?: string[];
 };
 
 /**
@@ -10,6 +11,6 @@ type ClientTeamBannerProps = {
  * rather than immediately issuing a duplicate no-store /api/teams request after
  * hydration.
  */
-export function ClientTeamBanner({initialTeam}: ClientTeamBannerProps) {
-  return <TeamBanner team={initialTeam} />;
+export function ClientTeamBanner({initialTeam, championSeasons = []}: ClientTeamBannerProps) {
+  return <TeamBanner team={initialTeam} championSeasons={championSeasons} />;
 }

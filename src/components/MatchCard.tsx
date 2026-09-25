@@ -20,20 +20,21 @@ type MatchCardProps = {
   match: PublicScheduleEvent;
   teams: Team[];
   feedPreview?: MatchFeedPreview;
+  variant?: 'default' | 'slate';
 };
 
-export function MatchCard({match, teams, feedPreview}: MatchCardProps) {
+export function MatchCard({match, teams, feedPreview, variant = 'default'}: MatchCardProps) {
   const homeTeam = findTeam(teams, match.homeTeamId, match.home);
   const awayTeam = findTeam(teams, match.awayTeamId, match.away);
 
   return (
-    <article className="dark-panel story-home-card home-match-card">
+    <article className={`dark-panel story-home-card home-match-card${variant === 'slate' ? ' home-match-card-slate' : ''}`}>
       <div className="story-matchup">
         <Link className="match-team-link" href={`/teams/${encodeURIComponent(match.awayTeamId)}`}>
           <TeamMatchLogo name={match.away} logo={awayTeam?.logo} />
           <strong>{match.away}</strong>
         </Link>
-        <b>VS</b>
+        <b>{variant === 'slate' ? '@' : 'VS'}</b>
         <Link className="match-team-link" href={`/teams/${encodeURIComponent(match.homeTeamId)}`}>
           <TeamMatchLogo name={match.home} logo={homeTeam?.logo} />
           <strong>{match.home}</strong>
@@ -44,7 +45,7 @@ export function MatchCard({match, teams, feedPreview}: MatchCardProps) {
         <p><span>TIME</span>{match.time}</p>
         <p><span>COURSE</span>{match.course}</p>
       </div>
-      {feedPreview ? (
+      {feedPreview && variant !== 'slate' ? (
         <a href={`${match.href}#match-feed`} className={styles.activity}>
           <div className={styles.activityText}>
             <strong>{feedPreview.author} posted{feedPreview.imageUrl ? ' a photo' : ''}</strong>
@@ -55,7 +56,7 @@ export function MatchCard({match, teams, feedPreview}: MatchCardProps) {
         </a>
       ) : null}
       <div className="match-card-footer">
-        <a href={match.href} className="gold-link">View match -&gt;</a>
+        <a href={match.href} className="gold-link">{variant === 'slate' ? 'Matchday' : 'View match'} -&gt;</a>
       </div>
     </article>
   );

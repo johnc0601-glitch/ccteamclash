@@ -4,7 +4,6 @@ import {unstable_cache} from 'next/cache';
 import type {PublicScheduleEvent, ScheduleEventBucket} from '@/domain/schedule/ScheduleService';
 import {createPublicClient} from '@/lib/supabase/public';
 import type {Team} from '@/models/Team';
-import type {HomepageMatchFeedPreview} from '@/services/media/HomepageMatchFeedService';
 import type {HomepageStory, HomepageStoryData} from '@/services/stories/HomepageStoryService';
 
 const MATCH_DISPLAY_WINDOW_DAYS = 14;
@@ -16,7 +15,7 @@ export type HomepageData = {
   storyData: HomepageStoryData;
   teams: Team[];
   homeEvents: PublicScheduleEvent[];
-  feedPreviews: Map<string, HomepageMatchFeedPreview>;
+  homeRoundLabel: string;
 };
 
 type HomepageRows = {
@@ -28,7 +27,6 @@ type HomepageRows = {
   rounds: any[];
   matches: any[];
   identities: any[];
-  previews: any[];
 };
 
 type HomepageScheduleEvent = PublicScheduleEvent & {
@@ -56,7 +54,6 @@ const getCachedHomepageRows = unstable_cache(
       roundsResult,
       matchesResult,
       identitiesResult,
-      previewsResult,
     ] = await Promise.all([
       db
         .from('launch_stories')
@@ -75,14 +72,11 @@ const getCachedHomepageRows = unstable_cache(
       db.from('launch_teams').select('*').order('name', {ascending: true}),
       db.from('launch_courses').select('id,name,map_url'),
       db.from('launch_schedules').select('id,published').eq('published', true),
-      db.from('launch_rounds').select('id,schedule_id,date,published').eq('published', true),
+      db.from('launch_rounds').select('id,schedule_id,number,name,date,published').eq('published', true),
       db
         .from('launch_schedule_matches')
         .select('id,round_id,home_team_id,away_team_id,course_id,date,time,status'),
       db.from('launch_schedule_matches').select('id,public_slug'),
-      db
-        .from('launch_homepage_match_feed_previews')
-        .select('match_id,author_name_snapshot,body,image_path,comment_count,reaction_count'),
     ]);
 
     logHomepageReadError('featured stories', featuredResult.error);
@@ -95,7 +89,6 @@ const getCachedHomepageRows = unstable_cache(
     if (identitiesResult.error && !identitySchemaUnavailable(identitiesResult.error)) {
       logHomepageReadError('match public identities', identitiesResult.error);
     }
-    logHomepageReadError('Matchday previews', previewsResult.error);
 
     return {
       featured: featuredResult.data ?? [],
@@ -106,13 +99,12 @@ const getCachedHomepageRows = unstable_cache(
       rounds: roundsResult.data ?? [],
       matches: matchesResult.data ?? [],
       identities: identitiesResult.data ?? [],
-      previews: previewsResult.data ?? [],
     };
   },
-  ['public-homepage-rows-v3'],
+  ['public-homepage-rows-v5'],
   {
     revalidate: HOMEPAGE_CACHE_SECONDS,
-    tags: ['public:homepage', 'public:stories', 'public:teams', 'public:schedule', 'public:match-feed'],
+    tags: ['public:homepage', 'public:stories', 'public:teams', 'public:schedule'],
   },
 );
 
@@ -123,8 +115,6 @@ const getCachedHomepageRows = unstable_cache(
  */
 export async function getHomepageData(referenceDate = new Date()): Promise<HomepageData> {
   const rows = await getCachedHomepageRows();
-  const publicSupabase = createPublicClient();
-
   const latest: HomepageStory[] = rows.latest.map((row: any) => mapHomepageStory(row));
   const featured = rows.featured[0] ? mapHomepageStory(rows.featured[0]) : null;
   const storyData: HomepageStoryData = {
@@ -157,6 +147,11 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
       .map((row: any) => [clean(row.id), clean(row.date)] as const)
       .filter(([id, date]) => Boolean(id && date)),
   );
+  const roundLabels = new Map<string, string>(
+    publishedRounds
+      .map((row: any) => [clean(row.id), formatRoundLabel(row)] as const)
+      .filter(([id, label]) => Boolean(id && label)),
+  );
 
   const events: HomepageScheduleEvent[] = rows.matches
     .filter((row: any) => publishedRoundIds.has(clean(row.round_id)))
@@ -182,25 +177,9 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
       : [];
   }
 
-  const homeMatchIds = new Set(homeEvents.map((event) => event.id));
-  const feedPreviews = new Map<string, HomepageMatchFeedPreview>();
-  for (const row of rows.previews) {
-    const matchId = clean(row.match_id);
-    if (!homeMatchIds.has(matchId)) continue;
-    const imagePath = clean(row.image_path);
-    const imageUrl = imagePath
-      ? publicSupabase.storage.from('match-feed').getPublicUrl(imagePath).data.publicUrl
-      : null;
-    feedPreviews.set(matchId, {
-      author: clean(row.author_name_snapshot) || 'Member',
-      excerpt: clean(row.body).slice(0, 140),
-      imageUrl,
-      commentCount: safeCount(row.comment_count),
-      reactionCount: safeCount(row.reaction_count),
-    });
-  }
+  const homeRoundLabel = homeEvents[0] ? roundLabels.get(homeEvents[0].roundId) ?? '' : '';
 
-  return {storyData, teams, homeEvents, feedPreviews};
+  return {storyData, teams, homeEvents, homeRoundLabel};
 }
 
 function mapPublicEvent(
@@ -285,6 +264,13 @@ function formatEventTime(value: string): string {
   }).format(new Date(2000, 0, 1, hours, minutes));
 }
 
+function formatRoundLabel(row: any): string {
+  const name = clean(row.name);
+  const number = Number(row.number);
+  if (/^(semi-?finals?|championship|finals?)$/i.test(name)) return name;
+  return Number.isFinite(number) && number > 0 ? `Round ${number}` : name;
+}
+
 function mapHomepageStory(row: any): HomepageStory {
   return {
     id: String(row.id),
@@ -320,11 +306,6 @@ function mapTeam(row: any): Team {
 
 function clean(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
-}
-
-function safeCount(value: unknown): number {
-  const count = Number(value);
-  return Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
 }
 
 function identitySchemaUnavailable(error: any): boolean {

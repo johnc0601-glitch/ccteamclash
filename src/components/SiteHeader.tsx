@@ -44,10 +44,15 @@ export function SiteHeader() {
               <Link href="/standings">Standings</Link>
               <Link href="/stats">Players</Link>
               <Link href="/teams">Teams</Link>
-              <Link href="/stories">Stories</Link>
-              <Link href="/courses">Courses</Link>
-              <Link href="/history">History</Link>
-              <FacebookLink size={20} />
+              <details className="desktop-more">
+                <summary>League</summary>
+                <div className="desktop-more-menu">
+                  <Link href="/stories">Stories</Link>
+                  <Link href="/courses">Courses</Link>
+                  <Link href="/history">History</Link>
+                  <a href={FACEBOOK_GROUP_URL} target="_blank" rel="noreferrer">Facebook</a>
+                </div>
+              </details>
               <DesktopRoleLinks />
               <Link className="desktop-account" href="/account">My Profile</Link>
             </nav>

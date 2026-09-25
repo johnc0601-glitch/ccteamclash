@@ -559,3 +559,21 @@
     padding: 8px 12px;
   }
 }
+
+
+/* Final-result emphasis. */
+.scoreValue {
+  font-size: 54px;
+}
+.scoreMiddle {
+  color: var(--cc-gold-ink);
+}
+@media (max-width: 760px) {
+  .scoreTop {
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+  .scoreValue {
+    font-size: 42px;
+  }
+}

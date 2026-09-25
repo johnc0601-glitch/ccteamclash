@@ -182,3 +182,87 @@
     text-align: center;
   }
 }
+
+
+/* Lifecycle-focused Matchday refinement. */
+.matchHero {
+  padding-top: 16px;
+}
+.heroTeams {
+  min-height: 180px;
+}
+.heroLogo,
+.heroLogoFallback {
+  width: 72px;
+  height: 72px;
+}
+.heroMeta {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.lifecycle {
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--cc-gold) 55%, transparent);
+  border-radius: 999px;
+  color: var(--cc-gold);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.matchHero[data-lifecycle='Completed'] .lifecycle {
+  border-color: rgba(86,112,28,.45);
+  color: #739633;
+}
+.matchHero[data-lifecycle='Postponed'] .lifecycle,
+.matchHero[data-lifecycle='Rain Delay'] .lifecycle {
+  border-color: color-mix(in srgb, var(--cc-bronze) 55%, transparent);
+  color: var(--cc-bronze);
+}
+.matchHero[data-lifecycle='Cancelled'] .lifecycle {
+  border-color: rgba(182,64,64,.45);
+  color: #b64040;
+}
+@media (max-width: 700px) {
+  .matchHero {
+    padding: 6px 8px 0;
+  }
+  .heroTeams {
+    min-height: 126px;
+    grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1fr);
+  }
+  .heroTeam {
+    padding: 9px 8px;
+    gap: 3px;
+  }
+  .heroTeam strong {
+    font-size: clamp(15px, 4.8vw, 21px);
+    line-height: .92;
+  }
+  .heroTeam > span {
+    font-size: 8px;
+    letter-spacing: .1em;
+  }
+  .heroLogo,
+  .heroLogoFallback {
+    width: 46px;
+    height: 46px;
+  }
+  .heroLogoFallback {
+    font-size: 20px;
+  }
+  .heroVs {
+    font-size: 12px;
+  }
+  .heroMeta {
+    margin: 0 4px;
+    padding: 8px 7px;
+    gap: 4px 8px;
+    font-size: 9px;
+  }
+  .lifecycle {
+    padding: 3px 6px;
+    font-size: 8px;
+  }
+}

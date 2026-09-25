@@ -459,6 +459,11 @@ function MemberProfile({
         <h2>Theme</h2>
         <p>Choose how Team Clash looks on this device.</p>
         <div className={styles.themeAction}><ThemeToggle /></div>
+        <div className={styles.accountPrivacy}>
+          <span className={styles.eyebrow}>Social preferences</span>
+          <p>Muted members are hidden only from social posts and comments. Official rosters, CI, results, and history are unchanged.</p>
+          <Link className={styles.privacyLink} href="/account/mutes">Manage muted members</Link>
+        </div>
       </article>
     </section>
   );

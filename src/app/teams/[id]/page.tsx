@@ -3,6 +3,8 @@ import {notFound} from 'next/navigation';
 import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
+import {TeamHubNav} from './TeamHubNav';
+import {TeamNextMatchActions} from './TeamNextMatchActions';
 import {LazyTeamRosterDirectory} from '@/components/teams/LazyTeamRosterDirectory';
 import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
@@ -14,6 +16,7 @@ import {
   getHistoricalTeamSeedSummary,
 } from '@/data/historicalSeed';
 import type {TeamScheduleEvent} from '@/domain/schedule/ScheduleService';
+import {isMatchAttendanceOpen} from '@/domain/match-roster/MatchRosterLock';
 import {getStoredCourses} from '@/services/courses/CourseStore';
 import {getStoredTeamById} from '@/services/teams/TeamStore';
 import {buildPublicTeamRoster} from '@/services/public/PublicRosterService';
@@ -75,6 +78,8 @@ export default async function TeamPage({params}: TeamPageProps) {
     scheduleService.getTeamNextEvent(team.id),
     scheduleService.getTeamEvents(team.id),
   ]);
+  const nextMatchRecord = nextMatch ? await scheduleService.getMatch(nextMatch.id) : undefined;
+  const nextMatchAvailabilityOpen = nextMatchRecord ? isMatchAttendanceOpen(nextMatchRecord) : false;
   const roster = activeSeason && launchPlayers
     ? []
     : launchPlayers
@@ -115,17 +120,22 @@ export default async function TeamPage({params}: TeamPageProps) {
       <main className={styles.page}>
         <div className="shell">
           <Link className={styles.back} href="/teams">Back to teams</Link>
-          <ClientTeamBanner initialTeam={team} />
-
-          {seasonTitles.length ? (
-            <section className={styles.championBanner} aria-label="Season championships">
-              <span>Season champion</span>
-              <strong>{seasonTitles.map((title) => title.seasonName.replace('Coastal Clash Match Play ', '')).join(' / ')}</strong>
-              <small>{team.name} won {seasonTitles.length === 1 ? 'this season' : 'these seasons'}.</small>
-            </section>
+          <ClientTeamBanner
+            initialTeam={team}
+            championSeasons={seasonTitles.map((title) => title.seasonName)}
+          />
+          <TeamHubNav teamId={team.id} />
+          {nextMatch ? (
+            <NextMatchCard
+              event={nextMatch}
+              teamId={team.id}
+              availabilityOpen={nextMatchAvailabilityOpen}
+              courseDirections={courseDirections}
+            />
           ) : null}
 
-          <section className={styles.overview}>
+
+          <section id="overview" className={styles.overview}>
             <div className={styles.recordBlock}>
               <span>{historicalStatistics?.seasonName ?? activeSeason?.name ?? 'Current season'}</span>
               <strong>{displayStatistics ? formatRecord(displayStatistics.record) : '0-0'}</strong>
@@ -155,16 +165,15 @@ export default async function TeamPage({params}: TeamPageProps) {
 
           {team.description ? <p className={styles.description}>{team.description}</p> : null}
 
-          <section className={styles.section}>
+          <section id="schedule" className={styles.section}>
             <header className={styles.sectionHeader}>
               <span>Team schedule</span>
               <h2>Matchdays</h2>
             </header>
-            {nextMatch ? <NextMatchCard event={nextMatch} courseDirections={courseDirections} /> : null}
             <TeamSchedule events={teamEvents} courseDirections={courseDirections} />
           </section>
 
-          <section className={styles.section}>
+          <section id="roster" className={styles.section}>
             <header className={styles.sectionHeader}>
               <span>Current team</span>
               <h2>Roster</h2>
@@ -186,7 +195,7 @@ export default async function TeamPage({params}: TeamPageProps) {
             )}
           </section>
 
-          <section className={styles.section}>
+          <section id="history" className={styles.section}>
             <header className={styles.sectionHeader}>
               <span>League record</span>
               <h2>Season history</h2>
@@ -266,8 +275,10 @@ function findDirections(courseName: string, courseDirections: Map<string, string
   return undefined;
 }
 
-function NextMatchCard({event, courseDirections}: {
+function NextMatchCard({event, teamId, availabilityOpen, courseDirections}: {
   event: TeamScheduleEvent;
+  teamId: string;
+  availabilityOpen: boolean;
   courseDirections: Map<string, string>;
 }) {
   const directions = findDirections(event.course, courseDirections);
@@ -282,7 +293,11 @@ function NextMatchCard({event, courseDirections}: {
           {directions ? <a href={directions} target="_blank" rel="noreferrer">{event.course}</a> : event.course}
         </p>
       </div>
-      <Link href={event.href}>Match page</Link>
+      <TeamNextMatchActions
+        teamId={teamId}
+        matchHref={event.href}
+        availabilityOpen={availabilityOpen}
+      />
     </div>
   );
 }

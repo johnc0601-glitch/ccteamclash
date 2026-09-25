@@ -562,3 +562,369 @@
   .commentForm button,
   .replyForm button { align-self: flex-end; }
 }
+
+
+.post[data-post-type="announcement"] {
+  border-color: color-mix(in srgb, var(--clubhouse-accent) 58%, var(--cc-card-border));
+  border-top: 4px solid var(--clubhouse-accent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--clubhouse-accent) 8%, var(--cc-card-bg)), var(--cc-card-bg) 42%);
+}
+
+.post[data-post-type="announcement"] .postTop b {
+  color: var(--cc-gold);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+
+.heroAside {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+.heroLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px 10px;
+}
+.heroLinks a {
+  color: rgba(255,255,255,.74);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.inlineControl {
+  position: relative;
+}
+.inlineControl > summary {
+  cursor: pointer;
+  color: var(--cc-muted);
+  font-size: 10px;
+  font-weight: 900;
+  list-style: none;
+  text-transform: uppercase;
+}
+.inlineControl > summary::-webkit-details-marker { display: none; }
+.inlineForm {
+  position: absolute;
+  z-index: 30;
+  right: 0;
+  width: min(320px, calc(100vw - 44px));
+  padding: 10px;
+  display: grid;
+  gap: 7px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 8px;
+  background: var(--cc-surface);
+  box-shadow: 0 14px 32px rgba(0,0,0,.26);
+}
+.inlineForm input,
+.inlineForm textarea,
+.inlineForm select,
+.composer select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 6px;
+  padding: 8px 9px;
+  background: var(--cc-surface-deep);
+  color: var(--cc-text);
+  font: inherit;
+}
+.inlineForm button {
+  min-height: 34px;
+  border: 1px solid var(--clubhouse-accent);
+  border-radius: 6px;
+  background: var(--clubhouse-accent);
+  color: #111;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 950;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.moderationStack {
+  display: grid;
+  gap: 18px;
+}
+.moderationHeading {
+  margin: 0 0 10px;
+  color: var(--cc-heading);
+  font-size: 13px;
+  text-transform: uppercase;
+}
+.moderationList {
+  display: grid;
+  gap: 8px;
+}
+.reportCard,
+.auditRow {
+  padding: 11px 12px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 8px;
+  background: var(--cc-surface-deep);
+}
+.reportCard > div {
+  display: grid;
+  gap: 3px;
+}
+.reportCard strong,
+.auditRow strong {
+  color: var(--cc-heading);
+  font-size: 12px;
+}
+.reportCard span,
+.auditRow span {
+  color: var(--cc-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+.reportCard p {
+  margin: 5px 0 0;
+  color: var(--cc-text);
+  font-size: 12px;
+}
+.reportActions {
+  margin-top: 6px;
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.reportActions button {
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 5px;
+  background: var(--cc-card-bg);
+  color: var(--cc-heading);
+  font: inherit;
+  font-size: 9px;
+  font-weight: 950;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+@media (max-width: 560px) {
+  .heroAside {
+    justify-items: center;
+  }
+  .heroLinks {
+    justify-content: center;
+  }
+  .inlineForm {
+    right: auto;
+    left: 0;
+  }
+  .postTools .inlineForm {
+    left: 0;
+  }
+  .reportCard {
+    padding: 10px;
+  }
+}
+
+
+/* Compact Clubhouse conversation controls. */
+.composer {
+  padding: 0;
+  overflow: hidden;
+}
+.composerHeader {
+  padding: 15px 18px 8px;
+}
+.composerHeader h2 {
+  margin: 0;
+  font-size: 24px;
+}
+.composer > form {
+  padding: 10px 18px 16px;
+  gap: 10px;
+}
+.announcementToggle {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cc-gold-ink);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.announcementToggle input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--cc-gold);
+}
+.composer textarea {
+  min-height: 108px;
+}
+.emptyInline {
+  margin: 0;
+  padding: 12px 4px 18px;
+  color: var(--cc-muted);
+  font-size: 13px;
+  text-align: center;
+}
+.moderationPanel {
+  margin-top: 14px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 9px;
+  background: var(--cc-card-bg);
+  box-shadow: var(--cc-card-shadow);
+  overflow: hidden;
+}
+.moderationSummary {
+  min-height: 50px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--cc-heading);
+}
+.moderationSummary::-webkit-details-marker {
+  display: none;
+}
+.moderationSummary span {
+  color: var(--cc-muted);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.moderationSummary strong {
+  color: var(--cc-heading);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+.moderationPanel[open] .moderationSummary {
+  border-bottom: 1px solid var(--cc-card-border);
+}
+.moderationPanel > .moderationStack {
+  padding: 14px 16px 16px;
+}
+.moderationQuiet {
+  margin: 0;
+  color: var(--cc-muted);
+  font-size: 12px;
+}
+@media (max-width: 560px) {
+  .composerHeader {
+    padding: 14px 15px 6px;
+  }
+  .composerHeader h2 {
+    font-size: 22px;
+  }
+  .composer > form {
+    padding: 8px 15px 14px;
+  }
+  .composer textarea {
+    min-height: 96px;
+  }
+  .moderationSummary {
+    min-height: 46px;
+    padding: 0 14px;
+  }
+  .moderationPanel > .moderationStack {
+    padding: 12px 14px 14px;
+  }
+}
+
+
+/* Compact team schedule: full row opens Matchday. */
+.schedulePanel {
+  margin-top: 10px;
+}
+.schedulePanel > summary {
+  padding: 14px 18px;
+}
+.schedule a {
+  grid-template-columns: 74px minmax(0, 1fr) auto;
+  gap: 10px;
+  min-height: 54px;
+  padding: 9px 16px;
+}
+.scheduleDate {
+  color: var(--clubhouse-accent);
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.scheduleMatchup {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  text-transform: none !important;
+}
+.scheduleMatchup b {
+  overflow: hidden;
+  color: var(--cc-heading);
+  font-size: 13px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.scheduleMatchup small {
+  overflow: hidden;
+  color: var(--cc-muted);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scheduleAction {
+  color: var(--cc-gold-ink);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .schedulePanel > summary {
+    padding: 12px 14px;
+  }
+  .schedule a {
+    grid-template-columns: 62px minmax(0, 1fr) 18px;
+    gap: 8px;
+    min-height: 48px;
+    padding: 8px 12px;
+  }
+  .scheduleDate {
+    font-size: 12px;
+  }
+  .scheduleMatchup b {
+    font-size: 12px;
+  }
+  .scheduleMatchup small {
+    grid-column: auto;
+    font-size: 9px;
+  }
+  .scheduleAction {
+    width: 18px;
+    overflow: hidden;
+    font-size: 0;
+  }
+  .scheduleAction::after {
+    content: '›';
+    font-size: 20px;
+    line-height: 1;
+  }
+}
