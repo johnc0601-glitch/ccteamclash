@@ -22,6 +22,8 @@ export function resolveAppPreviewState({
   standalone: boolean;
   appSurface?: boolean;
 }): AppPreviewState {
+  // Dedicated app projects bypass preview persistence and cannot be exited
+  // with the staging-only appPreview query parameter.
   if (appSurface) {
     return {
       persisted: false,
