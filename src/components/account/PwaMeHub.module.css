@@ -38,3 +38,11 @@
 .accountLine { padding: 0 2px; display: grid; gap: 2px; }
 .accountLine span { color: var(--cc-light-muted); font-size: 9px; font-weight: 900; text-transform: uppercase; }
 .accountLine strong { overflow: hidden; color: var(--cc-light-text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 800px) {
+  :global(html[data-app-preview='true']) .hub {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+}
