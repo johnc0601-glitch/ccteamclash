@@ -49,6 +49,8 @@ export default async function NotificationsPage({searchParams}: Props) {
 
   return (
     <AccountPageLayout
+      appBackHref="/account"
+      appBackLabel="Me"
       title="Notifications"
       description="Choose the Team Clash events worth interrupting you for. Normal site activity stays quiet."
       notice={readAccountParam(params.notice)}
