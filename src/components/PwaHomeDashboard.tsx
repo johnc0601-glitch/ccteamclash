@@ -203,8 +203,8 @@ export function PwaHomeDashboard({
             </ol>
           ) : (
             <div className={styles.preseason}>
-              <strong>Season opens October 3</strong>
-              <span>Standings populate after Matchday results are published.</span>
+              <strong>Preseason</strong>
+              <span>Standings populate after official Matchday results are published.</span>
             </div>
           )}
         </article>
