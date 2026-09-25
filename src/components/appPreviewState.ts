@@ -1,3 +1,4 @@
+// Dedicated Vercel app project production surface.
 export type AppPreviewState = {
   persisted: boolean;
   enabled: boolean;
