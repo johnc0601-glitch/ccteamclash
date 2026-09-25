@@ -843,3 +843,88 @@
     padding: 12px 14px 14px;
   }
 }
+
+
+/* Compact team schedule: full row opens Matchday. */
+.schedulePanel {
+  margin-top: 10px;
+}
+.schedulePanel > summary {
+  padding: 14px 18px;
+}
+.schedule a {
+  grid-template-columns: 74px minmax(0, 1fr) auto;
+  gap: 10px;
+  min-height: 54px;
+  padding: 9px 16px;
+}
+.scheduleDate {
+  color: var(--clubhouse-accent);
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.scheduleMatchup {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  text-transform: none !important;
+}
+.scheduleMatchup b {
+  overflow: hidden;
+  color: var(--cc-heading);
+  font-size: 13px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.scheduleMatchup small {
+  overflow: hidden;
+  color: var(--cc-muted);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scheduleAction {
+  color: var(--cc-gold-ink);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .schedulePanel > summary {
+    padding: 12px 14px;
+  }
+  .schedule a {
+    grid-template-columns: 62px minmax(0, 1fr) 18px;
+    gap: 8px;
+    min-height: 48px;
+    padding: 8px 12px;
+  }
+  .scheduleDate {
+    font-size: 12px;
+  }
+  .scheduleMatchup b {
+    font-size: 12px;
+  }
+  .scheduleMatchup small {
+    grid-column: auto;
+    font-size: 9px;
+  }
+  .scheduleAction {
+    width: 18px;
+    overflow: hidden;
+    font-size: 0;
+  }
+  .scheduleAction::after {
+    content: '›';
+    font-size: 20px;
+    line-height: 1;
+  }
+}
