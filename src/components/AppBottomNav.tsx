@@ -51,8 +51,11 @@ export function AppBottomNav() {
     {label: 'Me', href: '/account', active: pathname === '/account' || pathname.startsWith('/account/') || pathname.startsWith('/auth/'), icon: 'me'},
   ];
 
+  const exitPreviewHref = pathname + '?appPreview=0';
+
   return (
     <>
+      <Link className={styles.previewExit} href={exitPreviewHref}>App preview · Exit</Link>
       <nav className={styles.nav} aria-label="Team Clash app navigation">
         {tabs.map((tab) => (
           <Link
