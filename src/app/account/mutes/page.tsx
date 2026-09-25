@@ -33,6 +33,8 @@ export default async function MutedMembersPage() {
 
   return (
     <AccountPageLayout
+      appBackHref="/account"
+      appBackLabel="Me"
       title="Muted members"
       description="Muted members are hidden only from your social conversations. They remain visible in official rosters, CI, results, and league history."
       narrow
