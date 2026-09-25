@@ -35,7 +35,8 @@ export function PwaLifecycle() {
 
     const syncAppPreview = () => {
       const params = new URLSearchParams(window.location.search);
-      const appSurface = process.env.NEXT_PUBLIC_APP_SURFACE === 'true';
+      const appSurface = process.env.NEXT_PUBLIC_APP_SURFACE === 'true'
+        || window.location.hostname === 'app.ccteamclash.com';
       const state = resolveAppPreviewState({
         hostname: window.location.hostname,
         queryValue: params.get('appPreview'),
