@@ -39,10 +39,10 @@ export function PwaMeHub({
       <nav className={styles.primary} aria-label="Profile shortcuts">
         {teamId ? <Link href={`/teams/${teamId}`}><b>My Team</b><span>{teamName}</span></Link> : null}
         <Link href="/matchday"><b>Matchday</b><span>Your next Clash</span></Link>
-        <Link href="/account/notifications"><b>Notifications</b><span>Alert preferences</span></Link>
-        <Link href="/account/mutes"><b>Muted members</b><span>Social preferences</span></Link>
         {canCaptainManage ? <Link href="/captain"><b>Captain tools</b><span>Roster & team controls</span></Link> : null}
         {role === 'Commissioner' ? <Link href="/office"><b>Commissioner Office</b><span>Web administration</span></Link> : null}
+        <Link href="/account/notifications"><b>Notifications</b><span>Alert preferences</span></Link>
+        <Link href="/account/mutes"><b>Muted members</b><span>Social preferences</span></Link>
       </nav>
 
       <div className={styles.accountLine}>
