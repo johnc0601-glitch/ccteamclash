@@ -34,6 +34,10 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat('en-US', {month: 'short', day: 'numeric', year: 'numeric'}).format(new Date(`${value}T12:00:00`));
 }
 
+function formatScheduleDate(value: string) {
+  return new Intl.DateTimeFormat('en-US', {month: 'short', day: 'numeric'}).format(new Date(`${value}T12:00:00`));
+}
+
 export default async function ClubhousePage({searchParams}: Props) {
   const params = searchParams ? await searchParams : {};
   const notice = readParam(params.notice);
@@ -251,7 +255,16 @@ export default async function ClubhousePage({searchParams}: Props) {
               {teamMatchRows.map((match) => {
                 const opponentId = match.home_team_id === context.teamId ? match.away_team_id : match.home_team_id;
                 const side = match.home_team_id === context.teamId ? 'vs' : '@';
-                return <Link href={`/matches/${match.public_slug || match.id}`} key={match.id}><strong>{formatDate(match.date)}</strong><span>{side} {teams.get(opponentId) ?? 'Opponent'}</span><small>{courses.get(match.course_id) ?? 'Location TBD'}</small></Link>;
+                return (
+                  <Link href={`/matches/${match.public_slug || match.id}`} key={match.id}>
+                    <strong className={styles.scheduleDate}>{formatScheduleDate(match.date)}</strong>
+                    <span className={styles.scheduleMatchup}>
+                      <b>{side} {teams.get(opponentId) ?? 'Opponent'}</b>
+                      <small>{courses.get(match.course_id) ?? 'Location TBD'}</small>
+                    </span>
+                    <em className={styles.scheduleAction}>Matchday →</em>
+                  </Link>
+                );
               })}
             </div>
           </details>
