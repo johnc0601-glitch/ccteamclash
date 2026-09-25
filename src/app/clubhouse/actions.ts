@@ -19,6 +19,18 @@ function moderationReason(formData: FormData) {
   return MODERATION_REASONS.has(reason) ? reason : 'Other';
 }
 
+function clubhouseUrl(
+  context: {teamId: string; isCommissionerReview: boolean},
+  key?: 'notice' | 'error',
+  message?: string,
+) {
+  const params = new URLSearchParams();
+  if (context.isCommissionerReview) params.set('team', context.teamId);
+  if (key && message) params.set(key, message);
+  const query = params.toString();
+  return `/clubhouse${query ? `?${query}` : ''}`;
+}
+
 async function requireContext(teamId?: string) {
   const supabase = await createClient();
   const context = teamId
@@ -116,7 +128,7 @@ export async function deleteClubhousePost(formData: FormData) {
     .update({deleted_at: new Date().toISOString()})
     .eq('id', postId)
     .is('deleted_at', null);
-  if (error) redirect('/clubhouse?error=Post could not be removed.');
+  if (error) redirect(clubhouseUrl(context, 'error', 'Post could not be removed.'));
 
   if (!isOwn && isModerator) {
     const {error: auditError} = await db.from('launch_clubhouse_moderation_events').insert({
@@ -129,11 +141,18 @@ export async function deleteClubhousePost(formData: FormData) {
       reason: moderationReason(formData),
     });
     if (auditError) console.error('Clubhouse moderation event could not be recorded.', {postId, error: auditError.message});
+    await db
+      .from('launch_clubhouse_reports')
+      .update({status: 'Removed', reviewed_by_profile_id: context.profileId, reviewed_at: new Date().toISOString()})
+      .eq('team_id', context.teamId)
+      .eq('content_type', 'post')
+      .eq('content_id', post.id)
+      .eq('status', 'Open');
   }
 
   revalidatePath('/clubhouse');
   revalidatePath('/office/clubhouses');
-  redirect('/clubhouse?notice=Post removed.');
+  redirect(clubhouseUrl(context, 'notice', 'Post removed.'));
 }
 
 export async function toggleClubhousePin(formData: FormData) {
@@ -144,9 +163,10 @@ export async function toggleClubhousePin(formData: FormData) {
   if (!context.isCaptain && !context.isCommissioner) redirect('/clubhouse?error=Only captains can pin posts.');
   const db = supabase as any;
   const {error} = await db.from('launch_clubhouse_posts').update({pinned_at: pinned ? null : new Date().toISOString()}).eq('id', postId);
-  if (error) redirect('/clubhouse?error=Pin could not be updated.');
+  if (error) redirect(clubhouseUrl(context, 'error', 'Pin could not be updated.'));
   revalidatePath('/clubhouse');
   revalidatePath('/office/clubhouses');
+  if (context.isCommissionerReview) redirect(clubhouseUrl(context));
 }
 
 export async function addClubhouseComment(formData: FormData) {
@@ -199,7 +219,7 @@ export async function removeClubhouseComment(formData: FormData) {
     .update({deleted_at: new Date().toISOString()})
     .eq('id', commentId)
     .is('deleted_at', null);
-  if (error) redirect('/clubhouse?error=Comment could not be removed.');
+  if (error) redirect(clubhouseUrl(context, 'error', 'Comment could not be removed.'));
 
   if (!isOwn && isModerator) {
     const {error: auditError} = await db.from('launch_clubhouse_moderation_events').insert({
@@ -212,11 +232,18 @@ export async function removeClubhouseComment(formData: FormData) {
       reason: moderationReason(formData),
     });
     if (auditError) console.error('Clubhouse moderation event could not be recorded.', {commentId, error: auditError.message});
+    await db
+      .from('launch_clubhouse_reports')
+      .update({status: 'Removed', reviewed_by_profile_id: context.profileId, reviewed_at: new Date().toISOString()})
+      .eq('team_id', context.teamId)
+      .eq('content_type', 'comment')
+      .eq('content_id', comment.id)
+      .eq('status', 'Open');
   }
 
   revalidatePath('/clubhouse');
   revalidatePath('/office/clubhouses');
-  redirect('/clubhouse?notice=Comment removed.');
+  redirect(clubhouseUrl(context, 'notice', 'Comment removed.'));
 }
 
 export async function reactToClubhousePost(formData: FormData) {
@@ -267,11 +294,11 @@ export async function editClubhousePost(formData: FormData) {
     .update({title: title || null, body})
     .eq('id', postId)
     .is('deleted_at', null);
-  if (error) redirect('/clubhouse?error=Post could not be edited.');
+  if (error) redirect(clubhouseUrl(context, 'error', 'Post could not be edited.'));
 
   revalidatePath('/clubhouse');
   revalidatePath('/office/clubhouses');
-  redirect('/clubhouse?notice=Post updated.');
+  redirect(clubhouseUrl(context, 'notice', 'Post updated.'));
 }
 
 export async function editClubhouseComment(formData: FormData) {
@@ -302,14 +329,14 @@ export async function editClubhouseComment(formData: FormData) {
 
   const {error} = await db
     .from('launch_clubhouse_comments')
-    .update({body})
+    .update({body, updated_at: new Date().toISOString()})
     .eq('id', commentId)
     .is('deleted_at', null);
-  if (error) redirect('/clubhouse?error=Comment could not be edited.');
+  if (error) redirect(clubhouseUrl(context, 'error', 'Comment could not be edited.'));
 
   revalidatePath('/clubhouse');
   revalidatePath('/office/clubhouses');
-  redirect('/clubhouse?notice=Comment updated.');
+  redirect(clubhouseUrl(context, 'notice', 'Comment updated.'));
 }
 
 export async function reportClubhouseContent(formData: FormData) {
@@ -336,14 +363,14 @@ export async function reportClubhouseContent(formData: FormData) {
   });
 
   if (error) {
-    if (error.code === '23505') redirect('/clubhouse?notice=You already reported that item.');
+    if (error.code === '23505') redirect(clubhouseUrl(context, 'notice', 'You already reported that item.'));
     console.error('Clubhouse report could not be saved.', {contentType, contentId, error: error.message});
-    redirect('/clubhouse?error=Report could not be submitted.');
+    redirect(clubhouseUrl(context, 'error', 'Report could not be submitted.'));
   }
 
   revalidatePath('/clubhouse');
   revalidatePath('/office/clubhouses');
-  redirect('/clubhouse?notice=Report submitted.');
+  redirect(clubhouseUrl(context, 'notice', 'Report submitted.'));
 }
 
 export async function resolveClubhouseReport(formData: FormData) {
@@ -370,9 +397,9 @@ export async function resolveClubhouseReport(formData: FormData) {
     .eq('id', reportId)
     .eq('season_id', context.seasonId)
     .eq('team_id', context.teamId);
-  if (error) redirect('/clubhouse?error=Report could not be updated.');
+  if (error) redirect(clubhouseUrl(context, 'error', 'Report could not be updated.'));
 
   revalidatePath('/clubhouse');
   revalidatePath('/office/clubhouses');
-  redirect('/clubhouse?notice=Report updated.');
+  redirect(clubhouseUrl(context, 'notice', 'Report updated.'));
 }
