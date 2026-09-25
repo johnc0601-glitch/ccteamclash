@@ -37,6 +37,7 @@ export function AppBottomNav() {
           <Link
             key={tab.label}
             href={tab.href}
+            prefetch={false}
             className={tab.active ? styles.active : undefined}
             aria-current={tab.active ? 'page' : undefined}
             data-tab={tab.icon}
