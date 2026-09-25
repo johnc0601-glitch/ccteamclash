@@ -1,0 +1,105 @@
+.hub { display: none; }
+
+@media (max-width: 800px) and (display-mode: standalone) {
+  .hub {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+}
+
+.hero {
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.11);
+  border-top: 5px solid var(--team-primary);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #171c1d, #090b0c);
+  color: #fff;
+  box-shadow: 0 16px 38px rgba(0,0,0,.22);
+}
+.identity { padding: 20px 18px 14px; display: flex; align-items: center; gap: 14px; }
+.logo { width: 82px; height: 82px; flex: 0 0 auto; display: grid; place-items: center; overflow: hidden; border: 1px solid rgba(255,255,255,.14); border-radius: 50%; background: #0b0e0f; }
+.logo img { width: 74px; height: 74px; object-fit: contain; }
+.logo span { color: var(--cc-gold); font-size: 18px; font-weight: 950; text-transform: uppercase; }
+.identity > div:last-child { min-width: 0; }
+.identity span { color: var(--team-secondary); font-size: 9px; font-weight: 950; letter-spacing: .12em; text-transform: uppercase; }
+.identity h1 { margin: 4px 0 6px; overflow: hidden; text-overflow: ellipsis; color: #fff; font-family: var(--cc-font-display); font-size: 28px; font-style: italic; line-height: .95; text-transform: uppercase; }
+.identity p { margin: 0; color: #aeb5b2; font-size: 11px; font-weight: 800; }
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid rgba(255,255,255,.08); }
+.metrics div { padding: 12px 10px; display: grid; justify-items: center; gap: 3px; }
+.metrics div + div { border-left: 1px solid rgba(255,255,255,.08); }
+.metrics span { color: #949c98; font-size: 8px; font-weight: 950; text-transform: uppercase; }
+.metrics strong { font-size: 17px; }
+
+.nextMatch {
+  padding: 17px;
+  display: grid;
+  gap: 14px;
+  border: 1px solid #dcd7ca;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(13,17,18,.07);
+}
+.nextCopy > span { color: var(--cc-gold-ink); font-size: 9px; font-weight: 950; letter-spacing: .1em; text-transform: uppercase; }
+.nextCopy h2 { margin: 4px 0 8px; color: #171b1c; font-family: var(--cc-font-display); font-size: 26px; font-style: italic; line-height: 1; text-transform: uppercase; }
+.nextCopy p { margin: 2px 0; color: #656c69; font-size: 12px; font-weight: 800; }
+.availability { padding: 11px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #ebe6dc; border-radius: 10px; background: #f8f6f0; }
+.availability > div:first-child { display: grid; gap: 2px; }
+.availability span { color: #757c79; font-size: 8px; font-weight: 950; text-transform: uppercase; }
+.availability strong { color: #1a1f20; font-size: 14px; }
+.counts { display: flex; gap: 10px; }
+.counts span { display: grid; justify-items: center; gap: 2px; }
+.counts b { color: #171b1c; font-size: 14px; }
+.matchLink { min-height: 44px; display: grid; place-items: center; border-radius: 8px; background: var(--cc-gold); color: #111; font-size: 10px; font-weight: 950; text-transform: uppercase; }
+
+.actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.actions a { min-height: 82px; padding: 13px; display: grid; align-content: center; gap: 4px; border: 1px solid #ddd8cd; border-radius: 12px; background: #fff; box-shadow: 0 8px 20px rgba(13,17,18,.055); }
+.actions b { color: #1b2021; font-size: 13px; }
+.actions span { color: #747b78; font-size: 10px; }
+
+
+.announcement {
+  padding: 15px 16px;
+  display: grid;
+  gap: 5px;
+  border: 1px solid color-mix(in srgb, var(--team-primary) 48%, #d9d4c8);
+  border-left: 4px solid var(--team-primary);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(13,17,18,.06);
+}
+.announcement > span {
+  color: var(--cc-gold-ink);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.announcement > strong {
+  color: #171b1c;
+  font-size: 15px;
+}
+.announcement > p {
+  margin: 0;
+  overflow: hidden;
+  color: #656c69;
+  display: -webkit-box;
+  font-size: 11px;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.announcement > b {
+  margin-top: 3px;
+  color: var(--cc-gold-ink);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 800px) {
+  :global(html[data-app-preview='true']) .hub {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+}

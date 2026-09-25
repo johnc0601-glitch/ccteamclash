@@ -92,3 +92,213 @@
   .currentSeasonStrip, .registrationStatus { align-items: flex-start; flex-direction: column; }
   .currentSeasonStrip strong, .registrationStatus strong { text-align: left; }
 }
+
+.accountPrivacy { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--cc-light-border); }
+.accountPrivacy p { margin: 8px 0 12px; font-size: 12px; }
+.deleteAccountLink { color: #9e2f2f; font-size: 11px; font-weight: 950; text-decoration: underline; text-underline-offset: 4px; text-transform: uppercase; }
+.dangerPanel { border-color: rgba(180,59,59,.35); }
+.dangerPanel h2 { color: #8f2525; }
+.dangerList { margin: 16px 0; padding-left: 20px; color: var(--cc-light-muted); line-height: 1.6; }
+.dangerList strong { color: var(--cc-light-text); }
+.dangerButton { min-height: 46px; width: 100%; border: 1px solid #9e2f2f; border-radius: var(--cc-radius-sm); background: #9e2f2f; color: #fff; cursor: pointer; font: inherit; font-size: 12px; font-weight: 950; letter-spacing: .06em; text-transform: uppercase; }
+.dangerButton:hover { background: #7d2020; }
+.cancelLink { min-height: 44px; display: grid; place-items: center; color: var(--cc-light-text); font-size: 11px; font-weight: 900; text-decoration: underline; text-underline-offset: 3px; }
+
+.privacyActions { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; }
+.privacyLink { color: var(--cc-gold-ink); font-size: 11px; font-weight: 950; text-decoration: underline; text-underline-offset: 4px; text-transform: uppercase; }
+.muteList { margin-top: 18px; display: grid; gap: 10px; }
+.muteList > div { padding: 12px 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid var(--cc-light-border); }
+.muteList > div > div { display: grid; gap: 3px; }
+.muteList strong { color: var(--cc-light-text); }
+.muteList span { color: var(--cc-light-muted); font-size: 11px; }
+.muteList .secondaryButton { min-height: 36px; }
+
+.notificationForm { margin-top: 16px; display: grid; gap: 0; }
+.notificationToggle { min-height: 66px; padding: 12px 0; display: flex; align-items: center; justify-content: space-between; gap: 18px; border-top: 1px solid var(--cc-light-border); cursor: pointer; }
+.notificationToggle > span { display: grid; gap: 4px; }
+.notificationToggle strong { color: var(--cc-light-text); font-size: 13px; }
+.notificationToggle small { color: var(--cc-light-muted); font-size: 11px; line-height: 1.35; }
+.notificationToggle input { width: 22px; height: 22px; flex: 0 0 auto; accent-color: var(--cc-gold); }
+.notificationForm .primaryButton { margin-top: 18px; }
+
+.pushTestForm { margin-top: 14px; padding-top: 14px; display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; border-top: 1px solid var(--cc-light-border); }
+.pushTestForm span { color: var(--cc-light-muted); font-size: 10px; line-height: 1.4; }
+
+
+.appSubHeader {
+  display: none;
+}
+
+@media (max-width: 800px) and (display-mode: standalone) {
+  .shell {
+    padding-top: 18px;
+    padding-bottom: 30px;
+  }
+
+  .browserAccountHeader {
+    display: none !important;
+  }
+
+  .appSubHeader {
+    margin-bottom: 14px;
+    display: grid;
+    gap: 11px;
+  }
+
+  .appSubHeader > a {
+    width: fit-content;
+    color: var(--cc-gold-ink);
+    font-size: 9px;
+    font-weight: 950;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  .appSubHeader > div {
+    padding: 14px 16px;
+    display: grid;
+    gap: 4px;
+    border: 1px solid #ddd8cd;
+    border-left: 4px solid var(--cc-gold);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 20px rgba(13,17,18,.055);
+  }
+
+  .appSubHeader span {
+    color: var(--cc-gold-ink);
+    font-size: 8px;
+    font-weight: 950;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+  }
+
+  .appSubHeader strong {
+    color: #1b2021;
+    font-family: var(--cc-font-display);
+    font-size: 25px;
+    font-style: italic;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+}
+
+@media (max-width: 800px) {
+  :global(html[data-app-preview='true']) .shell {
+    padding-top: 18px;
+    padding-bottom: 30px;
+  }
+
+  :global(html[data-app-preview='true']) .browserAccountHeader {
+    display: none !important;
+  }
+
+  :global(html[data-app-preview='true']) .appSubHeader {
+    margin-bottom: 14px;
+    display: grid;
+    gap: 11px;
+  }
+
+  :global(html[data-app-preview='true']) .appSubHeader > a {
+    width: fit-content;
+    color: var(--cc-gold-ink);
+    font-size: 9px;
+    font-weight: 950;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  :global(html[data-app-preview='true']) .appSubHeader > div {
+    padding: 14px 16px;
+    display: grid;
+    gap: 4px;
+    border: 1px solid #ddd8cd;
+    border-left: 4px solid var(--cc-gold);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 20px rgba(13,17,18,.055);
+  }
+
+  :global(html[data-app-preview='true']) .appSubHeader span {
+    color: var(--cc-gold-ink);
+    font-size: 8px;
+    font-weight: 950;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+  }
+
+  :global(html[data-app-preview='true']) .appSubHeader strong {
+    color: #1b2021;
+    font-family: var(--cc-font-display);
+    font-size: 25px;
+    font-style: italic;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+}
+
+.notificationPending {
+  min-height: 66px;
+  padding: 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-top: 1px solid var(--cc-light-border);
+}
+.notificationPending > span { display: grid; gap: 4px; }
+.notificationPending strong { color: var(--cc-light-text); font-size: 13px; }
+.notificationPending small { color: var(--cc-light-muted); font-size: 11px; line-height: 1.35; }
+.notificationPending b {
+  flex: 0 0 auto;
+  padding: 5px 7px;
+  border: 1px solid var(--cc-light-border);
+  border-radius: 999px;
+  color: var(--cc-light-muted);
+  font-size: 8px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+
+/* In the installed/app-preview Me screen, keep legacy account controls behind
+   the explicit Account settings entry instead of stacking them below the app hub. */
+@media (max-width: 800px) and (display-mode: standalone) {
+  .accountBar.appAccountDetails,
+  .grid.appAccountDetails {
+    display: none;
+  }
+
+  .accountBar.appAccountDetailsOpen {
+    display: flex;
+  }
+
+  .grid.appAccountDetailsOpen {
+    display: grid;
+    gap: 12px;
+  }
+
+  .grid.appAccountDetailsOpen .panel {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 800px) {
+  :global(html[data-app-preview='true']) .accountBar.appAccountDetails,
+  :global(html[data-app-preview='true']) .grid.appAccountDetails {
+    display: none;
+  }
+
+  :global(html[data-app-preview='true']) .accountBar.appAccountDetailsOpen {
+    display: flex;
+  }
+
+  :global(html[data-app-preview='true']) .grid.appAccountDetailsOpen {
+    display: grid;
+    gap: 12px;
+  }
+
+  :global(html[data-app-preview='true']) .grid.appAccountDetailsOpen .panel {
+    padding: 20px;
+  }
+}

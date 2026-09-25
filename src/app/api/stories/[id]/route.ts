@@ -1,5 +1,6 @@
 import {revalidatePath, revalidateTag} from 'next/cache';
 import {StoryAccessError, requireStoryCommissioner} from '@/services/stories/StoryEditorAccess';
+import {enqueuePublishedStoryNotifications} from '@/services/notifications/NotificationOutboxService';
 import {
   StoryConflictError,
   StoryValidationError,
@@ -14,11 +15,32 @@ type RouteContext = {params: Promise<{id: string}>};
 
 export async function PATCH(request: Request, {params}: RouteContext) {
   try {
-    const {profile} = await requireStoryCommissioner();
+    const {profile, supabase} = await requireStoryCommissioner();
     const {id} = await params;
     const payload = await request.json() as {story?: unknown; revision?: unknown};
     const revision = parseRevision(payload.revision);
+    const {data: currentStory} = await (supabase as any)
+      .from('launch_stories')
+      .select('status')
+      .eq('id', id)
+      .maybeSingle();
     const story = await updateStory(id, revision, payload.story, profile.id);
+    if (currentStory?.status !== 'published' && story.status === 'published') {
+      try {
+        await enqueuePublishedStoryNotifications({
+          storyId: story.id,
+          slug: story.slug,
+          title: story.title,
+          category: story.category,
+          authorProfileId: profile.id,
+        });
+      } catch (notificationError) {
+        console.error('Published story notification could not be queued.', {
+          storyId: story.id,
+          error: notificationError,
+        });
+      }
+    }
     invalidatePublicStories(story.slug);
     return Response.json({story});
   } catch (error) {

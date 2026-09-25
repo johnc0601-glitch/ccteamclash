@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import styles from './Account.module.css';
 
@@ -9,6 +10,9 @@ type AccountPageLayoutProps = {
   narrow?: boolean;
   notice?: string;
   title: string;
+  appBackHref?: string;
+  appBackLabel?: string;
+  hideHeaderInApp?: boolean;
 };
 
 export function AccountPageLayout({
@@ -19,13 +23,25 @@ export function AccountPageLayout({
   narrow = false,
   notice,
   title,
+  appBackHref,
+  appBackLabel = 'Me',
+  hideHeaderInApp = false,
 }: AccountPageLayoutProps) {
   return (
     <main>
       <SiteHeader />
       <section className={styles.shell}>
         <div className={`shell ${narrow ? styles.narrowShell : ''}`}>
-          <header className={styles.header}>
+          {appBackHref ? (
+            <header className={styles.appSubHeader}>
+              <Link href={appBackHref}>← {appBackLabel}</Link>
+              <div>
+                <span>{eyebrow}</span>
+                <strong>{title}</strong>
+              </div>
+            </header>
+          ) : null}
+          <header className={appBackHref || hideHeaderInApp ? `${styles.header} ${styles.browserAccountHeader}` : styles.header}>
             <span className={styles.eyebrow}>{eyebrow}</span>
             <h1>{title}</h1>
             <p>{description}</p>

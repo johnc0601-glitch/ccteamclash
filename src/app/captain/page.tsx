@@ -8,6 +8,8 @@ import {hasSupabaseConfig} from '@/lib/supabase';
 import {createClient} from '@/lib/supabase/server';
 import {returnRosteredPlayerToCommissioner, saveRosterPlayerRegistration, saveTeamAppearance} from './actions';
 import {CaptainApprovalQueue} from './CaptainApprovalQueue';
+import {PwaCaptainHub} from '@/components/captain/PwaCaptainHub';
+import {getCaptainRosterHref} from '@/services/matches/CaptainRosterNavigation';
 import styles from './Captain.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -30,7 +32,7 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
       <SiteHeader />
       <section className={styles.page}>
         <div className="shell">
-          <header className={styles.header}>
+          <header className={`${styles.header} browser-captain-header`}>
             <span>Captain home</span>
             <h1>Team control</h1>
             <p>See your roster and match schedule from one simple captain screen.</p>
@@ -38,7 +40,7 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
           {notice ? <p className={styles.notice}>{notice}</p> : null}
           {error ? <p className={styles.error}>{error}</p> : null}
           {!captainData.ok ? <AccessMessage message={captainData.message} /> : (
-            <CaptainDashboard events={captainData.events} pendingApplications={captainData.pendingApplications} roster={captainData.roster} season={captainData.season} team={captainData.team} />
+            <CaptainDashboard events={captainData.events} pendingApplications={captainData.pendingApplications} roster={captainData.roster} season={captainData.season} team={captainData.team} rosterConfirmed={captainData.rosterConfirmed} />
           )}
         </div>
       </section>
@@ -47,7 +49,7 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
   );
 }
 
-function CaptainDashboard({events, pendingApplications, roster, season, team}: {events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; roster: CaptainRosterPlayer[]; season: CaptainSeason | null; team: LaunchTeam}) {
+function CaptainDashboard({events, pendingApplications, roster, season, team, rosterConfirmed}: {events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; roster: CaptainRosterPlayer[]; season: CaptainSeason | null; team: LaunchTeam; rosterConfirmed: boolean}) {
   const upcomingEvents = events.filter((event) => event.bucket === 'upcoming');
   const rosterCounts = {
     women: roster.filter((player) => player.rosterCategory === 'Women').length,
@@ -57,9 +59,22 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
   const primaryColor = team.primaryColor || '#006f71';
   const secondaryColor = team.secondaryColor || '#f4f6f2';
 
+  const nextMatch = upcomingEvents[0] ?? null;
+
   return (
     <>
-      <div className={styles.summaryGrid}>
+      <PwaCaptainHub
+        team={team}
+        nextMatch={nextMatch}
+        rosterCount={roster.length}
+        women={rosterCounts.women}
+        men={rosterCounts.men}
+        junior={rosterCounts.junior}
+        pendingCount={pendingApplications.length}
+        rosterConfirmed={rosterConfirmed}
+      />
+
+      <div className={`${styles.summaryGrid} browser-captain-summary`}>
         <SummaryCard label="Team" value={team.name} />
         <SummaryCard
           label="Roster"
@@ -76,7 +91,30 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
           <CaptainApprovalQueue applications={pendingApplications} />
         </section>
 
-        <section className={styles.panel}>
+        <section className={styles.panel} id="upcoming-matches">
+          <header className={styles.panelHeader}><span>Matchdays</span><h2>Upcoming matches</h2><p className={styles.muted}>Use this section to know where your team is playing next.</p></header>
+          <div className={styles.list}>{upcomingEvents.length ? upcomingEvents.map((event) => (
+            <article className={styles.row} key={event.id}>
+              <div className={styles.matchHeading}><strong>vs {event.opponent}</strong><span className={styles.sideLabel}>{event.isHome ? 'Home' : 'Away'}</span></div>
+              <span className={styles.muted}>{event.date} / {event.time}</span><span className={styles.muted}>{event.course}</span>
+              <Link href={getCaptainRosterHref(event.href)}>Manage Match Roster</Link>
+            </article>
+          )) : <p className={styles.empty}>No upcoming matches are posted for your team yet.</p>}</div>
+        </section>
+
+        <section className={styles.panel} id="team-roster">
+          <header className={styles.panelHeader}><span>Roster</span><h2>{team.name}</h2><p className={styles.muted}>{season?.canEditRegistrations ? 'Tap Edit registration to update player details or remove a player from your roster.' : 'Registration details are locked for this season. Open Roster options to request a removal or reassignment.'}</p></header>
+          <div className={styles.list}>{roster.length ? roster.map((player) => (
+            <article className={styles.row} key={player.id}>
+              <div className={styles.playerIdentity}>
+                <strong className={styles.playerName}>{player.name}</strong>
+                <span className={styles.rosterMeta}>
+                  <span>CI: {formatClashIndex(player)}</span>
+                  <span>{player.gender}</span>
+                  {player.rosterCategory === 'Junior' ? <span>Junior</span> : null}
+                  <span>{player.pdgaNumber ? `PDGA #${player.pdgaNumber}` : 'No PDGA #'}</span>
+                </span>
+                <section className={styles.panel}>
           <header className={styles.panelHeader}>
             <span>Season information</span>
             <h2>{season?.name ?? 'Current season'}</h2>
@@ -91,7 +129,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
           ) : null}
         </section>
 
-        <section className={styles.panel}>
+        <section className={styles.panel} id="team-appearance">
           <header className={styles.panelHeader}>
             <span>Team appearance</span>
             <h2>Brand your team</h2>
@@ -115,30 +153,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
           </form>
         </section>
 
-        <section className={styles.panel}>
-          <header className={styles.panelHeader}><span>Matchdays</span><h2>Upcoming matches</h2><p className={styles.muted}>Use this section to know where your team is playing next.</p></header>
-          <div className={styles.list}>{upcomingEvents.length ? upcomingEvents.map((event) => (
-            <article className={styles.row} key={event.id}>
-              <div className={styles.matchHeading}><strong>vs {event.opponent}</strong><span className={styles.sideLabel}>{event.isHome ? 'Home' : 'Away'}</span></div>
-              <span className={styles.muted}>{event.date} / {event.time}</span><span className={styles.muted}>{event.course}</span>
-              <Link href={`${event.href}?manage=roster`}>Manage Match Roster</Link>
-            </article>
-          )) : <p className={styles.empty}>No upcoming matches are posted for your team yet.</p>}</div>
-        </section>
-
-        <section className={styles.panel}>
-          <header className={styles.panelHeader}><span>Roster</span><h2>{team.name}</h2><p className={styles.muted}>{season?.canEditRegistrations ? 'Tap Edit registration to update player details or remove a player from your roster.' : 'Registration details are locked for this season. Open Roster options to request a removal or reassignment.'}</p></header>
-          <div className={styles.list}>{roster.length ? roster.map((player) => (
-            <article className={styles.row} key={player.id}>
-              <div className={styles.playerIdentity}>
-                <strong className={styles.playerName}>{player.name}</strong>
-                <span className={styles.rosterMeta}>
-                  <span>CI: {formatClashIndex(player)}</span>
-                  <span>{player.gender}</span>
-                  {player.rosterCategory === 'Junior' ? <span>Junior</span> : null}
-                  <span>{player.pdgaNumber ? `PDGA #${player.pdgaNumber}` : 'No PDGA #'}</span>
-                </span>
-              </div>
+      </div>
               <details className={styles.registrationDetails}>
                 <summary>{season?.canEditRegistrations ? 'Edit registration' : 'Roster options'}</summary>
                 <div className={styles.registrationPanel}>
@@ -200,7 +215,7 @@ function SummaryCard({label, value, detail}: {label: string; value: string; deta
 }
 function AccessMessage({message}: {message: string}) {return <section className={styles.alert}><strong>{message}</strong><p className={styles.muted}>Sign in with the account your commissioner approved for captain access.</p><Link href="/account">Open account page</Link></section>;}
 
-async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: CaptainRosterPlayer[]; events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; season: CaptainSeason | null} | {ok: false; message: string}> {
+async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: CaptainRosterPlayer[]; events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; season: CaptainSeason | null; rosterConfirmed: boolean} | {ok: false; message: string}> {
   if (!hasSupabaseConfig()) return {ok: false, message: 'League accounts are not configured yet.'};
   try {
     const supabase = await createClient();
@@ -223,6 +238,7 @@ async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: Ca
     if (branding.error) throw branding.error;
     const team: LaunchTeam = {...baseTeam, logo: branding.data?.logo || baseTeam.logo, primaryColor: branding.data?.primary_color || '#006f71', secondaryColor: branding.data?.secondary_color || '#f4f6f2'};
     const launchSupabase = supabase as any;
+    const nextEvent = events.find((event) => event.bucket === 'upcoming') ?? null;
     const seasonId = activeSeason.data?.id ?? null;
     const season: CaptainSeason | null = activeSeason.data ? {
       id: activeSeason.data.id,
@@ -230,12 +246,24 @@ async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: Ca
       startDate: activeSeason.data.start_date,
       canEditRegistrations: Boolean(activeSeason.data.start_date) && easternDateKey() < activeSeason.data.start_date.slice(0, 10),
     } : null;
-    const [{data: applicationRows, error: applicationError}, {data: membershipRows, error: membershipError}] = seasonId ? await Promise.all([
-      launchSupabase.from('launch_player_applications').select('id, profile_id, requested_team_id, player_type, gender, status, created_at').eq('season_id', seasonId).eq('requested_team_id', team.id).eq('status', 'Pending').order('created_at', {ascending: true}),
-      launchSupabase.from('launch_season_roster_memberships').select('player_id, roster_category').eq('season_id', seasonId).eq('team_id', team.id).eq('status', 'Active'),
-    ]) : [{data: [] as ApplicationRow[], error: null}, {data: [] as SeasonMembershipRow[], error: null}];
+    const [
+      {data: applicationRows, error: applicationError},
+      {data: membershipRows, error: membershipError},
+      {data: nextRosterRow, error: nextRosterError},
+    ] = await Promise.all([
+      seasonId
+        ? launchSupabase.from('launch_player_applications').select('id, profile_id, requested_team_id, player_type, gender, status, created_at').eq('season_id', seasonId).eq('requested_team_id', team.id).eq('status', 'Pending').order('created_at', {ascending: true})
+        : Promise.resolve({data: [] as ApplicationRow[], error: null}),
+      seasonId
+        ? launchSupabase.from('launch_season_roster_memberships').select('player_id, roster_category').eq('season_id', seasonId).eq('team_id', team.id).eq('status', 'Active')
+        : Promise.resolve({data: [] as SeasonMembershipRow[], error: null}),
+      nextEvent
+        ? launchSupabase.from('launch_match_rosters').select('status').eq('match_id', nextEvent.id).eq('team_id', team.id).maybeSingle()
+        : Promise.resolve({data: null, error: null}),
+    ]);
     if (applicationError) throw applicationError;
     if (membershipError) throw membershipError;
+    if (nextRosterError) throw nextRosterError;
     const pendingRows = (applicationRows ?? []) as ApplicationRow[];
     const profileIds = [...new Set(pendingRows.map((application) => application.profile_id))];
     const profiles = profileIds.length ? (await supabase.from('launch_profiles').select('id, display_name').in('id', profileIds)).data ?? [] : [];
@@ -244,7 +272,15 @@ async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: Ca
     const memberships = (membershipRows ?? []) as SeasonMembershipRow[];
     const membershipByPlayer = new Map(memberships.map((membership) => [membership.player_id, membership.roster_category]));
     const roster = players.filter((player) => player.active && membershipByPlayer.has(player.id)).map((player): CaptainRosterPlayer => ({...player, rosterCategory: membershipByPlayer.get(player.id) ?? 'Men'}));
-    return {ok: true, team, roster, events: events.filter((event) => event.homeTeamId === team.id || event.awayTeamId === team.id), pendingApplications, season};
+    return {
+      ok: true,
+      team,
+      roster,
+      events: events.filter((event) => event.homeTeamId === team.id || event.awayTeamId === team.id),
+      pendingApplications,
+      season,
+      rosterConfirmed: nextRosterRow?.status === 'Confirmed',
+    };
   } catch {return {ok: false, message: 'Captain Home could not load right now.'};}
 }
 
