@@ -107,8 +107,8 @@ export function PwaMatchdayHub({
       ) : null}
 
       <nav className={styles.shortcuts} aria-label="Matchday sections">
-        {phase === 'final' ? <a href="#scoreboard">Results</a> : null}
-        {phase !== 'final' && prediction ? <a href="#prediction">Prediction</a> : null}
+        {phase === 'final' ? <a className={styles.primaryShortcut} href="#scoreboard">Results</a> : null}
+        {phase !== 'final' && prediction ? <a className={styles.primaryShortcut} href="#prediction">Prediction</a> : null}
         {attendance ? <a href="#availability">Availability</a> : null}
         {hasManagedRoster ? <a href="#captain-roster">Captain</a> : null}
         <a href="#match-feed">Feed</a>
