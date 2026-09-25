@@ -7,6 +7,7 @@ import {MatchPreview} from '@/components/matches/MatchPreview';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
+import {MatchHighlights} from '@/components/matches/MatchHighlights';
 import {PersonalAttendanceCard} from '@/components/matches/PersonalAttendanceCard';
 import {CaptainRosterPanel} from '@/components/matches/CaptainRosterPanel';
 import {CommissionerRosterUnlockPanel} from '@/components/matches/CommissionerRosterUnlockPanel';
@@ -32,6 +33,7 @@ import {
   buildPublicMatchPrediction,
   resolvePublicPredictionSource,
 } from '@/services/teamStrength/PublicMatchPrediction';
+import {getMatchClashPulseHighlights} from '@/services/stories/ClashPulseFactCandidateService';
 import styles from './Matchday.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -187,6 +189,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     ? resolveLockedControls(actor, match, officialSnapshot.rosters)
     : {canUnlockRoster: false};
   const isCompleted = matchday.lifecycle === 'Completed';
+  const matchHighlights = isCompleted ? await getMatchClashPulseHighlights(matchId) : [];
 
   return (
     <>
@@ -197,6 +200,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
           {isCompleted ? (
             <>
               <MatchScoreboard matchday={matchday} result={publishedResult} contests={publishedResult ? contests : []} />
+              <MatchHighlights highlights={matchHighlights} />
 
               <MatchFeed
                 matchId={matchId}
