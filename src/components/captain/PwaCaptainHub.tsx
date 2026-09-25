@@ -65,7 +65,7 @@ export function PwaCaptainHub({
             <p>{nextMatch.date} · {nextMatch.time}</p>
             <p>{nextMatch.course}</p>
           </div>
-          <Link className={styles.primaryAction} href={`${nextMatch.href}?manage=roster`}>
+          <Link className={styles.primaryAction} href={`${nextMatch.href}?manage=roster#captain-roster`}>
             Manage match roster
           </Link>
         </article>
