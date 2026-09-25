@@ -730,3 +730,116 @@
     padding: 10px;
   }
 }
+
+
+/* Compact Clubhouse conversation controls. */
+.composer {
+  padding: 0;
+  overflow: hidden;
+}
+.composerHeader {
+  padding: 15px 18px 8px;
+}
+.composerHeader h2 {
+  margin: 0;
+  font-size: 24px;
+}
+.composer > form {
+  padding: 10px 18px 16px;
+  gap: 10px;
+}
+.announcementToggle {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cc-gold-ink);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.announcementToggle input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--cc-gold);
+}
+.composer textarea {
+  min-height: 108px;
+}
+.emptyInline {
+  margin: 0;
+  padding: 12px 4px 18px;
+  color: var(--cc-muted);
+  font-size: 13px;
+  text-align: center;
+}
+.moderationPanel {
+  margin-top: 14px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 9px;
+  background: var(--cc-card-bg);
+  box-shadow: var(--cc-card-shadow);
+  overflow: hidden;
+}
+.moderationSummary {
+  min-height: 50px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--cc-heading);
+}
+.moderationSummary::-webkit-details-marker {
+  display: none;
+}
+.moderationSummary span {
+  color: var(--cc-muted);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.moderationSummary strong {
+  color: var(--cc-heading);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+.moderationPanel[open] .moderationSummary {
+  border-bottom: 1px solid var(--cc-card-border);
+}
+.moderationPanel > .moderationStack {
+  padding: 14px 16px 16px;
+}
+.moderationQuiet {
+  margin: 0;
+  color: var(--cc-muted);
+  font-size: 12px;
+}
+@media (max-width: 560px) {
+  .composerHeader {
+    padding: 14px 15px 6px;
+  }
+  .composerHeader h2 {
+    font-size: 22px;
+  }
+  .composer > form {
+    padding: 8px 15px 14px;
+  }
+  .composer textarea {
+    min-height: 96px;
+  }
+  .moderationSummary {
+    min-height: 46px;
+    padding: 0 14px;
+  }
+  .moderationPanel > .moderationStack {
+    padding: 12px 14px 14px;
+  }
+}
