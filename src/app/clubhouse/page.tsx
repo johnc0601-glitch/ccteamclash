@@ -4,11 +4,18 @@ import {redirect} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {createClient} from '@/lib/supabase/server';
 import {getClubhouseContext} from '@/lib/clubhouse';
+import {getMutedProfileIds} from '@/lib/profileMutes';
+import {MuteMemberControl} from '@/components/social/MuteMemberControl';
 import {
   addClubhouseComment,
   createClubhousePost,
   deleteClubhousePost,
+  editClubhouseComment,
+  editClubhousePost,
+  reportClubhouseContent,
+  resolveClubhouseReport,
   reactToClubhousePost,
+  removeClubhouseComment,
   setClubhouseAttendance,
   toggleClubhousePin,
 } from './actions';
@@ -39,6 +46,9 @@ export default async function ClubhousePage({searchParams}: Props) {
     redirect('/account');
   }
   const db = supabase as any;
+  const mutedProfileIds = context.isCommissionerReview
+    ? new Set<string>()
+    : await getMutedProfileIds(supabase as any, context.profileId);
   const brandStyle = {
     '--clubhouse-accent': context.teamPrimaryColor,
     '--clubhouse-secondary': context.teamSecondaryColor,
@@ -56,9 +66,11 @@ export default async function ClubhousePage({searchParams}: Props) {
       .eq('team_id', context.teamId)
       .eq('status', 'Active'),
     db.from('launch_clubhouse_posts')
-      .select('id,author_profile_id,title,body,pinned_at,created_at,updated_at')
+      .select('id,author_profile_id,title,body,post_type,pinned_at,created_at,updated_at')
       .eq('season_id', context.seasonId)
       .eq('team_id', context.teamId)
+      .is('deleted_at', null)
+      .order('pinned_at', {ascending: false, nullsFirst: false})
       .order('created_at', {ascending: false})
       .limit(100),
   ]);
@@ -69,20 +81,50 @@ export default async function ClubhousePage({searchParams}: Props) {
   const teamIds = [...new Set(teamMatchRows.flatMap((match) => [match.home_team_id, match.away_team_id]).filter(Boolean))];
   const courseIds = [...new Set(teamMatchRows.map((match) => match.course_id).filter(Boolean))];
   const playerIds = (rosterRows ?? []).map((row: any) => row.player_id);
-  const postIds = (posts ?? []).map((post: any) => post.id);
-  const profileIds = (posts ?? []).map((post: any) => post.author_profile_id);
+  const visiblePosts = (posts ?? []).filter((post: any) => !mutedProfileIds.has(post.author_profile_id));
+  const postIds = visiblePosts.map((post: any) => post.id);
+  const profileIds = visiblePosts.map((post: any) => post.author_profile_id);
 
   const [teamResult, courseResult, playerResult, attendanceResult, commentResult, reactionResult] = await Promise.all([
     teamIds.length ? db.from('launch_teams').select('id,name').in('id', teamIds) : Promise.resolve({data: []}),
     courseIds.length ? db.from('launch_courses').select('id,name').in('id', courseIds) : Promise.resolve({data: []}),
     playerIds.length ? db.from('launch_players').select('id,name').in('id', playerIds) : Promise.resolve({data: []}),
     nextMatch ? db.from('launch_match_attendance').select('player_id,status').eq('match_id', nextMatch.id).eq('team_id', context.teamId) : Promise.resolve({data: []}),
-    postIds.length ? db.from('launch_clubhouse_comments').select('id,post_id,author_profile_id,parent_comment_id,body,created_at').in('post_id', postIds).order('created_at', {ascending: true}) : Promise.resolve({data: []}),
+    postIds.length ? db.from('launch_clubhouse_comments').select('id,post_id,author_profile_id,parent_comment_id,body,created_at').in('post_id', postIds).is('deleted_at', null).order('created_at', {ascending: true}) : Promise.resolve({data: []}),
     postIds.length ? db.from('launch_clubhouse_post_reactions').select('post_id,profile_id,reaction_type').in('post_id', postIds) : Promise.resolve({data: []}),
   ]);
 
-  const commentAuthorIds = (commentResult.data ?? []).map((comment: any) => comment.author_profile_id);
-  const allProfileIds = [...new Set([...profileIds, ...commentAuthorIds])];
+  const visibleComments = (commentResult.data ?? []).filter((comment: any) => !mutedProfileIds.has(comment.author_profile_id));
+
+  const [{data: moderationEvents}, {data: reports}] = (context.isCaptain || context.isCommissioner)
+    ? await Promise.all([
+      db
+        .from('launch_clubhouse_moderation_events')
+        .select('id,content_type,content_id,content_author_profile_id,moderator_profile_id,reason,created_at')
+        .eq('season_id', context.seasonId)
+        .eq('team_id', context.teamId)
+        .order('created_at', {ascending: false})
+        .limit(20),
+      db
+        .from('launch_clubhouse_reports')
+        .select('id,content_type,content_id,content_author_profile_id,reporter_profile_id,reason,note,status,created_at')
+        .eq('season_id', context.seasonId)
+        .eq('team_id', context.teamId)
+        .order('created_at', {ascending: false})
+        .limit(50),
+    ])
+    : [{data: []}, {data: []}];
+
+  const commentAuthorIds = visibleComments.map((comment: any) => comment.author_profile_id);
+  const moderationProfileIds = (moderationEvents ?? []).flatMap((event: any) => [
+    event.content_author_profile_id,
+    event.moderator_profile_id,
+  ]).filter(Boolean);
+  const reportProfileIds = (reports ?? []).flatMap((report: any) => [
+    report.content_author_profile_id,
+    report.reporter_profile_id,
+  ]).filter(Boolean);
+  const allProfileIds = [...new Set([...profileIds, ...commentAuthorIds, ...moderationProfileIds, ...reportProfileIds])];
   const {data: authorProfiles} = allProfileIds.length
     ? await db.from('launch_profiles').select('id,display_name').in('id', allProfileIds)
     : {data: []};
@@ -98,8 +140,8 @@ export default async function ClubhousePage({searchParams}: Props) {
   const undecided = playerIds.filter((id: string) => !attendance.has(id));
   const ownStatus = attendance.get(context.playerId) ?? 'Unconfirmed';
   const activityTimes = [
-    ...(posts ?? []).map((post: any) => String(post.created_at)),
-    ...(commentResult.data ?? []).map((comment: any) => String(comment.created_at)),
+    ...visiblePosts.map((post: any) => String(post.created_at)),
+    ...visibleComments.map((comment: any) => String(comment.created_at)),
   ].filter(Boolean);
   const readThrough = activityTimes.length
     ? activityTimes.reduce((latest, value) => value > latest ? value : latest)
@@ -122,13 +164,19 @@ export default async function ClubhousePage({searchParams}: Props) {
             <div>
               <span className={styles.kicker}>{context.isCommissionerReview ? 'Commissioner review' : 'Private team space'} · {context.seasonName}</span>
               <h1><span>{context.teamName}</span> Clubhouse</h1>
-              <p>{context.isCommissionerReview ? 'Read-only Office view of this team’s Clubhouse.' : 'Your team schedule, match availability, and private discussion in one place.'}</p>
+              <p>{context.isCommissionerReview ? 'Commissioner moderation view of this team’s Clubhouse.' : 'Your team schedule, match availability, and private discussion in one place.'}</p>
             </div>
-            {context.teamLogo ? <div className={styles.logoWrap}><img src={context.teamLogo} alt={`${context.teamName} logo`} width={92} height={92} /></div> : null}
+            <div className={styles.heroAside}>
+              {context.teamLogo ? <div className={styles.logoWrap}><img src={context.teamLogo} alt={`${context.teamName} logo`} width={92} height={92} /></div> : null}
+              <div className={styles.heroLinks}>
+                <Link href={`/teams/${context.teamId}`}>Team home</Link>
+                {!context.isCommissionerReview ? <Link href="/account/mutes">Muted members</Link> : null}
+              </div>
+            </div>
           </header>
 
           {context.isCommissionerReview ? (
-            <p className={styles.notice}>Commissioner review mode · read only · <Link href="/office/clubhouses">Back to Clubhouses</Link></p>
+            <p className={styles.notice}>Commissioner moderation mode · <Link href="/office/clubhouses">Back to Clubhouses</Link></p>
           ) : null}
           {notice ? <p className={styles.notice}>{notice}</p> : null}
           {error ? <p className={styles.error}>{error}</p> : null}
@@ -215,6 +263,15 @@ export default async function ClubhousePage({searchParams}: Props) {
                 <p>Only your current team and league commissioners can see this conversation.</p>
               </div>
               <form action={createClubhousePost}>
+                {(context.isCaptain || context.isCommissioner) ? (
+                  <label style={{display:'grid',gap:'5px',fontSize:'11px',fontWeight:900,textTransform:'uppercase'}}>
+                    Post type
+                    <select name="postType" defaultValue="discussion">
+                      <option value="discussion">Team discussion</option>
+                      <option value="announcement">Captain announcement</option>
+                    </select>
+                  </label>
+                ) : <input type="hidden" name="postType" value="discussion" />}
                 <input name="title" maxLength={120} placeholder="Optional title" />
                 <textarea name="body" maxLength={3000} rows={4} placeholder="Share something with your team" required />
                 <button type="submit">Post</button>
@@ -223,15 +280,16 @@ export default async function ClubhousePage({searchParams}: Props) {
           ) : null}
 
           <section className={styles.feed}>
-            {(posts ?? []).map((post: any) => {
-              const comments = (commentResult.data ?? []).filter((comment: any) => comment.post_id === post.id);
+            {visiblePosts.map((post: any) => {
+              const comments = visibleComments.filter((comment: any) => comment.post_id === post.id);
               const reactions = (reactionResult.data ?? []).filter((reaction: any) => reaction.post_id === post.id);
-              const canManage = !context.isCommissionerReview && (context.isCaptain || context.isCommissioner || post.author_profile_id === context.profileId);
+              const isOwnPost = post.author_profile_id === context.profileId;
+              const canManage = context.isCaptain || context.isCommissioner || isOwnPost;
               return (
-                <article className={`${styles.post} ${post.pinned_at ? styles.pinned : ''}`} key={post.id}>
+                <article id={`post-${post.id}`} className={`${styles.post} ${post.pinned_at ? styles.pinned : ''}`} data-post-type={post.post_type} key={post.id}>
                   <div className={styles.postTop}>
                     <div><strong>{authors.get(post.author_profile_id) ?? 'Member'}</strong><span>{new Date(post.created_at).toLocaleString()}</span></div>
-                    {post.pinned_at ? <b>Pinned</b> : null}
+                    {post.post_type === 'announcement' ? <b>Captain announcement</b> : post.pinned_at ? <b>Pinned</b> : null}
                   </div>
                   {post.title ? <h3>{post.title}</h3> : null}
                   <p>{post.body}</p>
@@ -244,28 +302,232 @@ export default async function ClubhousePage({searchParams}: Props) {
                       const active = reactions.some((reaction: any) => reaction.reaction_type === key && reaction.profile_id === context.profileId);
                       return <form action={reactToClubhousePost} key={key}><input type="hidden" name="postId" value={post.id}/><button data-active={active} name="reactionType" value={key}>{icon}{count ? ` ${count}` : ''}</button></form>;
                     })}
-                    {!context.isCommissionerReview && (context.isCaptain || context.isCommissioner) ? <form action={toggleClubhousePin}><input type="hidden" name="postId" value={post.id}/><input type="hidden" name="pinned" value={post.pinned_at ? 'true' : 'false'}/><button>{post.pinned_at ? 'Unpin' : 'Pin'}</button></form> : null}
-                    {canManage ? <form action={deleteClubhousePost}><input type="hidden" name="postId" value={post.id}/><button>Remove</button></form> : null}
+                    {(context.isCaptain || context.isCommissioner) ? <form action={toggleClubhousePin}><input type="hidden" name="postId" value={post.id}/><input type="hidden" name="teamId" value={context.teamId}/><input type="hidden" name="pinned" value={post.pinned_at ? 'true' : 'false'}/><button>{post.pinned_at ? 'Unpin' : 'Pin'}</button></form> : null}
+                    {isOwnPost ? (
+                      <EditPostControl post={post} teamId={context.teamId} />
+                    ) : (
+                      <>
+                        {!context.isCommissionerReview ? <ReportControl kind="post" id={post.id} teamId={context.teamId} /> : null}
+                        <MuteMemberControl
+                          profileId={post.author_profile_id}
+                          returnTo={`/clubhouse#post-${post.id}`}
+                          compact
+                        />
+                      </>
+                    )}
+                    {canManage ? (
+                      <RemovalControl
+                        kind="post"
+                        id={post.id}
+                        teamId={context.teamId}
+                        isOwn={isOwnPost}
+                      />
+                    ) : null}
                   </div>
                   <div className={styles.comments}>
-                    {comments.filter((comment: any) => !comment.parent_comment_id).map((comment: any) => (
-                      <div className={styles.comment} key={comment.id}>
-                        <strong>{authors.get(comment.author_profile_id) ?? 'Member'}</strong><p>{comment.body}</p>
-                        {comments.filter((reply: any) => reply.parent_comment_id === comment.id).map((reply: any) => <div className={styles.reply} key={reply.id}><strong>{authors.get(reply.author_profile_id) ?? 'Member'}</strong><span>{reply.body}</span></div>)}
-                        {!context.isCommissionerReview ? <form action={addClubhouseComment} className={styles.replyForm}><input type="hidden" name="postId" value={post.id}/><input type="hidden" name="parentCommentId" value={comment.id}/><input name="body" maxLength={1500} placeholder="Reply" required/><button>Reply</button></form> : null}
-                      </div>
-                    ))}
+                    {comments.filter((comment: any) => !comment.parent_comment_id).map((comment: any) => {
+                      const isOwnComment = comment.author_profile_id === context.profileId;
+                      const canManageComment = context.isCaptain || context.isCommissioner || isOwnComment;
+                      return (
+                        <div className={styles.comment} key={comment.id}>
+                          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'10px'}}>
+                            <strong>{authors.get(comment.author_profile_id) ?? 'Member'}</strong>
+                            <span style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                              {isOwnComment ? <EditCommentControl comment={comment} teamId={context.teamId} /> : !context.isCommissionerReview ? <ReportControl kind="comment" id={comment.id} teamId={context.teamId} compact /> : null}
+                              {!isOwnComment ? <MuteMemberControl profileId={comment.author_profile_id} returnTo={`/clubhouse#post-${post.id}`} compact /> : null}
+                              {canManageComment ? <RemovalControl kind="comment" id={comment.id} teamId={context.teamId} isOwn={isOwnComment} compact /> : null}
+                            </span>
+                          </div>
+                          <p>{comment.body}</p>
+                          {comments.filter((reply: any) => reply.parent_comment_id === comment.id).map((reply: any) => {
+                            const isOwnReply = reply.author_profile_id === context.profileId;
+                            const canManageReply = context.isCaptain || context.isCommissioner || isOwnReply;
+                            return (
+                              <div className={styles.reply} key={reply.id}>
+                                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'10px'}}>
+                                  <strong>{authors.get(reply.author_profile_id) ?? 'Member'}</strong>
+                                  <span style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                                    {isOwnReply ? <EditCommentControl comment={reply} teamId={context.teamId} /> : !context.isCommissionerReview ? <ReportControl kind="comment" id={reply.id} teamId={context.teamId} compact /> : null}
+                                    {!isOwnReply ? <MuteMemberControl profileId={reply.author_profile_id} returnTo={`/clubhouse#post-${post.id}`} compact /> : null}
+                                    {canManageReply ? <RemovalControl kind="comment" id={reply.id} teamId={context.teamId} isOwn={isOwnReply} compact /> : null}
+                                  </span>
+                                </div>
+                                <span>{reply.body}</span>
+                              </div>
+                            );
+                          })}
+                          {!context.isCommissionerReview ? <form action={addClubhouseComment} className={styles.replyForm}><input type="hidden" name="postId" value={post.id}/><input type="hidden" name="parentCommentId" value={comment.id}/><input name="body" maxLength={1500} placeholder="Reply" required/><button>Reply</button></form> : null}
+                        </div>
+                      );
+                    })}
                     {!context.isCommissionerReview ? <form action={addClubhouseComment} className={styles.commentForm}><input type="hidden" name="postId" value={post.id}/><input name="body" maxLength={1500} placeholder="Add a comment" required/><button>Comment</button></form> : null}
                   </div>
                 </article>
               );
             })}
-            {!(posts ?? []).length ? <p className={styles.empty}>No posts yet.</p> : null}
+            {!visiblePosts.length ? <p className={styles.empty}>No visible posts yet.</p> : null}
           </section>
+
+          {(context.isCaptain || context.isCommissioner) ? (
+            <section className={styles.panel} style={{marginTop:'18px'}}>
+              <span className={styles.kicker}>Moderation</span>
+              <h2 style={{margin:'5px 0 6px'}}>Team moderation</h2>
+              <p style={{margin:'0 0 14px',opacity:.7,fontSize:'12px'}}>Reports are private to this team’s captains and league commissioners. Moderator removals are logged.</p>
+
+              <div className={styles.moderationStack}>
+                <div>
+                  <h3 className={styles.moderationHeading}>Open reports</h3>
+                  {(reports ?? []).filter((report: any) => report.status === 'Open').length ? (
+                    <div className={styles.moderationList}>
+                      {(reports ?? []).filter((report: any) => report.status === 'Open').map((report: any) => (
+                        <article className={styles.reportCard} key={report.id}>
+                          <div>
+                            <strong>{report.content_type === 'post' ? 'Post' : 'Comment'} report · {report.reason}</strong>
+                            <span>{authors.get(report.reporter_profile_id) ?? 'Member'} reported content by {authors.get(report.content_author_profile_id) ?? 'Member'} · {new Date(report.created_at).toLocaleString()}</span>
+                            {report.note ? <p>{report.note}</p> : null}
+                          </div>
+                          <form action={resolveClubhouseReport} className={styles.reportActions}>
+                            <input type="hidden" name="reportId" value={report.id} />
+                            <input type="hidden" name="teamId" value={context.teamId} />
+                            <button name="status" value="Reviewed">Reviewed</button>
+                            <button name="status" value="Dismissed">Dismiss</button>
+                          </form>
+                        </article>
+                      ))}
+                    </div>
+                  ) : <p className={styles.empty}>No open reports.</p>}
+                </div>
+
+                <details className={styles.details}>
+                  <summary>Recent moderator removals</summary>
+                  {(moderationEvents ?? []).length ? (
+                    <div className={styles.moderationList}>
+                      {(moderationEvents ?? []).map((event: any) => (
+                        <div className={styles.auditRow} key={event.id}>
+                          <strong>{event.content_type === 'post' ? 'Post' : 'Comment'} removed · {event.reason}</strong>
+                          <span>{authors.get(event.content_author_profile_id) ?? 'Member'} · by {authors.get(event.moderator_profile_id) ?? 'Moderator'} · {new Date(event.created_at).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : <p className={styles.empty}>No moderator removals yet.</p>}
+                </details>
+              </div>
+            </section>
+          ) : null}
         </div>
       </section>
       <Footer />
     </main>
+  );
+}
+
+function RemovalControl({kind, id, teamId, isOwn, compact = false}: {
+  kind: 'post' | 'comment';
+  id: string;
+  teamId: string;
+  isOwn: boolean;
+  compact?: boolean;
+}) {
+  const action = kind === 'post' ? deleteClubhousePost : removeClubhouseComment;
+  const field = kind === 'post' ? 'postId' : 'commentId';
+
+  if (isOwn) {
+    return (
+      <form action={action} style={{margin:0}}>
+        <input type="hidden" name={field} value={id} />
+        <input type="hidden" name="teamId" value={teamId} />
+        <button type="submit" style={compact ? {padding:'3px 7px',fontSize:'9px'} : undefined}>Delete</button>
+      </form>
+    );
+  }
+
+  return (
+    <details style={{position:'relative'}}>
+      <summary style={{cursor:'pointer',fontSize:compact ? '9px' : '10px',fontWeight:900,textTransform:'uppercase'}}>Moderate</summary>
+      <form
+        action={action}
+        style={{
+          position:'absolute',
+          right:0,
+          zIndex:20,
+          width:'180px',
+          padding:'10px',
+          display:'grid',
+          gap:'7px',
+          border:'1px solid rgba(127,127,127,.35)',
+          borderRadius:'8px',
+          background:'#111617',
+          boxShadow:'0 12px 28px rgba(0,0,0,.28)',
+        }}
+      >
+        <input type="hidden" name={field} value={id} />
+        <input type="hidden" name="teamId" value={teamId} />
+        <select name="reason" defaultValue="Inappropriate" aria-label="Removal reason">
+          <option>Spam</option>
+          <option>Harassment</option>
+          <option>Inappropriate</option>
+          <option>Off-topic</option>
+          <option>Other</option>
+        </select>
+        <button type="submit">Remove</button>
+      </form>
+    </details>
+  );
+}
+
+function EditPostControl({post, teamId}: {post: any; teamId: string}) {
+  return (
+    <details className={styles.inlineControl}>
+      <summary>Edit</summary>
+      <form action={editClubhousePost} className={styles.inlineForm}>
+        <input type="hidden" name="postId" value={post.id} />
+        <input type="hidden" name="teamId" value={teamId} />
+        <input name="title" maxLength={120} defaultValue={post.title ?? ''} placeholder="Optional title" />
+        <textarea name="body" maxLength={3000} defaultValue={post.body} rows={4} required />
+        <button type="submit">Save edit</button>
+      </form>
+    </details>
+  );
+}
+
+function EditCommentControl({comment, teamId}: {comment: any; teamId: string}) {
+  return (
+    <details className={styles.inlineControl}>
+      <summary>Edit</summary>
+      <form action={editClubhouseComment} className={styles.inlineForm}>
+        <input type="hidden" name="commentId" value={comment.id} />
+        <input type="hidden" name="teamId" value={teamId} />
+        <textarea name="body" maxLength={1500} defaultValue={comment.body} rows={3} required />
+        <button type="submit">Save edit</button>
+      </form>
+    </details>
+  );
+}
+
+function ReportControl({kind, id, teamId, compact = false}: {
+  kind: 'post' | 'comment';
+  id: string;
+  teamId: string;
+  compact?: boolean;
+}) {
+  return (
+    <details className={styles.inlineControl}>
+      <summary style={compact ? {fontSize:'9px'} : undefined}>Report</summary>
+      <form action={reportClubhouseContent} className={styles.inlineForm}>
+        <input type="hidden" name="teamId" value={teamId} />
+        <input type="hidden" name="contentType" value={kind} />
+        <input type="hidden" name="contentId" value={id} />
+        <select name="reason" defaultValue="Inappropriate" aria-label="Report reason">
+          <option>Spam</option>
+          <option>Harassment</option>
+          <option>Inappropriate</option>
+          <option>Off-topic</option>
+          <option>Other</option>
+        </select>
+        <input name="note" maxLength={500} placeholder="Optional note" />
+        <button type="submit">Send report</button>
+      </form>
+    </details>
   );
 }
 
