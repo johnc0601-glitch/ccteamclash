@@ -263,6 +263,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
       title={manageAccount ? 'Account settings' : registrationIncomplete ? 'Finish registration' : 'Me'}
       appBackHref={manageAccount ? '/account' : undefined}
       appBackLabel="Me"
+      hideHeaderInApp
     >
       <section className={`${styles.accountBar} ${styles.appAccountDetails} ${manageAccount ? styles.appAccountDetailsOpen : ''}`} aria-label="Signed in account">
         <div>
