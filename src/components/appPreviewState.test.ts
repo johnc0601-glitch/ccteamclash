@@ -68,3 +68,30 @@ test('appPreview=0 clears persisted preview', () => {
     enabled: false,
   });
 });
+
+
+test('configured app surface stays enabled without preview state', () => {
+  assert.deepEqual(resolveAppPreviewState({
+    hostname: 'app.ccteamclash.com',
+    queryValue: null,
+    persisted: false,
+    standalone: false,
+    appSurface: true,
+  }), {
+    persisted: false,
+    enabled: true,
+  });
+});
+
+test('configured app surface cannot be exited with appPreview=0', () => {
+  assert.deepEqual(resolveAppPreviewState({
+    hostname: 'app.ccteamclash.com',
+    queryValue: '0',
+    persisted: true,
+    standalone: true,
+    appSurface: true,
+  }), {
+    persisted: false,
+    enabled: true,
+  });
+});
