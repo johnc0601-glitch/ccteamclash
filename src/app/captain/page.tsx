@@ -9,6 +9,7 @@ import {createClient} from '@/lib/supabase/server';
 import {returnRosteredPlayerToCommissioner, saveRosterPlayerRegistration, saveTeamAppearance} from './actions';
 import {CaptainApprovalQueue} from './CaptainApprovalQueue';
 import {PwaCaptainHub} from '@/components/captain/PwaCaptainHub';
+import {getCaptainRosterHref} from '@/services/matches/CaptainRosterNavigation';
 import styles from './Captain.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -134,7 +135,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
             <article className={styles.row} key={event.id}>
               <div className={styles.matchHeading}><strong>vs {event.opponent}</strong><span className={styles.sideLabel}>{event.isHome ? 'Home' : 'Away'}</span></div>
               <span className={styles.muted}>{event.date} / {event.time}</span><span className={styles.muted}>{event.course}</span>
-              <Link href={`${event.href}?manage=roster#captain-roster`}>Manage Match Roster</Link>
+              <Link href={getCaptainRosterHref(event.href)}>Manage Match Roster</Link>
             </article>
           )) : <p className={styles.empty}>No upcoming matches are posted for your team yet.</p>}</div>
         </section>
