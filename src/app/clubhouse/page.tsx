@@ -6,6 +6,7 @@ import {createClient} from '@/lib/supabase/server';
 import {getClubhouseContext} from '@/lib/clubhouse';
 import {getMutedProfileIds} from '@/lib/profileMutes';
 import {MuteMemberControl} from '@/components/social/MuteMemberControl';
+import {PwaClubhouseHeader} from '@/components/clubhouse/PwaClubhouseHeader';
 import {
   addClubhouseComment,
   createClubhousePost,
@@ -143,7 +144,17 @@ export default async function ClubhousePage({searchParams}: Props) {
       ) : null}
       <section className={styles.page} style={brandStyle}>
         <div className="shell">
-          <header className={styles.hero}>
+          <PwaClubhouseHeader
+            teamId={context.teamId}
+            teamName={context.teamName}
+            teamLogo={context.teamLogo}
+            seasonName={context.seasonName}
+            matchHref={nextMatch ? `/matches/${nextMatch.public_slug || nextMatch.id}` : null}
+            isCaptain={context.isCaptain || context.isCommissioner}
+            isCommissionerReview={context.isCommissionerReview}
+          />
+
+          <header className={`${styles.hero} browser-clubhouse-hero`}>
             <div>
               <span className={styles.kicker}>{context.isCommissionerReview ? 'Commissioner review' : 'Private team space'} · {context.seasonName}</span>
               <h1><span>{context.teamName}</span> Clubhouse</h1>
@@ -233,7 +244,7 @@ export default async function ClubhousePage({searchParams}: Props) {
           </details>
 
           {!context.isCommissionerReview ? (
-            <section className={styles.composer}>
+            <section className={styles.composer} id="clubhouse-composer">
               <div className={styles.composerHeader}>
                 <span className={styles.kicker}>Team discussion</span>
                 <h2>Post to the Clubhouse</h2>
@@ -338,7 +349,7 @@ export default async function ClubhousePage({searchParams}: Props) {
           </section>
 
           {(context.isCaptain || context.isCommissioner) ? (
-            <section className={styles.panel} style={{marginTop:'18px'}}>
+            <section className={styles.panel} id="clubhouse-moderation" style={{marginTop:'18px'}}>
               <span className={styles.kicker}>Moderation</span>
               <h2 style={{margin:'5px 0 6px'}}>Recent removals</h2>
               <p style={{margin:'0 0 14px',opacity:.7,fontSize:'12px'}}>Captain and commissioner removals in this Clubhouse are recorded here.</p>
