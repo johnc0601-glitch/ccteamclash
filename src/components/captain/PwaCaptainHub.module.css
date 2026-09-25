@@ -120,3 +120,28 @@
     margin-bottom: 18px;
   }
 }
+
+
+.confirmed,
+.needsConfirmation {
+  width: fit-content;
+  margin-top: 7px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.confirmed {
+  border: 1px solid rgba(79,127,50,.35);
+  background: rgba(79,127,50,.08);
+  color: #4f7f32;
+}
+
+.needsConfirmation {
+  border: 1px solid rgba(200,155,43,.38);
+  background: rgba(200,155,43,.08);
+  color: var(--cc-gold-ink);
+}
