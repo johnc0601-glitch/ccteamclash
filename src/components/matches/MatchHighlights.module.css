@@ -91,3 +91,9 @@
     font-size: 13px;
   }
 }
+
+@media (max-width: 760px) {
+  .card p {
+    display: none;
+  }
+}
