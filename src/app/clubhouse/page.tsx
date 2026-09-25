@@ -73,8 +73,12 @@ export default async function ClubhousePage({searchParams}: Props) {
   ]);
 
   const teamMatchRows = (matches ?? []) as any[];
-  const today = new Date().toISOString().slice(0, 10);
-  const nextMatch = teamMatchRows.find((match) => match.date && match.date >= today && match.status !== 'Completed') ?? null;
+  const today = easternDateKey();
+  const nextMatch = teamMatchRows.find((match) => (
+    match.date
+    && match.date >= today
+    && !['Completed', 'Cancelled'].includes(match.status)
+  )) ?? null;
   const teamIds = [...new Set(teamMatchRows.flatMap((match) => [match.home_team_id, match.away_team_id]).filter(Boolean))];
   const courseIds = [...new Set(teamMatchRows.map((match) => match.course_id).filter(Boolean))];
   const playerIds = (rosterRows ?? []).map((row: any) => row.player_id);
@@ -427,4 +431,16 @@ function RemovalControl({kind, id, isOwn, compact = false}: {
 
 function StatusList({label,tone,ids,players}: {label:string;tone:'green'|'red'|'yellow';ids:string[];players:Map<string,string>}) {
   return <div className={styles.statusGroup}><h3 className={styles[tone]}>{label} · {ids.length}</h3>{ids.length ? ids.map((id) => <span key={id}>{players.get(id) ?? 'Player'}</span>) : <span>None</span>}</div>;
+}
+
+
+function easternDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
 }
