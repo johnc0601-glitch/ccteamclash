@@ -22,9 +22,11 @@ export async function saveCaptainRosterAvailabilityBatch(formData: FormData) {
   const changes = parseBatchChanges(rawChanges);
   if (!changes?.length) {
     redirect(getCaptainRosterHref(path, {captainNotice: 'No roster changes to save.'}));
+    return;
   }
   if (!context || !context.teamIds.includes(teamId)) {
     redirect(getCaptainRosterHref(path, {captainError: 'You cannot manage that team roster.'}));
+    return;
   }
 
   const teamPlayers = await context.repository.getTeamAttendance(matchId, teamId);
@@ -78,10 +80,12 @@ export async function setCaptainRosterAvailability(formData: FormData) {
   const {publicMatchPath, path, context} = await getManagementNavigation(matchId);
   if (!context) {
     redirect(getCaptainRosterHref(path, {captainError: 'Roster management is closed for this match.'}));
+    return;
   }
   const team = await findManagedPlayerTeam(context, playerId);
   if (!team) {
     redirect(getCaptainRosterHref(path, {captainError: 'That player is not on a team you manage for this match.'}));
+    return;
   }
   if (context.overrideTeamIds.has(team)) {
     redirect(getCaptainRosterHref(path, {captainError: 'Use Save roster to apply the correction and lock it again.'}));
@@ -103,10 +107,12 @@ export async function clearCaptainRosterAvailability(formData: FormData) {
   const {publicMatchPath, path, context} = await getManagementNavigation(matchId);
   if (!context) {
     redirect(getCaptainRosterHref(path, {captainError: 'Roster management is closed for this match.'}));
+    return;
   }
   const team = await findManagedPlayerTeam(context, playerId);
   if (!team) {
     redirect(getCaptainRosterHref(path, {captainError: 'That player is not on a team you manage for this match.'}));
+    return;
   }
   if (context.overrideTeamIds.has(team)) {
     redirect(getCaptainRosterHref(path, {captainError: 'Use Save roster to apply the correction and lock it again.'}));
@@ -130,6 +136,7 @@ export async function confirmCaptainManagedRoster(formData: FormData) {
   const {publicMatchPath, path, context} = await getManagementNavigation(matchId);
   if (!context || !context.teamIds.includes(teamId)) {
     redirect(getCaptainRosterHref(path, {captainError: 'You cannot confirm that team roster.'}));
+    return;
   }
   try {
     if (context.overrideTeamIds.has(teamId)) {
