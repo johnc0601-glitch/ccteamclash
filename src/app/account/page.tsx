@@ -56,6 +56,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
   const params = searchParams ? await searchParams : {};
   const notice = readAccountParam(params.notice);
   const error = readAccountParam(params.error);
+  const manageAccount = readAccountParam(params.manage) === '1';
 
   if (!hasSupabaseConfig()) {
     return (
@@ -252,14 +253,18 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
 
   return (
     <AccountPageLayout
-      description={registrationIncomplete
-        ? 'Choose your team, or choose Free Agent if you are looking for one.'
-        : 'Manage your player profile, season registration, league history, and access.'}
+      description={manageAccount
+        ? 'Profile, registration, display, privacy, and account controls.'
+        : registrationIncomplete
+          ? 'Choose your team, or choose Free Agent if you are looking for one.'
+          : 'Your Team Clash profile, Matchday shortcuts, and league access.'}
       error={error ?? profileSetupError}
       notice={notice}
-      title={registrationIncomplete ? 'Finish registration' : 'My account'}
+      title={manageAccount ? 'Account settings' : registrationIncomplete ? 'Finish registration' : 'Me'}
+      appBackHref={manageAccount ? '/account' : undefined}
+      appBackLabel="Me"
     >
-      <section className={styles.accountBar} aria-label="Signed in account">
+      <section className={`${styles.accountBar} ${styles.appAccountDetails} ${manageAccount ? styles.appAccountDetailsOpen : ''}`} aria-label="Signed in account">
         <div>
           <span className={styles.eyebrow}>Signed in</span>
           <strong>{user.email}</strong>
@@ -280,6 +285,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
           establishedRegistration={establishedRegistration}
           playerStats={playerStats}
           email={user.email ?? ''}
+          manageAccount={manageAccount}
         />
       ) : (
         <article className={styles.panel}>
@@ -302,6 +308,7 @@ function MemberProfile({
   establishedRegistration,
   playerStats,
   email,
+  manageAccount,
 }: {
   players: LaunchPlayer[];
   profile: LaunchProfile;
@@ -312,6 +319,7 @@ function MemberProfile({
   establishedRegistration: EstablishedRegistration;
   playerStats: AccountPlayerStats | null;
   email: string;
+  manageAccount: boolean;
 }) {
   const linkedPlayer = players.find((player) => player.id === profile.playerId);
   const playerSetupComplete = Boolean(linkedPlayer && playedBefore !== null);
@@ -380,17 +388,19 @@ function MemberProfile({
 
   return (
     <>
-      <PwaMeHub
-        displayName={linkedPlayer?.name ?? profile.displayName}
-        email={email}
-        role={profile.role}
-        teamName={teamName}
-        teamId={linkedPlayer?.currentTeamId ?? null}
-        clashIndex={linkedPlayer?.clashIndex}
-        pdgaRating={linkedPlayer?.pdgaRating}
-        captainTeamId={profile.captainTeamId}
-      />
-      <section className={styles.grid}>
+      {!manageAccount ? (
+        <PwaMeHub
+          displayName={linkedPlayer?.name ?? profile.displayName}
+          email={email}
+          role={profile.role}
+          teamName={teamName}
+          teamId={linkedPlayer?.currentTeamId ?? null}
+          clashIndex={linkedPlayer?.clashIndex}
+          pdgaRating={linkedPlayer?.pdgaRating}
+          captainTeamId={profile.captainTeamId}
+        />
+      ) : null}
+      <section className={`${styles.grid} ${styles.appAccountDetails} ${manageAccount ? styles.appAccountDetailsOpen : ''}`}>
       <article className={`${styles.panel} ${styles.profilePanel}`}>
         <div className={styles.profileHeading}>
           <div>
