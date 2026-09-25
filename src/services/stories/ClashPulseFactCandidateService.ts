@@ -122,6 +122,63 @@ const PAGE_SIZE = 1000;
 const FILTER_LIMIT = 18;
 const TOP_FACT_LIMIT = 12;
 
+export type MatchClashPulseHighlight = {
+  id: string;
+  storyType: ClashPulseStoryType;
+  headline: string;
+  value: string;
+  pulseText: string;
+};
+
+export async function getMatchClashPulseHighlights(matchId: string): Promise<MatchClashPulseHighlight[]> {
+  const supabase = await createClient();
+  const db = supabase as any;
+  const {data, error} = await db
+    .from('clash_contest_rating_facts')
+    .select('contest_id,match_id,player_id,team_id,player_name,team_name,side,format,outcome,clash_index_before,opponent_effective_ci,win_probability,expected_points,actual_points,performance_vs_expected,ci_delta')
+    .eq('match_id', matchId);
+
+  if (error) {
+    console.error('Match Clash Pulse highlights are unavailable.', {matchId, error: error.message});
+    return [];
+  }
+
+  const liveRows = (data ?? []) as LiveFactRow[];
+  if (!liveRows.length) return [];
+
+  const {data: seasonRows, error: seasonError} = await db
+    .from('launch_seasons')
+    .select('id,name,year,active,archived')
+    .order('year', {ascending: false});
+  if (seasonError) {
+    console.error('Match Clash Pulse season context is unavailable.', {matchId, error: seasonError.message});
+    return [];
+  }
+
+  const seasons = seasonRows ?? [];
+  const liveMembers = await hydrateLiveMembers(db, liveRows, seasons);
+  const teamStories = await buildLiveTeamUpsetStories(db, liveRows, seasons);
+  const stories = diversify(
+    [...groupWinningStories(liveMembers), ...teamStories].sort((a, b) => storyScore(b) - storyScore(a)),
+    3,
+    1,
+    2,
+  );
+
+  return stories.flatMap((story) => {
+    const candidate = toCandidate(story);
+    const angle = candidate.angles[candidate.primaryStoryType];
+    if (!angle) return [];
+    return [{
+      id: candidate.id,
+      storyType: angle.storyType,
+      headline: angle.headline,
+      value: angle.value,
+      pulseText: angle.pulseText,
+    }];
+  });
+}
+
 export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
   const supabase = await createClient();
   const db = supabase as any;
