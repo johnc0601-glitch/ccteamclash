@@ -40,7 +40,7 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
           {notice ? <p className={styles.notice}>{notice}</p> : null}
           {error ? <p className={styles.error}>{error}</p> : null}
           {!captainData.ok ? <AccessMessage message={captainData.message} /> : (
-            <CaptainDashboard events={captainData.events} pendingApplications={captainData.pendingApplications} roster={captainData.roster} season={captainData.season} team={captainData.team} />
+            <CaptainDashboard events={captainData.events} pendingApplications={captainData.pendingApplications} roster={captainData.roster} season={captainData.season} team={captainData.team} rosterConfirmed={captainData.rosterConfirmed} />
           )}
         </div>
       </section>
@@ -49,7 +49,7 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
   );
 }
 
-function CaptainDashboard({events, pendingApplications, roster, season, team}: {events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; roster: CaptainRosterPlayer[]; season: CaptainSeason | null; team: LaunchTeam}) {
+function CaptainDashboard({events, pendingApplications, roster, season, team, rosterConfirmed}: {events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; roster: CaptainRosterPlayer[]; season: CaptainSeason | null; team: LaunchTeam; rosterConfirmed: boolean}) {
   const upcomingEvents = events.filter((event) => event.bucket === 'upcoming');
   const rosterCounts = {
     women: roster.filter((player) => player.rosterCategory === 'Women').length,
@@ -71,6 +71,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
         men={rosterCounts.men}
         junior={rosterCounts.junior}
         pendingCount={pendingApplications.length}
+        rosterConfirmed={rosterConfirmed}
       />
 
       <div className={`${styles.summaryGrid} browser-captain-summary`}>
@@ -214,7 +215,7 @@ function SummaryCard({label, value, detail}: {label: string; value: string; deta
 }
 function AccessMessage({message}: {message: string}) {return <section className={styles.alert}><strong>{message}</strong><p className={styles.muted}>Sign in with the account your commissioner approved for captain access.</p><Link href="/account">Open account page</Link></section>;}
 
-async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: CaptainRosterPlayer[]; events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; season: CaptainSeason | null} | {ok: false; message: string}> {
+async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: CaptainRosterPlayer[]; events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; season: CaptainSeason | null; rosterConfirmed: boolean} | {ok: false; message: string}> {
   if (!hasSupabaseConfig()) return {ok: false, message: 'League accounts are not configured yet.'};
   try {
     const supabase = await createClient();
@@ -237,6 +238,7 @@ async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: Ca
     if (branding.error) throw branding.error;
     const team: LaunchTeam = {...baseTeam, logo: branding.data?.logo || baseTeam.logo, primaryColor: branding.data?.primary_color || '#006f71', secondaryColor: branding.data?.secondary_color || '#f4f6f2'};
     const launchSupabase = supabase as any;
+    const nextEvent = events.find((event) => event.bucket === 'upcoming') ?? null;
     const seasonId = activeSeason.data?.id ?? null;
     const season: CaptainSeason | null = activeSeason.data ? {
       id: activeSeason.data.id,
@@ -244,12 +246,24 @@ async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: Ca
       startDate: activeSeason.data.start_date,
       canEditRegistrations: Boolean(activeSeason.data.start_date) && easternDateKey() < activeSeason.data.start_date.slice(0, 10),
     } : null;
-    const [{data: applicationRows, error: applicationError}, {data: membershipRows, error: membershipError}] = seasonId ? await Promise.all([
-      launchSupabase.from('launch_player_applications').select('id, profile_id, requested_team_id, player_type, gender, status, created_at').eq('season_id', seasonId).eq('requested_team_id', team.id).eq('status', 'Pending').order('created_at', {ascending: true}),
-      launchSupabase.from('launch_season_roster_memberships').select('player_id, roster_category').eq('season_id', seasonId).eq('team_id', team.id).eq('status', 'Active'),
-    ]) : [{data: [] as ApplicationRow[], error: null}, {data: [] as SeasonMembershipRow[], error: null}];
+    const [
+      {data: applicationRows, error: applicationError},
+      {data: membershipRows, error: membershipError},
+      {data: nextRosterRow, error: nextRosterError},
+    ] = await Promise.all([
+      seasonId
+        ? launchSupabase.from('launch_player_applications').select('id, profile_id, requested_team_id, player_type, gender, status, created_at').eq('season_id', seasonId).eq('requested_team_id', team.id).eq('status', 'Pending').order('created_at', {ascending: true})
+        : Promise.resolve({data: [] as ApplicationRow[], error: null}),
+      seasonId
+        ? launchSupabase.from('launch_season_roster_memberships').select('player_id, roster_category').eq('season_id', seasonId).eq('team_id', team.id).eq('status', 'Active')
+        : Promise.resolve({data: [] as SeasonMembershipRow[], error: null}),
+      nextEvent
+        ? launchSupabase.from('launch_match_rosters').select('status').eq('match_id', nextEvent.id).eq('team_id', team.id).maybeSingle()
+        : Promise.resolve({data: null, error: null}),
+    ]);
     if (applicationError) throw applicationError;
     if (membershipError) throw membershipError;
+    if (nextRosterError) throw nextRosterError;
     const pendingRows = (applicationRows ?? []) as ApplicationRow[];
     const profileIds = [...new Set(pendingRows.map((application) => application.profile_id))];
     const profiles = profileIds.length ? (await supabase.from('launch_profiles').select('id, display_name').in('id', profileIds)).data ?? [] : [];
@@ -258,7 +272,15 @@ async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: Ca
     const memberships = (membershipRows ?? []) as SeasonMembershipRow[];
     const membershipByPlayer = new Map(memberships.map((membership) => [membership.player_id, membership.roster_category]));
     const roster = players.filter((player) => player.active && membershipByPlayer.has(player.id)).map((player): CaptainRosterPlayer => ({...player, rosterCategory: membershipByPlayer.get(player.id) ?? 'Men'}));
-    return {ok: true, team, roster, events: events.filter((event) => event.homeTeamId === team.id || event.awayTeamId === team.id), pendingApplications, season};
+    return {
+      ok: true,
+      team,
+      roster,
+      events: events.filter((event) => event.homeTeamId === team.id || event.awayTeamId === team.id),
+      pendingApplications,
+      season,
+      rosterConfirmed: nextRosterRow?.status === 'Confirmed',
+    };
   } catch {return {ok: false, message: 'Captain Home could not load right now.'};}
 }
 
