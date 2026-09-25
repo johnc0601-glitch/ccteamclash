@@ -12,8 +12,11 @@ import "./canonical-theme.css";
 import "./matchday-theme.css";
 import "./responsive-header-fix.css";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://ccteamclash.com";
+const IS_APP_SURFACE = process.env.NEXT_PUBLIC_APP_SURFACE === "true";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ccteamclash.com"),
+  metadataBase: new URL(SITE_URL),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
   applicationName: "Team Clash",
@@ -25,6 +28,16 @@ export const metadata: Metadata = {
   icons: {
     icon: "/pwa/team-clash-app-icon.svg",
   },
+  robots: IS_APP_SURFACE
+    ? {
+        index: false,
+        follow: false,
+        googleBot: {
+          index: false,
+          follow: false,
+        },
+      }
+    : undefined,
 };
 
 export const viewport: Viewport = {
