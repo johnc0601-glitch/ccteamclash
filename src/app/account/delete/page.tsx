@@ -26,6 +26,8 @@ export default async function DeleteAccountPage({searchParams}: Props) {
 
   return (
     <AccountPageLayout
+      appBackHref="/account"
+      appBackLabel="Me"
       title="Delete account"
       description="Permanently remove your Team Clash website login and disconnect it from your league player record."
       error={error}
