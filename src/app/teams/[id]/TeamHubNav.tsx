@@ -19,7 +19,7 @@ export function TeamHubNav({teamId}: {teamId: string}) {
     <nav className={styles.hubNav} aria-label="Team sections">
       <a href="#overview">Overview</a>
       <a href="#schedule">Schedule</a>
-      <a href="#roster">Roster / Stats</a>
+      <a href="#roster">Roster</a>
       <a href="#history">History</a>
       {isOwnTeam && hasClubhouse ? (
         <Link className={styles.privateHubLink} href="/clubhouse">
