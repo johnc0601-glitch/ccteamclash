@@ -6,6 +6,7 @@ import {createPublicStandingsService} from '@/core/createPublicStandingsService'
 import {Intro} from '@/components/intro/Intro';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchCard} from '@/components/MatchCard';
+import {HomeYourMatch} from '@/components/home/HomeYourMatch';
 import {getHomepageData} from '@/services/home/HomepageDataService';
 import {getHomepageClashPulseItems} from '@/services/home/ClashPulseService';
 import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
@@ -26,6 +27,10 @@ export default async function Home() {
     <main className="home-page">
       <SiteHeader />
       <ClashCountdown />
+
+      <section className="shell">
+        <HomeYourMatch />
+      </section>
 
       <section className="shell home-matches-section home-matches-primary">
         <div className="home-matches-heading">
