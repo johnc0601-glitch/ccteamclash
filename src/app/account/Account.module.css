@@ -92,3 +92,15 @@
   .currentSeasonStrip, .registrationStatus { align-items: flex-start; flex-direction: column; }
   .currentSeasonStrip strong, .registrationStatus strong { text-align: left; }
 }
+
+
+.accountPrivacy { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--cc-light-border); }
+.accountPrivacy p { margin: 8px 0 12px; font-size: 12px; }
+.privacyLink { color: var(--cc-gold-ink); font-size: 11px; font-weight: 950; text-decoration: underline; text-underline-offset: 4px; text-transform: uppercase; }
+.cancelLink { min-height: 44px; display: grid; place-items: center; color: var(--cc-light-text); font-size: 11px; font-weight: 900; text-decoration: underline; text-underline-offset: 3px; }
+.muteList { margin-top: 18px; display: grid; gap: 10px; }
+.muteList > div { padding: 12px 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid var(--cc-light-border); }
+.muteList > div > div { display: grid; gap: 3px; }
+.muteList strong { color: var(--cc-light-text); }
+.muteList span { color: var(--cc-light-muted); font-size: 11px; }
+.muteList .secondaryButton { min-height: 36px; }
