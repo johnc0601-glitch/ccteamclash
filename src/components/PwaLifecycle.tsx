@@ -35,12 +35,20 @@ export function PwaLifecycle() {
 
     const syncAppPreview = () => {
       const params = new URLSearchParams(window.location.search);
+      const appSurface = process.env.NEXT_PUBLIC_APP_SURFACE === 'true';
       const state = resolveAppPreviewState({
         hostname: window.location.hostname,
         queryValue: params.get('appPreview'),
         persisted: window.localStorage.getItem('team-clash-app-preview') === '1',
         standalone: isStandaloneDisplay(),
+        appSurface,
       });
+
+      if (appSurface) {
+        root.dataset.appSurface = 'true';
+      } else {
+        delete root.dataset.appSurface;
+      }
 
       if (state.persisted) {
         window.localStorage.setItem('team-clash-app-preview', '1');
