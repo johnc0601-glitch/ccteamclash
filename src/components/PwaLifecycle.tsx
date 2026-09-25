@@ -1,7 +1,7 @@
 'use client';
 
 import {useEffect} from 'react';
-import {resolveAppPreviewState} from '@/components/appPreviewState';
+import {isAppPreviewHost, resolveAppPreviewState} from '@/components/appPreviewState';
 
 type NavigatorWithStandalone = Navigator & {
   standalone?: boolean;
@@ -83,7 +83,12 @@ export function PwaLifecycle() {
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
     window.addEventListener('appinstalled', onInstalled);
 
-    if ('serviceWorker' in navigator) {
+    const shouldRegisterServiceWorker = process.env.NEXT_PUBLIC_APP_SURFACE === 'true'
+      || window.location.hostname === 'app.ccteamclash.com'
+      || isAppPreviewHost(window.location.hostname)
+      || isStandaloneDisplay();
+
+    if (shouldRegisterServiceWorker && 'serviceWorker' in navigator) {
       navigator.serviceWorker
         .register('/sw.js', {scope: '/', updateViaCache: 'none'})
         .catch((error) => {
