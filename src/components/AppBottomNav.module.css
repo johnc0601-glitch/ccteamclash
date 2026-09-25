@@ -205,3 +205,8 @@
     text-transform: uppercase;
   }
 }
+
+
+:global(html[data-app-surface='true']) .previewExit {
+  display: none !important;
+}
