@@ -63,7 +63,7 @@ export function AppBottomNav() {
 
   return (
     <>
-      <Link className={styles.previewExit} href={exitPreviewHref}>App preview · Exit</Link>
+      <Link className={styles.previewExit} href={exitPreviewHref}>Staging app preview · Exit</Link>
       <nav className={styles.nav} aria-label="Team Clash app navigation">
         {tabs.map((tab) => (
           <Link
