@@ -39,7 +39,7 @@ export function PwaTeamHub({
   } as CSSProperties;
 
   return (
-    <section className={styles.hub} style={brandStyle} aria-label={`${team.name} team hub`}>
+    <section className={styles.hub} data-pwa-surface="team" style={brandStyle} aria-label={`${team.name} team hub`}>
       <header className={styles.hero}>
         <div className={styles.identity}>
           <div className={styles.logo}>
