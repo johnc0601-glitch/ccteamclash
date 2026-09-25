@@ -198,3 +198,57 @@ export async function enqueuePublishedResultNotifications(matchId: string) {
   if (error) throw error;
   return rows.length;
 }
+
+
+export async function enqueuePublishedStoryNotifications(input: {
+  storyId: string;
+  slug: string;
+  title: string;
+  category: string;
+  authorProfileId: string;
+}) {
+  const admin = createAdminClient() as any;
+
+  const {data: subscriptionRows, error: subscriptionError} = await admin
+    .from('launch_push_subscriptions')
+    .select('profile_id')
+    .eq('enabled', true);
+  if (subscriptionError) throw subscriptionError;
+
+  const subscribedProfileIds: string[] = [...new Set<string>(
+    (subscriptionRows ?? []).map((row: {profile_id: string}) => row.profile_id),
+  )].filter((profileId) => profileId !== input.authorProfileId);
+  if (!subscribedProfileIds.length) return 0;
+
+  const {data: preferenceRows, error: preferenceError} = await admin
+    .from('launch_notification_preferences')
+    .select('profile_id,league_stories')
+    .in('profile_id', subscribedProfileIds)
+    .eq('league_stories', true);
+  if (preferenceError) throw preferenceError;
+
+  const optedIn = new Set<string>(
+    (preferenceRows ?? []).map((row: {profile_id: string}) => row.profile_id),
+  );
+  const recipients = subscribedProfileIds.filter((profileId) => optedIn.has(profileId));
+  if (!recipients.length) return 0;
+
+  const rows = recipients.map((profileId) => ({
+    profile_id: profileId,
+    category: 'league_stories',
+    title: input.title.slice(0, 180),
+    body: `New ${input.category || 'Team Clash'} story is available.`.slice(0, 500),
+    url: `/stories/${encodeURIComponent(input.slug)}`,
+    source_type: 'story',
+    source_id: input.storyId,
+  }));
+
+  const {error} = await admin
+    .from('launch_notification_outbox')
+    .upsert(rows, {
+      onConflict: 'profile_id,category,source_type,source_id',
+      ignoreDuplicates: true,
+    });
+  if (error) throw error;
+  return rows.length;
+}
