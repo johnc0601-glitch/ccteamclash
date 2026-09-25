@@ -5,7 +5,11 @@ import type {Match} from '@/domain/schedule/Match';
 import type {PersonalAttendance} from '@/domain/match-roster/MatchAttendance';
 import type {PublicMatchday} from '@/services/matches/MatchdayService';
 import type {PublicMatchPrediction} from '@/services/teamStrength/PublicMatchPrediction';
-import {getPwaMatchdayPhaseCopy, resolvePwaMatchdayPhase} from '@/components/matches/PwaMatchdayPhase';
+import {
+  formatPwaPredictionPercent,
+  getPwaMatchdayPhaseCopy,
+  resolvePwaMatchdayPhase,
+} from '@/components/matches/PwaMatchdayPhase';
 import styles from './PwaMatchdayHub.module.css';
 
 export function PwaMatchdayHub({
@@ -27,8 +31,8 @@ export function PwaMatchdayHub({
   const phaseCopy = getPwaMatchdayPhaseCopy(phase);
   const awayChance = prediction?.state === 'calculated' ? prediction.awayChanceOfVictory : null;
   const homeChance = prediction?.state === 'calculated' ? prediction.homeChanceOfVictory : null;
-  const awayPercent = awayChance === null ? null : Math.round(awayChance * 100);
-  const homePercent = homeChance === null ? null : Math.round(homeChance * 100);
+  const awayPercent = awayChance === null ? null : formatPwaPredictionPercent(awayChance);
+  const homePercent = homeChance === null ? null : formatPwaPredictionPercent(homeChance);
   const style = {
     '--pwa-away': matchday.awayTeam.team?.primaryColor || '#0b4fb3',
     '--pwa-home': matchday.homeTeam.team?.primaryColor || '#a20b78',
