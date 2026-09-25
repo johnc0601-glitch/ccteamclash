@@ -32,8 +32,33 @@ export function PwaLifecycle() {
       root.dataset.displayMode = isStandaloneDisplay() ? 'standalone' : 'browser';
     };
 
+    const syncAppPreview = () => {
+      const previewHost = window.location.hostname.endsWith('.vercel.app')
+        || window.location.hostname === 'localhost'
+        || window.location.hostname === '127.0.0.1';
+      const params = new URLSearchParams(window.location.search);
+
+      if (previewHost && params.get('appPreview') === '1') {
+        window.localStorage.setItem('team-clash-app-preview', '1');
+      } else if (params.get('appPreview') === '0') {
+        window.localStorage.removeItem('team-clash-app-preview');
+      }
+
+      const enabled = previewHost
+        && window.localStorage.getItem('team-clash-app-preview') === '1'
+        && !isStandaloneDisplay();
+
+      if (enabled) {
+        root.dataset.appPreview = 'true';
+      } else {
+        delete root.dataset.appPreview;
+      }
+    };
+
     syncDisplayMode();
+    syncAppPreview();
     mediaQuery.addEventListener?.('change', syncDisplayMode);
+    mediaQuery.addEventListener?.('change', syncAppPreview);
 
     const onBeforeInstallPrompt = (event: Event) => {
       const promptEvent = event as TeamClashInstallPromptEvent;
@@ -59,6 +84,7 @@ export function PwaLifecycle() {
 
     return () => {
       mediaQuery.removeEventListener?.('change', syncDisplayMode);
+      mediaQuery.removeEventListener?.('change', syncAppPreview);
       window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
       window.removeEventListener('appinstalled', onInstalled);
     };
