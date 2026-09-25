@@ -97,7 +97,7 @@ export function PwaTeamHub({
         {isOwnTeam && nextMatch ? <Link href={nextMatch.href}><b>Availability</b><span>Yes / No</span></Link> : null}
         <Link href="#roster"><b>Roster</b><span>{rosterCount} players</span></Link>
         <Link href="#schedule"><b>Schedule</b><span>Season matches</span></Link>
-        <Link href="/stats"><b>Players / CI</b><span>League ratings</span></Link>
+        <Link href="/stats"><b>Players</b><span>Clash Index & stats</span></Link>
         {canManage ? <Link href="/captain"><b>Captain</b><span>Manage team</span></Link> : null}
       </nav>
     </section>
