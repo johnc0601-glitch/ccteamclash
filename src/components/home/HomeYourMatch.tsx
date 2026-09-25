@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import {useEffect, useState} from 'react';
+import {useHeaderAccess} from '@/components/HeaderAccessProvider';
 import styles from './HomeYourMatch.module.css';
 
 type MatchTeam = {
@@ -34,9 +35,15 @@ type YourMatch = {
 };
 
 export function HomeYourMatch() {
+  const {isSignedIn} = useHeaderAccess();
   const [match, setMatch] = useState<YourMatch | null>(null);
 
   useEffect(() => {
+    if (!isSignedIn) {
+      setMatch(null);
+      return;
+    }
+
     let active = true;
     void fetch('/api/home/your-match', {
       credentials: 'same-origin',
@@ -52,7 +59,7 @@ export function HomeYourMatch() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [isSignedIn]);
 
   if (!match) return null;
 
