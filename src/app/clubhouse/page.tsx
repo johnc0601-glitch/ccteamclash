@@ -134,6 +134,7 @@ export default async function ClubhousePage({searchParams}: Props) {
   const players = new Map<string, string>((playerResult.data ?? []).map((row: any): [string, string] => [String(row.id), String(row.name)]));
   const authors = new Map<string, string>((authorProfiles ?? []).map((row: any): [string, string] => [String(row.id), String(row.display_name)]));
   const attendance = new Map<string, string>((attendanceResult.data ?? []).map((row: any): [string, string] => [String(row.player_id), String(row.status)]));
+  const openReports = (reports ?? []).filter((report: any) => report.status === 'Open');
 
   const going = playerIds.filter((id: string) => attendance.get(id) === 'Playing');
   const notGoing = playerIds.filter((id: string) => attendance.get(id) === 'NotPlaying');
@@ -258,22 +259,17 @@ export default async function ClubhousePage({searchParams}: Props) {
           {!context.isCommissionerReview ? (
             <section className={styles.composer}>
               <div className={styles.composerHeader}>
-                <span className={styles.kicker}>Team discussion</span>
-                <h2>Post to the Clubhouse</h2>
-                <p>Only your current team and league commissioners can see this conversation.</p>
+                <h2>Team discussion</h2>
               </div>
               <form action={createClubhousePost}>
                 {(context.isCaptain || context.isCommissioner) ? (
-                  <label style={{display:'grid',gap:'5px',fontSize:'11px',fontWeight:900,textTransform:'uppercase'}}>
-                    Post type
-                    <select name="postType" defaultValue="discussion">
-                      <option value="discussion">Team discussion</option>
-                      <option value="announcement">Captain announcement</option>
-                    </select>
+                  <label className={styles.announcementToggle}>
+                    <input name="postType" type="checkbox" value="announcement" />
+                    <span>Captain announcement</span>
                   </label>
-                ) : <input type="hidden" name="postType" value="discussion" />}
+                ) : null}
                 <input name="title" maxLength={120} placeholder="Optional title" />
-                <textarea name="body" maxLength={3000} rows={4} placeholder="Share something with your team" required />
+                <textarea name="body" maxLength={3000} rows={3} placeholder="Write something to your team" required />
                 <button type="submit">Post</button>
               </form>
             </section>
@@ -365,41 +361,39 @@ export default async function ClubhousePage({searchParams}: Props) {
                 </article>
               );
             })}
-            {!visiblePosts.length ? <p className={styles.empty}>No visible posts yet.</p> : null}
+            {!visiblePosts.length ? <p className={styles.emptyInline}>No posts yet.</p> : null}
           </section>
 
           {(context.isCaptain || context.isCommissioner) ? (
-            <section className={styles.panel} style={{marginTop:'18px'}}>
-              <span className={styles.kicker}>Moderation</span>
-              <h2 style={{margin:'5px 0 6px'}}>Team moderation</h2>
-              <p style={{margin:'0 0 14px',opacity:.7,fontSize:'12px'}}>Reports are private to this team’s captains and league commissioners. Moderator removals are logged.</p>
+            <details className={styles.moderationPanel} open={openReports.length > 0}>
+              <summary className={styles.moderationSummary}>
+                <span>Moderation</span>
+                <strong>{openReports.length} {openReports.length === 1 ? 'report' : 'reports'}</strong>
+              </summary>
 
               <div className={styles.moderationStack}>
-                <div>
-                  <h3 className={styles.moderationHeading}>Open reports</h3>
-                  {(reports ?? []).filter((report: any) => report.status === 'Open').length ? (
-                    <div className={styles.moderationList}>
-                      {(reports ?? []).filter((report: any) => report.status === 'Open').map((report: any) => (
-                        <article className={styles.reportCard} key={report.id}>
-                          <div>
-                            <strong>{report.content_type === 'post' ? 'Post' : 'Comment'} report · {report.reason}</strong>
-                            <span>{authors.get(report.reporter_profile_id) ?? 'Member'} reported content by {authors.get(report.content_author_profile_id) ?? 'Member'} · {new Date(report.created_at).toLocaleString()}</span>
-                            {report.note ? <p>{report.note}</p> : null}
-                          </div>
-                          <form action={resolveClubhouseReport} className={styles.reportActions}>
-                            <input type="hidden" name="reportId" value={report.id} />
-                            <input type="hidden" name="teamId" value={context.teamId} />
-                            <button name="status" value="Reviewed">Reviewed</button>
-                            <button name="status" value="Dismissed">Dismiss</button>
-                          </form>
-                        </article>
-                      ))}
-                    </div>
-                  ) : <p className={styles.empty}>No open reports.</p>}
-                </div>
+                {openReports.length ? (
+                  <div className={styles.moderationList}>
+                    {openReports.map((report: any) => (
+                      <article className={styles.reportCard} key={report.id}>
+                        <div>
+                          <strong>{report.content_type === 'post' ? 'Post' : 'Comment'} · {report.reason}</strong>
+                          <span>{authors.get(report.reporter_profile_id) ?? 'Member'} reported content by {authors.get(report.content_author_profile_id) ?? 'Member'} · {new Date(report.created_at).toLocaleString()}</span>
+                          {report.note ? <p>{report.note}</p> : null}
+                        </div>
+                        <form action={resolveClubhouseReport} className={styles.reportActions}>
+                          <input type="hidden" name="reportId" value={report.id} />
+                          <input type="hidden" name="teamId" value={context.teamId} />
+                          <button name="status" value="Reviewed">Reviewed</button>
+                          <button name="status" value="Dismissed">Dismiss</button>
+                        </form>
+                      </article>
+                    ))}
+                  </div>
+                ) : <p className={styles.moderationQuiet}>Nothing needs attention.</p>}
 
                 <details className={styles.details}>
-                  <summary>Recent moderator removals</summary>
+                  <summary>Removal history</summary>
                   {(moderationEvents ?? []).length ? (
                     <div className={styles.moderationList}>
                       {(moderationEvents ?? []).map((event: any) => (
@@ -409,10 +403,10 @@ export default async function ClubhousePage({searchParams}: Props) {
                         </div>
                       ))}
                     </div>
-                  ) : <p className={styles.empty}>No moderator removals yet.</p>}
+                  ) : <p className={styles.moderationQuiet}>No removals logged.</p>}
                 </details>
               </div>
-            </section>
+            </details>
           ) : null}
         </div>
       </section>
