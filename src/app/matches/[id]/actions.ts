@@ -9,6 +9,7 @@ import type {ManagedTeamRoster} from '@/domain/match-roster/MatchAttendance';
 import {createClient} from '@/lib/supabase/server';
 import type {OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
 import {getPublicMatchHref} from '@/services/matches/MatchPublicIdentity';
+import {getCaptainRosterHref} from '@/services/matches/CaptainRosterNavigation';
 
 export async function setOwnMatchAttendance(formData: FormData) {
   const matchId = readFormValue(formData, 'matchId');
@@ -40,18 +41,17 @@ export async function setCaptainMatchAttendance(formData: FormData) {
   if (!matchId || !playerId) redirect('/captain?error=Match and player are required.');
 
   const {service, userId, matchHref} = await getMatchRosterService(matchId);
-  const path = `${matchHref}?manage=roster`;
   let result: AttendanceResult<ManagedTeamRoster>;
   try {
     result = await service.setTeamAttendance(userId, matchId, playerId, status);
   } catch {
-    redirect(`${path}&captainError=${encodeURIComponent('Player attendance could not be saved.')}#captain-roster`);
+    redirect(getCaptainRosterHref(matchHref, {captainError: 'Player attendance could not be saved.'}));
   }
-  if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(result.message)}#captain-roster`);
+  redirect(getCaptainRosterHref(matchHref, {captainError: result.message}));
 
   revalidatePath(`/matches/${matchId}`);
   revalidatePath(matchHref);
-  redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was updated.')}#captain-roster`);
+  redirect(getCaptainRosterHref(matchHref, {captainNotice: 'Player availability was updated.'}));
 }
 
 export async function clearCaptainMatchAttendance(formData: FormData) {
@@ -60,14 +60,13 @@ export async function clearCaptainMatchAttendance(formData: FormData) {
   if (!matchId || !playerId) redirect('/captain?error=Match and player are required.');
 
   const {service, userId, supabase, matchHref} = await getMatchRosterService(matchId);
-  const path = `${matchHref}?manage=roster`;
   const managedRosters = await service.getManagedTeamRosters(userId, matchId);
   const authorizedRoster = managedRosters.find((roster) => (
     roster.attendanceOpen
     && roster.players.some((player) => player.playerId === playerId)
   ));
   if (!authorizedRoster) {
-    redirect(`${path}&captainError=${encodeURIComponent('That player cannot be reset for this match.')}#captain-roster`);
+    redirect(getCaptainRosterHref(matchHref, {captainError: 'That player cannot be reset for this match.'}));
   }
 
   try {
@@ -80,12 +79,12 @@ export async function clearCaptainMatchAttendance(formData: FormData) {
       .eq('player_id', playerId);
     if (error) throw error;
   } catch {
-    redirect(`${path}&captainError=${encodeURIComponent('Player attendance could not be reset.')}#captain-roster`);
+    redirect(getCaptainRosterHref(matchHref, {captainError: 'Player attendance could not be reset.'}));
   }
 
   revalidatePath(`/matches/${matchId}`);
   revalidatePath(matchHref);
-  redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was reset to unconfirmed.')}#captain-roster`);
+  redirect(getCaptainRosterHref(matchHref, {captainNotice: 'Player availability was reset to unconfirmed.'}));
 }
 
 export async function confirmCaptainMatchRoster(formData: FormData) {
@@ -94,19 +93,18 @@ export async function confirmCaptainMatchRoster(formData: FormData) {
   if (!matchId || !teamId) redirect('/captain?error=Match and team are required.');
 
   const {service, userId, matchHref} = await getMatchRosterService(matchId);
-  const path = `${matchHref}?manage=roster`;
   let result: AttendanceResult<ManagedTeamRoster>;
   try {
     result = await service.confirmTeamRoster(userId, matchId, teamId);
   } catch {
-    redirect(`${path}&captainError=${encodeURIComponent('The roster could not be confirmed.')}#captain-roster`);
+    redirect(getCaptainRosterHref(matchHref, {captainError: 'The roster could not be confirmed.'}));
   }
-  if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(result.message)}#captain-roster`);
+  redirect(getCaptainRosterHref(matchHref, {captainError: result.message}));
 
   revalidatePath(`/matches/${matchId}`);
   revalidatePath(matchHref);
   revalidatePath('/captain');
-  redirect(`${path}&captainNotice=${encodeURIComponent('Match roster confirmed.')}#captain-roster`);
+  redirect(getCaptainRosterHref(matchHref, {captainNotice: 'Match roster confirmed.'}));
 }
 
 export async function addCommissionerSnapshotPlayer(formData: FormData) {
