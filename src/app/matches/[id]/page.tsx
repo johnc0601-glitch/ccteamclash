@@ -78,7 +78,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   ]);
   const userId = typeof claimsResult.data?.claims?.sub === 'string' ? claimsResult.data.claims.sub : undefined;
 
-  if (!event || !match || !match.homeTeamId || !match.awayTeamId || !match.courseId) notFound();
+  if (!event || !match || !match.homeTeamId || !match.awayTeamId) notFound();
 
   const now = new Date();
   const locked = isMatchRosterLocked(match, now);
@@ -87,7 +87,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const [rosterPlayerIdsByTeam, teamResults, course] = await Promise.all([
     locked ? Promise.resolve(new Map(teamIds.map((teamId) => [teamId, new Set<string>()]))) : getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds),
     Promise.all(teamIds.map((teamId) => launchRepository.getTeam(teamId))),
-    courseRepository.getById(match.courseId),
+    match.courseId ? courseRepository.getById(match.courseId) : Promise.resolve(undefined),
   ]);
   const rosterUnavailable = !locked && rosterPlayerIdsByTeam === null;
   const effectiveRosterIds = rosterPlayerIdsByTeam ?? new Map([[match.homeTeamId, new Set<string>()], [match.awayTeamId, new Set<string>()]]);

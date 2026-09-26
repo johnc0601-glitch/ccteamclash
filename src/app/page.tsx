@@ -42,7 +42,7 @@ export default async function Home() {
       <section className="shell home-matches-section">
         <div className="home-matches-heading">
           <span className="panel-title">League schedule</span>
-          <h2>This month&apos;s matches</h2>
+          <h2>Upcoming matches</h2>
         </div>
         <HomeMatchCarousel count={homeEvents.length}>
           {homeEvents.map((match) => (

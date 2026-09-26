@@ -115,9 +115,8 @@ export class ScheduleValidator {
     }
 
     const course = context.courses.find((candidate) => candidate.id === input.courseId);
-    if (context.requireComplete && !input.courseId) {
-      fieldErrors.courseId = 'Course is required.';
-    } else if (input.courseId && (!course || !course.active)) {
+    // Published fixtures can await venue confirmation.
+    if (input.courseId && (!course || !course.active)) {
       fieldErrors.courseId = 'Select an active course.';
     }
 

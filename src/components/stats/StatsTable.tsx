@@ -227,7 +227,7 @@ export function StatsTable({group, groupOptions, initialView, fullRowCount, team
             })}
           </tbody>
         </table>
-        {!rows.length ? <p className={styles.emptyState}>No players match these filters.</p> : null}
+        {!loadingFull && !fullLoadFailed && !rows.length ? <p className={styles.emptyState}>No players match these filters.</p> : null}
       </div>
 
       <p className={styles.qualifierNote}>* Fewer than 5 recorded results. CI is current for Overall/live views and season-ending for historical views. CI +/-, S +/- and D +/- count earned match movement only; season reseeds are excluded.</p>
