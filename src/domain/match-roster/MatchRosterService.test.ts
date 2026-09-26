@@ -40,7 +40,7 @@ const match: AttendanceMatch = {
 
 test('derives player, team, and updater IDs from the authenticated user context', async () => {
   const repository = new FakeMatchRosterRepository();
-  const service = new MatchRosterService(repository, () => new Date('2026-08-08T18:00:00Z'));
+  const service = new MatchRosterService(repository, () => new Date('2026-08-07T18:00:00Z'));
 
   const result = await service.setOwnAttendance('user-own', match.id, 'Playing');
 
@@ -57,7 +57,7 @@ test('derives player, team, and updater IDs from the authenticated user context'
 test('updates only the row resolved from the signed-in profile', async () => {
   const repository = new FakeMatchRosterRepository();
   repository.attendance = attendance('NotPlaying');
-  const service = new MatchRosterService(repository, () => new Date('2026-08-08T18:00:00Z'));
+  const service = new MatchRosterService(repository, () => new Date('2026-08-07T18:00:00Z'));
 
   const result = await service.setOwnAttendance('user-own', match.id, 'Playing');
 
@@ -102,7 +102,7 @@ test('rejects a player whose stable team ID is not in the match', async () => {
 });
 
 test('blocks writes exactly at and after the lock', async () => {
-  for (const now of ['2026-08-08T19:00:00Z', '2026-08-08T19:00:01Z']) {
+  for (const now of ['2026-08-07T19:00:00Z', '2026-08-07T19:00:01Z']) {
     const repository = new FakeMatchRosterRepository();
     const result = await new MatchRosterService(repository, () => new Date(now))
       .setOwnAttendance('user-own', match.id, 'Playing');
@@ -112,14 +112,14 @@ test('blocks writes exactly at and after the lock', async () => {
 });
 
 test('calculates 3 PM Eastern correctly in standard and daylight time', () => {
-  assert.equal(getMatchRosterLockAt('2026-01-15')?.toISOString(), '2026-01-15T20:00:00.000Z');
-  assert.equal(getMatchRosterLockAt('2026-07-15')?.toISOString(), '2026-07-15T19:00:00.000Z');
+  assert.equal(getMatchRosterLockAt('2026-01-15')?.toISOString(), '2026-01-09T20:00:00.000Z');
+  assert.equal(getMatchRosterLockAt('2026-07-15')?.toISOString(), '2026-07-10T19:00:00.000Z');
 });
 
 test('enforces the lock across the actual 2026 Eastern Time transition dates', () => {
   const transitions = [
-    {date: '2026-03-08', lockAt: '2026-03-08T19:00:00.000Z'},
-    {date: '2026-11-01', lockAt: '2026-11-01T20:00:00.000Z'},
+    {date: '2026-03-08', lockAt: '2026-03-06T20:00:00.000Z'},
+    {date: '2026-11-01', lockAt: '2026-10-30T19:00:00.000Z'},
   ];
 
   for (const transition of transitions) {
@@ -145,14 +145,14 @@ test('enforces the lock across the actual 2026 Eastern Time transition dates', (
 });
 
 test('uses the current rescheduled date and closes completed or cancelled matches', () => {
-  assert.equal(isMatchAttendanceOpen({...match, date: '2026-08-09'}, new Date('2026-08-08T19:00:00Z')), true);
-  assert.equal(isMatchAttendanceOpen({...match, status: 'Completed'}, new Date('2026-08-08T18:00:00Z')), false);
-  assert.equal(isMatchAttendanceOpen({...match, status: 'Cancelled'}, new Date('2026-08-08T18:00:00Z')), false);
+  assert.equal(isMatchAttendanceOpen({...match, date: '2026-08-15'}, new Date('2026-08-14T18:00:00Z')), true);
+  assert.equal(isMatchAttendanceOpen({...match, status: 'Completed'}, new Date('2026-08-07T18:00:00Z')), false);
+  assert.equal(isMatchAttendanceOpen({...match, status: 'Cancelled'}, new Date('2026-08-07T18:00:00Z')), false);
 });
 
 test('returns Unconfirmed when the player has no stored attendance row', async () => {
   const repository = new FakeMatchRosterRepository();
-  const personal = await new MatchRosterService(repository, () => new Date('2026-08-08T18:00:00Z'))
+  const personal = await new MatchRosterService(repository, () => new Date('2026-08-07T18:00:00Z'))
     .getPersonalAttendance('user-own', match.id);
 
   assert.equal(personal?.status, 'Unconfirmed');
@@ -171,7 +171,7 @@ test('does not return a personal card model for another team player', async () =
 test('captain views and updates only the assigned team attendance', async () => {
   const repository = new FakeMatchRosterRepository();
   repository.actor = {...actor, profileRole: 'Captain', playerId: null, teamId: null, playerName: null, captainTeamId: 'team-home'};
-  const service = new MatchRosterService(repository, () => new Date('2026-08-08T18:00:00Z'));
+  const service = new MatchRosterService(repository, () => new Date('2026-08-07T18:00:00Z'));
 
   const rosters = await service.getManagedTeamRosters('captain-user', match.id);
   const ownResult = await service.setTeamAttendance('captain-user', match.id, 'player-own', 'Playing');
@@ -186,7 +186,7 @@ test('captain views and updates only the assigned team attendance', async () => 
 test('captain confirms and revises only the assigned team roster before lock', async () => {
   const repository = new FakeMatchRosterRepository();
   repository.actor = {...actor, profileRole: 'Captain', playerId: null, teamId: null, playerName: null, captainTeamId: 'team-home'};
-  const service = new MatchRosterService(repository, () => new Date('2026-08-08T18:00:00Z'));
+  const service = new MatchRosterService(repository, () => new Date('2026-08-07T18:00:00Z'));
 
   const confirmed = await service.confirmTeamRoster('captain-user', match.id, 'team-home');
   const revised = await service.setTeamAttendance('captain-user', match.id, 'player-own', 'NotPlaying');
@@ -199,7 +199,7 @@ test('captain confirms and revises only the assigned team roster before lock', a
     matchId: 'match-1',
     teamId: 'team-home',
     confirmedBy: 'profile-player',
-    confirmedAt: '2026-08-08T18:00:00.000Z',
+    confirmedAt: '2026-08-07T18:00:00.000Z',
   }]);
 });
 
@@ -217,7 +217,7 @@ test('captain cannot manage a match that does not include the assigned team', as
 test('commissioner manages either participating team through the same service path', async () => {
   const repository = new FakeMatchRosterRepository();
   repository.actor = {...actor, profileRole: 'Commissioner', playerId: null, teamId: null, playerName: null};
-  const service = new MatchRosterService(repository, () => new Date('2026-08-08T18:00:00Z'));
+  const service = new MatchRosterService(repository, () => new Date('2026-08-07T18:00:00Z'));
 
   const rosters = await service.getManagedTeamRosters('commissioner-user', match.id);
   const awayUpdate = await service.setTeamAttendance('commissioner-user', match.id, 'player-away', 'Playing');
@@ -236,7 +236,7 @@ test('captain and commissioner management is blocked at the lock', async () => {
       profileRole: role,
       captainTeamId: role === 'Captain' ? 'team-home' : null,
     };
-    const service = new MatchRosterService(repository, () => new Date('2026-08-08T19:00:00Z'));
+    const service = new MatchRosterService(repository, () => new Date('2026-08-07T19:00:00Z'));
 
     assert.equal((await service.setTeamAttendance(`${role}-user`, match.id, 'player-own', 'Playing')).ok, false);
     assert.equal((await service.confirmTeamRoster(`${role}-user`, match.id, 'team-home')).ok, false);
@@ -248,9 +248,9 @@ test('switches to the official snapshot exactly at lock and preserves empty comp
   repository.officialRosters = officialRosters();
   repository.snapshotComplete = true;
 
-  const before = await new MatchRosterService(repository, () => new Date('2026-08-08T18:59:59.999Z'))
+  const before = await new MatchRosterService(repository, () => new Date('2026-08-07T18:59:59.999Z'))
     .ensureLockedSnapshot(match.id);
-  const atLock = await new MatchRosterService(repository, () => new Date('2026-08-08T19:00:00.000Z'))
+  const atLock = await new MatchRosterService(repository, () => new Date('2026-08-07T19:00:00.000Z'))
     .ensureLockedSnapshot(match.id);
 
   assert.equal(before.status, 'before-lock');
@@ -261,27 +261,27 @@ test('switches to the official snapshot exactly at lock and preserves empty comp
 
 test('lazy creation runs only for incomplete snapshots and hides failures', async () => {
   const repository = new FakeMatchRosterRepository();
-  const service = new MatchRosterService(repository, () => new Date('2026-08-08T19:00:00Z'));
-  const created = await service.ensureLockedSnapshot(match.id, new Date('2026-08-08T19:00:00Z'));
+  const service = new MatchRosterService(repository, () => new Date('2026-08-07T19:00:00Z'));
+  const created = await service.ensureLockedSnapshot(match.id, new Date('2026-08-07T19:00:00Z'));
   assert.equal(created.status, 'complete');
   assert.equal(repository.snapshotCreateCount, 1);
 
   repository.snapshotComplete = false;
   repository.completeMatchIds.clear();
   repository.createFails = true;
-  const unavailable = await new MatchRosterService(repository, () => new Date('2026-08-08T19:00:00Z'), repository, () => {})
-    .ensureLockedSnapshot(match.id, new Date('2026-08-08T19:00:00Z'));
+  const unavailable = await new MatchRosterService(repository, () => new Date('2026-08-07T19:00:00Z'), repository, () => {})
+    .ensureLockedSnapshot(match.id, new Date('2026-08-07T19:00:00Z'));
   assert.deepEqual(unavailable, {status: 'unavailable', rosters: []});
 });
 
 test('lazy creation fails closed before cutoff and for missing or invalid configuration', async () => {
   for (const cutoff of [
-    new Date('2026-08-08T19:00:00.001Z'),
+    new Date('2026-08-07T19:00:00.001Z'),
     parseMatchRosterSnapshotStartAt(undefined),
     parseMatchRosterSnapshotStartAt('not-a-timestamp'),
   ]) {
     const repository = new FakeMatchRosterRepository();
-    const state = await new MatchRosterService(repository, () => new Date('2026-08-08T19:00:00Z'), repository, () => {})
+    const state = await new MatchRosterService(repository, () => new Date('2026-08-07T19:00:00Z'), repository, () => {})
       .ensureLockedSnapshot(match.id, cutoff);
     assert.deepEqual(state, {status: 'unavailable', rosters: []});
     assert.equal(repository.snapshotCreateCount, 0);
@@ -289,9 +289,9 @@ test('lazy creation fails closed before cutoff and for missing or invalid config
 });
 
 test('lazy creation permits exact and post-cutoff matches', async () => {
-  for (const cutoff of [new Date('2026-08-08T19:00:00Z'), new Date('2026-08-07T19:00:00Z')]) {
+  for (const cutoff of [new Date('2026-08-07T19:00:00Z'), new Date('2026-08-06T19:00:00Z')]) {
     const repository = new FakeMatchRosterRepository();
-    const state = await new MatchRosterService(repository, () => new Date('2026-08-08T19:00:00Z'))
+    const state = await new MatchRosterService(repository, () => new Date('2026-08-07T19:00:00Z'))
       .ensureLockedSnapshot(match.id, cutoff);
     assert.equal(state.status, 'complete');
     assert.equal(repository.snapshotCreateCount, 1);
@@ -300,7 +300,7 @@ test('lazy creation permits exact and post-cutoff matches', async () => {
 
 test('an existing pre-cutoff snapshot remains readable without creation', async () => {
   const repository = lockedSnapshotRepository();
-  const state = await new MatchRosterService(repository, () => new Date('2026-08-08T19:00:00Z'))
+  const state = await new MatchRosterService(repository, () => new Date('2026-08-07T19:00:00Z'))
     .ensureLockedSnapshot(match.id, new Date('2026-08-09T19:00:00Z'));
   assert.equal(state.status, 'complete');
   assert.equal(repository.snapshotCreateCount, 0);
@@ -327,7 +327,7 @@ test('only an approved commissioner can correct either participating snapshot af
 test('commissioner corrections require lock, approval, and an existing manifest', async () => {
   const preLock = lockedSnapshotRepository();
   preLock.actor = {...actor, profileRole: 'Commissioner'};
-  assert.equal((await new MatchRosterService(preLock, () => new Date('2026-08-08T18:59:59.999Z'))
+  assert.equal((await new MatchRosterService(preLock, () => new Date('2026-08-07T18:59:59.999Z'))
     .commissionerAddSnapshotPlayer('user', match.id, 'team-home', 'new')).ok, false);
 
   const unapproved = lockedSnapshotRepository();
@@ -364,8 +364,8 @@ test('scheduled processing isolates failures and skips complete eligible matches
   ];
   repository.completeMatchIds.add('complete');
   repository.failMatchIds.add('failure');
-  const summary = await new MatchRosterService(repository, () => new Date('2026-08-08T19:00:00Z'), repository, () => {})
-    .processLockedSnapshots(new Date('2026-08-08T19:00:00Z'));
+  const summary = await new MatchRosterService(repository, () => new Date('2026-08-07T19:00:00Z'), repository, () => {})
+    .processLockedSnapshots(new Date('2026-08-07T19:00:00Z'));
   assert.deepEqual(summary, {processed: 3, succeeded: 1, alreadyComplete: 1, failed: 1});
 });
 
@@ -386,7 +386,7 @@ test('scheduled processing fails closed when the cutoff is missing or invalid', 
 test('official roster export rejects pre-lock, anonymous, partial, and unavailable snapshots', async () => {
   const preLock = lockedSnapshotRepository();
   preLock.actor = {...actor, profileRole: 'Captain', captainTeamId: 'team-home'};
-  assert.equal((await new MatchRosterService(preLock, () => new Date('2026-08-08T18:59:59.999Z'))
+  assert.equal((await new MatchRosterService(preLock, () => new Date('2026-08-07T18:59:59.999Z'))
     .getOfficialRosterExport('captain', match.id)).ok, false);
   assert.equal((await lockedService(preLock).getOfficialRosterExport(undefined, match.id)).ok, false);
 
@@ -618,7 +618,7 @@ function lockedSnapshotRepository(): FakeMatchRosterRepository {
 }
 
 function lockedService(repository: FakeMatchRosterRepository): MatchRosterService {
-  return new MatchRosterService(repository, () => new Date('2026-08-08T19:00:00Z'));
+  return new MatchRosterService(repository, () => new Date('2026-08-07T19:00:00Z'));
 }
 
 function officialRosters(): OfficialMatchRoster[] {
@@ -628,9 +628,9 @@ function officialRosters(): OfficialMatchRoster[] {
     teamId,
     teamNameSnapshot: teamId === 'team-home' ? 'Historic Home' : 'Historic Away',
     needsCommissionerReview: teamId === 'team-away',
-    createdAt: '2026-08-08T19:00:00Z',
+    createdAt: '2026-08-07T19:00:00Z',
     updatedBy: null,
-    updatedAt: '2026-08-08T19:00:00Z',
+    updatedAt: '2026-08-07T19:00:00Z',
     players: teamId === 'team-home' ? [snapshotPlayer('player-own', teamId)] : [],
   }));
 }
@@ -643,9 +643,9 @@ function snapshotPlayer(playerId: string, teamId: string) {
     teamNameSnapshot: teamId === 'team-home' ? 'Historic Home' : 'Historic Away',
     playerId,
     playerNameSnapshot: playerId === 'player-own' ? 'Historic Player' : 'Trusted Current Player',
-    createdAt: '2026-08-08T19:00:00Z',
+    createdAt: '2026-08-07T19:00:00Z',
     updatedBy: null,
-    updatedAt: '2026-08-08T19:00:00Z',
+    updatedAt: '2026-08-07T19:00:00Z',
   };
 }
 

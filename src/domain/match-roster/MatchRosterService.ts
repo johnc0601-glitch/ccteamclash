@@ -407,7 +407,11 @@ export class MatchRosterService {
       || !isMatchRosterLocked(match, this.now())
     ) return undefined;
     const teamIds = [match.awayTeamId, match.homeTeamId].filter((id): id is string => Boolean(id));
-    if (!teamIds.includes(teamId)) return undefined;
+    if (
+      !teamIds.includes(teamId)
+      || new Set(teamIds).size !== 2
+      || !teamIds.every((id) => rosters.some((roster) => roster.teamId === id && roster.teamNameSnapshot.trim()))
+    ) return undefined;
     return {actor, match, rosters};
   }
 }
@@ -435,6 +439,7 @@ function isAttendanceStatus(status: string): status is MatchAttendanceStatus {
 function toExportTeam(roster: OfficialMatchRoster): OfficialRosterExportTeam {
   return {
     name: roster.teamNameSnapshot,
-    playerNames: roster.players.map((player) => player.playerNameSnapshot),
+    playerNames: roster.players.map((player) => player.playerNameSnapshot)
+      .sort((left, right) => left.localeCompare(right, 'en', {sensitivity: 'base'}) || left.localeCompare(right, 'en')),
   };
 }

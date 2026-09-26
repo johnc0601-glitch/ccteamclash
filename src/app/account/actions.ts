@@ -98,7 +98,9 @@ export async function completePlayerSetup(formData: FormData) {
   revalidatePath('/account');
   revalidatePath('/players');
   revalidatePath('/office/players');
-  redirect('/account?notice=Player record connected.');
+  redirect(playedBefore
+    ? '/account?notice=Player claim submitted for commissioner review.'
+    : '/account?notice=Player record connected.');
 }
 
 export async function submitSeasonApplication(formData: FormData) {

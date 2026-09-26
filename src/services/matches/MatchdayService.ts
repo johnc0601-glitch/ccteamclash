@@ -41,7 +41,6 @@ export function resolveMatchday(
     event.id !== match.id
     || !match.homeTeamId
     || !match.awayTeamId
-    || !match.courseId
   ) {
     return undefined;
   }
@@ -49,7 +48,7 @@ export function resolveMatchday(
   return {
     ...event,
     lifecycle: resolveMatchdayLifecycle(match.status, hasPublishedResult),
-    courseDetails: courses.find((course) => course.id === match.courseId),
+    courseDetails: courses.find((course) => course.id === match.courseId && course.active),
     homeTeam: resolveTeam(
       match.homeTeamId,
       teams,

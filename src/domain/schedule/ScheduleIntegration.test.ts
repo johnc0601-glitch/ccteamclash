@@ -9,7 +9,10 @@ import {MockScheduleRepository} from '@/test-fixtures/MockScheduleRepository';
 import {MockSeasonRepository} from '@/test-fixtures/MockSeasonRepository';
 import {MockTeamRepository} from '@/test-fixtures/MockTeamRepository';
 
-function createService() {
+async function createService() {
+  const seasons = new MockSeasonRepository();
+  const template = (await seasons.getAll())[0];
+  await seasons.create({...template, id: 'summer-team-clash-2026', startDate: '2026-06-01', endDate: '2026-09-30'});
   const repository = new MockScheduleRepository();
   const teamService = new TeamService(new MockTeamRepository());
   return {
@@ -17,7 +20,7 @@ function createService() {
     teamService,
     service: new ScheduleService(
       repository,
-      new SeasonService(new MockSeasonRepository()),
+      new SeasonService(seasons),
       teamService,
       new MockCourseRepository(),
       {allowRepeatedMatchups: true},
@@ -26,7 +29,7 @@ function createService() {
 }
 
 test('schedule workflow imports, edits, publishes, and controls public visibility', async () => {
-  const {service, repository, teamService} = createService();
+  const {service, repository, teamService} = await createService();
   const existingSchedules = await repository.getSchedules();
   await Promise.all(existingSchedules
     .filter((schedule) => schedule.seasonId === 'summer-team-clash-2026')
@@ -46,7 +49,7 @@ test('schedule workflow imports, edits, publishes, and controls public visibilit
       matches: [{
         homeTeamId: teams[0].id,
         awayTeamId: teams[1].id,
-        courseId: 'castle-hayne-park',
+        courseId: null,
         date: '2026-09-12',
         time: '09:00',
         status: 'Scheduled',
@@ -76,6 +79,8 @@ test('schedule workflow imports, edits, publishes, and controls public visibilit
   assert.equal(published.ok, true);
   const visible = await service.getPublishedEventById(match.id, new Date('2026-09-01'));
   assert.equal(visible?.time, '10:30 AM');
+  assert.equal(visible?.course, 'To be confirmed');
+  assert.equal(visible?.directionsUrl, '');
 
   const forbiddenEdit = await service.updateMatch(match.id, {
     ...match,
@@ -96,7 +101,7 @@ test('schedule workflow imports, edits, publishes, and controls public visibilit
 });
 
 test('a season schedule is created implicitly once for manual building', async () => {
-  const {service, repository} = createService();
+  const {service, repository} = await createService();
   const existingSchedules = await repository.getSchedules();
   await Promise.all(existingSchedules
     .filter((schedule) => schedule.seasonId === 'summer-team-clash-2026')
@@ -117,7 +122,7 @@ test('a season schedule is created implicitly once for manual building', async (
 });
 
 test('commissioner import saves optional schedule details as an incomplete draft', async () => {
-  const {service, repository, teamService} = createService();
+  const {service, repository, teamService} = await createService();
   const existingSchedules = await repository.getSchedules();
   await Promise.all(existingSchedules
     .filter((schedule) => schedule.seasonId === 'summer-team-clash-2026')
@@ -157,7 +162,7 @@ test('commissioner import saves optional schedule details as an incomplete draft
 });
 
 test('schedule import rejects unsupported schema versions before writing', async () => {
-  const {service, repository} = createService();
+  const {service, repository} = await createService();
   const before = await repository.getSchedules();
   const result = await service.importSchedule({
     schemaVersion: 2,
@@ -171,7 +176,7 @@ test('schedule import rejects unsupported schema versions before writing', async
 });
 
 test('schedule import updates the season schedule in place and preserves playoff records', async () => {
-  const {service, repository} = createService();
+  const {service, repository} = await createService();
   const schedule = (await repository.getSchedules())
     .find((candidate) => candidate.seasonId === 'summer-team-clash-2026')!;
   await service.unpublishSchedule(schedule.id);
@@ -217,7 +222,7 @@ test('schedule import updates the season schedule in place and preserves playoff
 });
 
 test('recorded results protect schedule structure from import replacement', async () => {
-  const {service, repository} = createService();
+  const {service, repository} = await createService();
   const schedule = (await repository.getSchedules())
     .find((candidate) => candidate.seasonId === 'summer-team-clash-2026')!;
   await service.unpublishSchedule(schedule.id);

@@ -119,6 +119,9 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
   }
 
   const players = await repository.getPlayers();
+  const pendingClaim = profile
+    ? (await repository.getPlayerClaims()).find((claim) => claim.profileId === profile.id && claim.status === 'Pending')
+    : undefined;
   let playedBefore: boolean | null = null;
   let registrationSeason: RegistrationSeason | null = null;
   let registrationTeams: RegistrationTeam[] = [];
@@ -267,7 +270,12 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
         </form>
       </section>
 
-      {profile ? (
+      {pendingClaim && !profile?.playerId ? (
+        <article className={styles.panel}>
+          <h2>Player verification pending</h2>
+          <p>Your request to connect {players.find((player) => player.id === pendingClaim.requestedPlayerId)?.name ?? 'your player record'} is waiting for commissioner review. Team access becomes available after approval.</p>
+        </article>
+      ) : profile ? (
         <MemberProfile
           profile={profile}
           players={players}
@@ -572,7 +580,7 @@ function PlayerSetupPanel({players, freeAgentOptional = false}: {players: Launch
           searchPlaceholder="Type your name"
           required
         />
-        <button className={styles.primaryButton} type="submit">Connect player record</button>
+        <button className={styles.primaryButton} type="submit">Request player verification</button>
       </form>
       <details style={{marginTop: '1rem'}}>
         <summary><strong>I have never played Coastal Clash before</strong></summary>

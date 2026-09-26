@@ -58,7 +58,7 @@ const courses: Course[] = [{
   udiscUrl: '',
   photoUrl: '',
   description: '',
-  homeTeamId: null,
+  homeTeamId: undefined,
   active: true,
   createdAt: '2026-07-01T00:00:00.000Z',
   updatedAt: '2026-07-01T00:00:00.000Z',
@@ -109,11 +109,14 @@ test('does not rediscover a missing course by its display name', () => {
   assert.equal(resolved.courseDetails, undefined);
 });
 
-test('rejects incomplete match identity data', () => {
-  assert.equal(
-    resolveMatchday(event, {...match, courseId: null}, teams, [], courses, false, emptyRosters()),
-    undefined,
-  );
+test('supports an unknown venue without losing match identity', () => {
+  const resolved = resolveMatchday(event, {...match, courseId: null}, teams, [], courses, false, emptyRosters());
+  assert.ok(resolved);
+  assert.equal(resolved.courseDetails, undefined);
+  assert.equal(resolved.homeTeam.id, 'team-home');
+});
+
+test('rejects incomplete team identity data', () => {
   assert.equal(
     resolveMatchday(event, {...match, awayTeamId: null}, teams, [], courses, false, emptyRosters()),
     undefined,

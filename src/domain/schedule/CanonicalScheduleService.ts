@@ -96,7 +96,7 @@ export class CanonicalScheduleService extends ScheduleService {
           const courseId = clean(row.course_id);
           const time = clean(row.time).slice(0, 5);
           const anchorDate = roundDates.get(roundId) ?? '';
-          if (!id || !roundId || !homeTeamId || !awayTeamId || !courseId || !time || !anchorDate) {
+          if (!id || !roundId || !homeTeamId || !awayTeamId || !time || !anchorDate) {
             return null;
           }
 
@@ -111,8 +111,8 @@ export class CanonicalScheduleService extends ScheduleService {
             href: `/matches/${id}`,
             date: 'TBD',
             time: formatEventTime(time),
-            course: course?.name ?? courseId,
-            directionsUrl: course?.mapUrl ?? '',
+            course: course?.active ? course.name : 'To be confirmed',
+            directionsUrl: course?.active ? course.mapUrl : '',
             home: teamNames.get(homeTeamId) ?? homeTeamId,
             away: teamNames.get(awayTeamId) ?? awayTeamId,
             homeTeamId,

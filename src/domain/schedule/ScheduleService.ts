@@ -258,10 +258,9 @@ export class ScheduleService {
       (match): match is Match & {
         homeTeamId: string;
         awayTeamId: string;
-        courseId: string;
         date: string;
         time: string;
-      } => Boolean(match.homeTeamId && match.awayTeamId && match.courseId && match.date && match.time),
+      } => Boolean(match.homeTeamId && match.awayTeamId && match.date && match.time),
     );
     const teamNames = new Map(teams.map((team) => [team.id, team.name]));
     const courseDetails = new Map(courses.map((course) => [course.id, course]));
@@ -272,14 +271,14 @@ export class ScheduleService {
         ? new Date(`${match.date}T00:00:00`)
         : dateTime;
       const bucket = this.getEventBucket(safeDateTime, referenceDate);
-      const course = courseDetails.get(match.courseId);
+      const course = match.courseId ? courseDetails.get(match.courseId) : undefined;
       return {
         id: match.id,
         href: `/matches/${match.id}`,
         date: this.formatEventDate(match.date),
         time: this.formatEventTime(match.time),
-        course: course?.name ?? match.courseId,
-        directionsUrl: course?.mapUrl ?? '',
+        course: course && (course.active || bucket !== 'upcoming') ? course.name : 'To be confirmed',
+        directionsUrl: course?.active ? course.mapUrl : '',
         home: teamNames.get(match.homeTeamId) ?? match.homeTeamId,
         away: teamNames.get(match.awayTeamId) ?? match.awayTeamId,
         homeTeamId: match.homeTeamId,

@@ -96,15 +96,19 @@ export async function commissionerRoutePlayerToCaptain(formData: FormData) {
 }
 
 export async function approveClaim(formData: FormData) {
-  const {commissionerProfileId, service} = await getCommissionerService();
+  const {supabase} = await getCommissionerService();
   const claimId = readFormValue(formData, 'claimId');
   const playerId = readFormValue(formData, 'playerId');
   if (!claimId) redirect(`${PLAYERS_PATH}?error=Claim is required.`);
 
-  const result = await service.approvePlayerClaim(claimId, commissionerProfileId, playerId);
-  if (!result.ok) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(result.message)}`);
+  const {error} = await supabase.rpc('approve_verified_player_claim' as never, {
+    target_claim_id: claimId,
+    target_player_id: playerId || null,
+  } as never);
+  if (error) redirect(`${PLAYERS_PATH}?error=${encodeURIComponent(error.message)}`);
 
   revalidatePeoplePages();
+  revalidatePath('/account');
   redirect(`${PLAYERS_PATH}?notice=Player claim approved.`);
 }
 
@@ -260,6 +264,7 @@ async function getCommissionerService() {
   if (!commissionerProfile) redirect('/account?error=Create your league profile first.');
 
   return {
+    supabase,
     commissionerProfileId: commissionerProfile.id,
     repository,
     service: new LaunchService(repository),
