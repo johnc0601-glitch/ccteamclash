@@ -1,45 +1,8 @@
 'use server';
 
-import {revalidatePath} from 'next/cache';
 import {redirect} from 'next/navigation';
 import {createClient} from '@/lib/supabase/server';
 import {createAdminClient} from '@/lib/supabase/admin';
-
-export async function saveNotificationPreferences(formData: FormData) {
-  const supabase = await createClient();
-  const {data: {user}} = await supabase.auth.getUser();
-  if (!user) redirect('/account');
-
-  const {data: profile} = await supabase
-    .from('launch_profiles')
-    .select('id,status')
-    .eq('user_id', user.id)
-    .maybeSingle();
-  if (!profile || profile.status !== 'Approved') redirect('/account');
-
-  const payload = {
-    profile_id: profile.id,
-    match_reminders: false,
-    roster_deadline: formData.has('rosterDeadline'),
-    matchday_open: formData.has('matchdayOpen'),
-    results_ci: formData.has('resultsCi'),
-    captain_announcements: formData.has('captainAnnouncements'),
-    league_stories: formData.has('leagueStories'),
-    updated_at: new Date().toISOString(),
-  };
-
-  const {error} = await (supabase as any)
-    .from('launch_notification_preferences')
-    .upsert(payload, {onConflict: 'profile_id'});
-
-  if (error) {
-    redirect('/account/notifications?error=' + encodeURIComponent('Notification preferences could not be saved.'));
-  }
-
-  revalidatePath('/account/notifications');
-  redirect('/account/notifications?notice=' + encodeURIComponent('Notification preferences saved.'));
-}
-
 
 export async function queueTestNotification() {
   const supabase = await createClient();
@@ -67,9 +30,9 @@ export async function queueTestNotification() {
   const sourceId = crypto.randomUUID();
   const {error} = await admin.from('launch_notification_outbox').insert({
     profile_id: profile.id,
-    category: 'matchday_open',
+    category: 'match_reminders',
     title: 'Team Clash notifications are working',
-    body: 'This is a staging test from your installed Team Clash preview.',
+    body: 'Your Friday attendance reminder is ready.',
     url: '/account/notifications',
     source_type: 'self_test',
     source_id: sourceId,
