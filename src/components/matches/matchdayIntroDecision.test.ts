@@ -11,7 +11,6 @@ test('matchday intro requires a Matchday entry link and the scheduled Eastern da
     matchDate: '2026-10-03',
     lifecycle: 'Scheduled',
     now: new Date('2026-10-03T13:00:00.000Z'),
-    queryOverride: 'link',
   }), false);
 
   assert.equal(decideMatchdayIntroPlayback({
@@ -47,6 +46,7 @@ test('cancelled and postponed matches do not auto-play', () => {
       matchDate: '2026-10-03',
       lifecycle,
       now: new Date('2026-10-03T13:00:00.000Z'),
+      queryOverride: 'link',
     }), false);
   }
 });
