@@ -141,7 +141,7 @@ export default async function ClubhousePage({searchParams}: Props) {
                   <h2>{nextMatch.away_team_id === context.teamId ? `${context.teamName} @ ${teams.get(nextMatch.home_team_id) ?? 'Opponent'}` : `${teams.get(nextMatch.away_team_id) ?? 'Opponent'} @ ${context.teamName}`}</h2>
                   <p>{formatDate(nextMatch.date)} · {courses.get(nextMatch.course_id) ?? 'Location TBD'}</p>
                 </div>
-                <Link href={`/matches/${nextMatch.public_slug || nextMatch.id}`}>Open Matchday</Link>
+                <Link href={`/matches/${nextMatch.public_slug || nextMatch.id}?matchdayIntro=matchday`}>Open Matchday</Link>
               </div>
 
               <div style={{marginTop:'22px',paddingTop:'18px',borderTop:'1px solid rgba(255,255,255,.12)'}}>
