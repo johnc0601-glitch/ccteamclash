@@ -141,7 +141,11 @@ function TeamMark({team, side}: {team: MatchdayIntroTeam; side: 'away' | 'home'}
     <div className={className}>
       <div className={styles.logoStage}>
         {team.logo ? (
-          <CutoutLogo src={team.logo} className={styles.teamLogo} />
+          <CutoutLogo
+            src={team.logo}
+            className={styles.teamLogo}
+            mode={/dark knights/i.test(team.name) ? 'conservative' : 'default'}
+          />
         ) : (
           <div className={styles.logoFallback}>{team.shortName || initials(team.name)}</div>
         )}
@@ -161,7 +165,17 @@ function initials(name: string): string {
 }
 
 
-function CutoutLogo({src, className}: {src: string; className: string}) {
+type CutoutMode = 'default' | 'conservative';
+
+function CutoutLogo({
+  src,
+  className,
+  mode = 'default',
+}: {
+  src: string;
+  className: string;
+  mode?: CutoutMode;
+}) {
   const [displaySrc, setDisplaySrc] = useState(src);
 
   useEffect(() => {
@@ -173,7 +187,7 @@ function CutoutLogo({src, className}: {src: string; className: string}) {
 
     image.onload = () => {
       try {
-        const cutout = removeEdgeConnectedBackground(image);
+        const cutout = removeEdgeConnectedBackground(image, mode);
         if (!cancelled && cutout) setDisplaySrc(cutout);
       } catch {
         // Some third-party images may not allow canvas pixel reads. In that
@@ -187,12 +201,15 @@ function CutoutLogo({src, className}: {src: string; className: string}) {
       cancelled = true;
       image.onload = null;
     };
-  }, [src]);
+  }, [src, mode]);
 
   return <img src={displaySrc} alt="" className={className} />;
 }
 
-function removeEdgeConnectedBackground(image: HTMLImageElement): string | null {
+function removeEdgeConnectedBackground(
+  image: HTMLImageElement,
+  mode: CutoutMode = 'default',
+): string | null {
   const maxDimension = 900;
   const naturalWidth = image.naturalWidth || image.width;
   const naturalHeight = image.naturalHeight || image.height;
@@ -212,7 +229,7 @@ function removeEdgeConnectedBackground(image: HTMLImageElement): string | null {
   const imageData = context.getImageData(0, 0, width, height);
   const pixels = imageData.data;
 
-  const background = sampleCornerBackground(pixels, width, height);
+  const background = sampleCornerBackground(pixels, width, height, mode);
   if (!background) return null;
 
   const threshold = background.threshold;
@@ -264,7 +281,7 @@ function removeEdgeConnectedBackground(image: HTMLImageElement): string | null {
     if (removed[pixelIndex]) pixels[pixelIndex * 4 + 3] = 0;
   }
 
-  featherCutoutEdge(pixels, removed, width, height, background, threshold);
+  featherCutoutEdge(pixels, removed, width, height, background, threshold, mode);
   context.putImageData(imageData, 0, 0);
 
   const bounds = alphaBounds(pixels, width, height);
@@ -300,6 +317,7 @@ function sampleCornerBackground(
   pixels: Uint8ClampedArray,
   width: number,
   height: number,
+  mode: CutoutMode = 'default',
 ): {red: number; green: number; blue: number; threshold: number} | null {
   const patch = Math.max(3, Math.min(24, Math.round(Math.min(width, height) * 0.035)));
   const samples: Array<[number, number, number]> = [];
@@ -336,7 +354,9 @@ function sampleCornerBackground(
   });
 
   const cornerNoise = median(distances);
-  const threshold = Math.max(34, Math.min(74, Math.round(38 + cornerNoise * 2.2)));
+  const threshold = mode === 'conservative'
+    ? Math.max(18, Math.min(42, Math.round(22 + cornerNoise * 1.35)))
+    : Math.max(30, Math.min(64, Math.round(34 + cornerNoise * 1.8)));
   return {red, green, blue, threshold};
 }
 
@@ -347,8 +367,9 @@ function featherCutoutEdge(
   height: number,
   background: {red: number; green: number; blue: number},
   threshold: number,
+  mode: CutoutMode = 'default',
 ) {
-  const softRange = 34;
+  const softRange = mode === 'conservative' ? 18 : 28;
 
   for (let y = 1; y < height - 1; y += 1) {
     for (let x = 1; x < width - 1; x += 1) {
