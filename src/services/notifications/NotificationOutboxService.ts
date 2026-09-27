@@ -67,7 +67,7 @@ export async function enqueueCaptainAnnouncementNotifications(
   );
 
   const recipients: string[] = candidateProfileIds.filter((profileId: string) =>
-    subscribed.has(profileId) && preferenceMap.get(profileId) !== false);
+    subscribed.has(profileId) && preferenceMap.get(profileId) === true);
   if (!recipients.length) return 0;
 
   const announcementTitle = input.title.trim() || 'Captain announcement';
@@ -175,7 +175,7 @@ export async function enqueuePublishedResultNotifications(matchId: string) {
     ]),
   );
   const recipients: string[] = candidateProfileIds.filter((profileId: string) =>
-    subscribed.has(profileId) && preferenceMap.get(profileId) !== false);
+    subscribed.has(profileId) && preferenceMap.get(profileId) === true);
   if (!recipients.length) return 0;
 
   const title = `Final: ${away.shortName} ${result.away_score} - ${result.home_score} ${home.shortName}`;
