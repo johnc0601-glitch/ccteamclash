@@ -1,0 +1,73 @@
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  background: #000;
+  color: #fff;
+  isolation: isolate;
+  animation: exit 700ms ease-in-out 4000ms both;
+  font-family: 'Archivo SemiCondensed', var(--cc-font-body, Arial, sans-serif);
+  font-weight: 600;
+}
+
+.welcome, .lineups {
+  margin: 0;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: .055em;
+  text-align: center;
+  line-height: 1.25;
+  text-shadow: 0 1px 2px #000;
+  -webkit-text-stroke: .25px #222;
+}
+
+.welcome {
+  position: absolute;
+  padding: 24px;
+  font-size: clamp(24px, 3.3vw, 48px);
+  opacity: 0;
+  animation: welcome 1900ms ease-in-out both;
+}
+
+.poster {
+  width: min(1200px, 100%);
+  height: 100%;
+  max-height: 100dvh;
+  padding: max(24px, env(safe-area-inset-top)) 32px max(72px, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 20px;
+  opacity: 0;
+  animation: reveal 700ms ease-in-out 1900ms both;
+}
+
+.poster img { width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.lineups { font-size: clamp(20px, 2.3vw, 32px); opacity: 0; animation: reveal 700ms ease-in-out 2900ms both; }
+.skip {
+  position: absolute;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  min-height: 44px;
+  padding: 8px 14px;
+  background: #000;
+  color: #fff;
+  border: 1px solid #666;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.skip:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+@keyframes welcome { 0%, 10.5% { opacity: 0; } 47.4%, 63.2% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes reveal { from { opacity: 0; } to { opacity: 1; } }
+@keyframes exit { from { opacity: 1; } to { opacity: 0; } }
+@media (max-width: 767px) { .poster { padding-left: 16px; padding-right: 16px; gap: 16px; } }
+.intro[data-reduced='true'] { animation: none; }
+.intro[data-reduced='true'] .welcome { display: none; }
+.intro[data-reduced='true'] .poster, .intro[data-reduced='true'] .lineups { animation: none; opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .intro, .poster, .lineups { animation: none; opacity: 1; }
+  .welcome { display: none; }
+}
