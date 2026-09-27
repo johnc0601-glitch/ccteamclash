@@ -6,6 +6,8 @@ import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
+import {MatchdayIntro} from '@/components/matches/MatchdayIntro';
+import {decideMatchdayIntroPlayback, parseMatchdayIntroQuery} from '@/components/matches/matchdayIntroDecision';
 import {PersonalAttendanceCard} from '@/components/matches/PersonalAttendanceCard';
 import {CaptainRosterPanel} from '@/components/matches/CaptainRosterPanel';
 import {CommissionerRosterUnlockPanel} from '@/components/matches/CommissionerRosterUnlockPanel';
@@ -49,6 +51,7 @@ type MatchdayPageProps = {
     commissionerError?: string | string[];
     feedNotice?: string | string[];
     feedError?: string | string[];
+    matchdayIntro?: string | string[];
   }>;
 };
 
@@ -186,8 +189,34 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     ? resolveLockedControls(actor, match, officialSnapshot.rosters)
     : {canUnlockRoster: false};
 
+  const showMatchdayIntro = decideMatchdayIntroPlayback({
+    matchDate: match.date,
+    lifecycle: matchday.lifecycle,
+    now,
+    queryOverride: parseMatchdayIntroQuery(query.matchdayIntro),
+  });
+
   return (
     <>
+      <MatchdayIntro
+        key={matchId}
+        matchId={matchId}
+        play={showMatchdayIntro}
+        awayTeam={{
+          name: matchday.awayTeam.name,
+          shortName: matchday.awayTeam.team?.shortName ?? '',
+          logo: matchday.awayTeam.logo,
+          primaryColor: matchday.awayTeam.team?.primaryColor ?? awayColor,
+          secondaryColor: matchday.awayTeam.team?.secondaryColor ?? '#ffffff',
+        }}
+        homeTeam={{
+          name: matchday.homeTeam.name,
+          shortName: matchday.homeTeam.team?.shortName ?? '',
+          logo: matchday.homeTeam.logo,
+          primaryColor: matchday.homeTeam.team?.primaryColor ?? homeColor,
+          secondaryColor: matchday.homeTeam.team?.secondaryColor ?? '#ffffff',
+        }}
+      />
       <SiteHeader />
       <main className={styles.page} style={pageBackground}>
         <MatchHero matchday={matchday} />
