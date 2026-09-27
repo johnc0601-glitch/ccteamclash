@@ -1,0 +1,78 @@
+name: PWA App Tests
+
+on:
+  push:
+    paths:
+      - 'src/components/AppBottomNav.*'
+      - 'src/components/AppConnectivityBanner.*'
+      - 'src/components/AppConnectivityBanner.*'
+      - 'src/components/PwaLifecycle.*'
+      - 'src/components/PwaHomeDashboard.*'
+      - 'src/components/appShellState*'
+      - 'src/components/appPreviewState*'
+      - 'src/components/account/PwaMeHub.*'
+      - 'src/app/account/AccountPageLayout.tsx'
+      - 'src/app/account/Account.module.css'
+      - 'src/app/account/notifications/**'
+      - 'src/services/notifications/**'
+      - 'src/app/api/stories/**'
+      - 'src/services/notifications/**'
+      - 'src/app/api/stories/**'
+      - 'src/app/account/mutes/**'
+      - 'src/app/account/delete/**'
+      - 'src/app/account/AccountPageLayout.tsx'
+      - 'src/app/account/Account.module.css'
+      - 'src/app/account/notifications/**'
+      - 'src/app/account/mutes/**'
+      - 'src/app/account/delete/**'
+      - 'src/components/captain/PwaCaptainHub.*'
+      - 'src/app/captain/**'
+      - 'src/components/clubhouse/PwaClubhouseHeader.*'
+      - 'src/app/clubhouse/**'
+      - 'src/components/clubhouse/PwaClubhouseHeader.*'
+      - 'src/app/clubhouse/**'
+      - 'src/components/matches/PwaMatchdayHub.*'
+      - 'src/components/matches/PwaMatchdayPhase*'
+      - 'src/services/matches/CaptainRosterNavigation*'
+      - 'src/services/matches/CaptainRosterNavigation*'
+      - 'src/components/teams/PwaTeamHub.*'
+      - 'src/app/manifest.ts'
+      - 'public/sw.js'
+      - 'package.json'
+      - '.github/workflows/pwa-app.yml'
+  pull_request:
+    paths:
+      - 'src/components/AppBottomNav.*'
+      - 'src/components/PwaLifecycle.*'
+      - 'src/components/PwaHomeDashboard.*'
+      - 'src/components/appShellState*'
+      - 'src/components/appPreviewState*'
+      - 'src/components/account/PwaMeHub.*'
+      - 'src/components/captain/PwaCaptainHub.*'
+      - 'src/app/captain/**'
+      - 'src/components/matches/PwaMatchdayHub.*'
+      - 'src/components/matches/PwaMatchdayPhase*'
+      - 'src/components/teams/PwaTeamHub.*'
+      - 'src/app/manifest.ts'
+      - 'public/sw.js'
+      - 'package.json'
+      - '.github/workflows/pwa-app.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test-pwa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run PWA app tests
+        run: npm run test:pwa

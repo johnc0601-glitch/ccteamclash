@@ -4,6 +4,7 @@ import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory'
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
 import {LazyTeamRosterDirectory} from '@/components/teams/LazyTeamRosterDirectory';
+import {PwaTeamHub} from '@/components/teams/PwaTeamHub';
 import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
 import {createServerTeamPageServices} from '@/core/createServerTeamPageServices';
@@ -20,6 +21,7 @@ import {buildPublicTeamRoster} from '@/services/public/PublicRosterService';
 import type {RecordSummary} from '@/services/statistics';
 import {createSlug} from '@/shared/utils';
 import {createClient} from '@/lib/supabase/server';
+import {getOwnClubhouseContext} from '@/lib/clubhouse';
 import styles from './TeamDetail.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -40,6 +42,8 @@ export default async function TeamPage({params}: TeamPageProps) {
   if (!team?.active) notFound();
 
   const teamPageServices = await createServerTeamPageServices();
+  const supabase = await createClient();
+  const viewerContextPromise = getOwnClubhouseContext(supabase);
   const [activeSeason, seasons, courses, launchPlayers] = await Promise.all([
     teamPageServices?.seasons.getActive() ?? Promise.resolve(undefined),
     teamPageServices?.seasons.getAll() ?? Promise.resolve([]),
@@ -69,11 +73,12 @@ export default async function TeamPage({params}: TeamPageProps) {
       ? serverPublicPlayers.getForPlayerIdentities(rosterIdentities)
       : Promise.resolve([]);
   const scheduleService = await createServerScheduleService();
-  const [rosterSummaries, historicalPlayers, nextMatch, teamEvents] = await Promise.all([
+  const [rosterSummaries, historicalPlayers, nextMatch, teamEvents, viewerContext] = await Promise.all([
     rosterSummariesPromise,
     historicalPlayersPromise,
     scheduleService.getTeamNextEvent(team.id),
     scheduleService.getTeamEvents(team.id),
+    viewerContextPromise,
   ]);
   const roster = activeSeason && launchPlayers
     ? []
@@ -101,6 +106,24 @@ export default async function TeamPage({params}: TeamPageProps) {
     : undefined;
   const historicalStatistics = getHistoricalTeamSeedSummary(team.id);
   const displayStatistics = historicalStatistics ?? currentStatistics;
+  const appStatistics = currentStatistics ?? displayStatistics;
+  const isOwnTeam = viewerContext?.teamId === team.id;
+  const canManageTeam = Boolean(isOwnTeam && (viewerContext?.isCaptain || viewerContext?.isCommissioner));
+  const appAttendance = isOwnTeam && nextMatch
+    ? await getTeamAttendanceSummary(supabase, nextMatch.id, team.id, viewerContext?.playerId ?? '', rosterCount)
+    : null;
+  const {data: latestAnnouncement} = isOwnTeam
+    ? await (supabase as any)
+      .from('launch_clubhouse_posts')
+      .select('id,title,body')
+      .eq('season_id', viewerContext?.seasonId)
+      .eq('team_id', team.id)
+      .eq('post_type', 'announcement')
+      .is('deleted_at', null)
+      .order('created_at', {ascending: false})
+      .limit(1)
+      .maybeSingle()
+    : {data: null};
   const historicalHistory = getHistoricalTeamSeasonSummaries(team.id);
   const seasonTitles = getHistoricalTeamSeasonTitles(team.id);
   const history = seasonStatistics.filter(({statistics}) => statistics.matchesPlayed > 0);
@@ -114,6 +137,22 @@ export default async function TeamPage({params}: TeamPageProps) {
       <SiteHeader />
       <main className={styles.page}>
         <div className="shell">
+          <PwaTeamHub
+            team={team}
+            nextMatch={nextMatch}
+            rosterCount={rosterCount}
+            record={appStatistics ? formatRecord(appStatistics.record) : '0-0'}
+            pointsPercentage={appStatistics?.pointsPercentage ?? 0}
+            isOwnTeam={isOwnTeam}
+            canManage={canManageTeam}
+            attendance={appAttendance}
+            announcement={latestAnnouncement ? {
+              id: latestAnnouncement.id,
+              title: latestAnnouncement.title ?? '',
+              body: latestAnnouncement.body ?? '',
+            } : null}
+          />
+          <div className="browser-team-overview">
           <Link className={styles.back} href="/teams">Back to teams</Link>
           <ClientTeamBanner initialTeam={team} />
 
@@ -154,8 +193,9 @@ export default async function TeamPage({params}: TeamPageProps) {
           </section>
 
           {team.description ? <p className={styles.description}>{team.description}</p> : null}
+          </div>
 
-          <section className={styles.section}>
+          <section id="schedule" className={styles.section}>
             <header className={styles.sectionHeader}>
               <span>Team schedule</span>
               <h2>Matchdays</h2>
@@ -164,7 +204,7 @@ export default async function TeamPage({params}: TeamPageProps) {
             <TeamSchedule events={teamEvents} courseDirections={courseDirections} />
           </section>
 
-          <section className={styles.section}>
+          <section id="roster" className={styles.section}>
             <header className={styles.sectionHeader}>
               <span>Current team</span>
               <h2>Roster</h2>
@@ -314,4 +354,36 @@ function TeamSchedule({events, courseDirections}: {
       </table>
     </div>
   );
+}
+
+
+type TeamAttendanceSummary = {
+  yes: number;
+  no: number;
+  unknown: number;
+  own: string | null;
+};
+
+async function getTeamAttendanceSummary(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  matchId: string,
+  teamId: string,
+  playerId: string,
+  rosterCount: number,
+): Promise<TeamAttendanceSummary> {
+  const {data} = await (supabase as any)
+    .from('launch_match_attendance')
+    .select('player_id,status')
+    .eq('match_id', matchId)
+    .eq('team_id', teamId);
+
+  const rows = (data ?? []) as Array<{player_id: string; status: string}>;
+  const yes = rows.filter((row) => row.status === 'Playing').length;
+  const no = rows.filter((row) => row.status === 'NotPlaying').length;
+  return {
+    yes,
+    no,
+    unknown: Math.max(0, rosterCount - yes - no),
+    own: playerId ? rows.find((row) => row.player_id === playerId)?.status ?? null : null,
+  };
 }

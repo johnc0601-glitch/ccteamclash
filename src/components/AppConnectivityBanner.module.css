@@ -1,0 +1,56 @@
+.banner { display: none; }
+
+@media (max-width: 800px) and (display-mode: standalone) {
+  .banner {
+    position: fixed;
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    left: 12px;
+    z-index: 126;
+    min-height: 42px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid rgba(200,155,43,.58);
+    border-radius: 10px;
+    background: rgba(17,20,20,.97);
+    box-shadow: 0 9px 22px rgba(0,0,0,.28);
+    color: #fff;
+  }
+}
+
+.banner strong {
+  color: var(--cc-gold);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.banner span {
+  color: #c9cfcc;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+@media (max-width: 800px) {
+  :global(html[data-app-preview='true']) .banner {
+    position: fixed;
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    left: 12px;
+    z-index: 126;
+    min-height: 42px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid rgba(200,155,43,.58);
+    border-radius: 10px;
+    background: rgba(17,20,20,.97);
+    box-shadow: 0 9px 22px rgba(0,0,0,.28);
+    color: #fff;
+  }
+}

@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import {createClient} from '@/lib/supabase/server';
+import {getMutedProfileIds} from '@/lib/profileMutes';
+import {MuteMemberControl} from '@/components/social/MuteMemberControl';
 import {
   addStoryComment,
   editStoryComment,
@@ -67,9 +69,12 @@ export async function StoryComments({storyId, storySlug, notice, error}: StoryCo
 
   const reactions = (reactionsData ?? []) as Reaction[];
   const profile = profileResult.data as {id: string; role: string; status: string} | null;
+  const mutedProfileIds = await getMutedProfileIds(supabase as any, profile?.id);
+  const visibleComments = comments.filter((comment) => !mutedProfileIds.has(comment.profile_id));
+  const visibleReactions = reactions.filter((reaction) => !mutedProfileIds.has(reaction.profile_id));
   const commissioner = profile?.role === 'Commissioner' && profile.status === 'Approved';
-  const roots = comments.filter((comment) => !comment.parent_comment_id);
-  const visibleCount = comments.filter((comment) => !comment.deleted_at).length;
+  const roots = visibleComments.filter((comment) => !comment.parent_comment_id);
+  const visibleCount = visibleComments.filter((comment) => !comment.deleted_at).length;
 
   return (
     <section id="story-conversation" className={styles.conversation}>
@@ -107,8 +112,8 @@ export async function StoryComments({storyId, storySlug, notice, error}: StoryCo
           <CommentCard
             key={comment.id}
             comment={comment}
-            replies={comments.filter((candidate) => candidate.parent_comment_id === comment.id)}
-            reactions={reactions}
+            replies={visibleComments.filter((candidate) => candidate.parent_comment_id === comment.id)}
+            reactions={visibleReactions}
             currentProfileId={profile?.id ?? null}
             commissioner={Boolean(commissioner)}
             storyId={storyId}
@@ -221,6 +226,7 @@ function CommentBubble({comment, reactions, currentProfileId, commissioner, stor
           ) : null}
 
           {currentProfileId && !owner ? (
+            <>
             <details>
               <summary>Report</summary>
               <form action={reportStoryComment} className={styles.reportForm}>
@@ -237,6 +243,12 @@ function CommentBubble({comment, reactions, currentProfileId, commissioner, stor
                 <button type="submit">Submit report</button>
               </form>
             </details>
+            <MuteMemberControl
+              profileId={comment.profile_id}
+              returnTo={`/stories/${encodeURIComponent(storySlug)}#story-conversation`}
+              compact
+            />
+            </>
           ) : null}
 
           {canReply && currentProfileId ? (

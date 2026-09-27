@@ -250,6 +250,35 @@ export async function signOut() {
   redirect('/account?notice=You are signed out.');
 }
 
+export async function deleteOwnAccount(formData: FormData) {
+  const confirmation = readFormValue(formData, 'confirmation');
+  if (confirmation !== 'DELETE') {
+    redirect('/account/delete?error=Type DELETE exactly to confirm account deletion.');
+  }
+
+  const supabase = await createClient();
+  const {data: {user}, error: userError} = await supabase.auth.getUser();
+  if (userError || !user) redirect('/account?error=Sign in before deleting your account.');
+
+  const {error} = await (supabase as any).rpc('self_delete_launch_account', {confirmation});
+  if (error) {
+    redirect(`/account/delete?error=${encodeURIComponent(error.message)}`);
+  }
+
+  // The Auth row is already gone. This clears any local/server session cookie
+  // that remains in the current browser; stale tokens are also rejected by proxy.
+  try {
+    await supabase.auth.signOut({scope: 'local'});
+  } catch {
+    // The deleted Auth identity can no longer refresh or resolve to a league profile.
+  }
+
+  revalidatePath('/account');
+  revalidatePath('/clubhouse');
+  revalidatePath('/captain');
+  redirect('/account?notice=Your Team Clash account has been deleted. League results and player history were preserved.');
+}
+
 export async function updateProfileName(formData: FormData) {
   const displayName = readFormValue(formData, 'displayName');
   if (!displayName) redirect('/account?error=Enter your name.');

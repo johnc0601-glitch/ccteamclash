@@ -36,7 +36,7 @@ export async function MatchPreview({matchId}: {matchId: string}) {
   const storyUrl = safeStoryUrl(preview?.story_url);
 
   return (
-    <div className={`shell ${styles.wrap}`} id="match-preview">
+    <div className={`shell ${styles.wrap} ${!excerpt ? styles.emptyEditorOnly : ''}`} id="match-preview">
       <section className={styles.card} aria-labelledby={`match-preview-title-${matchId}`}>
         <div className={styles.header}>
           <div>

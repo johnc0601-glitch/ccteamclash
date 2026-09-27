@@ -13,6 +13,9 @@ type HeaderAccessState = {
   canCaptainManage: boolean;
   hasClubhouse: boolean;
   clubhouseHasUnread: boolean;
+  activeTeamId: string | null;
+  playerId: string | null;
+  activeSeasonId: string | null;
 };
 
 const EMPTY_ACCESS: HeaderAccessState = {
@@ -21,6 +24,9 @@ const EMPTY_ACCESS: HeaderAccessState = {
   canCaptainManage: false,
   hasClubhouse: false,
   clubhouseHasUnread: false,
+  activeTeamId: null,
+  playerId: null,
+  activeSeasonId: null,
 };
 
 const HeaderAccessContext = createContext<HeaderAccessState>(EMPTY_ACCESS);
@@ -49,6 +55,9 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
           canCaptainManage: false,
           hasClubhouse: false,
           clubhouseHasUnread: false,
+          activeTeamId: null,
+          playerId: null,
+          activeSeasonId: null,
         });
       }
 
@@ -66,6 +75,9 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
           canCaptainManage: false,
           hasClubhouse: false,
           clubhouseHasUnread: false,
+          activeTeamId: null,
+          playerId: null,
+          activeSeasonId: null,
         });
         return;
       }
@@ -75,6 +87,9 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
       ) && Boolean(profile.captain_team_id);
       let hasClubhouse = false;
       let clubhouseHasUnread = false;
+      let activeTeamId: string | null = null;
+      let activeSeasonId: string | null = null;
+      const playerId = profile.player_id ?? null;
 
       if (profile.player_id) {
         const {data: season} = await db
@@ -87,6 +102,7 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
           .maybeSingle();
 
         if (season?.id) {
+          activeSeasonId = season.id;
           const {data: membership} = await db
             .from('launch_season_roster_memberships')
             .select('team_id')
@@ -97,6 +113,7 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
             .maybeSingle();
 
           if (membership?.team_id) {
+            activeTeamId = membership.team_id;
             hasClubhouse = true;
 
             const {data: readState} = await db
@@ -128,11 +145,11 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
 
       if (!mounted) return;
       if (profile.role === 'Commissioner') {
-        setAccess({isSignedIn: true, role: 'commissioner', canCaptainManage, hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: 'commissioner', canCaptainManage, hasClubhouse, clubhouseHasUnread, activeTeamId, playerId, activeSeasonId});
       } else if (profile.role === 'Captain') {
-        setAccess({isSignedIn: true, role: 'captain', canCaptainManage, hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: 'captain', canCaptainManage, hasClubhouse, clubhouseHasUnread, activeTeamId, playerId, activeSeasonId});
       } else {
-        setAccess({isSignedIn: true, role: null, canCaptainManage, hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: null, canCaptainManage, hasClubhouse, clubhouseHasUnread, activeTeamId, playerId, activeSeasonId});
       }
     };
 

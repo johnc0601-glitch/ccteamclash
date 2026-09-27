@@ -31,7 +31,7 @@ const getCachedHomepageClashPulseItems = unstable_cache(
       publishedAt: String(row.published_at),
     }));
   },
-  ['homepage-clash-pulse-v1'],
+  ['homepage-clash-pulse-v2'],
   {revalidate: 3_600, tags: ['public:clash-pulse']},
 );
 

@@ -152,3 +152,32 @@
     font-size: 26px;
   }
 }
+
+
+@media (max-width: 800px) and (display-mode: standalone) {
+  .emptyEditorOnly {
+    display: none;
+  }
+
+  .editor {
+    display: none;
+  }
+
+  .wrap {
+    padding-bottom: 6px;
+  }
+}
+
+@media (max-width: 800px) {
+  :global(html[data-app-preview='true']) .emptyEditorOnly {
+    display: none;
+  }
+
+  :global(html[data-app-preview='true']) .editor {
+    display: none;
+  }
+
+  :global(html[data-app-preview='true']) .wrap {
+    padding-bottom: 6px;
+  }
+}

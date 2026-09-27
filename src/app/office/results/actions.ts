@@ -18,6 +18,7 @@ import type {Round} from '@/domain/schedule/Round';
 import type {Schedule} from '@/domain/schedule/Schedule';
 import {createClient} from '@/lib/supabase/server';
 import type {Team} from '@/models/Team';
+import {enqueuePublishedResultNotifications} from '@/services/notifications/NotificationOutboxService';
 
 type ResultsWorkspace = {
   schedules: Schedule[];
@@ -132,6 +133,18 @@ export async function saveOfficeResult(
   if (action !== 'draft' && seasonId.trim()) {
     await (await createServerPlayoffService()).getBracket(seasonId.trim());
   }
+
+  if (action === 'publish') {
+    try {
+      await enqueuePublishedResultNotifications(normalizedMatchId);
+    } catch (notificationError) {
+      console.error('Published result notifications could not be queued.', {
+        matchId: normalizedMatchId,
+        error: notificationError,
+      });
+    }
+  }
+
   revalidateResultSurfaces(normalizedMatchId);
   return result;
 }

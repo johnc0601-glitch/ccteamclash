@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import {PlayerRecordSelect} from '@/components/launch/PlayerRecordSelect';
 import {ThemeToggle} from '@/components/ThemeToggle';
+import {InstallTeamClashCard} from '@/components/InstallTeamClashCard';
+import {PwaMeHub} from '@/components/account/PwaMeHub';
 import {createServerPublicPlayerService} from '@/core/createServerPublicPlayerService';
 import {ensureLaunchSignupProfile} from '@/domain/launch/LaunchAccountSetup';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
@@ -54,6 +56,7 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
   const params = searchParams ? await searchParams : {};
   const notice = readAccountParam(params.notice);
   const error = readAccountParam(params.error);
+  const manageAccount = readAccountParam(params.manage) === '1';
 
   if (!hasSupabaseConfig()) {
     return (
@@ -250,14 +253,19 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
 
   return (
     <AccountPageLayout
-      description={registrationIncomplete
-        ? 'Choose your team, or choose Free Agent if you are looking for one.'
-        : 'Manage your player profile, season registration, league history, and access.'}
+      description={manageAccount
+        ? 'Profile, registration, display, privacy, and account controls.'
+        : registrationIncomplete
+          ? 'Choose your team, or choose Free Agent if you are looking for one.'
+          : 'Your Team Clash profile, Matchday shortcuts, and league access.'}
       error={error ?? profileSetupError}
       notice={notice}
-      title={registrationIncomplete ? 'Finish registration' : 'My account'}
+      title={manageAccount ? 'Account settings' : registrationIncomplete ? 'Finish registration' : 'Me'}
+      appBackHref={manageAccount ? '/account' : undefined}
+      appBackLabel="Me"
+      hideHeaderInApp
     >
-      <section className={styles.accountBar} aria-label="Signed in account">
+      <section className={`${styles.accountBar} ${styles.appAccountDetails} ${manageAccount ? styles.appAccountDetailsOpen : ''}`} aria-label="Signed in account">
         <div>
           <span className={styles.eyebrow}>Signed in</span>
           <strong>{user.email}</strong>
@@ -277,6 +285,8 @@ export default async function AccountPage({searchParams}: AccountPageProps) {
           application={application}
           establishedRegistration={establishedRegistration}
           playerStats={playerStats}
+          email={user.email ?? ''}
+          manageAccount={manageAccount}
         />
       ) : (
         <article className={styles.panel}>
@@ -298,6 +308,8 @@ function MemberProfile({
   application,
   establishedRegistration,
   playerStats,
+  email,
+  manageAccount,
 }: {
   players: LaunchPlayer[];
   profile: LaunchProfile;
@@ -307,6 +319,8 @@ function MemberProfile({
   application: RegistrationApplication | null;
   establishedRegistration: EstablishedRegistration;
   playerStats: AccountPlayerStats | null;
+  email: string;
+  manageAccount: boolean;
 }) {
   const linkedPlayer = players.find((player) => player.id === profile.playerId);
   const playerSetupComplete = Boolean(linkedPlayer && playedBefore !== null);
@@ -374,7 +388,20 @@ function MemberProfile({
   const gender = application?.gender || linkedPlayer?.gender || establishedRegistration?.gender || '—';
 
   return (
-    <section className={styles.grid}>
+    <>
+      {!manageAccount ? (
+        <PwaMeHub
+          displayName={linkedPlayer?.name ?? profile.displayName}
+          email={email}
+          role={profile.role}
+          teamName={teamName}
+          teamId={linkedPlayer?.currentTeamId ?? null}
+          clashIndex={linkedPlayer?.clashIndex}
+          pdgaRating={linkedPlayer?.pdgaRating}
+          captainTeamId={profile.captainTeamId}
+        />
+      ) : null}
+      <section className={`${styles.grid} ${styles.appAccountDetails} ${manageAccount ? styles.appAccountDetailsOpen : ''}`}>
       <article className={`${styles.panel} ${styles.profilePanel}`}>
         <div className={styles.profileHeading}>
           <div>
@@ -459,8 +486,19 @@ function MemberProfile({
         <h2>Theme</h2>
         <p>Choose how Team Clash looks on this device.</p>
         <div className={styles.themeAction}><ThemeToggle /></div>
+        <InstallTeamClashCard />
+        <div className={styles.accountPrivacy}>
+          <span className={styles.eyebrow}>Privacy & account</span>
+          <p>Control social-content visibility or remove your website login while preserving official league results and player history.</p>
+          <div className={styles.privacyActions}>
+            <Link className={styles.privacyLink} href="/account/notifications">Notifications</Link>
+            <Link className={styles.privacyLink} href="/account/mutes">Muted members</Link>
+            <Link className={styles.deleteAccountLink} href="/account/delete">Delete account</Link>
+          </div>
+        </div>
       </article>
-    </section>
+      </section>
+    </>
   );
 }
 

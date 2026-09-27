@@ -6,23 +6,67 @@ import {HomeMatchCarousel} from '@/components/HomeMatchCarousel';
 import {Intro} from '@/components/intro/Intro';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchCard} from '@/components/MatchCard';
+import {PwaHomeDashboard} from '@/components/PwaHomeDashboard';
 import {getHomepageData} from '@/services/home/HomepageDataService';
+import {createPublicStandingsService} from '@/core/createPublicStandingsService';
 import {getHomepageClashPulseItems} from '@/services/home/ClashPulseService';
 import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
 
 export const revalidate = 21_600;
 
 export default async function Home() {
-  const [homepageData, clashPulseItems] = await Promise.all([
+  const [homepageData, clashPulseItems, standingsData] = await Promise.all([
     getHomepageData(),
     getHomepageClashPulseItems(),
+    createPublicStandingsService().getActiveSeasonStandings(),
   ]);
   const {storyData, teams: teamLogos, homeEvents, feedPreviews} = homepageData;
   const lead = storyData.lead;
 
+  const pwaMatches = homeEvents.map((match) => ({
+    id: match.id,
+    href: match.href,
+    date: match.date,
+    time: match.time,
+    course: match.course,
+    home: match.home,
+    away: match.away,
+    homeTeamId: match.homeTeamId,
+    awayTeamId: match.awayTeamId,
+  }));
+  const pwaTeams = teamLogos.map((team) => ({
+    id: team.id,
+    name: team.name,
+    shortName: team.shortName,
+    logo: team.logo,
+    primaryColor: team.primaryColor,
+    secondaryColor: team.secondaryColor,
+  }));
+  const pwaStandings = (standingsData?.entries ?? []).map((entry) => ({
+    rank: entry.rank,
+    teamId: entry.team.id,
+    shortName: entry.team.shortName,
+    wins: entry.wins,
+    losses: entry.losses,
+    gamesPlayed: entry.gamesPlayed,
+  }));
+  const pwaStory = lead ? {
+    slug: lead.slug,
+    title: lead.title,
+    preview: getStoryPreview(lead),
+  } : null;
+
   return (
     <main className="home-page">
       <SiteHeader />
+      <PwaHomeDashboard
+        matches={pwaMatches}
+        teams={pwaTeams}
+        standings={pwaStandings}
+        story={pwaStory}
+        pulse={clashPulseItems}
+      />
+      <div className="browser-home-content">
       <ClashCountdown />
 
       {lead ? (
@@ -75,6 +119,7 @@ export default async function Home() {
       <Footer />
       <Intro />
       <ClashPulse items={clashPulseItems} />
+      </div>
     </main>
   );
 }

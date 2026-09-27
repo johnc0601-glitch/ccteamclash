@@ -1,0 +1,93 @@
+.header { display: none; }
+
+@media (max-width: 800px) and (display-mode: standalone) {
+  .header {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+}
+
+.identity {
+  padding: 15px 16px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-left: 4px solid var(--clubhouse-accent);
+  border-radius: 14px;
+  background: linear-gradient(145deg,#171c1d,#090b0c);
+  color: #fff;
+  box-shadow: 0 14px 30px rgba(0,0,0,.2);
+}
+
+.logo {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 50%;
+  background: #090b0c;
+}
+.logo img { width: 52px; height: 52px; object-fit: contain; }
+.logo span { color: var(--cc-gold); font-size: 15px; font-weight: 950; }
+
+.identity > div:last-child { min-width: 0; }
+.identity span {
+  color: var(--clubhouse-accent);
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+.identity h1 {
+  margin: 4px 0 3px;
+  overflow: hidden;
+  color: #fff;
+  font-family: var(--cc-font-display);
+  font-size: 26px;
+  font-style: italic;
+  line-height: .95;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.identity p { margin: 0; color: #9ea6a2; font-size: 10px; font-weight: 800; }
+
+.actions {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.actions::-webkit-scrollbar { display: none; }
+.actions a {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 12px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #ddd8cd;
+  border-radius: 999px;
+  background: #fff;
+  color: #232829;
+  font-size: 9px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+.actions a:first-child {
+  border-color: color-mix(in srgb, var(--clubhouse-accent) 46%, #ddd8cd);
+  color: var(--cc-gold-ink);
+}
+
+@media (max-width: 800px) {
+  :global(html[data-app-preview='true']) .header {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+}

@@ -37,7 +37,7 @@
 .nextMatch span { color: var(--cc-gold); font-size: 10px; font-weight: 950; letter-spacing: .12em; text-transform: uppercase; }
 .nextMatch h3 { margin: 6px 0 8px; font-family: var(--cc-font-display); font-size: 30px; font-style: italic; letter-spacing: -.03em; line-height: .95; text-transform: uppercase; }
 .nextMatch p { margin: 0; color: var(--cc-text-muted); font-size: 13px; font-weight: 800; }
-.nextMatch p a { color: #fff; text-decoration: underline; text-decoration-color: var(--cc-gold); text-underline-offset: 4px; }
+.nextMatch p a { color: var(--cc-light-text); text-decoration: underline; text-decoration-color: var(--cc-gold); text-underline-offset: 4px; }
 .nextMatch > a { min-height: 40px; padding: 0 14px; display: inline-flex; flex: 0 0 auto; align-items: center; border: 1px solid var(--cc-gold); border-radius: 4px; background: var(--cc-gold); color: #111; font-size: 11px; font-weight: 950; text-transform: uppercase; }
 .matchHistoryWrap table { width: 100%; min-width: 680px; border-collapse: collapse; }
 .matchHistoryWrap th, .matchHistoryWrap td { padding: 14px; border-bottom: 1px solid var(--cc-light-border); text-align: left; font-size: 12px; }

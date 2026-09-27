@@ -12,6 +12,8 @@ import {
 } from '@/app/matches/[id]/feedActions';
 import {isMatchFeedOpen} from '@/services/matches/MatchFeedLifecycle';
 import {getPublicMatchHref} from '@/services/matches/MatchPublicIdentity';
+import {getMutedProfileIds} from '@/lib/profileMutes';
+import {MuteMemberControl} from '@/components/social/MuteMemberControl';
 import {MatchFeedComposer} from './MatchFeedComposer';
 import styles from './MatchFeed.module.css';
 
@@ -105,6 +107,13 @@ export async function MatchFeed({matchId, matchDate, notice, error, before}: Mat
   const postReactions = (postReactionsData ?? []) as Reaction[];
   const commentReactions = (commentReactionsData ?? []) as Reaction[];
   const profile = profileResult.data as {id: string; role: string; status: string} | null;
+  const mutedProfileIds = await getMutedProfileIds(supabase as any, profile?.id);
+  const visiblePosts = posts.filter((post) => !mutedProfileIds.has(post.profile_id));
+  const visiblePostIds = new Set(visiblePosts.map((post) => post.id));
+  const visibleComments = comments.filter((comment) =>
+    !mutedProfileIds.has(comment.profile_id) && visiblePostIds.has(comment.post_id));
+  const visiblePostReactions = postReactions.filter((reaction) => !mutedProfileIds.has(reaction.profile_id));
+  const visibleCommentReactions = commentReactions.filter((reaction) => !mutedProfileIds.has(reaction.profile_id));
   const commissioner = profile?.role === 'Commissioner' && profile.status === 'Approved';
   const open = isMatchFeedOpen(matchDate);
   const publicUrl = (path: string) => supabase.storage.from('match-feed').getPublicUrl(path).data.publicUrl;
@@ -124,16 +133,16 @@ export async function MatchFeed({matchId, matchDate, notice, error, before}: Mat
         <div className={styles.signIn}><Link href="/account">Sign in</Link> to post, reply or react.</div>
       )}
 
-      {!posts.length ? <div className={styles.empty}>{cursor ? 'No older match posts.' : 'No match posts yet. Start the conversation.'}</div> : null}
-      {posts.slice(0, 3).map((post) => (
-        <PostCard key={post.id} post={post} comments={comments.filter((comment) => comment.post_id === post.id)} postReactions={postReactions.filter((reaction) => reaction.post_id === post.id)} commentReactions={commentReactions} currentProfileId={profile?.id ?? null} commissioner={Boolean(commissioner)} open={open} matchId={matchId} imageUrl={post.image_path ? publicUrl(post.image_path) : null} />
+      {!visiblePosts.length ? <div className={styles.empty}>{cursor ? 'No older visible match posts.' : 'No visible match posts yet. Start the conversation.'}</div> : null}
+      {visiblePosts.slice(0, 3).map((post) => (
+        <PostCard key={post.id} post={post} comments={visibleComments.filter((comment) => comment.post_id === post.id)} postReactions={visiblePostReactions.filter((reaction) => reaction.post_id === post.id)} commentReactions={visibleCommentReactions} currentProfileId={profile?.id ?? null} commissioner={Boolean(commissioner)} open={open} matchId={matchId} imageUrl={post.image_path ? publicUrl(post.image_path) : null} />
       ))}
-      {posts.length > 3 ? (
+      {visiblePosts.length > 3 ? (
         <details className={styles.loadMore}>
-          <summary>Show more on this page · {posts.length - 3}</summary>
+          <summary>Show more on this page · {visiblePosts.length - 3}</summary>
           <div className={styles.morePosts}>
-            {posts.slice(3).map((post) => (
-              <PostCard key={post.id} post={post} comments={comments.filter((comment) => comment.post_id === post.id)} postReactions={postReactions.filter((reaction) => reaction.post_id === post.id)} commentReactions={commentReactions} currentProfileId={profile?.id ?? null} commissioner={Boolean(commissioner)} open={open} matchId={matchId} imageUrl={post.image_path ? publicUrl(post.image_path) : null} />
+            {visiblePosts.slice(3).map((post) => (
+              <PostCard key={post.id} post={post} comments={visibleComments.filter((comment) => comment.post_id === post.id)} postReactions={visiblePostReactions.filter((reaction) => reaction.post_id === post.id)} commentReactions={visibleCommentReactions} currentProfileId={profile?.id ?? null} commissioner={Boolean(commissioner)} open={open} matchId={matchId} imageUrl={post.image_path ? publicUrl(post.image_path) : null} />
             ))}
           </div>
         </details>
@@ -174,7 +183,12 @@ function PostCard({post, comments, postReactions, commentReactions, currentProfi
           {interactive && currentProfileId === post.profile_id ? (
             <details><summary className={styles.editSummary}>Edit</summary><form action={editMatchFeedPost} className={styles.editForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={post.id} /><textarea name="body" defaultValue={post.body} maxLength={3000} /><button type="submit">Save edit</button></form></details>
           ) : null}
-          {!post.deleted_at && currentProfileId && currentProfileId !== post.profile_id ? <ReportControl matchId={matchId} postId={post.id} /> : null}
+          {!post.deleted_at && currentProfileId && currentProfileId !== post.profile_id ? (
+            <>
+              <ReportControl matchId={matchId} postId={post.id} />
+              <MuteMemberControl profileId={post.profile_id} returnTo={`/matches/${matchId}#match-feed`} compact />
+            </>
+          ) : null}
           {commissioner && !post.deleted_at ? <form action={softDeleteMatchFeedPost}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={post.id} /><button type="submit">Remove</button></form> : null}
         </div>
       </header>
@@ -229,7 +243,12 @@ function CommentBubble({comment, reactions, currentProfileId, commissioner, open
       {!comment.deleted_at && open && currentProfileId ? <ReactionPicker reactions={reactions} currentProfileId={currentProfileId} matchId={matchId} postId={postId} commentId={comment.id} compact /> : null}
       <ReactionSummary counts={counts} compact />
       {!comment.deleted_at && open && currentProfileId === comment.profile_id ? <details><summary>Edit</summary><form action={editMatchFeedComment} className={styles.editForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="commentId" value={comment.id} /><textarea name="body" defaultValue={comment.body} maxLength={1500} /><button type="submit">Save edit</button></form></details> : null}
-      {!comment.deleted_at && currentProfileId && currentProfileId !== comment.profile_id ? <ReportControl matchId={matchId} commentId={comment.id} /> : null}
+      {!comment.deleted_at && currentProfileId && currentProfileId !== comment.profile_id ? (
+        <>
+          <ReportControl matchId={matchId} commentId={comment.id} />
+          <MuteMemberControl profileId={comment.profile_id} returnTo={`/matches/${matchId}#match-feed`} compact />
+        </>
+      ) : null}
       {!comment.deleted_at && commissioner ? <form action={softDeleteMatchFeedComment}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="commentId" value={comment.id} /><button type="submit">Remove</button></form> : null}
       {!comment.deleted_at && canReply && open && currentProfileId ? <details><summary>Reply</summary><form action={addMatchFeedComment} className={styles.replyForm}><input type="hidden" name="matchId" value={matchId} /><input type="hidden" name="postId" value={postId} /><input type="hidden" name="parentCommentId" value={comment.id} /><input name="body" maxLength={1500} placeholder="Reply" /><button type="submit">Reply</button></form></details> : null}
     </div>
