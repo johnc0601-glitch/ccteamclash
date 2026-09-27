@@ -18,7 +18,7 @@ test('unconfigured matches, deep links and unrelated destinations bypass intros'
 });
 
 test('mobile crop is optional and desktop selection remains independent', () => {
-  const art = Object.values(MATCHDAY_INTROS)[0];
+  const art = Object.values(MATCHDAY_INTROS)[1];
   assert.equal(selectIntroImage(art, true), art.desktop);
   assert.equal(selectIntroImage({...art, mobile: '/crop.png'}, true), '/crop.png');
   assert.equal(selectIntroImage({...art, mobile: '/crop.png'}, false), art.desktop);

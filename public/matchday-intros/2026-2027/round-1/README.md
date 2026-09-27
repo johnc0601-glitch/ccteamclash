@@ -1,15 +1,22 @@
 # Round 1 intro artwork
 
-Place the original clean posters (without Matchday text) here:
+Included: the existing KB–Dark Knights poster and mobile crop recovered unchanged
+from repository branch `feature/matchday-matchup-intro` at `ebd2a40`:
 
-- `01_KB_at_Dark_Knights.png`
+- `01_KB_at_Dark_Knights.webp`
+- `01_KB_at_Dark_Knights.mobile.webp`
+
+These are earlier repository assets, not verified copies of the four newly
+requested conversation posters. Replace their config paths when those originals
+are available. Place the three remaining clean posters here:
+
 - `02_Wild_Turkey_at_Cougar_Country.png`
 - `03_Hayneous_OGs_at_Ninjas.png`
 - `04_Beast_Mode_at_Riptide.png`
 
-The finished poster binaries were not available in the referenced conversation's
-attachments or local files when this feature was implemented. Do not substitute
-team logos or claim these files are present. Missing files skip the intro safely.
+The four exact PNG binaries were not available in the referenced conversation's
+attachments, local file search, or site storage. The three remaining poster
+files above are pending. Missing files skip the intro safely.
 
 Configuration: `src/components/matchday-intro/matchdayIntro.config.ts`.
 Each public match slug maps to `{ matchId, label, desktop, mobile? }`.

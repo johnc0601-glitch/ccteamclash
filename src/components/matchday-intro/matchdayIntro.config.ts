@@ -13,7 +13,8 @@ export const MATCHDAY_INTROS: Record<string, MatchdayIntroArt> = {
   'kb-at-dark-knights-2026-r1': {
     matchId: 'ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f',
     label: 'KB at Dark Knights',
-    desktop: `${root}/01_KB_at_Dark_Knights.png`,
+    desktop: `${root}/01_KB_at_Dark_Knights.webp`,
+    mobile: `${root}/01_KB_at_Dark_Knights.mobile.webp`,
   },
   'wild-turkey-at-cougar-country-2026-r1': {
     matchId: 'wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2',
