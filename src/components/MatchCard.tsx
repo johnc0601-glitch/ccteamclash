@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import {MatchdayLink} from '@/components/matchday-intro/MatchdayLink';
 import {useState} from 'react';
 import type {Team} from '@/models/Team';
 import {createSlug} from '@/shared/utils';
@@ -55,7 +56,7 @@ export function MatchCard({match, teams, feedPreview}: MatchCardProps) {
         </a>
       ) : null}
       <div className="match-card-footer">
-        <a href={match.href} className="gold-link">View match -&gt;</a>
+        <MatchdayLink href={match.href} className="gold-link">View match -&gt;</MatchdayLink>
       </div>
     </article>
   );
