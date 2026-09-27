@@ -18,7 +18,7 @@ type MatchdayIntroProps = {
   homeTeam: MatchdayIntroTeam;
 };
 
-type MatchdayIntroPhase = 'away' | 'vs' | 'home' | 'hold' | 'exit';
+type MatchdayIntroPhase = 'start' | 'away' | 'vs' | 'home' | 'hold' | 'exit';
 
 type MatchdayIntroStyle = CSSProperties & {
   '--intro-away': string;
@@ -28,11 +28,12 @@ type MatchdayIntroStyle = CSSProperties & {
 };
 
 const TIMING = {
-  vsAtMs: 650,
-  homeAtMs: 1200,
-  holdAtMs: 1750,
-  exitAtMs: 2650,
-  finishAtMs: 3250,
+  awayAtMs: 180,
+  vsAtMs: 820,
+  homeAtMs: 1370,
+  holdAtMs: 1920,
+  exitAtMs: 2820,
+  finishAtMs: 3380,
   reducedExitAtMs: 850,
   reducedFinishAtMs: 1050,
 } as const;
@@ -44,7 +45,7 @@ export function MatchdayIntro({
   homeTeam,
 }: MatchdayIntroProps) {
   const [isMounted, setIsMounted] = useState(play);
-  const [phase, setPhase] = useState<MatchdayIntroPhase>('away');
+  const [phase, setPhase] = useState<MatchdayIntroPhase>('start');
 
   useEffect(() => {
     if (!play) {
@@ -53,7 +54,7 @@ export function MatchdayIntro({
     }
 
     setIsMounted(true);
-    setPhase('away');
+    setPhase('start');
 
     const timers: number[] = [];
     const root = document.documentElement;
@@ -80,6 +81,7 @@ export function MatchdayIntro({
       );
     } else {
       timers.push(
+        window.setTimeout(() => setPhase('away'), TIMING.awayAtMs),
         window.setTimeout(() => setPhase('vs'), TIMING.vsAtMs),
         window.setTimeout(() => setPhase('home'), TIMING.homeAtMs),
         window.setTimeout(() => setPhase('hold'), TIMING.holdAtMs),
