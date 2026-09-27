@@ -203,7 +203,7 @@ export default async function ClubhousePage({searchParams}: Props) {
               {teamMatchRows.map((match) => {
                 const opponentId = match.home_team_id === context.teamId ? match.away_team_id : match.home_team_id;
                 const side = match.home_team_id === context.teamId ? 'vs' : '@';
-                return <Link href={`/matches/${match.public_slug || match.id}`} key={match.id}><strong>{formatDate(match.date)}</strong><span>{side} {teams.get(opponentId) ?? 'Opponent'}</span><small>{courses.get(match.course_id) ?? 'Location TBD'}</small></Link>;
+                return <MatchdayLink href={`/matches/${match.public_slug || match.id}`} key={match.id}><strong>{formatDate(match.date)}</strong><span>{side} {teams.get(opponentId) ?? 'Opponent'}</span><small>{courses.get(match.course_id) ?? 'Location TBD'}</small></MatchdayLink>;
               })}
             </div>
           </details>
