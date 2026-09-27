@@ -122,7 +122,7 @@ export default async function SchedulePage() {
                             ) : (
                               <span className={styles.courseLink}>{match.course}</span>
                             )}
-                            <a className={styles.matchdayLink} href={match.href}>Matchday →</a>
+                            <a className={styles.matchdayLink} href={`${match.href}?matchdayIntro=matchday`}>Matchday →</a>
                           </div>
                         </article>
                       );
