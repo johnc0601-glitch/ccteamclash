@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useState, type CSSProperties} from 'react';
+import {useEffect, useState} from 'react';
 import styles from './MatchdayIntro.module.css';
 
 type MatchdayIntroTeam = {
@@ -20,22 +20,28 @@ type MatchdayIntroProps = {
 
 type MatchdayIntroPhase = 'start' | 'welcome' | 'poster' | 'finalized' | 'exit';
 
-type MatchdayIntroStyle = CSSProperties & {
-  '--intro-away': string;
-  '--intro-home': string;
+type MatchdayIntroAssets = {
+  desktopPoster: string;
+  mobilePoster: string;
 };
 
 const TIMING = {
   welcomeAtMs: 220,
-  posterAtMs: 1350,
-  finalizedAtMs: 2750,
-  exitAtMs: 4050,
-  finishAtMs: 4650,
-  reducedExitAtMs: 1200,
-  reducedFinishAtMs: 1400,
+  posterAtMs: 1150,
+  finalizedAtMs: 2850,
+  exitAtMs: 4450,
+  finishAtMs: 5200,
+  reducedExitAtMs: 1350,
+  reducedFinishAtMs: 1500,
 } as const;
 
-const KB_DARK_KNIGHTS_POSTER = '/matchday-intros/kb-vs-dark-knights-2026-r1.webp';
+const WELCOME_MARK = '/matchday-intros/welcome-to-matchday.webp';
+const ROSTERS_FINALIZED_MARK = '/matchday-intros/rosters-finalized.webp';
+
+const KB_DARK_KNIGHTS_ASSETS: MatchdayIntroAssets = {
+  desktopPoster: '/matchday-intros/kb-vs-dark-knights-2026-r1-desktop.webp',
+  mobilePoster: '/matchday-intros/kb-vs-dark-knights-2026-r1-mobile.webp',
+};
 
 export function MatchdayIntro({
   matchId,
@@ -43,11 +49,13 @@ export function MatchdayIntro({
   awayTeam,
   homeTeam,
 }: MatchdayIntroProps) {
-  const [isMounted, setIsMounted] = useState(play);
+  const introAssets = resolveMatchdayIntroAssets(matchId, awayTeam, homeTeam);
+  const shouldPlay = play && Boolean(introAssets);
+  const [isMounted, setIsMounted] = useState(shouldPlay);
   const [phase, setPhase] = useState<MatchdayIntroPhase>('start');
 
   useEffect(() => {
-    if (!play) {
+    if (!shouldPlay) {
       setIsMounted(false);
       return;
     }
@@ -94,54 +102,59 @@ export function MatchdayIntro({
       timers.forEach(window.clearTimeout);
       restoreScroll();
     };
-  }, [matchId, play]);
+  }, [matchId, shouldPlay]);
 
-  if (!isMounted) return null;
-
-  const style: MatchdayIntroStyle = {
-    '--intro-away': awayTeam.primaryColor,
-    '--intro-home': homeTeam.primaryColor,
-  };
+  if (!isMounted || !introAssets) return null;
 
   return (
     <div
       className={styles.overlay}
       data-phase={phase}
       data-match-id={matchId}
-      style={style}
       aria-hidden="true"
     >
-      <div className={styles.welcome}>Welcome to Matchday!</div>
-
       <div className={styles.posterStage}>
-        <img
-          src={resolveMatchdayPoster(matchId, awayTeam, homeTeam)}
-          alt=""
-          className={styles.poster}
-          fetchPriority="high"
-        />
+        <picture className={styles.posterPicture}>
+          <source media="(max-width: 700px)" srcSet={introAssets.mobilePoster} />
+          <img
+            src={introAssets.desktopPoster}
+            alt=""
+            className={styles.poster}
+            fetchPriority="high"
+          />
+        </picture>
         <div className={styles.posterShade} />
       </div>
 
-      <div className={styles.finalized}>Roster finalized!</div>
+      <div className={styles.welcome}>
+        <img src={WELCOME_MARK} alt="" className={styles.welcomeMark} fetchPriority="high" />
+      </div>
+
+      <div className={styles.finalized}>
+        <img src={ROSTERS_FINALIZED_MARK} alt="" className={styles.finalizedMark} fetchPriority="high" />
+      </div>
     </div>
   );
 }
 
-function resolveMatchdayPoster(
+function resolveMatchdayIntroAssets(
   matchId: string,
   awayTeam: MatchdayIntroTeam,
   homeTeam: MatchdayIntroTeam,
-): string {
-  const awayName = awayTeam.name.trim().toLowerCase();
-  const homeName = homeTeam.name.trim().toLowerCase();
+): MatchdayIntroAssets | null {
+  const awayNames = [awayTeam.name, awayTeam.shortName].map(normalizeTeamName);
+  const homeNames = [homeTeam.name, homeTeam.shortName].map(normalizeTeamName);
 
-  if (
-    matchId === 'kb-at-dark-knights-2026-r1'
-    || (awayName === 'kb' && homeName === 'dark knights')
-  ) {
-    return KB_DARK_KNIGHTS_POSTER;
+  const isKureBeach = awayNames.some((name) => name === 'kb' || name === 'kure beach');
+  const isDarkKnights = homeNames.some((name) => name === 'dk' || name === 'dark knights');
+
+  if (matchId === 'kb-at-dark-knights-2026-r1' || (isKureBeach && isDarkKnights)) {
+    return KB_DARK_KNIGHTS_ASSETS;
   }
 
-  return KB_DARK_KNIGHTS_POSTER;
+  return null;
+}
+
+function normalizeTeamName(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
