@@ -59,7 +59,7 @@ export function AppBottomNav() {
 function TabIcon({name}: {name: AppTabIcon}) {
   if (name === 'home') return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2v8.3H14v-5h-4v5H3z"/></svg>;
   if (name === 'team') return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="9" r="3"/><circle cx="16.5" cy="8" r="2.5"/><path d="M2.5 19c.7-3.3 2.5-5 5.5-5s4.8 1.7 5.5 5M13 14.5c1-.8 2.1-1.2 3.5-1.2 2.7 0 4.3 1.5 5 4.5"/></svg>;
-  if (name === 'matchday') return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 4 10 16M17 4 7 20M5 7h14M5 17h14"/></svg>;
+  if (name === 'matchday') return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5H6.8A1.8 1.8 0 0 0 5 6.8v11.4A1.8 1.8 0 0 0 6.8 20h7.1M15.5 5h1.7A1.8 1.8 0 0 1 19 6.8v6.1M9 5V3.8h6V5M8.5 9h7M8.5 12h5M8.5 15h3"/><ellipse cx="17.4" cy="17.2" rx="3.5" ry="1.8" transform="rotate(-18 17.4 17.2)"/></svg>;
   if (name === 'league') return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10h4v10M10 20V4h4v16M15 20v-7h4v7M3 20h18"/></svg>;
   return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.7-4.3 3.2-6.5 7.5-6.5s6.8 2.2 7.5 6.5"/></svg>;
 }
