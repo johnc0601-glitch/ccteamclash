@@ -2,11 +2,9 @@
   position: fixed;
   inset: 0;
   z-index: 5000;
-  display: grid;
-  place-items: center;
   overflow: hidden;
   isolation: isolate;
-  background: #020305;
+  background: #020304;
   opacity: 1;
   transition: opacity 600ms cubic-bezier(.4, 0, .2, 1);
 }
@@ -14,310 +12,118 @@
 .overlay::before {
   content: '';
   position: absolute;
-  inset: -15%;
-  z-index: -4;
+  inset: -10%;
+  z-index: -2;
   background:
-    radial-gradient(ellipse at 14% 52%, color-mix(in srgb, var(--intro-away) 56%, transparent) 0%, transparent 42%),
-    radial-gradient(ellipse at 86% 52%, color-mix(in srgb, var(--intro-home) 56%, transparent) 0%, transparent 42%),
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .075) 0%, transparent 25%),
-    linear-gradient(108deg,
-      color-mix(in srgb, var(--intro-away) 18%, #020305) 0%,
-      #03070a 42%,
-      #020305 50%,
-      #080303 58%,
-      color-mix(in srgb, var(--intro-home) 18%, #020305) 100%);
-  filter: saturate(1.2) contrast(1.08);
-  animation: backgroundDrift 7s ease-in-out infinite alternate;
+    radial-gradient(circle at 24% 54%, color-mix(in srgb, var(--intro-away) 16%, transparent) 0%, transparent 40%),
+    radial-gradient(circle at 76% 54%, color-mix(in srgb, var(--intro-home) 16%, transparent) 0%, transparent 40%),
+    linear-gradient(180deg, #050708 0%, #020304 56%, #010203 100%);
+  filter: blur(18px);
 }
 
 .overlay::after {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 9;
+  z-index: 7;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(0,0,0,.45), transparent 16%, transparent 84%, rgba(0,0,0,.45)),
-    linear-gradient(180deg, rgba(0,0,0,.48), transparent 21%, transparent 70%, rgba(0,0,0,.72));
-  box-shadow: inset 0 0 170px rgba(0,0,0,.76);
+    linear-gradient(180deg, rgba(0,0,0,.34), transparent 22%, transparent 72%, rgba(0,0,0,.52)),
+    radial-gradient(ellipse at center, transparent 42%, rgba(0,0,0,.46) 100%);
 }
 
-.atmosphere {
+.welcome,
+.finalized {
   position: absolute;
-  inset: -22%;
-  z-index: -3;
-  opacity: .74;
-  background:
-    radial-gradient(ellipse at 23% 58%, color-mix(in srgb, var(--intro-away) 28%, transparent), transparent 32%),
-    radial-gradient(ellipse at 77% 58%, color-mix(in srgb, var(--intro-home) 28%, transparent), transparent 32%),
-    repeating-linear-gradient(116deg, rgba(255,255,255,.018) 0 1px, transparent 1px 17px);
-  filter: blur(16px);
-  transform: scale(1.1);
-  animation: hazeShift 5.4s ease-in-out infinite alternate;
-}
-
-.grain {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  opacity: .42;
-  background:
-    radial-gradient(circle at 17% 23%, rgba(255,255,255,.16) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 82% 32%, rgba(255,255,255,.13) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 26% 76%, rgba(255,255,255,.1) 0 1px, transparent 1.6px),
-    repeating-linear-gradient(164deg, rgba(255,255,255,.014) 0 1px, transparent 1px 10px);
-  background-size: 170px 170px, 210px 210px, 190px 190px, auto;
-  mix-blend-mode: screen;
-  animation: grainFloat 8s linear infinite;
-}
-
-.brand {
-  position: absolute;
-  top: max(22px, env(safe-area-inset-top));
   left: 50%;
-  z-index: 11;
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  transform: translateX(-50%);
-  opacity: .46;
-}
-
-.brandLogo {
-  width: clamp(42px, 5vw, 62px);
-  height: clamp(42px, 5vw, 62px);
-  object-fit: contain;
-  filter: invert(1) drop-shadow(0 4px 14px rgba(0,0,0,.62));
-}
-
-.brand span {
-  color: rgba(255,255,255,.68);
-  font-family: var(--cc-font-body);
-  font-size: 8px;
+  z-index: 10;
+  width: min(92vw, 900px);
+  color: #fff;
+  font-family: var(--cc-font-display);
   font-weight: 900;
-  letter-spacing: .28em;
-  text-transform: uppercase;
-}
-
-.stage {
-  position: relative;
-  z-index: 5;
-  width: min(1080px, 100vw);
-  min-height: min(78vh, 760px);
-  display: grid;
-  place-items: center;
-  padding: clamp(72px, 10vh, 110px) clamp(14px, 3vw, 32px) clamp(58px, 8vh, 90px);
+  text-align: center;
+  text-shadow: 0 4px 24px rgba(0,0,0,.72);
+  opacity: 0;
+  filter: blur(4px);
+  transition:
+    opacity 500ms ease,
+    transform 620ms cubic-bezier(.2,.8,.2,1),
+    filter 500ms ease;
 }
 
 .welcome {
-  position: absolute;
-  left: 50%;
   top: 50%;
-  z-index: 8;
-  width: min(92vw, 850px);
+  font-size: clamp(38px, 6vw, 78px);
+  letter-spacing: -.03em;
+  transform: translate(-50%, -44%);
+}
+
+.finalized {
+  bottom: clamp(48px, 8vh, 90px);
+  font-size: clamp(24px, 3.6vw, 44px);
+  letter-spacing: -.02em;
+  transform: translate(-50%, 12px);
+}
+
+.posterStage {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
   display: grid;
-  justify-items: center;
-  gap: 6px;
-  text-align: center;
+  place-items: center;
   opacity: 0;
-  transform: translate(-50%, -42%) scale(.96);
-  filter: blur(5px);
+  transform: scale(.985);
+  filter: brightness(.72) blur(3px);
   transition:
-    opacity 460ms ease,
-    transform 620ms cubic-bezier(.2,.8,.2,1),
-    filter 520ms ease;
-}
-
-.welcome span {
-  color: rgba(255,255,255,.78);
-  font-family: var(--cc-font-body);
-  font-size: clamp(15px, 2.3vw, 22px);
-  font-weight: 800;
-  letter-spacing: .2em;
-  text-transform: uppercase;
-}
-
-.welcome strong {
-  color: #fff;
-  font-family: var(--cc-font-display);
-  font-size: clamp(46px, 8.5vw, 92px);
-  font-style: italic;
-  font-weight: 950;
-  letter-spacing: -.045em;
-  line-height: .94;
-  text-shadow:
-    0 3px 0 rgba(0,0,0,.4),
-    0 0 28px rgba(255,255,255,.16),
-    -18px 0 42px color-mix(in srgb, var(--intro-away) 42%, transparent),
-    18px 0 42px color-mix(in srgb, var(--intro-home) 42%, transparent);
-}
-
-.posterFrame {
-  position: relative;
-  width: min(94vw, 980px);
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: clamp(16px, 2vw, 26px);
-  background: #050608;
-  box-shadow:
-    0 30px 80px rgba(0,0,0,.7),
-    0 0 0 1px rgba(255,255,255,.035),
-    -20px 0 70px color-mix(in srgb, var(--intro-away) 24%, transparent),
-    20px 0 70px color-mix(in srgb, var(--intro-home) 24%, transparent);
-  opacity: 0;
-  transform: scale(.92) translateY(18px);
-  filter: blur(7px) brightness(.74);
-  transition:
-    opacity 600ms ease,
-    transform 800ms cubic-bezier(.17,.84,.22,1),
-    filter 700ms ease;
+    opacity 760ms ease,
+    transform 900ms cubic-bezier(.2,.8,.2,1),
+    filter 760ms ease;
 }
 
 .poster {
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scale(1.035);
-  filter: saturate(1.08) contrast(1.06);
-  animation: posterDrift 5.4s ease-out both;
+  width: min(100vw, 1672px);
+  height: auto;
+  max-height: 100vh;
+  object-fit: contain;
+  object-position: center;
 }
 
-.posterVignette {
+.posterShade {
   position: absolute;
   inset: 0;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.24), transparent 23%, transparent 70%, rgba(0,0,0,.36)),
+    radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,.34) 100%);
   pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(0,0,0,.18), transparent 22%, transparent 66%, rgba(0,0,0,.48)),
-    linear-gradient(90deg, rgba(0,0,0,.18), transparent 15%, transparent 85%, rgba(0,0,0,.18));
-  box-shadow: inset 0 0 70px rgba(0,0,0,.36);
-}
-
-.loaded {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(62px, 8vh, 90px);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(9px, 2vw, 18px);
-  width: min(88vw, 720px);
-  color: #fff;
-  opacity: 0;
-  transform: translate(-50%, 12px);
-  transition:
-    opacity 430ms ease,
-    transform 520ms cubic-bezier(.2,.8,.2,1);
-}
-
-.loaded strong {
-  flex: 0 0 auto;
-  font-family: var(--cc-font-body);
-  font-size: clamp(15px, 2.3vw, 23px);
-  font-weight: 900;
-  letter-spacing: .075em;
-  text-shadow: 0 3px 16px rgba(0,0,0,.82);
-}
-
-.loadedLine {
-  flex: 1 1 80px;
-  max-width: 160px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.62));
-  box-shadow: 0 0 14px rgba(255,255,255,.16);
-}
-
-.loadedLine:last-child {
-  transform: scaleX(-1);
-}
-
-.fallbackPoster {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
-  align-items: center;
-  gap: clamp(12px, 3vw, 36px);
-  padding: clamp(22px, 5vw, 70px);
-  background:
-    radial-gradient(circle at 20% 50%, color-mix(in srgb, var(--intro-away) 62%, transparent), transparent 38%),
-    radial-gradient(circle at 80% 50%, color-mix(in srgb, var(--intro-home) 62%, transparent), transparent 38%),
-    linear-gradient(110deg, #041116 0%, #030506 48%, #100303 52%, #160606 100%);
-}
-
-.fallbackSide {
-  min-width: 0;
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  color: #fff;
-  text-align: center;
-}
-
-.fallbackSide span {
-  font-family: var(--cc-font-display);
-  font-size: clamp(42px, 8vw, 105px);
-  font-style: italic;
-  font-weight: 950;
-  line-height: .9;
-  text-shadow: 0 0 28px rgba(255,255,255,.2);
-}
-
-.fallbackSide small {
-  max-width: 230px;
-  overflow: hidden;
-  color: rgba(255,255,255,.72);
-  font-family: var(--cc-font-body);
-  font-size: clamp(10px, 1.7vw, 16px);
-  font-weight: 850;
-  letter-spacing: .12em;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.fallbackVs {
-  color: #fff;
-  font-family: var(--cc-font-display);
-  font-size: clamp(32px, 5vw, 62px);
-  font-style: italic;
-  font-weight: 950;
-  transform: skewX(-9deg);
-  text-shadow: 0 4px 16px #000;
 }
 
 .overlay[data-phase='welcome'] .welcome {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
   filter: blur(0);
+  transform: translate(-50%, -50%);
 }
 
 .overlay[data-phase='poster'] .welcome,
-.overlay[data-phase='loaded'] .welcome,
+.overlay[data-phase='finalized'] .welcome,
 .overlay[data-phase='exit'] .welcome {
   opacity: 0;
-  transform: translate(-50%, -58%) scale(.97);
-  filter: blur(4px);
+  filter: blur(3px);
+  transform: translate(-50%, -56%);
 }
 
-.overlay[data-phase='poster'] .posterFrame,
-.overlay[data-phase='loaded'] .posterFrame,
-.overlay[data-phase='exit'] .posterFrame {
+.overlay[data-phase='poster'] .posterStage,
+.overlay[data-phase='finalized'] .posterStage,
+.overlay[data-phase='exit'] .posterStage {
   opacity: 1;
-  transform: scale(1) translateY(0);
-  filter: blur(0) brightness(1);
+  transform: scale(1);
+  filter: brightness(1) blur(0);
 }
 
-.overlay[data-phase='loaded'] .posterFrame,
-.overlay[data-phase='exit'] .posterFrame {
-  transform: scale(1.018) translateY(-4px);
-}
-
-.overlay[data-phase='loaded'] .loaded,
-.overlay[data-phase='exit'] .loaded {
+.overlay[data-phase='finalized'] .finalized,
+.overlay[data-phase='exit'] .finalized {
   opacity: 1;
+  filter: blur(0);
   transform: translate(-50%, 0);
 }
 
@@ -326,130 +132,45 @@
   pointer-events: none;
 }
 
-@keyframes backgroundDrift {
-  from { transform: translate3d(-1.2%, -.6%, 0) scale(1.04); }
-  to { transform: translate3d(1.2%, .6%, 0) scale(1.08); }
-}
-
-@keyframes hazeShift {
-  from { transform: translate3d(-1.5%, 0, 0) scale(1.08); opacity: .58; }
-  to { transform: translate3d(1.5%, -1%, 0) scale(1.13); opacity: .82; }
-}
-
-@keyframes grainFloat {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(0, -16px, 0); }
-}
-
-@keyframes posterDrift {
-  from { transform: scale(1.045); }
-  to { transform: scale(1.015); }
-}
-
 @media (max-width: 700px) {
-  .brand {
-    top: max(15px, env(safe-area-inset-top));
-  }
-
-  .brandLogo {
-    width: 42px;
-    height: 42px;
-  }
-
-  .brand span {
-    font-size: 7px;
-  }
-
-  .stage {
-    min-height: 76vh;
-    padding: 72px 7px 78px;
-  }
-
   .welcome {
-    width: 96vw;
-    gap: 5px;
+    width: 90vw;
+    font-size: clamp(36px, 11vw, 56px);
+    line-height: .98;
   }
 
-  .welcome span {
-    font-size: 12px;
-    letter-spacing: .18em;
+  .posterStage {
+    padding: 8vh 0 7vh;
   }
 
-  .welcome strong {
-    font-size: clamp(42px, 13vw, 64px);
+  .poster {
+    width: 100vw;
+    height: 76vh;
+    max-height: none;
+    object-fit: cover;
+    object-position: center;
   }
 
-  .posterFrame {
-    width: 96vw;
-    border-radius: 16px;
-  }
-
-  .loaded {
-    bottom: max(45px, 6.5vh);
-    width: 92vw;
-    gap: 10px;
-  }
-
-  .loaded strong {
-    font-size: clamp(13px, 4vw, 17px);
-    letter-spacing: .045em;
-  }
-
-  .loadedLine {
-    max-width: 70px;
-  }
-
-  .fallbackPoster {
-    padding: 18px 13px;
-    gap: 10px;
-  }
-
-  .fallbackSide span {
-    font-size: clamp(36px, 14vw, 58px);
-  }
-
-  .fallbackSide small {
-    max-width: 34vw;
-    font-size: 9px;
-  }
-
-  .fallbackVs {
-    font-size: 30px;
-  }
-}
-
-@media (max-width: 430px) {
-  .stage {
-    padding-left: 4px;
-    padding-right: 4px;
-  }
-
-  .posterFrame {
-    width: 98vw;
-  }
-
-  .loaded {
-    bottom: max(38px, 5.5vh);
+  .finalized {
+    bottom: max(42px, 6vh);
+    width: 90vw;
+    font-size: clamp(24px, 7vw, 34px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .overlay,
-  .atmosphere,
-  .grain,
   .welcome,
-  .posterFrame,
-  .poster,
-  .loaded {
-    animation: none !important;
+  .posterStage,
+  .finalized {
     transition: none !important;
   }
 
-  .posterFrame,
-  .loaded {
+  .posterStage,
+  .finalized {
     opacity: 1 !important;
-    transform: none !important;
     filter: none !important;
+    transform: none !important;
   }
 
   .welcome {
