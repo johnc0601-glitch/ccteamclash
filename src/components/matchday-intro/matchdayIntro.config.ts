@@ -39,8 +39,8 @@ export const MATCHDAY_INTROS: Record<string, MatchdayIntroArt> = {
 };
 
 export const MATCHDAY_INTRO_TIMING = {
-  revealMs: 1900,
-  durationMs: 5200,
+  revealMs: 2400,
+  durationMs: 5700,
   reducedMs: 700,
 } as const;
 
