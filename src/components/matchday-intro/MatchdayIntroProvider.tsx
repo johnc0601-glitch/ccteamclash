@@ -81,7 +81,6 @@ function MatchdayIntro({run, onFinish}: {run: Run; onFinish: () => void}) {
             if (src !== run.art.desktop) setSrc(run.art.desktop);
             else onFinish();
           }} />
-        <p className={styles.lineups}>LINEUPS SET</p>
       </div>
       <button ref={skip} type="button" className={styles.skip} onClick={onFinish}>Skip intro</button>
     </div>
