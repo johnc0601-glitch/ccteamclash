@@ -1,4 +1,5 @@
 import type {Metadata} from 'next';
+import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {getPublicGalleryAssets, getPublicGalleryFacets} from '@/services/media/MediaLibraryService';
 import styles from './photos.module.css';
@@ -32,6 +33,7 @@ export default async function PhotosPage({searchParams}: PhotosPageProps) {
     <div className={styles.page}>
       <SiteHeader />
       <main className="shell">
+        <Link href="/stories" className="back">← Stories</Link>
         <section className={styles.hero}>
           <span>League media</span>
           <h1>Photos</h1>
