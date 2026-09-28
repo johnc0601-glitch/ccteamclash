@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { HeaderAccessProvider } from "@/components/HeaderAccessProvider";
+import { MatchdayIntroProvider } from "@/components/matchday-intro/MatchdayIntroProvider";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/shared/constants";
 import "./globals.css";
 import "./theme.css";
@@ -20,7 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body>
         <HeaderAccessProvider>
-          {children}
+          <MatchdayIntroProvider>{children}</MatchdayIntroProvider>
         </HeaderAccessProvider>
         <Analytics />
       </body>

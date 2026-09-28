@@ -1,4 +1,5 @@
 import {Footer, SiteHeader} from '@/components/SiteHeader';
+import {MatchdayLink} from '@/components/matchday-intro/MatchdayLink';
 import {createPublicScheduleService} from '@/core/createPublicScheduleService';
 import {createPublicStandingsService} from '@/core/createPublicStandingsService';
 import type {TeamStanding} from '@/services/standings/StandingsTypes';
@@ -122,7 +123,7 @@ export default async function SchedulePage() {
                             ) : (
                               <span className={styles.courseLink}>{match.course}</span>
                             )}
-                            <a className={styles.matchdayLink} href={match.href}>Matchday →</a>
+                            <MatchdayLink className={styles.matchdayLink} href={match.href}>Matchday →</MatchdayLink>
                           </div>
                         </article>
                       );

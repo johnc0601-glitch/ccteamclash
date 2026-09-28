@@ -1,0 +1,111 @@
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  background: #000;
+  color: #fff;
+  isolation: isolate;
+  animation: exit 1200ms ease-in-out 4500ms both;
+  font-family: 'Archivo SemiCondensed', var(--cc-font-body, Arial, sans-serif);
+  font-weight: 600;
+}
+
+.welcomeArt,
+.poster {
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+.welcomeArt {
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  background: #000;
+  opacity: 0;
+  animation: welcome 1900ms ease-in-out both;
+}
+
+.welcomeArt picture,
+.welcomeArt img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.welcomeArt img {
+  object-fit: cover;
+  object-position: center;
+}
+
+.poster {
+  z-index: 2;
+  opacity: 0;
+  animation: reveal 700ms ease-in-out 2400ms both;
+}
+
+.poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+  object-position: center;
+}
+
+.skip {
+  position: absolute;
+  z-index: 4;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  min-height: 44px;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, .72);
+  color: #fff;
+  border: 1px solid #666;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.skip:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+@keyframes welcome {
+  0%, 8% { opacity: 0; }
+  22%, 68% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes reveal { from { opacity: 0; } to { opacity: 1; } }
+@keyframes exit { from { opacity: 1; } to { opacity: 0; } }
+
+@media (max-width: 767px) {
+  .poster img {
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .poster[data-has-mobile='false'] img {
+    object-fit: contain;
+    background: #000;
+  }
+}
+
+.intro[data-ready='false'],
+.intro[data-ready='false'] .welcomeArt,
+.intro[data-ready='false'] .poster { animation-play-state: paused; }
+
+.intro[data-reduced='true'] { animation: none; }
+.intro[data-reduced='true'] .welcomeArt { animation: none; opacity: 1; }
+.intro[data-reduced='true'] .poster { animation: none; opacity: 0; }
+.intro[data-reduced='true'][data-reduced-poster='true'] .welcomeArt { opacity: 0; }
+.intro[data-reduced='true'][data-reduced-poster='true'] .poster { opacity: 1; }

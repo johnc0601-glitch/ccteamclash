@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import {notFound} from 'next/navigation';
 import {PublicPlayerDirectory} from '@/components/players/PublicPlayerDirectory';
+import {MatchdayLink} from '@/components/matchday-intro/MatchdayLink';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {ClientTeamBanner} from '@/components/teams/ClientTeamBanner';
 import {LazyTeamRosterDirectory} from '@/components/teams/LazyTeamRosterDirectory';
@@ -282,7 +283,7 @@ function NextMatchCard({event, courseDirections}: {
           {directions ? <a href={directions} target="_blank" rel="noreferrer">{event.course}</a> : event.course}
         </p>
       </div>
-      <Link href={event.href}>Match page</Link>
+      <MatchdayLink href={event.href}>Match page</MatchdayLink>
     </div>
   );
 }
@@ -307,7 +308,7 @@ function TeamSchedule({events, courseDirections}: {
               <td>{event.isHome ? 'vs' : 'at'} {event.opponent}</td>
               <td>{directions ? <a href={directions} target="_blank" rel="noreferrer">{event.course}</a> : event.course}</td>
               <td>{event.status}</td>
-              <td><Link href={event.href}>Open</Link></td>
+              <td><MatchdayLink href={event.href}>Open</MatchdayLink></td>
             </tr>
           );
         })}</tbody>
