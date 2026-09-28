@@ -44,20 +44,6 @@ export function MobileNav() {
     <details ref={detailsRef} className="mobile-nav">
       <summary aria-label="Menu"><span aria-hidden="true">☰</span></summary>
       <nav>
-        {(hasClubhouse || canOpenOffice || canOpenCaptain) ? (
-          <div className="mobile-nav-group mobile-nav-tools">
-            <span>Tools</span>
-            {hasClubhouse ? (
-              <Link className="clubhouse-nav-link" href="/clubhouse" onClick={closeMenu}>
-                Clubhouse
-                {clubhouseHasUnread ? <ClubhouseUnreadDisc /> : null}
-              </Link>
-            ) : null}
-            {canOpenOffice ? <Link href="/admin" onClick={closeMenu}>Create post</Link> : null}
-            {canOpenOffice ? <Link href="/office" onClick={closeMenu}>Office</Link> : null}
-            {canOpenCaptain ? <Link href="/captain" onClick={closeMenu}>Captain</Link> : null}
-          </div>
-        ) : null}
         <div className="mobile-nav-group">
           <span>Season</span>
           <Link href="/schedule" onClick={closeMenu}>Schedule</Link>
@@ -70,6 +56,18 @@ export function MobileNav() {
           <Link href="/stories" onClick={closeMenu}>Stories</Link>
           <Link href="/courses" onClick={closeMenu}>Courses</Link>
           <Link href="/history" onClick={closeMenu}>History</Link>
+        </div>
+        <div className="mobile-nav-group mobile-nav-tools">
+          <span>My Clash</span>
+          <Link href="/account" onClick={closeMenu}>My Profile</Link>
+          {hasClubhouse ? (
+            <Link className="clubhouse-nav-link" href="/clubhouse" onClick={closeMenu}>
+              Clubhouse
+              {clubhouseHasUnread ? <ClubhouseUnreadDisc /> : null}
+            </Link>
+          ) : null}
+          {canOpenCaptain ? <Link href="/captain" onClick={closeMenu}>Captain</Link> : null}
+          {canOpenOffice ? <Link href="/office" onClick={closeMenu}>Office</Link> : null}
         </div>
         <div className="mobile-nav-group">
           <span>Community</span>

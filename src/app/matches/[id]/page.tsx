@@ -1,4 +1,5 @@
 import type {CSSProperties} from 'react';
+import Link from 'next/link';
 import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
@@ -190,6 +191,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     <>
       <SiteHeader />
       <main className={styles.page} style={pageBackground}>
+        <div className="shell" style={{paddingTop: 16}}><Link href="/schedule">← Schedule</Link></div>
         <MatchHero matchday={matchday} />
         <div className={`shell ${styles.content}`}>
           {matchPrediction ? (

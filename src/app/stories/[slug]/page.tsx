@@ -57,7 +57,7 @@ export default async function Page({params, searchParams}: StoryPageProps) {
     <>
       <SiteHeader />
       <main className="article shell">
-        <Link href="/stories" className="back">&lt;- All stories</Link>
+        <Link href="/stories" className="back">← Stories</Link>
         <span className="eyebrow">{story.category} | {formatStoryDate(story.publishedAt)}</span>
         <h1>{story.title}</h1>
         <StoryPhoto className="article-image" image={story.image} alt={heroAlt} />
@@ -67,6 +67,10 @@ export default async function Page({params, searchParams}: StoryPageProps) {
             <Link className="button" href={link.url} key={`${link.label}-${link.url}`}>{link.label}</Link>
           ))}
         </div>
+        <nav aria-label="Story navigation" style={{display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 28, marginBottom: 28}}>
+          <Link href="/stories">← Back to Stories</Link>
+          <Link href="/photos">View Photos →</Link>
+        </nav>
         <StoryComments
           storyId={story.id}
           storySlug={story.slug}

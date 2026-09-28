@@ -49,6 +49,7 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
 
 function CaptainDashboard({events, pendingApplications, roster, season, team}: {events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; roster: CaptainRosterPlayer[]; season: CaptainSeason | null; team: LaunchTeam}) {
   const upcomingEvents = events.filter((event) => event.bucket === 'upcoming');
+  const nextEvent = upcomingEvents[0];
   const rosterCounts = {
     women: roster.filter((player) => player.rosterCategory === 'Women').length,
     men: roster.filter((player) => player.rosterCategory === 'Men').length,
@@ -69,6 +70,21 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
         <SummaryCard label="Confirm" value={`${pendingApplications.length} pending`} />
         <SummaryCard label="Upcoming" value={`${upcomingEvents.length} matches`} />
       </div>
+
+      {nextEvent ? (
+        <section className={styles.panel} style={{marginBottom: 18}}>
+          <header className={styles.panelHeader}>
+            <span>Next match</span>
+            <h2>{nextEvent.isHome ? 'Home vs' : 'Away at'} {nextEvent.opponent}</h2>
+            <p className={styles.muted}>{nextEvent.date} / {nextEvent.time} / {nextEvent.course}</p>
+          </header>
+          <div style={{display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center'}}>
+            <Link href={`${nextEvent.href}?manage=roster`} className={styles.primaryButton}>Manage Match Roster</Link>
+            <Link href={nextEvent.href}>Open Matchday →</Link>
+            <Link href={`/teams/${team.id}`}>View {team.name} →</Link>
+          </div>
+        </section>
+      ) : null}
 
       <div className={styles.grid}>
         <section className={styles.panel} id="season-requests">

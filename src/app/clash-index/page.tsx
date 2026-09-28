@@ -58,7 +58,7 @@ export default function ClashIndexPage() {
 
           <p className={styles.finish}><strong>Win against good competition, outperform expectations, and your CI will rise.</strong></p>
 
-          <Link className={styles.backLink} href="/stats">← Back to Stats</Link>
+          <Link className={styles.backLink} href="/stats">← Back to Players</Link>
         </section>
       </main>
       <Footer />
