@@ -8,8 +8,8 @@ export type MatchdayIntroArt = {
 const root = '/matchday-intros/2026-2027/round-1';
 
 export const MATCHDAY_WELCOME_ART = {
-  desktop: '/matchday-intros/welcome/welcome-desktop.webp',
-  mobile: '/matchday-intros/welcome/welcome-mobile.webp',
+  desktop: '/matchday-intros/welcome/welcome-desktop.png',
+  mobile: '/matchday-intros/welcome/welcome-mobile.png',
 } as const;
 
 // Verified against live launch_schedule_matches on 2026-09-27.
