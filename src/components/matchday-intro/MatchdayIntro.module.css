@@ -33,11 +33,15 @@
   animation: welcome 1900ms ease-in-out both;
 }
 
+.welcomeArt picture,
 .welcomeArt img {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+}
+
+.welcomeArt img {
+  object-fit: cover;
   object-position: center;
 }
 
@@ -85,10 +89,6 @@
 @keyframes exit { from { opacity: 1; } to { opacity: 0; } }
 
 @media (max-width: 767px) {
-  .welcomeArt img {
-    object-fit: contain;
-  }
-
   .poster img {
     object-fit: cover;
     object-position: center;

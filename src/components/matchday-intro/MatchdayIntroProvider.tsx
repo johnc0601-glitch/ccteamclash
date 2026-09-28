@@ -2,10 +2,10 @@
 
 import {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
 import {usePathname} from 'next/navigation';
-import {findMatchdayIntro, selectIntroImage, selectWelcomeImage, MATCHDAY_INTRO_TIMING, type MatchdayIntroArt} from './matchdayIntro.config';
+import {findMatchdayIntro, selectIntroImage, MATCHDAY_WELCOME_ART, MATCHDAY_INTRO_TIMING, type MatchdayIntroArt} from './matchdayIntro.config';
 import styles from './MatchdayIntro.module.css';
 
-type Run = {id: number; from: string; href: string; slug: string; art: MatchdayIntroArt; src: string; welcomeSrc: string; reduced: boolean};
+type Run = {id: number; from: string; href: string; slug: string; art: MatchdayIntroArt; src: string; reduced: boolean};
 const IntroContext = createContext<(href: string) => void>(() => {});
 export const useMatchdayIntro = () => useContext(IntroContext);
 
@@ -20,13 +20,11 @@ export function MatchdayIntroProvider({children}: {children: ReactNode}) {
     if (!entry || pathname === href || pathname === `/matches/${entry.slug}`) return;
     const isMobile = window.matchMedia('(max-width: 767px)').matches;
     const src = selectIntroImage(entry.art, isMobile);
-    const welcomeSrc = selectWelcomeImage(isMobile);
-    // Start both image requests synchronously in the navigation event, before rendering.
-    for (const imageSrc of [welcomeSrc, src]) {
-      const preload = new window.Image();
-      preload.src = imageSrc;
-    }
-    setRun({id: ++counter.current, from: pathname, href, ...entry, src, welcomeSrc,
+    // Preload the matchup art. The welcome splash itself uses a responsive <picture>
+    // so the browser selects the correct mobile/desktop source.
+    const preload = new window.Image();
+    preload.src = src;
+    setRun({id: ++counter.current, from: pathname, href, ...entry, src,
       reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches});
   }, [pathname]);
   const finish = useCallback(() => setRun(null), []);
@@ -76,8 +74,11 @@ function MatchdayIntro({run, onFinish}: {run: Run; onFinish: () => void}) {
     <div className={styles.intro} data-matchday-intro data-reduced={run.reduced}
       role="dialog" aria-modal="true" aria-label={`Welcome to Matchday: ${run.art.label}`}>
       <div className={styles.welcomeArt} aria-hidden="true">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={run.welcomeSrc} alt="" fetchPriority="high" loading="eager" />
+        <picture>
+          <source media="(max-width: 767px)" srcSet={MATCHDAY_WELCOME_ART.mobile} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={MATCHDAY_WELCOME_ART.desktop} alt="" fetchPriority="high" loading="eager" />
+        </picture>
       </div>
       <div className={styles.poster} data-has-mobile={run.art.mobile ? 'true' : 'false'}>
         {/* Native img shares the exact preloaded URL and supports optional art direction. */}

@@ -57,6 +57,3 @@ export function selectIntroImage(art: MatchdayIntroArt, mobile: boolean) {
   return mobile && art.mobile ? art.mobile : art.desktop;
 }
 
-export function selectWelcomeImage(mobile: boolean) {
-  return mobile ? MATCHDAY_WELCOME_ART.mobile : MATCHDAY_WELCOME_ART.desktop;
-}
