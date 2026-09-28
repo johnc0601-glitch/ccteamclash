@@ -2,14 +2,18 @@
   position: relative;
 }
 
-.desktopTrack {
+.track {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
-.mobileTrack {
-  display: none;
+.slide {
+  min-width: 0;
+}
+
+.slide > * {
+  height: 100%;
 }
 
 @media (max-width: 800px) {
@@ -19,11 +23,7 @@
     overflow: hidden;
   }
 
-  .desktopTrack {
-    display: none;
-  }
-
-  .mobileTrack {
+  .track {
     display: flex;
     gap: 14px;
     overflow-x: auto;
@@ -34,16 +34,12 @@
     scroll-padding-inline: 36px;
   }
 
-  .mobileTrack::-webkit-scrollbar {
+  .track::-webkit-scrollbar {
     display: none;
   }
 
   .slide {
     flex: 0 0 calc(100% - 72px);
     scroll-snap-align: center;
-  }
-
-  .slide > * {
-    height: 100%;
   }
 }
