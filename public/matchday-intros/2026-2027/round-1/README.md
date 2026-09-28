@@ -1,35 +1,24 @@
-# Round 1 intro artwork
+# Matchday intro artwork
 
-Included: the existing KB–Dark Knights poster and mobile crop recovered unchanged
-from repository branch `feature/matchday-matchup-intro` at `ebd2a40`:
+All four Round 1 matchups have desktop `.webp` and portrait `.mobile.webp` files.
+The three portrait variants added on 2026-09-28 were created from their original
+landscape posters; no pre-existing mobile copies were found. KB artwork is unchanged.
 
-- `01_KB_at_Dark_Knights.webp`
-- `01_KB_at_Dark_Knights.mobile.webp`
+The permanent opening image is shared across every matchup and every round:
+- `/matchday-intros/welcome/welcome-desktop-hq.webp`
+- `/matchday-intros/welcome/welcome-mobile-hq.webp`
 
-These are earlier repository assets, not verified copies of the four newly
-requested conversation posters. Replace their config paths when those originals
-are available. Place the three remaining clean posters here:
+Keep these welcome assets unchanged when adding new matchups. Store only matchup
+posters inside season/round folders. Map each public match slug and legacy ID in
+`src/components/matchday-intro/matchdayIntro.config.ts`.
 
-- `02_Wild_Turkey_at_Cougar_Country.png`
-- `03_Hayneous_OGs_at_Ninjas.png`
-- `04_Beast_Mode_at_Riptide.png`
+Below 768px, mobile artwork is selected. Broken mobile art falls back to the
+full desktop image without cropping. Both welcome and matchup images must load
+before animation starts; an 8-second loading timeout prevents a stuck overlay.
+The standard sequence lasts 5.7 seconds, including a 1.2-second exit fade.
+Reduced motion shows the same welcome then matchup as two static 0.7-second frames.
 
-The four exact PNG binaries were not available in the referenced conversation's
-attachments, local file search, or site storage. The three remaining poster
-files above are pending. Missing files skip the intro safely.
-
-Configuration: `src/components/matchday-intro/matchdayIntro.config.ts`.
-Each public match slug maps to `{ matchId, label, desktop, mobile? }`.
-Paths are public URLs, without the `public` prefix. Optional mobile crops can be
-named `01_KB_at_Dark_Knights.mobile.png`, etc.; add their paths as `mobile`.
-Below 768px, mobile artwork is selected; absent/broken crops fall back to desktop.
-Art is contained, never zoomed or automatically cropped.
-
-Use `MatchdayLink` for links intended to trigger the intro. Ordinary links,
-direct visits, refreshes, browser history and rerenders do not trigger it.
-The root provider lets navigation load beneath the overlay without delaying it.
-The sequence lasts 4.7s, with 0.7s opacity fades; reduced motion is static for 0.7s.
-Skip, Escape, image errors, slow image loads and leaving the tab dismiss it.
-
-The slugs and legacy IDs were verified from live `launch_schedule_matches` on
-2026-09-27. Some IDs mention previous opponents; never derive artwork from ID text.
+Use MatchdayLink to trigger playback during navigation. Direct visits, refresh,
+browser history and ordinary links do not trigger playback. Skip, Escape, image
+failure and leaving the tab dismiss the intro. Match IDs may contain old team names;
+use the explicit mappings rather than deriving artwork from the ID text.

@@ -100,11 +100,12 @@
   }
 }
 
-.intro[data-reduced='true'] { animation: none; }
-.intro[data-reduced='true'] .welcomeArt { display: none; }
-.intro[data-reduced='true'] .poster { animation: none; opacity: 1; }
+.intro[data-ready='false'],
+.intro[data-ready='false'] .welcomeArt,
+.intro[data-ready='false'] .poster { animation-play-state: paused; }
 
-@media (prefers-reduced-motion: reduce) {
-  .intro, .poster { animation: none; opacity: 1; }
-  .welcomeArt { display: none; }
-}
+.intro[data-reduced='true'] { animation: none; }
+.intro[data-reduced='true'] .welcomeArt { animation: none; opacity: 1; }
+.intro[data-reduced='true'] .poster { animation: none; opacity: 0; }
+.intro[data-reduced='true'][data-reduced-poster='true'] .welcomeArt { opacity: 0; }
+.intro[data-reduced='true'][data-reduced-poster='true'] .poster { opacity: 1; }
