@@ -7,7 +7,7 @@
   background: #000;
   color: #fff;
   isolation: isolate;
-  animation: exit 1200ms ease-in-out 4000ms both;
+  animation: exit 1200ms ease-in-out 4500ms both;
   font-family: 'Archivo SemiCondensed', var(--cc-font-body, Arial, sans-serif);
   font-weight: 600;
 }
@@ -44,7 +44,7 @@
 .poster {
   z-index: 2;
   opacity: 0;
-  animation: reveal 700ms ease-in-out 1900ms both;
+  animation: reveal 700ms ease-in-out 2400ms both;
 }
 
 .poster img {
