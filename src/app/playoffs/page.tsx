@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {PlayoffBracket} from '@/components/playoffs/PlayoffBracket';
 import {createServerPlayoffService} from '@/core/createServerPlayoffService';
@@ -14,6 +15,7 @@ export default async function PlayoffsPage() {
     <>
       <SiteHeader />
       <main className="shell page-shell">
+        <Link href="/standings" className="back">← Standings</Link>
         <span className="eyebrow">Team Clash postseason</span>
         <h1>Playoffs</h1>
         {view ? <PlayoffBracket view={view} /> : <p>The playoff bracket has not been published.</p>}
