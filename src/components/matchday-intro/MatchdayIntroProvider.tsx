@@ -2,10 +2,10 @@
 
 import {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
 import {usePathname} from 'next/navigation';
-import {findMatchdayIntro, selectIntroImage, MATCHDAY_INTRO_TIMING, type MatchdayIntroArt} from './matchdayIntro.config';
+import {findMatchdayIntro, selectIntroImage, selectWelcomeImage, MATCHDAY_INTRO_TIMING, type MatchdayIntroArt} from './matchdayIntro.config';
 import styles from './MatchdayIntro.module.css';
 
-type Run = {id: number; from: string; href: string; slug: string; art: MatchdayIntroArt; src: string; reduced: boolean};
+type Run = {id: number; from: string; href: string; slug: string; art: MatchdayIntroArt; src: string; welcomeSrc: string; reduced: boolean};
 const IntroContext = createContext<(href: string) => void>(() => {});
 export const useMatchdayIntro = () => useContext(IntroContext);
 
@@ -18,11 +18,15 @@ export function MatchdayIntroProvider({children}: {children: ReactNode}) {
   const start = useCallback((href: string) => {
     const entry = findMatchdayIntro(href);
     if (!entry || pathname === href || pathname === `/matches/${entry.slug}`) return;
-    const src = selectIntroImage(entry.art, window.matchMedia('(max-width: 767px)').matches);
-    // Start the request synchronously in the navigation event, before rendering.
-    const preload = new window.Image();
-    preload.src = src;
-    setRun({id: ++counter.current, from: pathname, href, ...entry, src,
+    const isMobile = window.matchMedia('(max-width: 767px)').matches;
+    const src = selectIntroImage(entry.art, isMobile);
+    const welcomeSrc = selectWelcomeImage(isMobile);
+    // Start both image requests synchronously in the navigation event, before rendering.
+    for (const imageSrc of [welcomeSrc, src]) {
+      const preload = new window.Image();
+      preload.src = imageSrc;
+    }
+    setRun({id: ++counter.current, from: pathname, href, ...entry, src, welcomeSrc,
       reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches});
   }, [pathname]);
   const finish = useCallback(() => setRun(null), []);
@@ -71,7 +75,10 @@ function MatchdayIntro({run, onFinish}: {run: Run; onFinish: () => void}) {
   return (
     <div className={styles.intro} data-matchday-intro data-reduced={run.reduced}
       role="dialog" aria-modal="true" aria-label={`Welcome to Matchday: ${run.art.label}`}>
-      <p className={styles.welcome}>WELCOME TO MATCHDAY</p>
+      <div className={styles.welcomeArt} aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={run.welcomeSrc} alt="" fetchPriority="high" loading="eager" />
+      </div>
       <div className={styles.poster}>
         {/* Native img shares the exact preloaded URL and supports optional art direction. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
