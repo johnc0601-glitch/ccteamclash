@@ -7,6 +7,11 @@ export type MatchdayIntroArt = {
 
 const root = '/matchday-intros/2026-2027/round-1';
 
+export const MATCHDAY_WELCOME_ART = {
+  desktop: '/matchday-intros/welcome/welcome-desktop.webp',
+  mobile: '/matchday-intros/welcome/welcome-mobile.webp',
+} as const;
+
 // Verified against live launch_schedule_matches on 2026-09-27.
 // IDs retain legacy team names: use public slugs, not names inferred from IDs.
 export const MATCHDAY_INTROS: Record<string, MatchdayIntroArt> = {
@@ -50,4 +55,8 @@ export function findMatchdayIntro(href: string) {
 
 export function selectIntroImage(art: MatchdayIntroArt, mobile: boolean) {
   return mobile && art.mobile ? art.mobile : art.desktop;
+}
+
+export function selectWelcomeImage(mobile: boolean) {
+  return mobile ? MATCHDAY_WELCOME_ART.mobile : MATCHDAY_WELCOME_ART.desktop;
 }
