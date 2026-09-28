@@ -93,6 +93,11 @@
     object-fit: cover;
     object-position: center;
   }
+
+  .poster[data-has-mobile='false'] img {
+    object-fit: contain;
+    background: #000;
+  }
 }
 
 .intro[data-reduced='true'] { animation: none; }

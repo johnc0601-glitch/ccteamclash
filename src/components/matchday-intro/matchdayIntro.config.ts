@@ -24,17 +24,17 @@ export const MATCHDAY_INTROS: Record<string, MatchdayIntroArt> = {
   'wild-turkey-at-cougar-country-2026-r1': {
     matchId: 'wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2',
     label: 'Wild Turkey at Cougar Country',
-    desktop: `${root}/02_Wild_Turkey_at_Cougar_Country.png`,
+    desktop: `${root}/02_Wild_Turkey_at_Cougar_Country.webp`,
   },
   'hayneous-og-s-at-ninjas-2026-r1': {
     matchId: 'hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766',
     label: "Hayneous OG's at Ninjas",
-    desktop: `${root}/03_Hayneous_OGs_at_Ninjas.png`,
+    desktop: `${root}/03_Hayneous_OGs_at_Ninjas.webp`,
   },
   'beast-mode-at-riptide-2026-r1': {
     matchId: 'beast-mode-vs-riptide-3ed22cf9-623e-4c11-96a2-b0e6c42b7e0d',
     label: 'Beast Mode at Riptide',
-    desktop: `${root}/04_Beast_Mode_at_Riptide.png`,
+    desktop: `${root}/04_Beast_Mode_at_Riptide.webp`,
   },
 };
 

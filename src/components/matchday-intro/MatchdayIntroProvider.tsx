@@ -79,7 +79,7 @@ function MatchdayIntro({run, onFinish}: {run: Run; onFinish: () => void}) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={run.welcomeSrc} alt="" fetchPriority="high" loading="eager" />
       </div>
-      <div className={styles.poster}>
+      <div className={styles.poster} data-has-mobile={run.art.mobile ? 'true' : 'false'}>
         {/* Native img shares the exact preloaded URL and supports optional art direction. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={run.art.label} fetchPriority="high" loading="eager"
