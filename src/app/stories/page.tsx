@@ -21,7 +21,10 @@ export default async function Page({searchParams}: {searchParams: SearchParams})
       <SiteHeader />
       <main className="shell page-shell">
         <span className="eyebrow">STORY ARCHIVE</span>
-        <h1>League stories</h1>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, flexWrap: 'wrap'}}>
+          <h1>League stories</h1>
+          <Link href="/photos">Photos →</Link>
+        </div>
 
         <form method="get" action="/stories" style={{display: 'grid', gap: 10, margin: '18px 0 24px'}}>
           <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10, alignItems: 'end'}}>
