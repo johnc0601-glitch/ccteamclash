@@ -1,0 +1,8 @@
+.weather { margin: 12px 0; padding: 16px; border: 1px solid rgba(198,164,83,.35); border-radius: 14px; background: rgba(198,164,83,.06); }
+.heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; }
+.heading > span, .note { font-size: .8rem; opacity: .8; }
+.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
+.metrics > span { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; }
+.metrics strong { font-size: clamp(1rem, 3.5vw, 1.3rem); }
+.note { line-height: 1.5; margin: 0; }
+.note a { color: inherit; text-decoration: underline; }
