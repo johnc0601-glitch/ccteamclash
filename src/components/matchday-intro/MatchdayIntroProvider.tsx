@@ -2,11 +2,11 @@
 
 import {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
 import {usePathname} from 'next/navigation';
-import {findMatchdayIntro, selectIntroImage, MATCHDAY_WELCOME_ART, MATCHDAY_INTRO_TIMING, type MatchdayIntroArt} from './matchdayIntro.config';
+import {isMatchdayToday, findMatchdayIntro, selectIntroImage, MATCHDAY_WELCOME_ART, MATCHDAY_INTRO_TIMING, type MatchdayIntroArt} from './matchdayIntro.config';
 import styles from './MatchdayIntro.module.css';
 
 type Run = {id: number; from: string; href: string; slug: string; art: MatchdayIntroArt; src: string; reduced: boolean};
-const IntroContext = createContext<(href: string) => void>(() => {});
+const IntroContext = createContext<(href: string, matchDate?: string | null) => void>(() => {});
 export const useMatchdayIntro = () => useContext(IntroContext);
 
 // Only explicit Link.onNavigate events create a run. No storage, query flags or
@@ -15,7 +15,8 @@ export function MatchdayIntroProvider({children}: {children: ReactNode}) {
   const pathname = usePathname();
   const counter = useRef(0);
   const [run, setRun] = useState<Run | null>(null);
-  const start = useCallback((href: string) => {
+  const start = useCallback((href: string, matchDate?: string | null) => {
+    if (!isMatchdayToday(matchDate)) return;
     const entry = findMatchdayIntro(href);
     if (!entry || pathname === href || pathname === `/matches/${entry.slug}`) return;
     const isMobile = window.matchMedia('(max-width: 767px)').matches;

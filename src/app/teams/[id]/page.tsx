@@ -283,7 +283,7 @@ function NextMatchCard({event, courseDirections}: {
           {directions ? <a href={directions} target="_blank" rel="noreferrer">{event.course}</a> : event.course}
         </p>
       </div>
-      <MatchdayLink href={event.href}>Match page</MatchdayLink>
+      <MatchdayLink href={event.href} matchDate={event.scheduledDate}>Match page</MatchdayLink>
     </div>
   );
 }
@@ -308,7 +308,7 @@ function TeamSchedule({events, courseDirections}: {
               <td>{event.isHome ? 'vs' : 'at'} {event.opponent}</td>
               <td>{directions ? <a href={directions} target="_blank" rel="noreferrer">{event.course}</a> : event.course}</td>
               <td>{event.status}</td>
-              <td><MatchdayLink href={event.href}>Open</MatchdayLink></td>
+              <td><MatchdayLink href={event.href} matchDate={event.scheduledDate}>Open</MatchdayLink></td>
             </tr>
           );
         })}</tbody>

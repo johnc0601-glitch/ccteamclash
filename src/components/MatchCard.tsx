@@ -56,7 +56,7 @@ export function MatchCard({match, teams, feedPreview}: MatchCardProps) {
         </a>
       ) : null}
       <div className="match-card-footer">
-        <MatchdayLink href={match.href} className="gold-link">View match -&gt;</MatchdayLink>
+        <MatchdayLink href={match.href} matchDate={match.scheduledDate} className="gold-link">View match -&gt;</MatchdayLink>
       </div>
     </article>
   );

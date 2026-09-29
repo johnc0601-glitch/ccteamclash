@@ -62,3 +62,13 @@ export function selectIntroImage(art: MatchdayIntroArt, mobile: boolean) {
   return mobile && art.mobile ? art.mobile : art.desktop;
 }
 
+
+// Compare calendar dates in the league timezone, never the viewer's local zone.
+export function isMatchdayToday(matchDate: string | null | undefined, now = new Date()): boolean {
+  if (!matchDate || !/^\d{4}-\d{2}-\d{2}$/.test(matchDate)) return false;
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(now);
+  const part = (type: string) => parts.find((value) => value.type === type)?.value;
+  return matchDate === `${part('year')}-${part('month')}-${part('day')}`;
+}
