@@ -11,16 +11,14 @@ export async function MatchWeather({matchday}: {matchday: PublicMatchday}) {
   const forecast = course?.city && course?.state
     ? await getDailyMatchWeather(course.city, course.state, matchday.scheduledDate!, today)
     : null;
-  return <section className={styles.weather} aria-label="Match-day weather">
-    <div className={styles.heading}><strong>Match-day weather</strong><span>{course?.city ? `${course.city} area` : 'Location pending'}</span></div>
-    {forecast ? <>
-      {forecast.condition && <div className={styles.condition}><WeatherIcon name={forecast.condition.icon} /><strong>{forecast.condition.label}</strong></div>}
-      <div className={styles.metrics}>
-        <span><strong>{forecast.high}° / {forecast.low}°</strong>High / low · °F</span>
-        <span><strong className={styles.iconValue}><WeatherIcon name="rain" />{forecast.rain}%</strong>Rain chance</span>
-        <span><strong className={styles.iconValue}><WeatherIcon name="wind" />{forecast.wind === null ? 'Unavailable' : forecast.wind === 0 ? 'Calm' : `${forecast.windDirection ? `${forecast.windDirection} · ` : ''}${forecast.wind} mph`}</strong>Typical wind · 8am–5pm</span>
-      </div>
-      <div className={styles.note}>Full-day forecast · Updated {new Intl.DateTimeFormat('en-US', {timeZone: WEATHER_TIME_ZONE, month: 'short', day: 'numeric'}).format(new Date(forecast.updatedAt))} · Updates daily · <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo</a></div>
-    </> : <p className={styles.note}>{course?.city && course?.state ? 'Forecast temporarily unavailable. Please check again tomorrow.' : 'Forecast will appear when the course location is confirmed.'}</p>}
+  if (!forecast) return <section className={styles.weather} aria-label="Match-day weather"><span>Weather {course?.city && course?.state ? 'temporarily unavailable' : 'pending course location'}</span></section>;
+  const wind = forecast.wind === null ? '—' : forecast.wind === 0 ? 'Calm' : `${forecast.windDirection === 'Variable' ? 'Var' : forecast.windDirection ?? ''} ${forecast.wind} mph`.trim();
+  const updated = new Intl.DateTimeFormat('en-US', {timeZone: WEATHER_TIME_ZONE, month: 'short', day: 'numeric'}).format(new Date(forecast.updatedAt));
+  return <section className={styles.weather} aria-label="Match-day weather" title={`${course?.city ?? 'Course'} area · Updated ${updated} · Updates daily · Weather data: Open-Meteo`}>
+    <span className={styles.item} aria-label={`${forecast.condition?.label ?? 'Forecast'}, high ${forecast.high}, low ${forecast.low} degrees Fahrenheit`}>
+      {forecast.condition && <WeatherIcon name={forecast.condition.icon} />}<strong>{forecast.high}°/{forecast.low}°</strong>
+    </span>
+    <span className={styles.item} aria-label={`Rain chance ${forecast.rain} percent`}><WeatherIcon name="rain" /><strong>{forecast.rain}%</strong></span>
+    <span className={styles.item} aria-label={`Typical wind, 8am to 5pm: ${forecast.windDirection ?? ''} ${forecast.wind === null ? 'unavailable' : `${forecast.wind} miles per hour`}`}><WeatherIcon name="wind" /><strong>{wind}</strong></span>
   </section>;
 }

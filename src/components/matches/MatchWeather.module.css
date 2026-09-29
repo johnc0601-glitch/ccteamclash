@@ -1,13 +1,4 @@
-.weather { margin: 12px 0; padding: 16px; border: 1px solid rgba(198,164,83,.35); border-radius: 14px; background: rgba(198,164,83,.06); }
-.heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; }
-.heading > span, .note { font-size: .8rem; opacity: .8; }
-.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
-.metrics > span { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; }
-.metrics strong { font-size: clamp(1rem, 3.5vw, 1.3rem); }
-.note { line-height: 1.5; margin: 0; }
-.note a { color: inherit; text-decoration: underline; }
-
-.condition { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
-.condition svg { width: 30px; height: 30px; color: var(--cc-gold-ink, #b38b32); }
-.iconValue { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-.iconValue svg { flex-shrink: 0; width: 20px; height: 20px; }
+.weather { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 4vw, 24px); margin: 8px 0; padding: 8px 10px; border: 1px solid rgba(198,164,83,.3); border-radius: 8px; background: rgba(198,164,83,.06); font-size: clamp(11px, 3.2vw, 14px); line-height: 1.2; white-space: nowrap; }
+.item { display: inline-flex; align-items: center; gap: 5px; }
+.item svg { flex-shrink: 0; width: 18px; height: 18px; }
+.item:first-child svg { color: var(--cc-gold-ink, #b38b32); }
