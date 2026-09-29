@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync} from 'node:fs';
-import {findMatchdayIntro, MATCHDAY_INTROS, MATCHDAY_WELCOME_ART, selectIntroImage} from './matchdayIntro.config';
+import {isMatchdayToday, findMatchdayIntro, MATCHDAY_INTROS, MATCHDAY_WELCOME_ART, selectIntroImage} from './matchdayIntro.config';
 
 test('verified public slugs and legacy IDs resolve to the same matchup', () => {
   for (const [slug, art] of Object.entries(MATCHDAY_INTROS)) {
@@ -32,4 +32,15 @@ test('every configured welcome and matchup asset exists, with mobile art for all
     assert.ok(existsSync(`public${art.mobile}`), art.mobile);
   }
   for (const path of Object.values(MATCHDAY_WELCOME_ART)) assert.ok(existsSync(`public${path}`), path);
+});
+
+test('intro runs only on the scheduled Eastern calendar day', () => {
+  for (const [instant, expected] of [
+    ['2026-10-03T03:59:59Z', false], ['2026-10-03T04:00:00Z', true],
+    ['2026-10-04T03:59:59Z', true], ['2026-10-04T04:00:00Z', false],
+  ] as const) assert.equal(isMatchdayToday('2026-10-03', new Date(instant)), expected);
+  assert.equal(isMatchdayToday('2027-01-02', new Date('2027-01-02T04:59:59Z')), false);
+  assert.equal(isMatchdayToday('2027-01-02', new Date('2027-01-02T05:00:00Z')), true);
+  for (const date of [undefined, null, '', 'TBD', '2026-10-04'])
+    assert.equal(isMatchdayToday(date, new Date('2026-10-03T16:00:00Z')), false);
 });

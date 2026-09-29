@@ -142,7 +142,7 @@ export default async function ClubhousePage({searchParams}: Props) {
                   <h2>{nextMatch.away_team_id === context.teamId ? `${context.teamName} @ ${teams.get(nextMatch.home_team_id) ?? 'Opponent'}` : `${teams.get(nextMatch.away_team_id) ?? 'Opponent'} @ ${context.teamName}`}</h2>
                   <p>{formatDate(nextMatch.date)} · {courses.get(nextMatch.course_id) ?? 'Location TBD'}</p>
                 </div>
-                <MatchdayLink href={`/matches/${nextMatch.public_slug || nextMatch.id}`}>Open Matchday</MatchdayLink>
+                <MatchdayLink matchDate={nextMatch.date} href={`/matches/${nextMatch.public_slug || nextMatch.id}`}>Open Matchday</MatchdayLink>
               </div>
 
               <div style={{marginTop:'22px',paddingTop:'18px',borderTop:'1px solid rgba(255,255,255,.12)'}}>
@@ -203,7 +203,7 @@ export default async function ClubhousePage({searchParams}: Props) {
               {teamMatchRows.map((match) => {
                 const opponentId = match.home_team_id === context.teamId ? match.away_team_id : match.home_team_id;
                 const side = match.home_team_id === context.teamId ? 'vs' : '@';
-                return <MatchdayLink href={`/matches/${match.public_slug || match.id}`} key={match.id}><strong>{formatDate(match.date)}</strong><span>{side} {teams.get(opponentId) ?? 'Opponent'}</span><small>{courses.get(match.course_id) ?? 'Location TBD'}</small></MatchdayLink>;
+                return <MatchdayLink matchDate={match.date} href={`/matches/${match.public_slug || match.id}`} key={match.id}><strong>{formatDate(match.date)}</strong><span>{side} {teams.get(opponentId) ?? 'Opponent'}</span><small>{courses.get(match.course_id) ?? 'Location TBD'}</small></MatchdayLink>;
               })}
             </div>
           </details>

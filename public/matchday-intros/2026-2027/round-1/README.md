@@ -18,7 +18,8 @@ before animation starts; an 8-second loading timeout prevents a stuck overlay.
 The standard sequence lasts 5.7 seconds, including a 1.2-second exit fade.
 Reduced motion shows the same welcome then matchup as two static 0.7-second frames.
 
-Use MatchdayLink to trigger playback during navigation. Direct visits, refresh,
+Use MatchdayLink with the live scheduledDate (YYYY-MM-DD) to trigger playback
+only on that match date in America/New_York. Missing/TBD dates skip playback. Direct visits, refresh,
 browser history and ordinary links do not trigger playback. Skip, Escape, image
 failure and leaving the tab dismiss the intro. Match IDs may contain old team names;
 use the explicit mappings rather than deriving artwork from the ID text.

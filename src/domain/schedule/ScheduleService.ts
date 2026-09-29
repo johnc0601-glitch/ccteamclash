@@ -32,6 +32,7 @@ const MATCH_DISPLAY_WINDOW_DAYS = 14;
 export type ScheduleEventBucket = 'upcoming' | 'recent' | 'past';
 
 export type PublicScheduleEvent = {
+  scheduledDate?: string;
   id: string;
   href: string;
   date: string;
@@ -277,6 +278,7 @@ export class ScheduleService {
         id: match.id,
         href: `/matches/${match.id}`,
         date: this.formatEventDate(match.date),
+        scheduledDate: match.date,
         time: this.formatEventTime(match.time),
         course: course?.name ?? match.courseId,
         directionsUrl: course?.mapUrl ?? '',
