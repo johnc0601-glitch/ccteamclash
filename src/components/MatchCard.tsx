@@ -23,12 +23,12 @@ type MatchCardProps = {
   feedPreview?: MatchFeedPreview;
 };
 
-export function MatchCard({match, teams, feedPreview}: MatchCardProps) {
+export function MatchCard({match, teams}: MatchCardProps) {
   const homeTeam = findTeam(teams, match.homeTeamId, match.home);
   const awayTeam = findTeam(teams, match.awayTeamId, match.away);
 
   return (
-    <article className="dark-panel story-home-card home-match-card">
+    <article className={`dark-panel story-home-card home-match-card ${styles.card}`}>
       <div className="story-matchup">
         <Link className="match-team-link" href={`/teams/${encodeURIComponent(match.awayTeamId)}`}>
           <TeamMatchLogo name={match.away} logo={awayTeam?.logo} />
@@ -45,16 +45,6 @@ export function MatchCard({match, teams, feedPreview}: MatchCardProps) {
         <p><span>TIME</span>{match.time}</p>
         <p><span>COURSE</span>{match.course}</p>
       </div>
-      {feedPreview ? (
-        <a href={`${match.href}#match-feed`} className={styles.activity}>
-          <div className={styles.activityText}>
-            <strong>{feedPreview.author} posted{feedPreview.imageUrl ? ' a photo' : ''}</strong>
-            {feedPreview.excerpt ? <p>{feedPreview.excerpt}</p> : null}
-            <span>{feedPreview.commentCount} comments · {feedPreview.reactionCount} reactions</span>
-          </div>
-          {feedPreview.imageUrl ? <img src={feedPreview.imageUrl} alt="Latest match post" className={styles.thumb} /> : null}
-        </a>
-      ) : null}
       <div className="match-card-footer">
         <MatchdayLink href={match.href} matchDate={match.scheduledDate} className="gold-link">View match -&gt;</MatchdayLink>
       </div>

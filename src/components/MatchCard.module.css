@@ -1,1 +1,70 @@
-:global(.home-match-card .match-logo-frame){border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;color:var(--cc-text)!important}.activity{margin:14px 0 0;padding:11px;border-top:1px solid rgba(255,255,255,.12);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}.activityText{min-width:0}.activityText strong{display:block;color:#fff;font-size:12px}.activityText p{margin:4px 0 0;overflow:hidden;color:rgba(255,255,255,.72);font-size:12px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.activityText span{display:block;margin-top:6px;color:rgba(255,255,255,.56);font-size:10px}.thumb{width:64px;height:52px;display:block;object-fit:cover;border-radius:6px;background:#111}@media(max-width:700px){.activity{padding:10px 0 0}.thumb{width:58px;height:48px}}
+.card:global(.home-match-card) {
+  min-height: 0;
+  padding: 14px;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.card:global(.home-match-card) :global(.story-matchup) {
+  margin: 0;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 6px;
+}
+
+.card:global(.home-match-card) :global(.story-matchup) > b {
+  align-self: start;
+  padding-top: 24px;
+}
+
+.card:global(.home-match-card) :global(.match-team-link) {
+  min-width: 0;
+  padding: 0;
+  gap: 5px;
+}
+
+.card:global(.home-match-card) :global(.match-logo-frame) {
+  width: 56px;
+  height: 56px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  color: var(--cc-text);
+}
+
+.card:global(.home-match-card) :global(.match-team-link) strong {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.card:global(.home-match-card) :global(.match-details) {
+  margin: 0;
+  padding-top: 8px;
+}
+
+.card:global(.home-match-card) :global(.match-details) p {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 6px;
+  margin: 0 0 5px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.card:global(.home-match-card) :global(.match-details) span {
+  min-width: 0;
+  margin: 0;
+  font-size: 10px;
+}
+
+.card:global(.home-match-card) :global(.match-card-footer) {
+  margin-top: auto;
+  padding: 0;
+}
+
+.card:global(.home-match-card) :global(.gold-link) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+}
