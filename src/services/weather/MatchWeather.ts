@@ -18,7 +18,7 @@ export function weatherVisible(matchDate: string | undefined, lifecycle: string,
 }
 
 export type WeatherForecast = {
-  high: number; low: number; rain: number; wind: number; updatedAt: string;
+  condition: WeatherCondition; high: number; low: number; rain: number; wind: number; updatedAt: string;
 };
 
 export function parseForecast(value: unknown, matchDate: string): WeatherForecast | null {
@@ -31,5 +31,24 @@ export function parseForecast(value: unknown, matchDate: string): WeatherForecas
   if (!values.every(value => typeof value === 'number' && Number.isFinite(value))) return null;
   const [high, low, rain, wind] = values as number[];
   if (rain < 0 || rain > 100 || wind < 0 || low > high) return null;
-  return {high: Math.round(high), low: Math.round(low), rain: Math.round(rain), wind: Math.round(wind), updatedAt: new Date().toISOString()};
+  const code = Array.isArray(daily.weather_code) ? daily.weather_code[index] : undefined;
+  return {condition: weatherCondition(code), high: Math.round(high), low: Math.round(low), rain: Math.round(rain), wind: Math.round(wind), updatedAt: new Date().toISOString()};
+}
+
+export type WeatherCondition = {icon: 'sun' | 'cloud' | 'partly-cloudy' | 'rain' | 'storm' | 'snow' | 'fog'; label: string} | null;
+
+// WMO weather interpretation codes supplied by Open-Meteo, not inferred from rain probability.
+export function weatherCondition(code: unknown): WeatherCondition {
+  if (code === 0) return {icon: 'sun', label: 'Sunny'};
+  if (code === 1) return {icon: 'sun', label: 'Mainly clear'};
+  if (code === 2) return {icon: 'partly-cloudy', label: 'Partly cloudy'};
+  if (code === 3) return {icon: 'cloud', label: 'Cloudy'};
+  if (code === 45 || code === 48) return {icon: 'fog', label: 'Fog'};
+  if ([51, 53, 55].includes(code as number)) return {icon: 'rain', label: 'Drizzle'};
+  if ([56, 57, 66, 67].includes(code as number)) return {icon: 'rain', label: 'Freezing rain'};
+  if ([61, 63, 65, 80, 81, 82].includes(code as number)) return {icon: 'rain', label: 'Rain'};
+  if ([71, 73, 75, 77, 85, 86].includes(code as number)) return {icon: 'snow', label: 'Snow'};
+  if ([95, 97].includes(code as number)) return {icon: 'storm', label: 'Thunderstorms'};
+  if ([96, 99].includes(code as number)) return {icon: 'storm', label: 'Thunderstorms with hail'};
+  return null;
 }

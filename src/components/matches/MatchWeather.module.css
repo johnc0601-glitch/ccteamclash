@@ -6,3 +6,8 @@
 .metrics strong { font-size: clamp(1rem, 3.5vw, 1.3rem); }
 .note { line-height: 1.5; margin: 0; }
 .note a { color: inherit; text-decoration: underline; }
+
+.condition { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+.condition svg { width: 30px; height: 30px; color: var(--cc-gold-ink, #b38b32); }
+.iconValue { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.iconValue svg { flex-shrink: 0; width: 20px; height: 20px; }

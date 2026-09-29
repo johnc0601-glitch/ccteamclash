@@ -32,7 +32,7 @@ export const getDailyMatchWeather = unstable_cache(async (city: string, state: s
     const url = new URL('https://api.open-meteo.com/v1/forecast');
     url.search = new URLSearchParams({
       latitude: String(location.latitude), longitude: String(location.longitude),
-      daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max',
+      daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max',
       temperature_unit: 'fahrenheit', wind_speed_unit: 'mph', timezone: WEATHER_TIME_ZONE,
       start_date: matchDate, end_date: matchDate,
     }).toString();
@@ -40,4 +40,4 @@ export const getDailyMatchWeather = unstable_cache(async (city: string, state: s
   } catch {
     return null;
   }
-}, ['match-weather-daily-v1'], {revalidate: false});
+}, ['match-weather-daily-v2'], {revalidate: false});
