@@ -1,3 +1,5 @@
+import {Suspense} from 'react';
+import {MatchWeather} from './MatchWeather';
 import type {PublicMatchday} from '@/services/matches/MatchdayService';
 import {MatchPreview} from './MatchPreview';
 import styles from './MatchHeroV1.module.css';
@@ -18,9 +20,9 @@ export function MatchHero({matchday}: {matchday: PublicMatchday}) {
           <span>{matchday.date}</span>
           <span>{matchday.time}</span>
           {matchday.courseDetails?.mapUrl ? <a href={matchday.courseDetails.mapUrl} target="_blank" rel="noreferrer">{courseName}</a> : <span>{courseName}</span>}
-          <span className={styles.weatherSlot}>Weather closer to match</span>
         </div>
       </section>
+      <Suspense fallback={null}><MatchWeather matchday={matchday} /></Suspense>
       <MatchPreview matchId={matchday.id} />
     </>
   );
