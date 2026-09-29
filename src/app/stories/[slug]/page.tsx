@@ -62,7 +62,12 @@ export default async function Page({params, searchParams}: StoryPageProps) {
         <h1>{story.title}</h1>
         <StoryPhoto className="article-image" image={story.image} alt={heroAlt} />
         <div className="article-copy">
-          {story.body.map((paragraph, index) => <p key={`${index}-${paragraph.slice(0, 40)}`}>{paragraph}</p>)}
+          {story.body.map((paragraph, index) => (
+            <StoryBodyBlock
+              key={`${index}-${paragraph.slice(0, 40)}`}
+              paragraph={paragraph}
+            />
+          ))}
           {story.links?.map((link) => (
             <Link className="button" href={link.url} key={`${link.label}-${link.url}`}>{link.label}</Link>
           ))}
@@ -76,6 +81,35 @@ export default async function Page({params, searchParams}: StoryPageProps) {
       </main>
       <Footer />
     </>
+  );
+}
+
+
+function StoryBodyBlock({paragraph}: {paragraph: string}) {
+  const trimmed = paragraph.trim();
+  if (!trimmed) return null;
+
+  if (trimmed.startsWith('## ')) {
+    return <h2 className="article-subheading">{trimmed.slice(3)}</h2>;
+  }
+
+  return (
+    <p className="article-paragraph">
+      {trimmed.split('\n').map((line, index) => {
+        const value = line.trim();
+        const isUrl = /^https?:\/\/\S+$/.test(value);
+
+        return (
+          <span className="article-line" key={`${index}-${value.slice(0, 30)}`}>
+            {isUrl ? (
+              <a className="article-link" href={value} target="_blank" rel="noreferrer">
+                {value.replace(/^https?:\/\//, '')}
+              </a>
+            ) : value}
+          </span>
+        );
+      })}
+    </p>
   );
 }
 
