@@ -31,19 +31,6 @@ export default function OfficeMediaPage() {
             <Link href="/office/media/moderation">Open moderation</Link>
           </div>
         </section>
-
-        <section style={mediaCardStyle}>
-          <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap'}}>
-            <div>
-              <div style={{display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap'}}>
-                <strong>Clash Pulse</strong>
-                <span style={{fontSize: 11, fontWeight: 800, letterSpacing: '.08em', border: '1px solid currentColor', borderRadius: 999, padding: '2px 7px'}}>VERIFIED DATA</span>
-              </div>
-              <p style={{margin: '6px 0 0'}}>Review verified player and team facts, build the Pulse Queue, and publish the strongest items to the homepage.</p>
-            </div>
-            <Link href="/office/media/around-the-clash">Open Clash Pulse</Link>
-          </div>
-        </section>
       </div>
       <StoryManager />
     </OfficePage>
