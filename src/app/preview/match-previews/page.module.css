@@ -148,6 +148,17 @@
   line-height: 1.25;
 }
 
+.battleLine {
+  padding: 12px 17px;
+  border-bottom: 1px solid var(--cc-card-border);
+  background: color-mix(in srgb, var(--cc-gold) 5%, var(--cc-card-bg));
+  color: var(--cc-body-text);
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
 .details {
   background: var(--cc-card-bg);
 }
@@ -288,6 +299,12 @@
 
   .stat strong {
     font-size: 12px;
+  }
+
+  .battleLine {
+    padding: 11px 13px;
+    font-size: 12px;
+    text-align: center;
   }
 
   .details summary {
