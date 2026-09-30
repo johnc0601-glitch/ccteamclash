@@ -346,7 +346,6 @@
   cursor: pointer;
 }
 
-.captainPlayerActions button:first-of-type,
 .confirmRosterForm button {
   border-color: var(--cc-teal);
   background: var(--cc-teal);
@@ -465,10 +464,10 @@
 }
 
 .yesStatusButton[data-selected='true'] {
-  border-color: #326f20;
-  background: #59a63b;
-  color: #fff;
-  box-shadow: 0 0 0 2px var(--cc-heading), 0 0 12px rgba(89, 166, 59, .62);
+  border-color: #218c2b;
+  background: #5ee65f;
+  color: #102512;
+  box-shadow: 0 0 0 2px var(--cc-heading), 0 0 14px rgba(66, 218, 78, .78);
 }
 
 .noStatusButton:not([data-selected='true']) {
