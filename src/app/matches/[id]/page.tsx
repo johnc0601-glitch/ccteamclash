@@ -192,7 +192,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
       <SiteHeader />
       <main className={styles.page} style={pageBackground}>
         <MatchHero matchday={matchday} />
-        <MatchPreview matchId={matchId} matchday={matchday} />
+        <MatchPreview matchId={match.id} matchday={matchday} />
         <div className={`shell ${styles.content}`}>
           {matchPrediction ? (
             <MatchPredictionCard
