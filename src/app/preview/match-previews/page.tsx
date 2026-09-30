@@ -12,6 +12,7 @@ type Matchup = {
   proven: string;
   swing: string;
   hook: string;
+  battle: string;
   paragraphs: string[];
   watch: string;
 };
@@ -28,6 +29,7 @@ const matchups: Matchup[] = [
     proven: 'Phillips · 11 wins',
     swing: 'Daniel Johnson · 2–0 vs CC',
     hook: 'WT brings a stronger top end',
+    battle: 'The Turkeys head into Cougar Country, where the Cougars will be defending their ground.',
     paragraphs: [
       'There may not be a better early-season test for Wild Turkey.',
       'Cougar Country won the only previous meeting, 20.5–15.5, but both rosters have changed enough that the old result only tells part of the story. Wild Turkey is stronger at the top, while Cougar Country brings back a group that already knows how to pile up Clash points.',
@@ -48,6 +50,7 @@ const matchups: Matchup[] = [
     proven: 'Duncan 15 · England 14',
     swing: 'Eli Batazhan · 2–0 vs KB',
     hook: 'New Burnt Mill layout',
+    battle: 'KB heads into Burnt Mill, where the Dark Knights are waiting on unfamiliar ground.',
     paragraphs: [
       "Dark Knights probably don't need much reminding about their recent history with KB.",
       'KB has won both previous meetings, including a 21–12 win last season and a 24–13 victory the year before. This time, though, the setting changes everything.',
@@ -68,6 +71,7 @@ const matchups: Matchup[] = [
     proven: 'Lehmann · 14 wins',
     swing: 'Chad Crom · 6 wins in 8',
     hook: 'New faces on both sides',
+    battle: 'The OG’s step into Ninja territory for another close-quarters fight.',
     paragraphs: [
       "There isn't much history between these teams yet, which may be exactly what makes this matchup so intriguing.",
       "Ninjas won the only previous meeting, 21.5–18.5, but both teams have enough new faces that last year's result is hardly a blueprint.",
@@ -88,6 +92,7 @@ const matchups: Matchup[] = [
     proven: 'Lee 13 · Deering 12',
     swing: 'Hastin McGill · 3–0 vs RIP',
     hook: 'Championship rematch',
+    battle: 'Beast Mode meets the Riptide again, looking to turn the current after last year’s Championship.',
     paragraphs: [
       'Beast Mode gets another shot at the team that ended its season.',
       'Riptide beat Beast Mode 23–17 during the regular season, then followed it with a 12–7 win in the Championship. That gives this matchup a little more bite than a typical season opener.',
@@ -138,6 +143,8 @@ export default function MatchPreviewConceptPage() {
                   <Stat label="Swing player" value={matchup.swing} />
                   <Stat label="Story" value={matchup.hook} />
                 </div>
+
+                <div className={styles.battleLine}>{matchup.battle}</div>
 
                 <details className={styles.details}>
                   <summary>
