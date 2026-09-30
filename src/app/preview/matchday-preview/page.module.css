@@ -270,23 +270,23 @@
 @media (max-width: 700px) {
   .hero {
     width: calc(100% - 20px);
-    padding-top: 10px;
+    padding-top: 8px;
   }
 
   .heroTeams {
-    min-height: 160px;
+    min-height: 150px;
     grid-template-columns: minmax(0,1fr) 38px minmax(0,1fr);
     border-radius: 10px;
   }
 
   .team {
-    padding: 12px 10px;
-    gap: 5px;
+    padding: 10px 9px;
+    gap: 4px;
   }
 
   .team img {
-    width: 58px;
-    height: 58px;
+    width: 54px;
+    height: 54px;
   }
 
   .team strong {
@@ -299,8 +299,8 @@
 
   .meta {
     margin: 0 5px;
-    padding: 9px 8px;
-    gap: 5px 10px;
+    padding: 7px 8px;
+    gap: 3px 9px;
     font-size: 10px;
   }
 
@@ -311,15 +311,28 @@
 
   .previewWrap {
     width: calc(100% - 20px);
-    padding-top: 12px;
+    padding-top: 7px;
   }
 
   .previewHeader {
-    padding: 15px 14px 13px;
+    padding: 10px 12px 9px;
+    gap: 8px;
+  }
+
+  .kicker,
+  .stat span,
+  .watch span,
+  .afterPreview span {
+    font-size: 8px;
   }
 
   .previewHeader h1 {
-    font-size: 24px;
+    margin-top: 3px;
+    font-size: 21px;
+  }
+
+  .round {
+    font-size: 10px;
   }
 
   .stats {
@@ -327,8 +340,8 @@
   }
 
   .stat {
-    min-height: 69px;
-    padding: 11px 12px;
+    min-height: 54px;
+    padding: 8px 10px;
     border-bottom: 1px solid var(--cc-card-border);
   }
 
@@ -342,22 +355,26 @@
   }
 
   .stat strong {
-    font-size: 12px;
+    margin-top: 2px;
+    font-size: 11px;
+    line-height: 1.16;
   }
 
   .battle {
-    padding: 11px 13px;
-    font-size: 12px;
+    padding: 7px 10px;
+    font-size: 11px;
+    line-height: 1.25;
     text-align: center;
   }
 
   .fullPreview summary {
-    min-height: 44px;
-    padding: 0 13px;
+    min-height: 37px;
+    padding: 0 10px;
+    font-size: 11px;
   }
 
   .story {
-    padding: 16px 14px 18px;
+    padding: 14px 12px 16px;
   }
 
   .story p {
@@ -365,6 +382,9 @@
   }
 
   .afterPreview {
+    margin-top: 8px;
+    padding: 12px 14px;
+    gap: 8px;
     align-items: flex-start;
     flex-direction: column;
   }
