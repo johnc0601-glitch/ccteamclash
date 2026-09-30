@@ -365,3 +365,189 @@
     font-size: 36px;
   }
 }
+
+
+/* Commissioner dashboard workflow grouping */
+.office-dashboard-groups {
+  display: grid;
+  gap: 34px;
+}
+
+.office-dashboard-group {
+  display: grid;
+  gap: 14px;
+}
+
+.office-dashboard-group-header span {
+  color: var(--cc-gold);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.office-dashboard-group-header p {
+  margin: 5px 0 0;
+  color: var(--cc-text-muted);
+  font-size: 13px;
+}
+
+.office-priority-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.office-section-card-primary {
+  min-height: 218px;
+  border-top: 4px solid var(--cc-gold);
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--cc-gold) 5%, transparent), transparent 58%),
+    var(--cc-card-bg);
+}
+
+.office-section-card-primary > span {
+  font-size: 25px;
+}
+
+.office-priority-grid .office-section-card:not(.office-section-card-primary) {
+  min-height: 145px;
+}
+
+.office-section-grid-compact .office-section-card {
+  min-height: 150px;
+}
+
+.office-preview-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.office-preview-summary > div {
+  padding: 14px 16px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 6px;
+  background: var(--cc-card-bg);
+}
+
+.office-preview-summary span,
+.office-preview-match-meta span {
+  display: block;
+  color: var(--cc-text-muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.office-preview-summary strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--cc-text);
+  font-size: 22px;
+}
+
+.office-preview-list {
+  display: grid;
+  gap: 12px;
+}
+
+.office-preview-match {
+  padding: 18px;
+  border: 1px solid var(--cc-card-border);
+  border-radius: 6px;
+  background: var(--cc-card-bg);
+}
+
+.office-preview-match-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.office-preview-match h2 {
+  margin: 0;
+  color: var(--cc-text);
+  font-size: 20px;
+  text-transform: uppercase;
+}
+
+.office-preview-match-meta {
+  margin-top: 7px;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.office-preview-match-meta span {
+  color: var(--cc-text-muted);
+  font-size: 10px;
+}
+
+.office-preview-status {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border: 1px solid var(--cc-panel-border);
+  border-radius: 999px;
+  color: var(--cc-text-muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.office-preview-status.ready {
+  border-color: var(--cc-gold-soft);
+  color: var(--cc-gold);
+}
+
+.office-preview-excerpt {
+  margin: 14px 0 0;
+  color: var(--cc-body-text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.office-preview-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.office-preview-actions a {
+  padding: 9px 11px;
+  border: 1px solid var(--cc-panel-border);
+  border-radius: 4px;
+  color: var(--cc-text);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.office-preview-actions a:first-child {
+  border-color: var(--cc-gold);
+  color: var(--cc-gold);
+}
+
+@media (max-width: 760px) {
+  .office-priority-grid,
+  .office-preview-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .office-section-card-primary {
+    min-height: 175px;
+  }
+
+  .office-preview-match-head {
+    display: grid;
+  }
+
+  .office-preview-status {
+    justify-self: start;
+  }
+}
