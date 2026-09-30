@@ -33,6 +33,19 @@ export type TeamAttendanceMember = {
   status: MatchAttendanceStatus | 'Unconfirmed';
 };
 
+export type ManagedTeamAttendanceMember = TeamAttendanceMember & {
+  singlesAvailable: boolean;
+  doublesAvailable: boolean;
+};
+
+export type MatchRoundAvailability = {
+  matchId: string;
+  teamId: string;
+  playerId: string;
+  singlesAvailable: boolean;
+  doublesAvailable: boolean;
+};
+
 export type MatchRosterStatus = 'Draft' | 'Confirmed';
 
 export type MatchRoster = {
@@ -52,7 +65,7 @@ export type ManagedTeamRoster = {
   emailReminderOpen?: boolean;
   rosterStatus: MatchRosterStatus;
   confirmedAt: string | null;
-  players: TeamAttendanceMember[];
+  players: ManagedTeamAttendanceMember[];
 };
 
 export type AttendanceMatch = {

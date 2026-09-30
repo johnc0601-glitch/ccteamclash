@@ -209,7 +209,8 @@ export class MatchRosterService {
     if (!context) return [];
 
     const now = this.now();
-    return Promise.all(context.teamIds.map(async (teamId) => {
+    const availabilityPromise = this.repository.getRoundAvailability(matchId, context.teamIds);
+    const rosterPromise = Promise.all(context.teamIds.map(async (teamId) => {
       const [players, roster] = await Promise.all([
         this.repository.getTeamAttendance(matchId, teamId),
         this.repository.getMatchRoster(matchId, teamId),
@@ -225,8 +226,27 @@ export class MatchRosterService {
         ),
         rosterStatus: roster?.status ?? 'Draft',
         confirmedAt: roster?.confirmedAt ?? null,
-        players,
+        players: players.map((player) => ({
+          ...player,
+          singlesAvailable: true,
+          doublesAvailable: true,
+        })),
       };
+    }));
+    const [availability, rosters] = await Promise.all([availabilityPromise, rosterPromise]);
+    const exceptions = new Map(availability.map((item) => [item.playerId, item]));
+    return rosters.map((roster) => ({
+      ...roster,
+      players: roster.players.map((player) => {
+        const exception = exceptions.get(player.playerId);
+        return exception && exception.teamId === roster.teamId
+          ? {
+            ...player,
+            singlesAvailable: exception.singlesAvailable,
+            doublesAvailable: exception.doublesAvailable,
+          }
+          : player;
+      }),
     }));
   }
 
@@ -311,7 +331,7 @@ export class MatchRosterService {
         attendanceOpen: true,
         rosterStatus: roster?.status ?? 'Draft',
         confirmedAt: roster?.confirmedAt ?? null,
-        players,
+        players: players.map((player) => ({...player, singlesAvailable: true, doublesAvailable: true})),
       },
     };
   }
@@ -348,7 +368,7 @@ export class MatchRosterService {
         attendanceOpen: true,
         rosterStatus: roster.status,
         confirmedAt: roster.confirmedAt,
-        players,
+        players: players.map((player) => ({...player, singlesAvailable: true, doublesAvailable: true})),
       },
     };
   }

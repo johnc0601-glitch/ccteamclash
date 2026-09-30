@@ -4,6 +4,7 @@ import type {
   AttendanceMatch,
   MatchAttendance,
   MatchAttendanceStatus,
+  MatchRoundAvailability,
   MatchRoster,
   TeamAttendanceMember,
 } from '@/domain/match-roster/MatchAttendance';
@@ -35,6 +36,12 @@ type AttendanceDatabase = {
         Row: AttendanceRow;
         Insert: Pick<AttendanceRow, 'match_id' | 'team_id' | 'player_id' | 'status' | 'updated_by'>;
         Update: Pick<AttendanceRow, 'status' | 'updated_by'>;
+        Relationships: [];
+      };
+      launch_match_round_availability: {
+        Row: RoundAvailabilityRow;
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
       launch_match_rosters: {
@@ -71,6 +78,14 @@ type AttendanceDatabase = {
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };
+};
+
+type RoundAvailabilityRow = {
+  match_id: string;
+  team_id: string;
+  player_id: string;
+  singles_available: boolean;
+  doubles_available: boolean;
 };
 
 type RosterRow = {
@@ -204,6 +219,23 @@ export class SupabaseMatchRosterRepository implements MatchRosterRepository {
       playerName: player.name,
       teamId,
       status: statuses.get(player.id) ?? 'Unconfirmed',
+    }));
+  }
+
+  async getRoundAvailability(matchId: string, teamIds: string[]): Promise<MatchRoundAvailability[]> {
+    if (!teamIds.length) return [];
+    const {data, error} = await this.attendanceClient
+      .from('launch_match_round_availability')
+      .select('match_id,team_id,player_id,singles_available,doubles_available')
+      .eq('match_id', matchId)
+      .in('team_id', teamIds);
+    if (error) throw error;
+    return data.map((row) => ({
+      matchId: row.match_id,
+      teamId: row.team_id,
+      playerId: row.player_id,
+      singlesAvailable: row.singles_available,
+      doublesAvailable: row.doubles_available,
     }));
   }
 
