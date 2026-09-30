@@ -65,8 +65,6 @@ export function CaptainRosterEditor({
     && counts.Unconfirmed > 0
     && dirtyCount === 0
   );
-  const selectedBox = '0 0 0 2px var(--cc-heading)';
-
   function choose(playerId: string, status: Status) {
     setDraft((current) => {
       const prior = current[playerId];
@@ -155,32 +153,26 @@ export function CaptainRosterEditor({
               <span className={styles.captainPlayerActions} style={{display: 'flex', gap: 4, whiteSpace: 'nowrap'}}>
                 <button
                   aria-pressed={status === 'Playing'}
+                  className={`${styles.captainStatusButton} ${styles.yesStatusButton}`}
+                  data-selected={status === 'Playing'}
                   onClick={() => choose(player.playerId, 'Playing')}
-                  style={{
-                    ...compactButtonStyle,
-                    background: '#4f7f32',
-                    borderColor: '#4f7f32',
-                    boxShadow: status === 'Playing' ? selectedBox : 'none',
-                    color: '#fff',
-                  }}
+                  style={compactButtonStyle}
                   type="button"
                 >Yes</button>
                 <button
                   aria-pressed={status === 'NotPlaying'}
+                  className={`${styles.captainStatusButton} ${styles.noStatusButton}`}
+                  data-selected={status === 'NotPlaying'}
                   onClick={() => choose(player.playerId, 'NotPlaying')}
-                  style={{
-                    ...compactButtonStyle,
-                    background: '#b64040',
-                    borderColor: '#b64040',
-                    boxShadow: status === 'NotPlaying' ? selectedBox : 'none',
-                    color: '#fff',
-                  }}
+                  style={compactButtonStyle}
                   type="button"
                 >No</button>
                 <button
                   aria-pressed={status === 'Unconfirmed'}
+                  className={`${styles.captainStatusButton} ${styles.unconfirmedStatusButton}`}
+                  data-selected={status === 'Unconfirmed'}
                   onClick={() => choose(player.playerId, 'Unconfirmed')}
-                  style={{...compactButtonStyle, boxShadow: status === 'Unconfirmed' ? selectedBox : 'none'}}
+                  style={compactButtonStyle}
                   type="button"
                 >Unconfirmed</button>
               </span>

@@ -448,6 +448,49 @@
   opacity: .5;
 }
 
+.captainStatusButton {
+  border: 1px solid var(--cc-card-border);
+  border-radius: 5px;
+  background: var(--cc-card-bg);
+  color: var(--cc-muted);
+  font-weight: 950;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, color 120ms ease;
+}
+
+.yesStatusButton:not([data-selected='true']) {
+  border-color: #bdcfb3;
+  background: #e8efe4;
+  color: #426232;
+}
+
+.yesStatusButton[data-selected='true'] {
+  border-color: #326f20;
+  background: #59a63b;
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--cc-heading), 0 0 12px rgba(89, 166, 59, .62);
+}
+
+.noStatusButton:not([data-selected='true']) {
+  border-color: #d9b8b8;
+  background: #f4e8e8;
+  color: #8a3d3d;
+}
+
+.noStatusButton[data-selected='true'] {
+  border-color: #922d32;
+  background: #d84a50;
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--cc-heading), 0 0 12px rgba(216, 74, 80, .58);
+}
+
+.unconfirmedStatusButton[data-selected='true'] {
+  border-color: var(--cc-heading);
+  background: var(--cc-card-bg);
+  color: var(--cc-heading);
+  box-shadow: 0 0 0 2px var(--cc-heading);
+}
+
 .playingButton {
   background: var(--cc-teal);
   color: #fff;
