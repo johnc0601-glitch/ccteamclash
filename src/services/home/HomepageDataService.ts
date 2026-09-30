@@ -16,6 +16,7 @@ export type HomepageData = {
   storyData: HomepageStoryData;
   teams: Team[];
   homeEvents: PublicScheduleEvent[];
+  roundLabel: string;
   feedPreviews: Map<string, HomepageMatchFeedPreview>;
 };
 
@@ -75,7 +76,7 @@ const getCachedHomepageRows = unstable_cache(
       db.from('launch_teams').select('*').order('name', {ascending: true}),
       db.from('launch_courses').select('id,name,map_url'),
       db.from('launch_schedules').select('id,published').eq('published', true),
-      db.from('launch_rounds').select('id,schedule_id,date,published').eq('published', true),
+      db.from('launch_rounds').select('id,schedule_id,number,date,published').eq('published', true),
       db
         .from('launch_schedule_matches')
         .select('id,round_id,home_team_id,away_team_id,course_id,date,time,status'),
@@ -109,7 +110,7 @@ const getCachedHomepageRows = unstable_cache(
       previews: previewsResult.data ?? [],
     };
   },
-  ['public-homepage-rows-v3'],
+  ['public-homepage-rows-v4'],
   {
     revalidate: HOMEPAGE_CACHE_SECONDS,
     tags: ['public:homepage', 'public:stories', 'public:teams', 'public:schedule', 'public:match-feed'],
@@ -200,7 +201,9 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
     });
   }
 
-  return {storyData, teams, homeEvents, feedPreviews};
+  const displayedRound = publishedRounds.find((round: any) => clean(round.id) === homeEvents[0]?.roundId);
+  const roundLabel = displayedRound?.number ? `Round ${displayedRound.number}` : 'Matches';
+  return {storyData, teams, homeEvents, feedPreviews, roundLabel};
 }
 
 function mapPublicEvent(

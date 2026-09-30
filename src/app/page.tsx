@@ -17,7 +17,7 @@ export default async function Home() {
     getHomepageData(),
     getHomepageClashPulseItems(),
   ]);
-  const {storyData, teams: teamLogos, homeEvents, feedPreviews} = homepageData;
+  const {storyData, teams: teamLogos, homeEvents, feedPreviews, roundLabel} = homepageData;
   const lead = storyData.lead;
 
   return (
@@ -41,8 +41,7 @@ export default async function Home() {
 
       <section className="shell home-matches-section">
         <div className="home-matches-heading">
-          <span className="panel-title">League schedule</span>
-          <h2>This month&apos;s matches</h2>
+          <h2>{roundLabel}</h2>
         </div>
         <HomeMatchCarousel count={homeEvents.length}>
           {homeEvents.map((match) => (
