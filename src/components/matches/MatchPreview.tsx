@@ -42,6 +42,16 @@ export async function MatchPreview({matchId, matchday}: {matchId: string; matchd
     }),
   ]);
 
+  if (previewResult.error) {
+    console.error('Match preview is unavailable.', {
+      matchId,
+      code: previewResult.error.code,
+      message: previewResult.error.message,
+    });
+  } else if (!previewResult.data) {
+    console.warn('Match preview was not found.', {matchId});
+  }
+
   const preview = previewResult.data as MatchPreviewRow | null;
   const userId = typeof claimsResult.data?.claims?.sub === 'string'
     ? claimsResult.data.claims.sub
