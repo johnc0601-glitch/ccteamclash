@@ -11,7 +11,12 @@ import {getCaptainRosterHref} from '@/services/matches/CaptainRosterNavigation';
 
 const MANAGER_STATUSES = new Set(['Scheduled', 'Postponed', 'Rain Delay']);
 type BatchStatus = MatchAttendanceStatus | 'Unconfirmed';
-type BatchChange = {playerId: string; status: BatchStatus};
+type BatchChange = {
+  playerId: string;
+  status: BatchStatus;
+  singlesAvailable: boolean;
+  doublesAvailable: boolean;
+};
 
 export async function saveCaptainRosterAvailabilityBatch(formData: FormData) {
   const matchId = readFormValue(formData, 'matchId');
@@ -20,7 +25,11 @@ export async function saveCaptainRosterAvailabilityBatch(formData: FormData) {
   if (!matchId || !teamId || !rawChanges) redirect('/captain?error=Match, team, and availability changes are required.');
   const {publicMatchPath, path, context} = await getManagementNavigation(matchId);
   const changes = parseBatchChanges(rawChanges);
-  if (!changes?.length) {
+  if (!changes) {
+    redirect(getCaptainRosterHref(path, {captainError: 'Roster changes are invalid.'}));
+    return;
+  }
+  if (!changes.length) {
     redirect(getCaptainRosterHref(path, {captainNotice: 'No roster changes to save.'}));
     return;
   }
@@ -40,7 +49,7 @@ export async function saveCaptainRosterAvailabilityBatch(formData: FormData) {
       const {error} = await (context.supabase as any).rpc('captain_save_unlocked_match_roster', {
         target_match_id: matchId,
         target_team_id: teamId,
-        p_changes: changes.map((change) => ({player_id: change.playerId, status: change.status})),
+        p_changes: toRpcChanges(changes),
       });
       if (error) throw error;
     } catch (error) {
@@ -52,18 +61,13 @@ export async function saveCaptainRosterAvailabilityBatch(formData: FormData) {
     redirect(getCaptainRosterHref(publicMatchPath, {captainNotice: 'Roster updated and locked again.'}));
   }
 
-  const attendanceClient = context.supabase as any;
-  const upserts = changes.filter((change): change is BatchChange & {status: MatchAttendanceStatus} => change.status !== 'Unconfirmed').map((change) => ({match_id: matchId, team_id: teamId, player_id: change.playerId, status: change.status, updated_by: context.actor.profileId}));
-  const clearIds = changes.filter((change) => change.status === 'Unconfirmed').map((change) => change.playerId);
   try {
-    if (upserts.length) {
-      const {error} = await attendanceClient.from('launch_match_attendance').upsert(upserts, {onConflict: 'match_id,player_id'});
-      if (error) throw error;
-    }
-    if (clearIds.length) {
-      const {error} = await attendanceClient.from('launch_match_attendance').delete().eq('match_id', matchId).eq('team_id', teamId).in('player_id', clearIds);
-      if (error) throw error;
-    }
+    const {error} = await (context.supabase as any).rpc('captain_save_match_roster_availability_batch', {
+      target_match_id: matchId,
+      target_team_id: teamId,
+      p_changes: toRpcChanges(changes),
+    });
+    if (error) throw error;
   } catch (error) {
     console.error('Captain batch availability update failed.', {matchId, teamId, changeCount: changes.length, errorClass: error instanceof Error ? error.name : 'UnknownError'});
     redirect(getCaptainRosterHref(path, {captainError: 'Roster changes could not be saved.'}));
@@ -212,14 +216,33 @@ function parseBatchChanges(raw: string): BatchChange[] | undefined {
       if (!item || typeof item !== 'object') return undefined;
       const playerId = typeof item.playerId === 'string' ? item.playerId.trim() : '';
       const status = item.status;
-      if (!playerId || seen.has(playerId) || (status !== 'Playing' && status !== 'NotPlaying' && status !== 'Unconfirmed')) return undefined;
+      const singlesAvailable = item.singlesAvailable;
+      const doublesAvailable = item.doublesAvailable;
+      if (
+        !playerId
+        || seen.has(playerId)
+        || (status !== 'Playing' && status !== 'NotPlaying' && status !== 'Unconfirmed')
+        || typeof singlesAvailable !== 'boolean'
+        || typeof doublesAvailable !== 'boolean'
+        || (status === 'Playing' && !singlesAvailable && !doublesAvailable)
+        || (status !== 'Playing' && (!singlesAvailable || !doublesAvailable))
+      ) return undefined;
       seen.add(playerId);
-      changes.push({playerId, status});
+      changes.push({playerId, status, singlesAvailable, doublesAvailable});
     }
     return changes;
   } catch {
     return undefined;
   }
+}
+
+function toRpcChanges(changes: BatchChange[]) {
+  return changes.map((change) => ({
+    player_id: change.playerId,
+    status: change.status,
+    singles_available: change.singlesAvailable,
+    doubles_available: change.doublesAvailable,
+  }));
 }
 
 function readFormValue(formData: FormData, key: string): string {

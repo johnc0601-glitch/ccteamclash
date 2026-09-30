@@ -268,6 +268,53 @@
   gap: 3px;
 }
 
+.captainPlayerNameLine {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.captainPlayerNameLine strong {
+  min-width: 0;
+}
+
+.roundAvailabilityBadges {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 3px;
+}
+
+.roundAvailabilityBadges button {
+  width: 22px;
+  min-height: 22px;
+  padding: 0;
+  border: 1px solid #8a949b;
+  border-radius: 999px;
+  background: #8a949b;
+  color: #fff;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.roundAvailabilityBadges .singlesBadge[data-active="true"] {
+  border-color: #1976d2;
+  background: #1976d2;
+}
+
+.roundAvailabilityBadges .doublesBadge[data-active="true"] {
+  border-color: #7e57c2;
+  background: #7e57c2;
+}
+
+.roundAvailabilityBadges button:focus-visible {
+  outline: 2px solid var(--cc-heading);
+  outline-offset: 2px;
+}
+
 .captainPlayerRow strong {
   overflow: hidden;
   color: var(--cc-heading);

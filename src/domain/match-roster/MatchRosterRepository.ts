@@ -3,6 +3,7 @@ import type {
   AttendanceMatch,
   MatchAttendance,
   MatchAttendanceStatus,
+  MatchRoundAvailability,
   MatchRoster,
   TeamAttendanceMember,
 } from '@/domain/match-roster/MatchAttendance';
@@ -13,6 +14,7 @@ export interface MatchRosterRepository {
   getAttendanceMatch(matchId: string): Promise<AttendanceMatch | undefined>;
   getAttendance(matchId: string, playerId: string): Promise<MatchAttendance | undefined>;
   getTeamAttendance(matchId: string, teamId: string): Promise<TeamAttendanceMember[]>;
+  getRoundAvailability(matchId: string, teamIds: string[]): Promise<MatchRoundAvailability[]>;
   getMatchRoster(matchId: string, teamId: string): Promise<MatchRoster | undefined>;
   getOfficialMatchRosters(matchId: string): Promise<OfficialMatchRoster[]>;
   hasCompleteSnapshot(matchId: string): Promise<boolean>;

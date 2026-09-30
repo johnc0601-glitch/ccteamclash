@@ -5,6 +5,7 @@ import type {
   AttendanceMatch,
   MatchAttendance,
   MatchAttendanceStatus,
+  MatchRoundAvailability,
   MatchRoster,
   TeamAttendanceMember,
 } from '@/domain/match-roster/MatchAttendance';
@@ -181,6 +182,34 @@ test('captain views and updates only the assigned team attendance', async () => 
   assert.equal(ownResult.ok, true);
   assert.equal(opponentResult.ok, false);
   assert.equal(repository.savedInputs.at(-1)?.teamId, 'team-home');
+});
+
+test('managed rosters merge sparse round availability without changing attendance defaults', async () => {
+  const repository = new FakeMatchRosterRepository();
+  repository.actor = {...actor, profileRole: 'Captain', playerId: null, teamId: null, playerName: null, captainTeamId: 'team-home'};
+  repository.teamAttendance['team-home'] = [
+    {playerId: 'player-own', playerName: 'Own Player', teamId: 'team-home', status: 'Playing'},
+    {playerId: 'player-home-two', playerName: 'Second Player', teamId: 'team-home', status: 'Playing'},
+  ];
+  repository.roundAvailability = [{
+    matchId: match.id,
+    teamId: 'team-home',
+    playerId: 'player-own',
+    singlesAvailable: true,
+    doublesAvailable: false,
+  }];
+
+  const [roster] = await new MatchRosterService(repository).getManagedTeamRosters('captain-user', match.id);
+
+  assert.deepEqual(roster.players.map((player) => ({
+    playerId: player.playerId,
+    singlesAvailable: player.singlesAvailable,
+    doublesAvailable: player.doublesAvailable,
+  })), [
+    {playerId: 'player-own', singlesAvailable: true, doublesAvailable: false},
+    {playerId: 'player-home-two', singlesAvailable: true, doublesAvailable: true},
+  ]);
+  assert.equal(repository.roundAvailabilityReadCount, 1);
 });
 
 test('captain confirms and revises only the assigned team roster before lock', async () => {
@@ -515,6 +544,8 @@ class FakeMatchRosterRepository implements MatchRosterRepository {
     'team-home': [{playerId: 'player-own', playerName: 'Own Player', teamId: 'team-home', status: 'Unconfirmed'}],
     'team-away': [{playerId: 'player-away', playerName: 'Away Player', teamId: 'team-away', status: 'Unconfirmed'}],
   };
+  roundAvailability: MatchRoundAvailability[] = [];
+  roundAvailabilityReadCount = 0;
   matchRosters: Record<string, MatchRoster | undefined> = {};
   officialRosters: OfficialMatchRoster[] = [];
   snapshotComplete = false;
@@ -542,6 +573,11 @@ class FakeMatchRosterRepository implements MatchRosterRepository {
 
   async getTeamAttendance(_matchId: string, teamId: string): Promise<TeamAttendanceMember[]> {
     return (this.teamAttendance[teamId] ?? []).map((player) => ({...player}));
+  }
+
+  async getRoundAvailability(): Promise<MatchRoundAvailability[]> {
+    this.roundAvailabilityReadCount += 1;
+    return this.roundAvailability.map((item) => ({...item}));
   }
 
   async getMatchRoster(_matchId: string, teamId: string): Promise<MatchRoster | undefined> {

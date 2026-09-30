@@ -7,6 +7,11 @@ import styles from '@/app/matches/[id]/Matchday.module.css';
 import type {ManagedTeamRoster} from '@/domain/match-roster/MatchAttendance';
 
 type Status = ManagedTeamRoster['players'][number]['status'];
+type DraftPlayer = {
+  status: Status;
+  singlesAvailable: boolean;
+  doublesAvailable: boolean;
+};
 
 const compactButtonStyle = {
   minHeight: 30,
@@ -24,20 +29,34 @@ export function CaptainRosterEditor({
   emailConfigured: boolean;
 }) {
   const initial = useMemo(
-    () => Object.fromEntries(roster.players.map((player) => [player.playerId, player.status])) as Record<string, Status>,
+    () => Object.fromEntries(roster.players.map((player) => [player.playerId, {
+      status: player.status,
+      singlesAvailable: player.singlesAvailable,
+      doublesAvailable: player.doublesAvailable,
+    }])) as Record<string, DraftPlayer>,
     [roster.players],
   );
-  const [draft, setDraft] = useState<Record<string, Status>>(initial);
+  const [draft, setDraft] = useState<Record<string, DraftPlayer>>(initial);
 
   const changes = roster.players
-    .filter((player) => draft[player.playerId] !== player.status)
-    .map((player) => ({playerId: player.playerId, status: draft[player.playerId]}));
+    .filter((player) => {
+      const next = draft[player.playerId];
+      return next.status !== player.status
+        || next.singlesAvailable !== player.singlesAvailable
+        || next.doublesAvailable !== player.doublesAvailable;
+    })
+    .map((player) => ({playerId: player.playerId, ...draft[player.playerId]}));
   const dirtyCount = changes.length;
 
   const counts = roster.players.reduce((result, player) => {
-    result[draft[player.playerId] ?? player.status] += 1;
+    const next = draft[player.playerId];
+    result[next.status] += 1;
+    if (next.status === 'Playing') {
+      if (next.singlesAvailable) result.Singles += 1;
+      if (next.doublesAvailable) result.Doubles += 1;
+    }
     return result;
-  }, {Playing: 0, NotPlaying: 0, Unconfirmed: 0});
+  }, {Playing: 0, NotPlaying: 0, Unconfirmed: 0, Singles: 0, Doubles: 0});
 
   const canEmailUnconfirmed = Boolean(
     emailConfigured
@@ -49,7 +68,28 @@ export function CaptainRosterEditor({
   const selectedBox = '0 0 0 2px var(--cc-heading)';
 
   function choose(playerId: string, status: Status) {
-    setDraft((current) => ({...current, [playerId]: status}));
+    setDraft((current) => {
+      const prior = current[playerId];
+      const enteringPlaying = status === 'Playing' && prior.status !== 'Playing';
+      return {
+        ...current,
+        [playerId]: {
+          status,
+          singlesAvailable: status === 'Playing' && !enteringPlaying ? prior.singlesAvailable : true,
+          doublesAvailable: status === 'Playing' && !enteringPlaying ? prior.doublesAvailable : true,
+        },
+      };
+    });
+  }
+
+  function toggleRound(playerId: string, round: 'singlesAvailable' | 'doublesAvailable') {
+    setDraft((current) => {
+      const prior = current[playerId];
+      if (prior.status !== 'Playing') return current;
+      const otherRound = round === 'singlesAvailable' ? 'doublesAvailable' : 'singlesAvailable';
+      if (prior[round] && !prior[otherRound]) return current;
+      return {...current, [playerId]: {...prior, [round]: !prior[round]}};
+    });
   }
 
   function discard() {
@@ -63,7 +103,7 @@ export function CaptainRosterEditor({
           <h3>{teamName}</h3>
           <span>Open</span>
         </div>
-        <p>{counts.Playing} yes · {counts.NotPlaying} no · {counts.Unconfirmed} unconfirmed</p>
+        <p>{counts.Playing} yes · {counts.NotPlaying} no · {counts.Unconfirmed} unconfirmed · Singles {counts.Singles} · Doubles {counts.Doubles}</p>
       </header>
 
       {canEmailUnconfirmed ? (
@@ -75,16 +115,41 @@ export function CaptainRosterEditor({
 
       <div className={styles.captainPlayerList}>
         {roster.players.map((player) => {
-          const status = draft[player.playerId] ?? player.status;
-          const changed = status !== player.status;
+          const next = draft[player.playerId];
+          const status = next.status;
+          const changed = status !== player.status
+            || next.singlesAvailable !== player.singlesAvailable
+            || next.doublesAvailable !== player.doublesAvailable;
           return (
             <div
               className={styles.captainPlayerRow}
               key={player.playerId}
               style={{minHeight: 48, padding: '6px 10px', gap: 8}}
             >
-              <div>
-                <strong>{player.playerName}</strong>
+              <div className={styles.captainPlayerIdentity}>
+                <div className={styles.captainPlayerNameLine}>
+                  <strong>{player.playerName}</strong>
+                  {status === 'Playing' ? (
+                    <span className={styles.roundAvailabilityBadges} aria-label="Round availability">
+                      <button
+                        aria-label={`${player.playerName} ${next.singlesAvailable ? 'available' : 'unavailable'} for Singles`}
+                        aria-pressed={next.singlesAvailable}
+                        className={styles.singlesBadge}
+                        data-active={next.singlesAvailable}
+                        onClick={() => toggleRound(player.playerId, 'singlesAvailable')}
+                        type="button"
+                      >S</button>
+                      <button
+                        aria-label={`${player.playerName} ${next.doublesAvailable ? 'available' : 'unavailable'} for Doubles`}
+                        aria-pressed={next.doublesAvailable}
+                        className={styles.doublesBadge}
+                        data-active={next.doublesAvailable}
+                        onClick={() => toggleRound(player.playerId, 'doublesAvailable')}
+                        type="button"
+                      >D</button>
+                    </span>
+                  ) : null}
+                </div>
                 <span>{formatStatus(status)}{changed ? ' · unsaved' : ''}</span>
               </div>
               <span className={styles.captainPlayerActions} style={{display: 'flex', gap: 4, whiteSpace: 'nowrap'}}>
