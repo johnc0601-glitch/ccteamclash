@@ -10,6 +10,26 @@ export const OFFICE_SECTIONS = {
     description: 'A central view of league operations and commissioner workflows.',
     href: '/office',
   },
+  matchPreviews: {
+    title: 'Match Previews',
+    description: 'Manage matchup synopsis copy, preview status, and the stories that lead into Matchday.',
+    href: '/office/match-previews',
+  },
+  clashPulse: {
+    title: 'Clash Pulse',
+    description: 'Review verified league facts, build the Pulse Queue, and manage homepage publishing.',
+    href: '/office/clash-pulse',
+  },
+  results: {
+    title: 'Results',
+    description: 'Record completed matches and review submitted scores.',
+    href: '/office/results',
+  },
+  schedule: {
+    title: 'Schedule',
+    description: 'Plan league dates, matchups, and course assignments.',
+    href: '/office/schedule',
+  },
   teams: {
     title: 'Teams',
     description: 'Organize team identities, captains, and roster assignments.',
@@ -20,30 +40,10 @@ export const OFFICE_SECTIONS = {
     description: 'Maintain player records, accounts, history links, team assignments, and captain access.',
     href: '/office/players',
   },
-  clubhouses: {
-    title: 'Clubhouses',
-    description: 'Review private team Clubhouse posts and conversations.',
-    href: '/office/clubhouses',
-  },
   seasons: {
     title: 'Seasons',
     description: 'Set the active season and preserve the structure of past seasons.',
     href: '/office/seasons',
-  },
-  schedule: {
-    title: 'Schedule',
-    description: 'Plan league dates, matchups, and course assignments.',
-    href: '/office/schedule',
-  },
-  results: {
-    title: 'Results',
-    description: 'Record completed matches and review submitted scores.',
-    href: '/office/results',
-  },
-  imports: {
-    title: 'Imports',
-    description: 'Import historical team and player summary records.',
-    href: '/office/imports',
   },
   standings: {
     title: 'Standings',
@@ -64,6 +64,16 @@ export const OFFICE_SECTIONS = {
     title: 'Media',
     description: 'Coordinate league stories, photos, and publishing assets.',
     href: '/office/media',
+  },
+  clubhouses: {
+    title: 'Clubhouses',
+    description: 'Review private team Clubhouse posts and conversations.',
+    href: '/office/clubhouses',
+  },
+  imports: {
+    title: 'Imports',
+    description: 'Import historical team and player summary records.',
+    href: '/office/imports',
   },
   settings: {
     title: 'Settings',
