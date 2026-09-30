@@ -1,4 +1,6 @@
 import {createClient} from '@/lib/supabase/server';
+import type {PublicMatchday} from '@/services/matches/MatchdayService';
+import {getMatchPreviewInsights} from '@/services/matches/MatchPreviewInsights';
 import {saveMatchPreview} from './matchPreviewActions';
 import styles from './MatchPreview.module.css';
 
@@ -7,12 +9,37 @@ type MatchPreviewRow = {
   story_url: string | null;
 };
 
-export async function MatchPreview({matchId}: {matchId: string}) {
+const APPROVED_COPY: Record<string, {story: string; battle: string}> = {
+  'wild turkey|cougar country': {
+    story: 'WT brings a stronger top end',
+    battle: 'The Turkeys head into Cougar Country, where the Cougars will be defending their ground.',
+  },
+  'kb|dark knights': {
+    story: 'New Burnt Mill layout',
+    battle: 'KB heads into Burnt Mill, where the Dark Knights are waiting on unfamiliar ground.',
+  },
+  'hayneous ogs|ninjas': {
+    story: 'New faces on both sides',
+    battle: 'The OG’s step into Ninja territory for another close-quarters fight.',
+  },
+  'beast mode|riptide': {
+    story: 'Championship rematch',
+    battle: 'Beast Mode meets the Riptide again, looking to turn the current after last year’s Championship.',
+  },
+};
+
+export async function MatchPreview({matchId, matchday}: {matchId: string; matchday: PublicMatchday}) {
   const supabase = await createClient();
   const db = supabase as any;
-  const [previewResult, claimsResult] = await Promise.all([
+  const [previewResult, claimsResult, insights] = await Promise.all([
     db.from('launch_match_previews').select('excerpt,story_url').eq('match_id', matchId).maybeSingle(),
     supabase.auth.getClaims(),
+    getMatchPreviewInsights({
+      awayName: matchday.awayTeam.name,
+      homeName: matchday.homeTeam.name,
+      awayRoster: matchday.awayTeam.roster,
+      homeRoster: matchday.homeTeam.roster,
+    }),
   ]);
 
   const preview = previewResult.data as MatchPreviewRow | null;
@@ -34,6 +61,7 @@ export async function MatchPreview({matchId}: {matchId: string}) {
   if (!excerpt && !canEdit) return null;
 
   const storyUrl = safeStoryUrl(preview?.story_url);
+  const approved = APPROVED_COPY[pairKey(matchday.awayTeam.name, matchday.homeTeam.name)];
 
   return (
     <div className={`shell ${styles.wrap}`} id="match-preview">
@@ -62,12 +90,42 @@ export async function MatchPreview({matchId}: {matchId: string}) {
             </details>
           ) : null}
         </div>
-
-        {excerpt ? <p className={styles.excerpt}>{excerpt}</p> : <p className={styles.empty}>No match preview has been added yet.</p>}
-        {excerpt && storyUrl ? <a className={styles.storyLink} href={storyUrl}>Read Full Preview →</a> : null}
+        {excerpt ? (
+          <>
+            <div className={styles.synopsis}>
+              <Stat label="Series" value={insights.series} />
+              <Stat label="Proven" value={insights.proven} />
+              <Stat label="Swing player" value={insights.swing} />
+              <Stat label="Story" value={approved?.story ?? 'A new chapter'} />
+            </div>
+            <p className={styles.battleLine}>{approved?.battle ?? `${matchday.awayTeam.name} meets ${matchday.homeTeam.name}.`}</p>
+            <details className={styles.fullPreview}>
+              <summary>
+                <span>Full matchup preview</span>
+                <span className={styles.chevron} aria-hidden="true">⌄</span>
+              </summary>
+              <div className={styles.fullPreviewBody}>
+                <p className={styles.excerpt}>{excerpt}</p>
+                {storyUrl ? <a className={styles.storyLink} href={storyUrl}>Read Full Preview →</a> : null}
+              </div>
+            </details>
+          </>
+        ) : <p className={styles.empty}>No match preview has been added yet.</p>}
       </section>
     </div>
   );
+}
+
+function Stat({label, value}: {label: string; value: string}) {
+  return <div className={styles.stat}><span>{label}</span><strong>{value}</strong></div>;
+}
+
+function pairKey(away: string, home: string) {
+  return `${normalizeTeamName(away)}|${normalizeTeamName(home)}`;
+}
+
+function normalizeTeamName(value: string) {
+  return value.toLocaleLowerCase('en').replace(/[’']/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
 function safeStoryUrl(value: string | null | undefined) {

@@ -3,6 +3,7 @@ import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
 import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
+import {MatchPreview} from '@/components/matches/MatchPreview';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
@@ -191,6 +192,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
       <SiteHeader />
       <main className={styles.page} style={pageBackground}>
         <MatchHero matchday={matchday} />
+        <MatchPreview matchId={matchId} matchday={matchday} />
         <div className={`shell ${styles.content}`}>
           {matchPrediction ? (
             <MatchPredictionCard
