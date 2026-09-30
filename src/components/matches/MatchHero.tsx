@@ -23,7 +23,7 @@ export function MatchHero({matchday}: {matchday: PublicMatchday}) {
         </div>
       </section>
       <Suspense fallback={null}><MatchWeather matchday={matchday} /></Suspense>
-      <MatchPreview matchId={matchday.id} />
+      <MatchPreview matchId={matchday.id} matchday={matchday} />
     </>
   );
 }
