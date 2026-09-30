@@ -203,7 +203,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
           attendance={personalAttendance}
           hasManagedRoster={managedRosters.length > 0}
         />
-        <MatchPreview matchId={matchId} matchday={matchday} />
+        <MatchPreview matchId={match.id} matchday={matchday} />
         <div className={`shell ${styles.content}`}>
           {matchPrediction ? (
             <div id="prediction">
