@@ -1,0 +1,4 @@
+.weather { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 4vw, 24px); margin: 8px 0; padding: 8px 10px; border: 1px solid rgba(198,164,83,.3); border-radius: 8px; background: rgba(198,164,83,.06); font-size: clamp(11px, 3.2vw, 14px); line-height: 1.2; white-space: nowrap; }
+.item { display: inline-flex; align-items: center; gap: 5px; }
+.item svg { flex-shrink: 0; width: 18px; height: 18px; }
+.item:first-child svg { color: var(--cc-gold-ink, #b38b32); }
