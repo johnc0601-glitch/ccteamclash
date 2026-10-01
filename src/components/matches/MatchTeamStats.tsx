@@ -16,13 +16,23 @@ export async function MatchTeamStats({
   homeTeam: TeamIdentity;
   seasonId: string;
 }) {
-  const services = await createServerTeamPageServices();
-  if (!services) return null;
+  let statistics: TeamStatistics[];
+  try {
+    const services = await createServerTeamPageServices();
+    if (!services) return null;
+    statistics = await services.statistics.getTeamStatisticsForTeams(
+      [awayTeam.id, homeTeam.id],
+      seasonId,
+    );
+  } catch (error) {
+    console.error('Matchday team statistics are unavailable.', {
+      seasonId,
+      teamIds: [awayTeam.id, homeTeam.id],
+      errorClass: error instanceof Error ? error.name : 'UnknownError',
+    });
+    return null;
+  }
 
-  const statistics = await services.statistics.getTeamStatisticsForTeams(
-    [awayTeam.id, homeTeam.id],
-    seasonId,
-  );
   const byTeam = new Map(statistics.map((entry) => [entry.teamId, entry]));
 
   return (
