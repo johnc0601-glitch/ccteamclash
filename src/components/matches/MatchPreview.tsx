@@ -16,7 +16,7 @@ const APPROVED_COPY: Record<string, {story: string; battle: string}> = {
   },
   'kb|dark knights': {
     story: 'New Burnt Mill layout',
-    battle: 'KB heads into Burnt Mill, where the Dark Knights are waiting on unfamiliar ground.',
+    battle: 'KB owns the history. Burnt Mill gives Dark Knights a clean slate—and a chance to make the series mean something different.',
   },
   'hayneous ogs|ninjas': {
     story: 'New faces on both sides',
