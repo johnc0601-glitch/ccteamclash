@@ -29,6 +29,14 @@ export class StatisticsEngine {
     return this.teamStatistics.calculate(teamId, seasonId, results);
   }
 
+  async getTeamStatisticsForTeams(
+    teamIds: string[],
+    seasonId: string,
+  ): Promise<TeamStatisticsResult[]> {
+    const results = await this.repository.getPublishedChallengeResults();
+    return teamIds.map((teamId) => this.teamStatistics.calculate(teamId, seasonId, results));
+  }
+
   async getPlayerStatistics(playerId: string, seasonId: string): Promise<PlayerStatisticsResult> {
     const results = await this.repository.getPublishedChallengeResults();
     return this.playerStatistics.calculate(playerId, seasonId, results);
