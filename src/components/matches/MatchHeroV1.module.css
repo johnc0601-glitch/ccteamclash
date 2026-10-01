@@ -14,15 +14,15 @@
   border: 1px solid rgba(255, 255, 255, .1);
   border-radius: 16px;
   background:
-    radial-gradient(circle at 19% 26%, color-mix(in srgb, var(--match-away) 42%, transparent), transparent 32%),
-    radial-gradient(circle at 81% 26%, color-mix(in srgb, var(--match-home) 42%, transparent), transparent 32%),
+    radial-gradient(circle at 20% 28%, color-mix(in srgb, var(--match-away) 26%, transparent), transparent 38%),
+    radial-gradient(circle at 80% 28%, color-mix(in srgb, var(--match-home) 26%, transparent), transparent 38%),
     linear-gradient(90deg,
-      color-mix(in srgb, var(--match-away) 52%, #081015) 0%,
-      color-mix(in srgb, var(--match-away) 32%, #0b1116) 42%,
-      #101318 49%,
-      #101318 51%,
-      color-mix(in srgb, var(--match-home) 32%, #0b1116) 58%,
-      color-mix(in srgb, var(--match-home) 52%, #081015) 100%);
+      color-mix(in srgb, var(--match-away) 30%, #091015) 0%,
+      color-mix(in srgb, var(--match-away) 18%, #0c1217) 38%,
+      #11161b 48%,
+      #11161b 52%,
+      color-mix(in srgb, var(--match-home) 18%, #0c1217) 62%,
+      color-mix(in srgb, var(--match-home) 30%, #091015) 100%);
   box-shadow: 0 22px 54px rgba(0, 0, 0, .32);
 }
 
@@ -47,9 +47,9 @@
   transform: translateX(-50%);
   background:
     radial-gradient(ellipse at center,
-      rgba(255, 255, 255, .09) 0%,
-      color-mix(in srgb, var(--match-away) 10%, transparent) 34%,
-      color-mix(in srgb, var(--match-home) 10%, transparent) 66%,
+      rgba(255, 255, 255, .055) 0%,
+      color-mix(in srgb, var(--match-away) 7%, transparent) 36%,
+      color-mix(in srgb, var(--match-home) 7%, transparent) 64%,
       transparent 100%);
   filter: blur(10px);
   pointer-events: none;
