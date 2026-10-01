@@ -108,6 +108,22 @@ test('StatisticsEngine calculates team, player, season, and head-to-head stats',
   assert.equal(headToHead.recordForTeamA.wins, 1);
 });
 
+test('batched team statistics reuse one published-results read', async () => {
+  let reads = 0;
+  const engine = new StatisticsEngine({
+    async getPublishedChallengeResults() {
+      reads += 1;
+      return TEST_RESULTS;
+    },
+  });
+
+  const [teamA, teamB] = await engine.getTeamStatisticsForTeams(['team-a', 'team-b'], 'season-1');
+
+  assert.equal(reads, 1);
+  assert.equal(teamA.record.wins, 1);
+  assert.equal(teamB.record.losses, 1);
+});
+
 test('Player season match tally counts challenges, not singles and doubles entries', async () => {
   const secondResult: ChallengeResult = {
     ...TEST_RESULTS[0],
