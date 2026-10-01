@@ -75,7 +75,7 @@ export async function MatchPreview({matchId, matchday}: {matchId: string; matchd
   const approved = APPROVED_COPY[pairKey(matchday.awayTeam.name, matchday.homeTeam.name)];
 
   return (
-    <div className={`shell ${styles.wrap}`} id="match-preview">
+    <div className={styles.wrap} id="match-preview">
       <section className={styles.card} aria-labelledby={`match-preview-title-${matchId}`}>
         <div className={styles.header}>
           <div>
