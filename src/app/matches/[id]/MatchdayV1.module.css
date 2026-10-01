@@ -7,7 +7,7 @@
   overflow: hidden;
   border: 1px solid var(--cc-card-border);
   border-radius: 12px;
-  background: var(--cc-card-bg);
+  background: var(--match-card-treatment) !important;
   box-shadow: var(--cc-card-shadow);
 }
 
