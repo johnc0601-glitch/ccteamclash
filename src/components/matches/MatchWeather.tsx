@@ -12,9 +12,16 @@ export async function MatchWeather({matchday}: {matchday: PublicMatchday}) {
     ? await getDailyMatchWeather(course.city, course.state, matchday.scheduledDate!, today)
     : null;
   if (!forecast) return <section className={styles.weather} aria-label="Match-day weather"><span>Weather {course?.city && course?.state ? 'temporarily unavailable' : 'pending course location'}</span></section>;
-  const wind = forecast.wind === null ? '—' : forecast.wind === 0 ? 'Calm' : `${forecast.windDirection === 'Variable' ? 'Var' : forecast.windDirection ?? ''} ${forecast.wind} mph`.trim();
+
+  const wind = forecast.wind === null
+    ? '—'
+    : forecast.wind === 0
+      ? 'Calm'
+      : `${forecast.windDirection === 'Variable' ? 'Var' : forecast.windDirection ?? ''} ${forecast.wind} mph`.trim();
   const updated = new Intl.DateTimeFormat('en-US', {timeZone: WEATHER_TIME_ZONE, month: 'short', day: 'numeric'}).format(new Date(forecast.updatedAt));
-  return <section className={styles.weather} aria-label="Match-day weather" title={`${course?.city ?? 'Course'} area · Updated ${updated} · Updates daily · Weather data: Open-Meteo`}>
+  const provider = forecast.source === 'NWS' ? 'National Weather Service' : 'Open-Meteo';
+
+  return <section className={styles.weather} aria-label="Match-day weather" title={`${course?.city ?? 'Course'} area · Updated ${updated} · Updates daily · Weather data: ${provider}`}>
     <span className={styles.item} aria-label={`${forecast.condition?.label ?? 'Forecast'}, high ${forecast.high}, low ${forecast.low} degrees Fahrenheit`}>
       {forecast.condition && <WeatherIcon name={forecast.condition.icon} />}<strong>{forecast.high}°/{forecast.low}°</strong>
     </span>
