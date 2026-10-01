@@ -10,26 +10,8 @@
   --match-muted: #8f9aa2;
 }
 
-html body [data-matchday-root] main {
-  background:
-    radial-gradient(ellipse 54rem 34rem at 18% 8%,
-      color-mix(in srgb, var(--match-away) 28%, transparent),
-      transparent 72%),
-    radial-gradient(ellipse 54rem 34rem at 82% 8%,
-      color-mix(in srgb, var(--match-home) 28%, transparent),
-      transparent 72%),
-    linear-gradient(90deg,
-      color-mix(in srgb, var(--match-away) 22%, #090d11) 0%,
-      color-mix(in srgb, var(--match-away) 14%, #0b1015) 32%,
-      color-mix(in srgb, var(--match-away) 7%, #0d1116) 46%,
-      #101318 50%,
-      color-mix(in srgb, var(--match-home) 7%, #0d1116) 54%,
-      color-mix(in srgb, var(--match-home) 14%, #0b1015) 68%,
-      color-mix(in srgb, var(--match-home) 22%, #090d11) 100%) !important;
-  background-attachment: fixed !important;
-  color: var(--match-body) !important;
-}
-
+/* The page-level CSS module owns the Matchday backdrop so there is only one
+   source of truth for the team-color blend. */
 html body [data-matchday-root] main > .shell > * {
   border-color: var(--match-border) !important;
   color: var(--match-body) !important;
@@ -41,9 +23,9 @@ html body [data-matchday-root] main > .shell > aside {
   background:
     linear-gradient(90deg,
       color-mix(in srgb, var(--match-away) 4%, var(--match-surface)) 0%,
-      var(--match-surface) 44%,
-      var(--match-surface) 56%,
-      color-mix(in srgb, var(--match-home) 4%, var(--match-surface)) 100%);
+      var(--match-surface) 43%,
+      var(--match-surface) 57%,
+      color-mix(in srgb, var(--match-home) 4%, var(--match-surface)) 100%) !important;
   box-shadow: 0 16px 34px rgba(0, 0, 0, .2);
 }
 
@@ -93,21 +75,6 @@ html body [data-matchday-root] main > .shell > *:has(textarea) {
 }
 
 @media (max-width: 700px) {
-  html body [data-matchday-root] main {
-    background:
-      radial-gradient(ellipse 24rem 56rem at 0% 22%,
-        color-mix(in srgb, var(--match-away) 24%, transparent),
-        transparent 74%),
-      radial-gradient(ellipse 24rem 56rem at 100% 24%,
-        color-mix(in srgb, var(--match-home) 24%, transparent),
-        transparent 74%),
-      linear-gradient(90deg,
-        color-mix(in srgb, var(--match-away) 15%, #0a0e12) 0%,
-        #101318 48%,
-        #101318 52%,
-        color-mix(in srgb, var(--match-home) 15%, #0a0e12) 100%) !important;
-  }
-
   html body [data-matchday-root] main > .shell > *:has(textarea) {
     padding-left: 18px;
     padding-right: 18px;
