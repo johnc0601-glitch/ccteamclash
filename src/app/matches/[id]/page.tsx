@@ -160,7 +160,9 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
         <MatchHero matchday={matchday} roundLabel={round ? `Round ${round.number}` : undefined} />
         <div className={`shell ${styles.content}`}>
           <MatchdayInfoStrip matchday={matchday} attendance={attendanceTotals} />
-          <MatchPreview matchId={matchId} matchday={matchday} />
+          <Suspense fallback={null}>
+            <MatchPreview matchId={matchId} matchday={matchday} />
+          </Suspense>
 
           {publishedResult ? <MatchScoreboard matchday={matchday} result={publishedResult} contests={contests} /> : null}
 
@@ -195,13 +197,6 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
           {!publishedResult ? <MatchScoreboard matchday={matchday} result={publishedResult} contests={[]} /> : null}
 
-          <MatchFeed
-            matchId={matchId}
-            matchDate={match.date}
-            notice={readParam(query.feedNotice)}
-            error={readParam(query.feedError)}
-          />
-
           {lockedControls.canUnlockRoster && officialSnapshot?.status === 'complete' ? (
             <CommissionerRosterUnlockPanel
               matchId={matchId}
@@ -213,6 +208,15 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
           {lockedControls.rosterExport?.ok ? <OfficialRosterExportPanel exportData={lockedControls.rosterExport.data} /> : null}
 
           <MatchCourseInfo course={matchday.courseDetails} />
+
+          <Suspense fallback={null}>
+            <MatchFeed
+              matchId={matchId}
+              matchDate={match.date}
+              notice={readParam(query.feedNotice)}
+              error={readParam(query.feedError)}
+            />
+          </Suspense>
         </div>
       </main>
       <Footer />
