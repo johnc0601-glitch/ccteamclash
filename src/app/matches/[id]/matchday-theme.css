@@ -20,12 +20,7 @@ html body [data-matchday-root] main > .shell > * {
 html body [data-matchday-root] main > .shell > section,
 html body [data-matchday-root] main > .shell > article,
 html body [data-matchday-root] main > .shell > aside {
-  background:
-    linear-gradient(90deg,
-      color-mix(in srgb, var(--match-away) 4%, var(--match-surface)) 0%,
-      var(--match-surface) 43%,
-      var(--match-surface) 57%,
-      color-mix(in srgb, var(--match-home) 4%, var(--match-surface)) 100%) !important;
+  background: var(--match-card-treatment) !important;
   box-shadow: 0 16px 34px rgba(0, 0, 0, .2);
 }
 
