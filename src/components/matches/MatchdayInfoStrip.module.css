@@ -7,12 +7,7 @@
   gap: 18px;
   border: 1px solid var(--match-border);
   border-radius: 12px;
-  background:
-    linear-gradient(90deg,
-      color-mix(in srgb, var(--match-away) 9%, var(--match-surface)) 0%,
-      var(--match-surface) 44%,
-      var(--match-surface) 56%,
-      color-mix(in srgb, var(--match-home) 9%, var(--match-surface)) 100%);
+  background: var(--match-card-treatment) !important;
   box-shadow: var(--cc-card-shadow);
 }
 
