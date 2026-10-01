@@ -9,7 +9,7 @@ type MatchPreviewRow = {
   story_url: string | null;
 };
 
-const APPROVED_COPY: Record<string, {story: string; battle: string}> = {
+const APPROVED_COPY: Record<string, {story: string; battle: string; proven?: string}> = {
   'wild turkey|cougar country': {
     story: 'WT brings a stronger top end',
     battle: 'The Turkeys head into Cougar Country, where the Cougars will be defending their ground.',
@@ -17,6 +17,7 @@ const APPROVED_COPY: Record<string, {story: string; battle: string}> = {
   'kb|dark knights': {
     story: 'New Burnt Mill layout',
     battle: 'KB owns the history. Burnt Mill gives Dark Knights a clean slate—and a chance to make the series mean something different.',
+    proven: 'Duncan · 15 wins / England · 14 wins',
   },
   'hayneous ogs|ninjas': {
     story: 'New faces on both sides',
@@ -104,7 +105,7 @@ export async function MatchPreview({matchId, matchday}: {matchId: string; matchd
           <>
             <div className={styles.synopsis}>
               <Stat label="Series" value={insights.series} />
-              <Stat label="Proven" value={insights.proven} />
+              <Stat label="Proven" value={approved?.proven ?? insights.proven} />
               <Stat label="Swing player" value={insights.swing} />
               <Stat label="Story" value={approved?.story ?? 'A new chapter'} />
             </div>
