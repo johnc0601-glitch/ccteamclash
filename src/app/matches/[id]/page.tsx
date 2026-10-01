@@ -1,4 +1,4 @@
-import type {CSSProperties} from 'react';
+import {Suspense, type CSSProperties} from 'react';
 import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
@@ -8,6 +8,7 @@ import {MatchFeed} from '@/components/matches/MatchFeed';
 import {MatchPreview} from '@/components/matches/MatchPreview';
 import {MatchdayInfoStrip, type MatchdayAttendanceTotals} from '@/components/matches/MatchdayInfoStrip';
 import {MatchCourseInfo} from '@/components/matches/MatchCourseInfo';
+import {MatchTeamStats} from '@/components/matches/MatchTeamStats';
 import {PersonalAttendanceCard} from '@/components/matches/PersonalAttendanceCard';
 import {CaptainRosterPanel} from '@/components/matches/CaptainRosterPanel';
 import {CommissionerRosterUnlockPanel} from '@/components/matches/CommissionerRosterUnlockPanel';
@@ -183,6 +184,14 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             availability={availability ?? undefined}
             availabilityUnavailable={availabilityUnavailable}
           />
+
+          <Suspense fallback={null}>
+            <MatchTeamStats
+              awayTeam={{id: matchday.awayTeam.id, name: matchday.awayTeam.name}}
+              homeTeam={{id: matchday.homeTeam.id, name: matchday.homeTeam.name}}
+              seasonId={match.seasonId}
+            />
+          </Suspense>
 
           {!publishedResult ? <MatchScoreboard matchday={matchday} result={publishedResult} contests={[]} /> : null}
 
