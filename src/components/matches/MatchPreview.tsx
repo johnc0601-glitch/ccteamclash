@@ -116,7 +116,7 @@ export async function MatchPreview({matchId, matchday}: {matchId: string; matchd
                 <span className={styles.chevron} aria-hidden="true">⌄</span>
               </summary>
               <div className={styles.fullPreviewBody}>
-                <p className={styles.excerpt}>{excerpt}</p>
+                <PreviewCopy excerpt={excerpt} />
                 {storyUrl ? <a className={styles.storyLink} href={storyUrl}>Read Full Preview →</a> : null}
               </div>
             </details>
@@ -129,6 +129,32 @@ export async function MatchPreview({matchId, matchday}: {matchId: string; matchd
 
 function Stat({label, value}: {label: string; value: string}) {
   return <div className={styles.stat}><span>{label}</span><strong>{value}</strong></div>;
+}
+
+function PreviewCopy({excerpt}: {excerpt: string}) {
+  const paragraphs = excerpt.split(/\r?\n\s*\r?\n/).map((paragraph) => paragraph.trim()).filter(Boolean);
+
+  return (
+    <div className={styles.previewCopy}>
+      {paragraphs.map((paragraph, index) => {
+        const watch = paragraph.match(/^What to watch:\s*(.*)$/i);
+        if (watch) {
+          return (
+            <aside className={styles.previewWatch} key={paragraph}>
+              <span>What to watch</span>
+              <strong>{watch[1]}</strong>
+            </aside>
+          );
+        }
+
+        return (
+          <p className={index === 0 ? styles.previewLead : styles.previewParagraph} key={paragraph}>
+            {paragraph}
+          </p>
+        );
+      })}
+    </div>
+  );
 }
 
 function pairKey(away: string, home: string) {
