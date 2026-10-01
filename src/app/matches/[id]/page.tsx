@@ -1,11 +1,14 @@
-import type {CSSProperties} from 'react';
+import {Suspense, type CSSProperties} from 'react';
 import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
-import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
+import {MatchPreview} from '@/components/matches/MatchPreview';
+import {MatchdayInfoStrip, type MatchdayAttendanceTotals} from '@/components/matches/MatchdayInfoStrip';
+import {MatchCourseInfo} from '@/components/matches/MatchCourseInfo';
+import {MatchTeamStats} from '@/components/matches/MatchTeamStats';
 import {PersonalAttendanceCard} from '@/components/matches/PersonalAttendanceCard';
 import {CaptainRosterPanel} from '@/components/matches/CaptainRosterPanel';
 import {CommissionerRosterUnlockPanel} from '@/components/matches/CommissionerRosterUnlockPanel';
@@ -27,10 +30,6 @@ import type {Match} from '@/domain/schedule/Match';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 import {resolveMatchday, type PublicMatchday} from '@/services/matches/MatchdayService';
-import {
-  buildPublicMatchPrediction,
-  resolvePublicPredictionSource,
-} from '@/services/teamStrength/PublicMatchPrediction';
 import styles from './Matchday.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -104,8 +103,6 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const pageBackground: CSSProperties & {'--match-away': string; '--match-home': string} = {
     '--match-away': awayColor,
     '--match-home': homeColor,
-    background: `radial-gradient(circle at 50% 4%, rgba(4,8,14,.34) 0%, transparent 32rem), linear-gradient(90deg, color-mix(in srgb, ${awayColor} 92%, #06111c) 0%, color-mix(in srgb, ${awayColor} 86%, #081827) 38%, color-mix(in srgb, ${awayColor} 58%, #101019) 48.5%, #101019 50%, color-mix(in srgb, ${homeColor} 58%, #101019) 51.5%, color-mix(in srgb, ${homeColor} 86%, #1a0718) 62%, color-mix(in srgb, ${homeColor} 92%, #170515) 100%)`,
-    backgroundAttachment: 'fixed',
   };
 
   const availability = availabilityOpen && !rosterUnavailable ? await getPublicAvailability(supabase, matchId, matchday) : undefined;
@@ -128,43 +125,6 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     }
   }
 
-  const predictionSource = match.date ? resolvePublicPredictionSource(match.date, now) : undefined;
-  const officialRosters = officialSnapshot?.status === 'complete' ? officialSnapshot.rosters : undefined;
-  let homePredictionPlayers = matchday.homeTeam.roster;
-  let awayPredictionPlayers = matchday.awayTeam.roster;
-
-  if (predictionSource === 'matchLineup' && officialRosters) {
-    const homeRoster = officialRosters.find((roster) => roster.teamId === match.homeTeamId);
-    const awayRoster = officialRosters.find((roster) => roster.teamId === match.awayTeamId);
-    if (homeRoster && awayRoster) {
-      const homeIds = homeRoster.players.map((player) => player.playerId);
-      const awayIds = awayRoster.players.map((player) => player.playerId);
-      const lineupPlayers = await getPlayersByIds(supabase, [...new Set([...homeIds, ...awayIds])]);
-      const playersById = new Map(lineupPlayers.map((player) => [player.id, player]));
-      homePredictionPlayers = homeIds
-        .map((playerId) => playersById.get(playerId))
-        .filter((player): player is LaunchPlayer => Boolean(player));
-      awayPredictionPlayers = awayIds
-        .map((playerId) => playersById.get(playerId))
-        .filter((player): player is LaunchPlayer => Boolean(player));
-    }
-  }
-
-  const matchPrediction = buildPublicMatchPrediction({
-    matchDate: match.date,
-    matchStatus: match.status,
-    hasPublishedResult: Boolean(publishedResult),
-    homeTeamId: match.homeTeamId,
-    awayTeamId: match.awayTeamId,
-    matchVenue: course?.homeTeamId === match.homeTeamId ? 'Home' : 'Neutral',
-    homePlayers: homePredictionPlayers,
-    awayPlayers: awayPredictionPlayers,
-    homeAttendance: availability?.get(match.homeTeamId),
-    awayAttendance: availability?.get(match.awayTeamId),
-    officialRosters,
-    now,
-  });
-
   const attendanceRepository = new SupabaseMatchRosterRepository(supabase);
   const actor = userId ? await attendanceRepository.getAttendanceActor(userId) : undefined;
   const openUnlockTeamIds = locked ? await getOpenRosterUnlockTeamIds(supabase, matchId) : new Set<string>();
@@ -186,21 +146,25 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     ? resolveLockedControls(actor, match, officialSnapshot.rosters)
     : {canUnlockRoster: false};
 
+  const round = await scheduleService.getRound(match.roundId);
+  const attendanceTotals = availability
+    ? summarizeAttendance(availability)
+    : officialSnapshot?.status === 'complete'
+      ? await getLockedAttendanceTotals(supabase, matchId, officialSnapshot.rosters)
+      : undefined;
+
   return (
     <>
       <SiteHeader />
       <main className={styles.page} style={pageBackground}>
-        <MatchHero matchday={matchday} />
+        <MatchHero matchday={matchday} roundLabel={round ? `Round ${round.number}` : undefined} />
         <div className={`shell ${styles.content}`}>
-          {matchPrediction ? (
-            <MatchPredictionCard
-              prediction={matchPrediction}
-              awayTeamName={matchday.awayTeam.name}
-              homeTeamName={matchday.homeTeam.name}
-            />
-          ) : null}
+          <MatchdayInfoStrip matchday={matchday} attendance={attendanceTotals} />
+          <Suspense fallback={null}>
+            <MatchPreview matchId={matchId} matchday={matchday} />
+          </Suspense>
 
-          <MatchScoreboard matchday={matchday} result={publishedResult} contests={publishedResult ? contests : []} />
+          {publishedResult ? <MatchScoreboard matchday={matchday} result={publishedResult} contests={contests} /> : null}
 
           {personalAttendance ? (
             <PersonalAttendanceCard attendance={personalAttendance} notice={readParam(query.attendanceNotice)} error={readParam(query.attendanceError)} />
@@ -215,12 +179,23 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             />
           ) : null}
 
-          <MatchFeed
-            matchId={matchId}
-            matchDate={match.date}
-            notice={readParam(query.feedNotice)}
-            error={readParam(query.feedError)}
+          <MatchRosterBoard
+            matchday={matchday}
+            official={officialSnapshot}
+            rosterUnavailable={rosterUnavailable}
+            availability={availability ?? undefined}
+            availabilityUnavailable={availabilityUnavailable}
           />
+
+          <Suspense fallback={null}>
+            <MatchTeamStats
+              awayTeam={{id: matchday.awayTeam.id, name: matchday.awayTeam.name}}
+              homeTeam={{id: matchday.homeTeam.id, name: matchday.homeTeam.name}}
+              seasonId={match.seasonId}
+            />
+          </Suspense>
+
+          {!publishedResult ? <MatchScoreboard matchday={matchday} result={publishedResult} contests={[]} /> : null}
 
           {lockedControls.canUnlockRoster && officialSnapshot?.status === 'complete' ? (
             <CommissionerRosterUnlockPanel
@@ -230,15 +205,18 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             />
           ) : null}
 
-          <MatchRosterBoard
-            matchday={matchday}
-            official={officialSnapshot}
-            rosterUnavailable={rosterUnavailable}
-            availability={availability ?? undefined}
-            availabilityUnavailable={availabilityUnavailable}
-          />
-
           {lockedControls.rosterExport?.ok ? <OfficialRosterExportPanel exportData={lockedControls.rosterExport.data} /> : null}
+
+          <MatchCourseInfo course={matchday.courseDetails} />
+
+          <Suspense fallback={null}>
+            <MatchFeed
+              matchId={matchId}
+              matchDate={match.date}
+              notice={readParam(query.feedNotice)}
+              error={readParam(query.feedError)}
+            />
+          </Suspense>
         </div>
       </main>
       <Footer />
@@ -328,4 +306,47 @@ async function getSeasonRosterPlayerIdsByTeam(supabase: Awaited<ReturnType<typeo
 
 function readParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
+}
+
+
+function summarizeAttendance(availability: Map<string, TeamAttendanceMember[]>): MatchdayAttendanceTotals {
+  const totals: MatchdayAttendanceTotals = {yes: 0, no: 0, unconfirmed: 0};
+  for (const players of availability.values()) {
+    for (const player of players) {
+      if (player.status === 'Playing') totals.yes += 1;
+      else if (player.status === 'NotPlaying') totals.no += 1;
+      else totals.unconfirmed += 1;
+    }
+  }
+  return totals;
+}
+
+async function getLockedAttendanceTotals(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  matchId: string,
+  rosters: OfficialMatchRoster[],
+): Promise<MatchdayAttendanceTotals> {
+  const playerIds = rosters.flatMap((roster) => roster.players.map((player) => player.playerId));
+  const totals: MatchdayAttendanceTotals = {yes: 0, no: 0, unconfirmed: playerIds.length};
+  if (!playerIds.length) return totals;
+
+  const {data, error} = await (supabase as any)
+    .from('launch_match_attendance')
+    .select('player_id,status')
+    .eq('match_id', matchId)
+    .in('player_id', playerIds);
+
+  if (error) return totals;
+
+  totals.unconfirmed = playerIds.length;
+  for (const row of data ?? []) {
+    if (row.status === 'Playing') {
+      totals.yes += 1;
+      totals.unconfirmed -= 1;
+    } else if (row.status === 'NotPlaying') {
+      totals.no += 1;
+      totals.unconfirmed -= 1;
+    }
+  }
+  return totals;
 }

@@ -1,5 +1,5 @@
 .wrap {
-  padding: 18px 0 0;
+  padding: 0;
 }
 
 .card {
@@ -8,7 +8,7 @@
   border: 1px solid var(--cc-card-border);
   border-left: 5px solid var(--cc-gold);
   border-radius: 10px;
-  background: var(--cc-card-bg);
+  background: var(--match-card-treatment) !important;
   box-shadow: var(--cc-card-shadow);
 }
 
@@ -269,10 +269,6 @@
 }
 
 @media (max-width: 640px) {
-  .wrap {
-    padding-top: 12px;
-  }
-
   .card {
     padding: 16px 16px 0;
   }

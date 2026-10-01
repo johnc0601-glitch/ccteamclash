@@ -53,6 +53,15 @@ export type TeamStatistics = {
   lastFive: string[];
 };
 
+export type TeamFormatStatistics = {
+  teamId: string;
+  seasonId: string;
+  singlesRecord: RecordSummary;
+  doublesRecord: RecordSummary;
+  singlesWinPercentage: number;
+  doublesWinPercentage: number;
+};
+
 export type PlayerStatistics = {
   playerId: string;
   playerName: string;

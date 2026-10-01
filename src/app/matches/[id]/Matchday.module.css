@@ -1,14 +1,69 @@
 .page {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 82% 4%, rgba(0, 118, 128, .15), transparent 28rem),
-    linear-gradient(135deg, #fbfcf8 0%, #f5f2ea 46%, #edf4f2 100%);
-}
+  color-scheme: dark;
 
-:global([data-theme="dark"]) .page {
+  /* Matchday owns its palette. Do not inherit the site's warm light card variables. */
+  --cc-bg: #090d11;
+  --cc-surface: rgba(15, 20, 25, .82);
+  --cc-surface-raised: rgba(22, 29, 35, .86);
+  --cc-surface-deep: rgba(10, 14, 18, .78);
+  --cc-panel-border: rgba(255, 255, 255, .10);
+  --cc-text: #f4f6f7;
+  --cc-text-muted: #929da5;
+  --cc-body-text: #cdd3d7;
+  --cc-card-bg: rgba(15, 20, 25, .82);
+  --cc-card-bg-soft: rgba(22, 29, 35, .86);
+  --cc-card-border: rgba(255, 255, 255, .10);
+  --cc-card-shadow: 0 16px 34px rgba(0, 0, 0, .28);
+  --cc-heading: #f4f6f7;
+  --cc-muted: #929da5;
+  --cc-row-bg: rgba(12, 17, 21, .74);
+  --cc-table-head-bg: rgba(10, 14, 18, .76);
+  --cc-table-head-text: #a0a9af;
+  --cc-teal: #87959a;
+
+  --match-surface: rgba(15, 20, 25, .80);
+  --match-surface-soft: rgba(22, 29, 35, .84);
+  --match-border: rgba(255, 255, 255, .10);
+  --match-text: #f4f6f7;
+  --match-body: #cdd3d7;
+  --match-muted: #929da5;
+
+  --match-card-treatment:
+    radial-gradient(circle at 20% 28%,
+      color-mix(in srgb, var(--match-away) 26%, transparent),
+      transparent 38%),
+    radial-gradient(circle at 80% 28%,
+      color-mix(in srgb, var(--match-home) 26%, transparent),
+      transparent 38%),
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--match-away) 30%, #091015) 0%,
+      color-mix(in srgb, var(--match-away) 18%, #0c1217) 38%,
+      #11161b 48%,
+      #11161b 52%,
+      color-mix(in srgb, var(--match-home) 18%, #0c1217) 62%,
+      color-mix(in srgb, var(--match-home) 30%, #091015) 100%);
+
+  /*
+   * The approved treatment: dark neutral arena with both team colors washing
+   * inward and overlapping through the middle. Colors are intentionally
+   * restrained so they read as atmosphere, not page-edge rails.
+   */
   background:
-    radial-gradient(circle at 84% 0, rgba(0, 163, 166, .18), transparent 30rem),
-    linear-gradient(135deg, #05090a 0%, #071112 48%, #0a2224 100%);
+    radial-gradient(circle at 20% 10%,
+      color-mix(in srgb, var(--match-away) 28%, transparent),
+      transparent 38%),
+    radial-gradient(circle at 80% 10%,
+      color-mix(in srgb, var(--match-home) 28%, transparent),
+      transparent 38%),
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--match-away) 30%, #091015) 0%,
+      color-mix(in srgb, var(--match-away) 22%, #0c1217) 38%,
+      #11161b 48%,
+      #11161b 52%,
+      color-mix(in srgb, var(--match-home) 22%, #0c1217) 62%,
+      color-mix(in srgb, var(--match-home) 30%, #091015) 100%) !important;
+  background-attachment: fixed !important;
 }
 
 .hero {
@@ -91,7 +146,7 @@
 .scoreboard {
   border: 1px solid var(--cc-card-border);
   border-radius: 10px;
-  background: var(--cc-card-bg);
+  background: var(--match-card-treatment) !important;
   box-shadow: var(--cc-card-shadow);
 }
 
@@ -785,5 +840,36 @@
 
   .playerRow strong {
     white-space: normal;
+  }
+}
+
+
+/* Keep the team field visible through Matchday content instead of reducing it
+   to narrow page-edge strips. */
+.page :global(section),
+.page :global(article),
+.page :global(aside),
+.page :global(details) {
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+@media (max-width: 700px) {
+  .page {
+    background:
+      radial-gradient(circle at 20% 10%,
+        color-mix(in srgb, var(--match-away) 30%, transparent),
+        transparent 40%),
+      radial-gradient(circle at 80% 10%,
+        color-mix(in srgb, var(--match-home) 30%, transparent),
+        transparent 40%),
+      linear-gradient(90deg,
+        color-mix(in srgb, var(--match-away) 30%, #091015) 0%,
+        color-mix(in srgb, var(--match-away) 22%, #0c1217) 38%,
+        #11161b 48%,
+        #11161b 52%,
+        color-mix(in srgb, var(--match-home) 22%, #0c1217) 62%,
+        color-mix(in srgb, var(--match-home) 30%, #091015) 100%) !important;
+    background-attachment: fixed !important;
   }
 }

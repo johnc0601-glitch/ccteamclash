@@ -10,6 +10,9 @@ import type {
   PlayerStatistics as PlayerStatisticsResult,
   SeasonStatistics as SeasonStatisticsResult,
   TeamStatistics as TeamStatisticsResult,
+  TeamFormatStatistics,
+  ChallengeResult,
+  RecordSummary,
 } from '@/services/statistics/StatisticsTypes';
 
 export class StatisticsEngine {
@@ -27,6 +30,33 @@ export class StatisticsEngine {
   async getTeamStatistics(teamId: string, seasonId: string): Promise<TeamStatisticsResult> {
     const results = await this.repository.getPublishedChallengeResults();
     return this.teamStatistics.calculate(teamId, seasonId, results);
+  }
+
+  async getTeamStatisticsForTeams(
+    teamIds: string[],
+    seasonId: string,
+  ): Promise<TeamStatisticsResult[]> {
+    const results = await this.repository.getPublishedChallengeResults();
+    return teamIds.map((teamId) => this.teamStatistics.calculate(teamId, seasonId, results));
+  }
+
+  async getMatchdayTeamStatisticsForTeams(
+    teamIds: string[],
+    currentSeasonId: string,
+    previousSeasonId?: string,
+  ): Promise<{
+    current: TeamStatisticsResult[];
+    previousFormats: TeamFormatStatistics[];
+  }> {
+    const results = await this.repository.getPublishedChallengeResults();
+    return {
+      current: teamIds.map((teamId) =>
+        this.teamStatistics.calculate(teamId, currentSeasonId, results)),
+      previousFormats: previousSeasonId
+        ? teamIds.map((teamId) =>
+          calculateTeamFormatStatistics(teamId, previousSeasonId, results))
+        : [],
+    };
   }
 
   async getPlayerStatistics(playerId: string, seasonId: string): Promise<PlayerStatisticsResult> {
@@ -122,4 +152,49 @@ export class StatisticsEngine {
     const results = await this.repository.getPublishedChallengeResults();
     return this.headToHeadStatistics.calculate(teamAId, teamBId, seasonId, results);
   }
+}
+
+
+function calculateTeamFormatStatistics(
+  teamId: string,
+  seasonId: string,
+  results: ChallengeResult[],
+): TeamFormatStatistics {
+  const singlesRecord = emptyRecord();
+  const doublesRecord = emptyRecord();
+  const seenContests = new Set<string>();
+
+  for (const result of results) {
+    if (result.seasonId !== seasonId) continue;
+    for (const playerResult of result.playerResults) {
+      if (playerResult.teamId !== teamId || !playerResult.contestId) continue;
+      const key = `${result.challengeId}:${playerResult.contestId}:${teamId}`;
+      if (seenContests.has(key)) continue;
+      seenContests.add(key);
+
+      const record = playerResult.format === 'Singles' ? singlesRecord : doublesRecord;
+      if (playerResult.outcome === 'Win') record.wins += 1;
+      else if (playerResult.outcome === 'Loss') record.losses += 1;
+      else record.ties += 1;
+    }
+  }
+
+  return {
+    teamId,
+    seasonId,
+    singlesRecord,
+    doublesRecord,
+    singlesWinPercentage: winPercentage(singlesRecord),
+    doublesWinPercentage: winPercentage(doublesRecord),
+  };
+}
+
+function emptyRecord(): RecordSummary {
+  return {wins: 0, losses: 0, ties: 0};
+}
+
+function winPercentage(record: RecordSummary): number {
+  const total = record.wins + record.losses + record.ties;
+  if (!total) return 0;
+  return Math.round(((record.wins + record.ties * 0.5) / total) * 1000) / 10;
 }
