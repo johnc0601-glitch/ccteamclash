@@ -1,5 +1,5 @@
 .wrap {
-  padding: 18px 0 0;
+  padding: 0;
 }
 
 .card {
@@ -269,10 +269,6 @@
 }
 
 @media (max-width: 640px) {
-  .wrap {
-    padding-top: 12px;
-  }
-
   .card {
     padding: 16px 16px 0;
   }
