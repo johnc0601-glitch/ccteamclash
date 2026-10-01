@@ -29,6 +29,21 @@
   --match-body: #cdd3d7;
   --match-muted: #929da5;
 
+  --match-card-treatment:
+    radial-gradient(circle at 20% 28%,
+      color-mix(in srgb, var(--match-away) 26%, transparent),
+      transparent 38%),
+    radial-gradient(circle at 80% 28%,
+      color-mix(in srgb, var(--match-home) 26%, transparent),
+      transparent 38%),
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--match-away) 30%, #091015) 0%,
+      color-mix(in srgb, var(--match-away) 18%, #0c1217) 38%,
+      #11161b 48%,
+      #11161b 52%,
+      color-mix(in srgb, var(--match-home) 18%, #0c1217) 62%,
+      color-mix(in srgb, var(--match-home) 30%, #091015) 100%);
+
   /*
    * The approved treatment: dark neutral arena with both team colors washing
    * inward and overlapping through the middle. Colors are intentionally
@@ -131,7 +146,7 @@
 .scoreboard {
   border: 1px solid var(--cc-card-border);
   border-radius: 10px;
-  background: var(--cc-card-bg);
+  background: var(--match-card-treatment) !important;
   box-shadow: var(--cc-card-shadow);
 }
 
