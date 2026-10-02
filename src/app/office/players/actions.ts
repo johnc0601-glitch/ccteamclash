@@ -290,6 +290,7 @@ function readRating(value: string): number | null {
 }
 
 function revalidatePeoplePages() {
+  revalidateTag('public:match-rosters', 'max');
   revalidateTag('public:players', 'max');
   revalidateTag('public:stats', 'max');
   revalidateTag('public:teams', 'max');

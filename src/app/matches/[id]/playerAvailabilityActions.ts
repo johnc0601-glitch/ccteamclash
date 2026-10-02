@@ -1,8 +1,9 @@
 'use server';
 
-import {revalidatePath} from 'next/cache';
+import {revalidatePath, revalidateTag} from 'next/cache';
 import {redirect} from 'next/navigation';
 import type {AttendanceResult, PersonalAttendance} from '@/domain/match-roster/MatchAttendance';
+import {publicMatchRosterTag} from '@/core/loadCachedPublicMatchRoster';
 import {PlayerAvailabilityService} from '@/domain/match-roster/PlayerAvailabilityService';
 import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
 import {createClient} from '@/lib/supabase/server';
@@ -30,6 +31,7 @@ export async function setOwnPlayerAvailability(formData: FormData) {
 
   if (!result.ok) redirect(`${path}?attendanceError=${encodeURIComponent(result.message)}`);
 
+  revalidateTag(publicMatchRosterTag(matchId), 'max');
   revalidatePath(path);
   redirect(`${path}?attendanceNotice=${encodeURIComponent('Your availability was saved.')}`);
 }

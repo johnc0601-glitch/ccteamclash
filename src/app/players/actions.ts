@@ -165,6 +165,7 @@ export async function loadPlayerMatchHistory(
 }
 
 function revalidateCaptainPlayerPages() {
+  revalidateTag('public:match-rosters', 'max');
   revalidateTag('public:players', 'max');
   revalidateTag('public:stats', 'max');
   revalidateTag('public:teams', 'max');
