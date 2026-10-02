@@ -155,7 +155,16 @@ function lockedRosterPlayers(
     }
   }
   return [...players.values()]
-    .sort((left, right) => left.playerName.localeCompare(right.playerName, 'en', {sensitivity: 'base'}));
+    .sort((left, right) => {
+      const statusOrder = attendanceStatusOrder(left.status) - attendanceStatusOrder(right.status);
+      return statusOrder || left.playerName.localeCompare(right.playerName, 'en', {sensitivity: 'base'});
+    });
+}
+
+function attendanceStatusOrder(status: TeamAttendanceMember['status']): number {
+  if (status === 'Playing') return 0;
+  if (status === 'NotPlaying') return 2;
+  return 1;
 }
 
 function Unavailable({title, detail}: {title: string; detail: string}) {
