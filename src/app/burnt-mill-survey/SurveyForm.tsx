@@ -1,6 +1,6 @@
 'use client';
 
-import {FormEvent, useState} from 'react';
+import {useState, type FormEvent, type ReactNode} from 'react';
 import styles from './BurntMillSurvey.module.css';
 
 type SubmitState = 'idle' | 'submitting' | 'success' | 'error';
@@ -224,7 +224,7 @@ function Question({
   title: string;
   hint?: string;
   required?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <fieldset className={styles.question}>
