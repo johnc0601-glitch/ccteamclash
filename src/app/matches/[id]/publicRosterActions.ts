@@ -47,16 +47,31 @@ export async function loadActiveRosterRemainder(matchId: string, teamId: string)
       return {ok: false, message: 'Roster could not be loaded.'};
     }
 
-    const {data: memberships, error: membershipError} = await supabase
-      .from('launch_season_roster_memberships')
-      .select('player_id')
-      .eq('season_id', match.season_id)
-      .eq('team_id', cleanTeamId)
-      .eq('status', 'Active');
+    const [
+      {data: memberships, error: membershipError},
+      {data: loans, error: loanError},
+    ] = await Promise.all([
+      supabase
+        .from('launch_season_roster_memberships')
+        .select('player_id')
+        .eq('season_id', match.season_id)
+        .eq('team_id', cleanTeamId)
+        .eq('status', 'Active'),
+      (supabase as any)
+        .from('launch_match_roster_loans')
+        .select('player_id')
+        .eq('match_id', cleanMatchId)
+        .eq('borrowing_team_id', cleanTeamId)
+        .is('removed_at', null),
+    ]);
 
     if (membershipError) throw membershipError;
+    if (loanError) throw loanError;
 
-    const playerIds = [...new Set((memberships ?? []).map((membership) => membership.player_id).filter(Boolean))];
+    const playerIds = [...new Set([
+      ...(memberships ?? []).map((membership) => membership.player_id),
+      ...(loans ?? []).map((loan: {player_id: string}) => loan.player_id),
+    ].filter(Boolean))];
     if (playerIds.length <= PREVIEW_COUNT) return {ok: true, players: []};
 
     const {data: players, error: playerError} = await (supabase as any)

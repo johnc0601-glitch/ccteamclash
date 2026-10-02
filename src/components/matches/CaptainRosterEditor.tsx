@@ -1,7 +1,13 @@
 'use client';
 
 import {useMemo, useState} from 'react';
-import {saveCaptainRosterAvailabilityBatch} from '@/app/matches/[id]/captainRosterManagementActions';
+import {
+  borrowFemaleForMatch,
+  loadBorrowableFemaleCandidates,
+  removeBorrowedFemaleFromMatch,
+  saveCaptainRosterAvailabilityBatch,
+  type BorrowableFemaleCandidate,
+} from '@/app/matches/[id]/captainRosterManagementActions';
 import {emailCaptainUnconfirmed} from '@/app/matches/[id]/captainReminderActions';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 import type {ManagedTeamRoster} from '@/domain/match-roster/MatchAttendance';
@@ -37,6 +43,10 @@ export function CaptainRosterEditor({
     [roster.players],
   );
   const [draft, setDraft] = useState<Record<string, DraftPlayer>>(initial);
+  const [borrowPickerOpen, setBorrowPickerOpen] = useState(false);
+  const [borrowCandidates, setBorrowCandidates] = useState<BorrowableFemaleCandidate[] | null>(null);
+  const [borrowLoading, setBorrowLoading] = useState(false);
+  const [borrowError, setBorrowError] = useState<string | null>(null);
 
   const changes = roster.players
     .filter((player) => {
@@ -94,6 +104,29 @@ export function CaptainRosterEditor({
     setDraft(initial);
   }
 
+  async function toggleBorrowPicker() {
+    if (dirtyCount > 0) return;
+    if (borrowPickerOpen) {
+      setBorrowPickerOpen(false);
+      return;
+    }
+
+    setBorrowPickerOpen(true);
+    setBorrowError(null);
+    if (borrowCandidates !== null) return;
+
+    setBorrowLoading(true);
+    try {
+      const result = await loadBorrowableFemaleCandidates(roster.matchId, roster.teamId);
+      if (result.ok) setBorrowCandidates(result.players);
+      else setBorrowError(result.message);
+    } catch {
+      setBorrowError('Available women could not be loaded. Try again.');
+    } finally {
+      setBorrowLoading(false);
+    }
+  }
+
   return (
     <article className={styles.captainTeamRoster}>
       <header className={styles.captainTeamHeader}>
@@ -109,6 +142,70 @@ export function CaptainRosterEditor({
           <input name="matchId" type="hidden" value={roster.matchId} />
           <button type="submit">Email {counts.Unconfirmed} unconfirmed</button>
         </form>
+      ) : null}
+
+      <div style={{display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px 2px'}}>
+        <button
+          disabled={!roster.attendanceOpen || dirtyCount > 0 || borrowLoading}
+          onClick={toggleBorrowPicker}
+          style={{
+            minHeight: 30,
+            padding: '4px 9px',
+            border: '1px solid rgba(255,255,255,.25)',
+            borderRadius: 5,
+            background: 'rgba(255,255,255,.06)',
+            color: 'inherit',
+            fontSize: 11,
+            fontWeight: 900,
+            cursor: dirtyCount > 0 ? 'not-allowed' : 'pointer',
+            opacity: dirtyCount > 0 ? .55 : 1,
+          }}
+          type="button"
+        >
+          {borrowLoading ? 'Loading…' : borrowPickerOpen ? 'Close borrowed players' : '+ Borrow Female'}
+        </button>
+        {dirtyCount > 0 ? <span style={{fontSize: 11, opacity: .7}}>Save roster changes first.</span> : null}
+      </div>
+
+      {borrowPickerOpen ? (
+        <div style={{margin: '6px 10px 10px', padding: 10, border: '1px solid rgba(255,255,255,.14)', borderRadius: 6, background: 'rgba(255,255,255,.035)'}}>
+          <strong style={{display: 'block', fontSize: 12, marginBottom: 6}}>Available women</strong>
+          {borrowError ? <p style={{margin: 0, fontSize: 11}}>{borrowError}</p> : null}
+          {!borrowError && !borrowLoading && borrowCandidates?.length === 0 ? (
+            <p style={{margin: 0, fontSize: 11, opacity: .72}}>No eligible borrowed players are currently available.</p>
+          ) : null}
+          {!borrowError && borrowCandidates?.length ? (
+            <div style={{display: 'grid', gap: 5}}>
+              {borrowCandidates.map((candidate) => (
+                <div
+                  key={candidate.playerId}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(0,1fr) auto',
+                    gap: 8,
+                    alignItems: 'center',
+                    padding: '6px 7px',
+                    borderRadius: 5,
+                    background: 'rgba(255,255,255,.04)',
+                  }}
+                >
+                  <div style={{minWidth: 0}}>
+                    <strong style={{display: 'block', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis'}}>{candidate.playerName}</strong>
+                    <span style={{display: 'block', fontSize: 10, opacity: .72}}>
+                      {candidate.originalTeamName} · CI {candidate.clashIndex ?? '—'} · {candidate.availabilityStatus}
+                    </span>
+                  </div>
+                  <form action={borrowFemaleForMatch}>
+                    <input name="matchId" type="hidden" value={roster.matchId} />
+                    <input name="teamId" type="hidden" value={roster.teamId} />
+                    <input name="playerId" type="hidden" value={candidate.playerId} />
+                    <button style={compactButtonStyle} type="submit">Add</button>
+                  </form>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       <div className={styles.captainPlayerList}>
@@ -148,9 +245,12 @@ export function CaptainRosterEditor({
                     </span>
                   ) : null}
                 </div>
-                <span>{formatStatus(status)}{changed ? ' · unsaved' : ''}</span>
+                <span>
+                  {player.borrowed ? `Borrowed · ${player.originalTeamName ?? 'League'} · ` : ''}
+                  {formatStatus(status)}{changed ? ' · unsaved' : ''}
+                </span>
               </div>
-              <span className={styles.captainPlayerActions} style={{display: 'flex', gap: 4, whiteSpace: 'nowrap'}}>
+              <div className={styles.captainPlayerActions} style={{display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end', whiteSpace: 'nowrap'}}>
                 <button
                   aria-pressed={status === 'Playing'}
                   className={`${styles.captainStatusButton} ${styles.yesStatusButton}`}
@@ -175,7 +275,24 @@ export function CaptainRosterEditor({
                   style={compactButtonStyle}
                   type="button"
                 >Unconfirmed</button>
-              </span>
+                {player.borrowed ? (
+                  <form action={removeBorrowedFemaleFromMatch}>
+                    <input name="matchId" type="hidden" value={roster.matchId} />
+                    <input name="teamId" type="hidden" value={roster.teamId} />
+                    <input name="playerId" type="hidden" value={player.playerId} />
+                    <button
+                      disabled={dirtyCount > 0}
+                      style={{
+                        ...compactButtonStyle,
+                        border: '1px solid rgba(220,90,90,.55)',
+                        background: 'transparent',
+                        opacity: dirtyCount > 0 ? .5 : 1,
+                      }}
+                      type="submit"
+                    >Remove</button>
+                  </form>
+                ) : null}
+              </div>
             </div>
           );
         })}
