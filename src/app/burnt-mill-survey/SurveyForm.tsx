@@ -228,13 +228,16 @@ function Question({
 }) {
   return (
     <fieldset className={styles.question}>
-      <legend>
+      <legend className={styles.srOnly}>
+        {title}{required ? ' Required' : ''}
+      </legend>
+      <div className={styles.questionHeading} aria-hidden="true">
         <span className={styles.questionNumber}>{number}</span>
         <span>
           {title}
           {required ? <span className={styles.required}> Required</span> : null}
         </span>
-      </legend>
+      </div>
       {hint ? <p className={styles.hint}>{hint}</p> : null}
       {children}
     </fieldset>

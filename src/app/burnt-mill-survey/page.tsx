@@ -12,6 +12,25 @@ export default function BurntMillSurveyPage() {
   return (
     <>
       <main className={styles.page}>
+        <div className={styles.udiscStrip}>
+          <a
+            className={styles.udiscCard}
+            href="https://udisc.com/courses/burnt-mill-creek-temp-elW1"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="View Burnt Mill Creek Clash Gold and Clash Blue layouts on UDisc"
+          >
+            <span className={styles.udiscTopLine}>
+              <span className={styles.udiscName}>UDisc Layouts</span>
+              <span className={styles.udiscBadge}>Course maps</span>
+            </span>
+            <span className={styles.udiscBottomLine}>
+              <span className={styles.udiscSubtitle}>Clash Gold • Clash Blue</span>
+              <span className={styles.udiscAction}>View <span aria-hidden="true">›</span></span>
+            </span>
+          </a>
+        </div>
+
         <section className={styles.hero}>
           <div className={styles.heroInner}>
             <span className={styles.kicker}>Wilmington, North Carolina</span>
