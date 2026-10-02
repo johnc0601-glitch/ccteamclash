@@ -545,15 +545,16 @@
   box-shadow: 0 0 0 2px var(--cc-heading);
 }
 
-.playingButton {
-  background: var(--cc-teal);
+.attendanceActions .playingButton {
+  border-color: #4f7f32;
+  background: #4f7f32;
   color: #fff;
 }
 
-.notPlayingButton {
-  border-color: var(--cc-card-border) !important;
-  background: var(--cc-card-bg);
-  color: var(--cc-heading);
+.attendanceActions .notPlayingButton {
+  border-color: #b64040 !important;
+  background: #b64040;
+  color: #fff;
 }
 
 .stateBanner {
