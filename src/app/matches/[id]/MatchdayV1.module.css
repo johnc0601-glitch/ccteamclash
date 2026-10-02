@@ -439,15 +439,15 @@
   white-space: nowrap;
 }
 
-.previewGrid .availabilityPlaying {
+.previewGrid > .previewTeam .playerMeta.availabilityPlaying {
   color: #5ee65f;
 }
 
-.previewGrid .availabilityNotPlaying {
+.previewGrid > .previewTeam .playerMeta.availabilityNotPlaying {
   color: #ff666b;
 }
 
-.previewGrid .availabilityUnconfirmed {
+.previewGrid > .previewTeam .playerMeta.availabilityUnconfirmed {
   color: var(--cc-muted);
 }
 
