@@ -252,32 +252,29 @@ export function CaptainRosterEditor({
               </div>
               <div className={styles.captainPlayerActions} style={{display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end', whiteSpace: 'nowrap'}}>
                 <button
-                  aria-label={`Mark ${player.playerName} as playing`}
                   aria-pressed={status === 'Playing'}
                   className={`${styles.captainStatusButton} ${styles.yesStatusButton}`}
                   data-selected={status === 'Playing'}
                   onClick={() => choose(player.playerId, 'Playing')}
-                  title="Playing"
+                  style={compactButtonStyle}
                   type="button"
-                ><span aria-hidden="true">✓</span></button>
+                >Yes</button>
                 <button
-                  aria-label={`Mark ${player.playerName} as not playing`}
                   aria-pressed={status === 'NotPlaying'}
                   className={`${styles.captainStatusButton} ${styles.noStatusButton}`}
                   data-selected={status === 'NotPlaying'}
                   onClick={() => choose(player.playerId, 'NotPlaying')}
-                  title="Not playing"
+                  style={compactButtonStyle}
                   type="button"
-                ><span aria-hidden="true">×</span></button>
+                >No</button>
                 <button
-                  aria-label={`Mark ${player.playerName} as unconfirmed`}
                   aria-pressed={status === 'Unconfirmed'}
                   className={`${styles.captainStatusButton} ${styles.unconfirmedStatusButton}`}
                   data-selected={status === 'Unconfirmed'}
                   onClick={() => choose(player.playerId, 'Unconfirmed')}
-                  title="Unconfirmed"
+                  style={compactButtonStyle}
                   type="button"
-                ><span aria-hidden="true">?</span></button>
+                >Unconfirmed</button>
                 {player.borrowed ? (
                   <form action={removeBorrowedFemaleFromMatch}>
                     <input name="matchId" type="hidden" value={roster.matchId} />
