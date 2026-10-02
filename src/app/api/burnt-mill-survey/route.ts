@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import type {SupabaseClient} from '@supabase/supabase-js';
 import {createAdminClient} from '@/lib/supabase/admin';
 
 export const runtime = 'nodejs';
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
   }
 
   const ipHash = hashRequestIp(request);
-  const supabase = createAdminClient() as any;
+  const supabase = createAdminClient() as unknown as SupabaseClient;
 
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
