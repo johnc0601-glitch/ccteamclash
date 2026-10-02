@@ -84,7 +84,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const availabilityOpen = !locked && isMatchAttendanceOpen(match, now);
   const teamIds = [match.homeTeamId, match.awayTeamId];
   const [rosterPlayerIdsByTeam, teamResults, course] = await Promise.all([
-    locked ? Promise.resolve(new Map(teamIds.map((teamId) => [teamId, new Set<string>()]))) : getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds, matchId),
+    getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds, matchId),
     Promise.all(teamIds.map((teamId) => launchRepository.getTeam(teamId))),
     courseRepository.getById(match.courseId),
   ]);
@@ -126,7 +126,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   }
 
   const lockedAvailability = locked && officialSnapshot?.status === 'complete'
-    ? await getLockedAvailability(supabase, matchId, teamIds, officialSnapshot.rosters)
+    ? await getLockedAvailability(supabase, matchId, teamIds, officialSnapshot.rosters, effectiveRosterIds)
     : undefined;
 
   const attendanceRepository = new SupabaseMatchRosterRepository(supabase);
@@ -407,6 +407,7 @@ async function getLockedAvailability(
   matchId: string,
   teamIds: string[],
   rosters: OfficialMatchRoster[],
+  rosterPlayerIdsByTeam: Map<string, Set<string>>,
 ): Promise<Map<string, TeamAttendanceMember[]>> {
   const {data, error} = await (supabase as any)
     .from('launch_match_attendance')
@@ -416,21 +417,25 @@ async function getLockedAvailability(
   if (error) return new Map();
 
   const rows = (data ?? []) as Array<{team_id: string; player_id: string; status: TeamAttendanceMember['status']}>;
+  const statuses = new Map(rows.map((row) => [row.player_id, row.status]));
   const officialNames = new Map(
     rosters.flatMap((roster) => roster.players.map((player) => [player.playerId, player.playerNameSnapshot] as const)),
   );
-  const players = await getPlayersByIds(supabase, [...new Set(rows.map((row) => row.player_id))]);
+  const rosterPlayerIds = [...new Set([...rosterPlayerIdsByTeam.values()].flatMap((ids) => [...ids]))];
+  const players = await getPlayersByIds(supabase, rosterPlayerIds);
   const names = new Map(players.map((player) => [player.id, player.name]));
   const availability = new Map(teamIds.map((teamId) => [teamId, [] as TeamAttendanceMember[]]));
-  for (const row of rows) {
-    const playerName = names.get(row.player_id) ?? officialNames.get(row.player_id);
-    if (!playerName) continue;
-    availability.get(row.team_id)?.push({
-      playerId: row.player_id,
-      playerName,
-      teamId: row.team_id,
-      status: row.status,
-    });
+  for (const teamId of teamIds) {
+    for (const playerId of rosterPlayerIdsByTeam.get(teamId) ?? []) {
+      const playerName = names.get(playerId) ?? officialNames.get(playerId);
+      if (!playerName) continue;
+      availability.get(teamId)?.push({
+        playerId,
+        playerName,
+        teamId,
+        status: statuses.get(playerId) ?? 'Unconfirmed',
+      });
+    }
   }
   return availability;
 }

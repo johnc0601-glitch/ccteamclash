@@ -428,9 +428,21 @@
   width: 9px;
   height: 9px;
   flex: 0 0 9px;
-  margin-left: auto;
   border-radius: 50%;
   box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.playerStatusIdentity {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statusLightPlaceholder {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
 }
 
 .statusLightPlaying {

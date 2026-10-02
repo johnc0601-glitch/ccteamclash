@@ -155,7 +155,6 @@ function lockedRosterPlayers(
     }
   }
   return [...players.values()]
-    .filter((player) => player.status === 'Playing' || player.status === 'NotPlaying')
     .sort((left, right) => left.playerName.localeCompare(right.playerName, 'en', {sensitivity: 'base'}));
 }
 

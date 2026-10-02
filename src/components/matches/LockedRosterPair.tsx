@@ -1,10 +1,5 @@
-'use client';
-
-import {useState} from 'react';
 import type {TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import v1 from '@/app/matches/[id]/MatchdayV1.module.css';
-
-const PREVIEW_COUNT = 5;
 
 // Locked rosters expand in place so the team cards remain the single source of truth.
 type LockedRosterTeam = {
@@ -16,34 +11,15 @@ type LockedRosterTeam = {
 };
 
 export function LockedRosterPair({away, home}: {away: LockedRosterTeam; home: LockedRosterTeam}) {
-  const [expanded, setExpanded] = useState(false);
   return (
-    <div>
-      <div className={v1.previewGrid}>
-        <LockedRosterCard team={away} expanded={expanded} onExpand={() => setExpanded(true)} />
-        <LockedRosterCard team={home} expanded={expanded} onExpand={() => setExpanded(true)} />
-      </div>
-      {(away.players.length > PREVIEW_COUNT || home.players.length > PREVIEW_COUNT) ? (
-        <button className={v1.rosterToggle} type="button" onClick={() => setExpanded((value) => !value)} aria-expanded={expanded}>
-          {expanded ? 'Show 5 players' : 'View full rosters'}
-          <span aria-hidden="true">{expanded ? '⌃' : '⌄'}</span>
-        </button>
-      ) : null}
+    <div className={v1.previewGrid}>
+      <LockedRosterCard team={away} />
+      <LockedRosterCard team={home} />
     </div>
   );
 }
 
-function LockedRosterCard({
-  team,
-  expanded,
-  onExpand,
-}: {
-  team: LockedRosterTeam;
-  expanded: boolean;
-  onExpand: () => void;
-}) {
-  const visible = expanded ? team.players : team.players.slice(0, PREVIEW_COUNT);
-  const remaining = Math.max(0, team.players.length - PREVIEW_COUNT);
+function LockedRosterCard({team}: {team: LockedRosterTeam}) {
   const isAway = team.label === 'Away';
   const headerStyle = {
     background: isAway
@@ -64,29 +40,23 @@ function LockedRosterCard({
         <span>{team.label}</span>
       </div>
       <div className={v1.previewList}>
-        {visible.length ? visible.map((player, index) => (
+        {team.players.length ? team.players.map((player, index) => (
           <div className={v1.previewPlayer} key={`${player.playerName}-${index}`}>
-            <strong>{player.playerName}</strong>
-            <span
-              className={`${v1.statusLight} ${player.status === 'Playing' ? v1.statusLightPlaying : v1.statusLightNotPlaying}`}
-              role="img"
-              aria-label={player.status === 'Playing' ? 'Coming' : 'Not coming'}
-              title={player.status === 'Playing' ? 'Coming' : 'Not coming'}
-            />
+            <span className={v1.playerStatusIdentity}>
+              {player.status === 'Playing' || player.status === 'NotPlaying' ? (
+                <span
+                  className={`${v1.statusLight} ${player.status === 'Playing' ? v1.statusLightPlaying : v1.statusLightNotPlaying}`}
+                  role="img"
+                  aria-label={player.status === 'Playing' ? 'Coming' : 'Not coming'}
+                  title={player.status === 'Playing' ? 'Coming' : 'Not coming'}
+                />
+              ) : <span className={v1.statusLightPlaceholder} aria-hidden="true" />}
+              <strong>{player.playerName}</strong>
+            </span>
           </div>
         )) : (
           <div className={v1.previewPlayer}><span className={v1.previewMore}>No players listed yet</span></div>
         )}
-        {!expanded && remaining > 0 ? (
-          <button
-            className={`${v1.previewPlayer} ${v1.previewMore} ${v1.previewMoreButton}`}
-            type="button"
-            onClick={onExpand}
-            aria-label={`Show all ${team.players.length} ${team.name} players`}
-          >
-            + {remaining} more
-          </button>
-        ) : null}
       </div>
     </article>
   );
