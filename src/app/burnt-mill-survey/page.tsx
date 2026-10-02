@@ -1,17 +1,16 @@
 import type {Metadata} from 'next';
-import {Footer, SiteHeader} from '@/components/SiteHeader';
+import {Footer} from '@/components/SiteHeader';
 import {SurveyForm} from './SurveyForm';
 import styles from './BurntMillSurvey.module.css';
 
 export const metadata: Metadata = {
-  title: 'Burnt Mill Creek Disc Golf Course Community Survey | Team Clash',
+  title: 'Burnt Mill Creek Disc Golf Course Community Survey',
   description: 'Community input survey about a possible permanent public disc golf course at Burnt Mill Creek in Wilmington, North Carolina.',
 };
 
 export default function BurntMillSurveyPage() {
   return (
     <>
-      <SiteHeader />
       <main className={styles.page}>
         <section className={styles.hero}>
           <div className={styles.heroInner}>
