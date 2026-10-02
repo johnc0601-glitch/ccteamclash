@@ -78,7 +78,9 @@ function AvailabilityPlayerRow({player}: {player: TeamAttendanceMember}) {
   return (
     <div className={v1.previewPlayer}>
       <strong>{player.playerName}</strong>
-      <span className={v1.playerMeta}>{status}</span>
+      <span className={v1.playerMeta}>
+        {player.borrowed ? `Borrowed · ${player.originalTeamName ?? 'League'} · ` : ''}{status}
+      </span>
     </div>
   );
 }
