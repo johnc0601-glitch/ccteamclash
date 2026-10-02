@@ -503,11 +503,19 @@
 }
 
 .captainStatusButton {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
   border: 1px solid var(--cc-card-border);
-  border-radius: 5px;
+  border-radius: 6px;
   background: var(--cc-card-bg);
   color: var(--cc-muted);
+  font-size: 17px;
   font-weight: 950;
+  line-height: 1;
   cursor: pointer;
   transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, color 120ms ease;
 }
