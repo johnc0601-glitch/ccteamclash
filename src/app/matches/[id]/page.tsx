@@ -10,18 +10,18 @@ import {MatchdayInfoStrip, type MatchdayAttendanceTotals} from '@/components/mat
 import {MatchCourseInfo} from '@/components/matches/MatchCourseInfo';
 import {MatchTeamStats} from '@/components/matches/MatchTeamStats';
 import {PersonalAttendanceCard} from '@/components/matches/PersonalAttendanceCard';
-import {CaptainRosterPanel} from '@/components/matches/CaptainRosterPanel';
 import {CommissionerRosterUnlockPanel} from '@/components/matches/CommissionerRosterUnlockPanel';
 import {OfficialRosterExportPanel} from '@/components/matches/OfficialRosterExportPanel';
 import {createServerResultsService} from '@/core/createServerResultsService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
+import {loadCachedPublicMatchRoster, type CachedPublicMatchRoster} from '@/core/loadCachedPublicMatchRoster';
 import {SupabaseCourseRepository} from '@/domain/course/SupabaseCourseRepository';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
-import type {AttendanceActor, TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
+import type {AttendanceActor, PersonalAttendance, TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import type {OfficialRosterExport} from '@/domain/match-roster/MatchRosterExport';
 import {MatchRosterService} from '@/domain/match-roster/MatchRosterService';
-import {isMatchAttendanceOpen, isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
+import {isMatchAttendanceOpen, isMatchRosterLocked, isPlayerAttendanceOpen} from '@/domain/match-roster/MatchRosterLock';
 import type {OfficialMatchRoster, OfficialSnapshotState} from '@/domain/match-roster/MatchRosterSnapshot';
 import {parseMatchRosterSnapshotStartAt, snapshotErrorClass} from '@/domain/match-roster/MatchRosterSnapshotAutomation';
 import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
@@ -39,11 +39,8 @@ const ROSTER_CORRECTION_STATUSES = new Set(['Scheduled', 'Postponed', 'Rain Dela
 type MatchdayPageProps = {
   params: Promise<{id: string}>;
   searchParams: Promise<{
-    manage?: string | string[];
     attendanceNotice?: string | string[];
     attendanceError?: string | string[];
-    captainNotice?: string | string[];
-    captainError?: string | string[];
     commissionerNotice?: string | string[];
     commissionerError?: string | string[];
     feedNotice?: string | string[];
@@ -83,15 +80,20 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const locked = isMatchRosterLocked(match, now);
   const availabilityOpen = !locked && isMatchAttendanceOpen(match, now);
   const teamIds = [match.homeTeamId, match.awayTeamId];
-  const [rosterPlayerIdsByTeam, teamResults, course] = await Promise.all([
-    getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds, matchId),
+  const [publicRoster, lockedRosterPlayerIdsByTeam, teamResults, course] = await Promise.all([
+    locked ? Promise.resolve(undefined) : loadCachedPublicMatchRoster(matchId, match.seasonId, teamIds),
+    locked ? getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds, matchId) : Promise.resolve(undefined),
     Promise.all(teamIds.map((teamId) => launchRepository.getTeam(teamId))),
     courseRepository.getById(match.courseId),
   ]);
+  const rosterPlayerIdsByTeam = locked
+    ? lockedRosterPlayerIdsByTeam
+    : publicRoster
+      ? new Map(publicRoster.rosterByTeam.map(({teamId, playerIds}) => [teamId, new Set(playerIds)]))
+      : null;
   const rosterUnavailable = !locked && rosterPlayerIdsByTeam === null;
   const effectiveRosterIds = rosterPlayerIdsByTeam ?? new Map([[match.homeTeamId, new Set<string>()], [match.awayTeamId, new Set<string>()]]);
-  const matchPlayerIds = locked ? [] : [...new Set([...effectiveRosterIds.values()].flatMap((ids) => [...ids]))];
-  const players = locked ? [] : await getPlayersByIds(supabase, matchPlayerIds);
+  const players = locked ? [] : publicRoster?.players ?? [];
   const teams = teamResults.filter((team): team is NonNullable<typeof team> => Boolean(team));
   const courses = course ? [course] : [];
 
@@ -105,8 +107,8 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     '--match-home': homeColor,
   };
 
-  const availability = availabilityOpen && !rosterUnavailable ? await getPublicAvailability(supabase, matchId, matchday) : undefined;
-  const availabilityUnavailable = availabilityOpen && availability === null;
+  const availability = availabilityOpen && publicRoster ? buildPublicAvailability(publicRoster, matchday) : undefined;
+  const availabilityUnavailable = availabilityOpen && publicRoster === null;
 
   let officialSnapshot: OfficialSnapshotState | undefined;
   if (locked) {
@@ -129,22 +131,16 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     ? await getLockedAvailability(supabase, matchId, teamIds, officialSnapshot.rosters, effectiveRosterIds)
     : undefined;
 
-  const attendanceRepository = new SupabaseMatchRosterRepository(supabase);
-  const actor = userId ? await attendanceRepository.getAttendanceActor(userId) : undefined;
+  const actor = userId ? await matchRosterRepository.getAttendanceActor(userId, matchId) : undefined;
   const openUnlockTeamIds = locked ? await getOpenRosterUnlockTeamIds(supabase, matchId) : new Set<string>();
-
-  const personalAttendance = !locked && userId ? await matchRosterService.getPersonalAttendance(userId, matchId) : undefined;
-  let managedRosters = userId && readParam(query.manage) === 'roster'
-    ? await matchRosterService.getManagedTeamRosters(userId, matchId)
-    : [];
-  if (locked) {
-    const allowedTeamId = actor?.profileRole === 'Captain' && actor.captainTeamId && openUnlockTeamIds.has(actor.captainTeamId)
-      ? actor.captainTeamId
-      : undefined;
-    managedRosters = allowedTeamId
-      ? managedRosters.filter((roster) => roster.teamId === allowedTeamId).map((roster) => ({...roster, attendanceOpen: true}))
-      : [];
-  }
+  const personalAttendance = !locked ? await getPersonalAttendance(matchRosterRepository, actor, match, now) : undefined;
+  const canManageRoster = Boolean(
+    personalAttendance
+    && actor?.profileStatus === 'Approved'
+    && actor.profileRole === 'Captain'
+    && actor.captainTeamId
+    && actor.captainTeamId === personalAttendance.teamId
+  );
 
   const lockedControls = locked && officialSnapshot?.status === 'complete'
     ? resolveLockedControls(actor, match, officialSnapshot.rosters)
@@ -176,15 +172,11 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
           {publishedResult ? <MatchScoreboard matchday={matchday} result={publishedResult} contests={contests} /> : null}
 
           {personalAttendance ? (
-            <PersonalAttendanceCard attendance={personalAttendance} notice={readParam(query.attendanceNotice)} error={readParam(query.attendanceError)} />
-          ) : null}
-
-          {managedRosters.length ? (
-            <CaptainRosterPanel
-              rosters={managedRosters}
-              teamNames={{[matchday.awayTeam.id]: matchday.awayTeam.name, [matchday.homeTeam.id]: matchday.homeTeam.name}}
-              notice={readParam(query.captainNotice)}
-              error={readParam(query.captainError)}
+            <PersonalAttendanceCard
+              attendance={personalAttendance}
+              canManageRoster={canManageRoster}
+              notice={readParam(query.attendanceNotice)}
+              error={readParam(query.attendanceError)}
             />
           ) : null}
 
@@ -261,20 +253,52 @@ async function getOpenRosterUnlockTeamIds(supabase: Awaited<ReturnType<typeof cr
   return new Set((data ?? []).map((row: {team_id: string}) => row.team_id));
 }
 
-async function getPublicAvailability(supabase: Awaited<ReturnType<typeof createClient>>, matchId: string, matchday: PublicMatchday): Promise<Map<string, TeamAttendanceMember[]> | null> {
-  const teamIds = [matchday.awayTeam.id, matchday.homeTeam.id];
-  const attendanceClient = supabase as any;
-  const {data, error} = await attendanceClient.from('launch_match_attendance').select('team_id,player_id,status').eq('match_id', matchId).in('team_id', teamIds);
-  if (error) {
-    console.error('Public match availability is unavailable.', {matchId, error: error.message});
-    return null;
-  }
-  const statuses = new Map<string, TeamAttendanceMember['status']>((data ?? []).map((row: {player_id: string; status: string}) => [row.player_id, row.status as TeamAttendanceMember['status']]));
+function buildPublicAvailability(
+  roster: CachedPublicMatchRoster,
+  matchday: PublicMatchday,
+): Map<string, TeamAttendanceMember[]> {
+  const statuses = new Map(
+    roster.attendance.map((row) => [row.playerId, row.status] as const),
+  );
   const availability = new Map<string, TeamAttendanceMember[]>();
+
   for (const team of [matchday.awayTeam, matchday.homeTeam]) {
-    availability.set(team.id, team.roster.map((player) => ({playerId: player.id, playerName: player.name, teamId: team.id, status: statuses.get(player.id) ?? 'Unconfirmed'})));
+    availability.set(team.id, team.roster.map((player) => ({
+      playerId: player.id,
+      playerName: player.name,
+      teamId: team.id,
+      status: statuses.get(player.id) ?? 'Unconfirmed',
+    })));
   }
+
   return availability;
+}
+
+async function getPersonalAttendance(
+  repository: SeasonAwareMatchRosterRepository,
+  actor: AttendanceActor | undefined,
+  match: Match,
+  now: Date,
+): Promise<PersonalAttendance | undefined> {
+  if (
+    !actor
+    || actor.profileStatus !== 'Approved'
+    || !actor.playerId
+    || !actor.playerName
+    || !actor.teamId
+    || !actor.playerActive
+    || (actor.teamId !== match.homeTeamId && actor.teamId !== match.awayTeamId)
+  ) return undefined;
+
+  const attendance = await repository.getAttendance(match.id, actor.playerId);
+  return {
+    matchId: match.id,
+    playerId: actor.playerId,
+    playerName: actor.playerName,
+    teamId: actor.teamId,
+    status: attendance?.status ?? 'Unconfirmed',
+    attendanceOpen: isPlayerAttendanceOpen(match, now),
+  };
 }
 
 async function getPlayersByIds(supabase: Awaited<ReturnType<typeof createClient>>, playerIds: string[]): Promise<LaunchPlayer[]> {

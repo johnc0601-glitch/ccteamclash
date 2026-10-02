@@ -1,7 +1,8 @@
 'use server';
 
-import {revalidatePath} from 'next/cache';
+import {revalidatePath, revalidateTag} from 'next/cache';
 import {redirect} from 'next/navigation';
+import {publicMatchRosterTag} from '@/core/loadCachedPublicMatchRoster';
 import {PlayerAvailabilityService} from '@/domain/match-roster/PlayerAvailabilityService';
 import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
 import {createClient} from '@/lib/supabase/server';
@@ -45,6 +46,7 @@ export async function setClubhouseAttendance(formData: FormData) {
     if (!result.ok) redirect(`/clubhouse?error=${encodeURIComponent(result.message)}`);
   }
 
+  revalidateTag(publicMatchRosterTag(matchId), 'max');
   revalidatePath('/clubhouse');
   redirect('/clubhouse?notice=Availability updated.');
 }

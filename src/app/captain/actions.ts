@@ -230,6 +230,7 @@ async function reviewTeamApplication(formData: FormData, status: 'Approved' | 'R
 }
 
 function revalidateRosterCaches() {
+  revalidateTag('public:match-rosters', 'max');
   revalidateTag('public:players', 'max');
   revalidateTag('public:stats', 'max');
   revalidateTag('public:teams', 'max');

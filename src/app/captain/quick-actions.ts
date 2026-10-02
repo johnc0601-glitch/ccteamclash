@@ -1,5 +1,6 @@
 'use server';
 
+import {revalidateTag} from 'next/cache';
 import {createClient} from '@/lib/supabase/server';
 
 type QuickReviewInput = {
@@ -49,6 +50,7 @@ export async function reviewTeamApplicationInline(input: QuickReviewInput): Prom
   );
 
   if (reviewError) return {ok: false, error: reviewError.message};
+  revalidateTag('public:match-rosters', 'max');
   return {ok: true};
 }
 
@@ -99,6 +101,7 @@ export async function approveTeamApplicationsInline(inputs: BulkApprovalInput[])
     .filter((result): result is {applicationId: string; error: string} => Boolean(result.error))
     .map((result) => ({applicationId: result.applicationId, error: result.error}));
 
+  if (approvedIds.length) revalidateTag('public:match-rosters', 'max');
   return {ok: errors.length === 0, approvedIds, errors};
 }
 

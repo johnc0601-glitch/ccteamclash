@@ -121,7 +121,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
             <article className={styles.row} key={event.id}>
               <div className={styles.matchHeading}><strong>vs {event.opponent}</strong><span className={styles.sideLabel}>{event.isHome ? 'Home' : 'Away'}</span></div>
               <span className={styles.muted}>{event.date} / {event.time}</span><span className={styles.muted}>{event.course}</span>
-              <Link href={`${event.href}?manage=roster`}>Manage Match Roster</Link>
+              <Link href={`/captain/matches/${encodeURIComponent(event.id)}/roster`} prefetch={false}>Manage Match Roster</Link>
             </article>
           )) : <p className={styles.empty}>No upcoming matches are posted for your team yet.</p>}</div>
         </section>
@@ -213,8 +213,9 @@ async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: Ca
     if (!profile.captainTeamId) return {ok: false, message: 'No captain team has been assigned yet.'};
 
     const scheduleService = await createServerScheduleService();
-    const [baseTeam, players, events, activeSeason, branding] = await Promise.all([
-      repository.getTeam(profile.captainTeamId), repository.getPlayers(), scheduleService.getTeamEvents(profile.captainTeamId),
+    const [baseTeam, events, activeSeason, branding] = await Promise.all([
+      repository.getTeam(profile.captainTeamId),
+      scheduleService.getTeamEvents(profile.captainTeamId),
       supabase.from('launch_seasons').select('id, name, start_date').eq('active', true).eq('published', true).order('year', {ascending: false}).limit(1).maybeSingle(),
       (supabase as any).from('launch_teams').select('logo, primary_color, secondary_color').eq('id', profile.captainTeamId).maybeSingle(),
     ]);
@@ -243,7 +244,32 @@ async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: Ca
     const pendingApplications = pendingRows.map((application): TeamApplication => ({id: application.id, profileId: application.profile_id, displayName: profileNames.get(application.profile_id) ?? 'Unknown player', playerType: application.player_type, gender: application.gender, createdAt: application.created_at}));
     const memberships = (membershipRows ?? []) as SeasonMembershipRow[];
     const membershipByPlayer = new Map(memberships.map((membership) => [membership.player_id, membership.roster_category]));
-    const roster = players.filter((player) => player.active && membershipByPlayer.has(player.id)).map((player): CaptainRosterPlayer => ({...player, rosterCategory: membershipByPlayer.get(player.id) ?? 'Men'}));
+    const rosterPlayerIds = [...membershipByPlayer.keys()];
+    const {data: rosterRows, error: rosterError} = rosterPlayerIds.length
+      ? await launchSupabase
+        .from('launch_players')
+        .select('id,name,gender,pdga_number,pdga_rating,pdga_rating_effective_date,clash_index,clash_index_provisional,current_team_id,home_area,active,created_at,updated_at')
+        .in('id', rosterPlayerIds)
+        .eq('active', true)
+        .order('name')
+      : {data: [], error: null};
+    if (rosterError) throw rosterError;
+    const roster = (rosterRows ?? []).map((player: any): CaptainRosterPlayer => ({
+      id: player.id,
+      name: player.name,
+      gender: player.gender,
+      pdgaNumber: player.pdga_number,
+      pdgaRating: player.pdga_rating,
+      pdgaRatingEffectiveDate: player.pdga_rating_effective_date,
+      clashIndex: player.clash_index ?? null,
+      clashIndexProvisional: player.clash_index_provisional ?? false,
+      currentTeamId: player.current_team_id,
+      homeArea: player.home_area,
+      active: player.active,
+      createdAt: player.created_at,
+      updatedAt: player.updated_at,
+      rosterCategory: membershipByPlayer.get(player.id) ?? 'Men',
+    }));
     return {ok: true, team, roster, events: events.filter((event) => event.homeTeamId === team.id || event.awayTeamId === team.id), pendingApplications, season};
   } catch {return {ok: false, message: 'Captain Home could not load right now.'};}
 }

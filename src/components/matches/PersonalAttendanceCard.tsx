@@ -1,44 +1,20 @@
 import Link from 'next/link';
 import type {PersonalAttendance} from '@/domain/match-roster/MatchAttendance';
-import {PlayerAvailabilityService} from '@/domain/match-roster/PlayerAvailabilityService';
-import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
 import {setOwnPlayerAvailability} from '@/app/matches/[id]/playerAvailabilityActions';
-import {createClient} from '@/lib/supabase/server';
 import styles from '@/app/matches/[id]/Matchday.module.css';
 
-export async function PersonalAttendanceCard({
+export function PersonalAttendanceCard({
   attendance,
+  canManageRoster = false,
   notice,
   error,
 }: {
   attendance: PersonalAttendance;
+  canManageRoster?: boolean;
   notice?: string;
   error?: string;
 }) {
-  let current = attendance;
-  let canManageRoster = false;
-
-  try {
-    const supabase = await createClient();
-    const {data: {user}} = await supabase.auth.getUser();
-    if (user) {
-      const repository = new SeasonAwareMatchRosterRepository(supabase);
-      const [refreshed, actor] = await Promise.all([
-        new PlayerAvailabilityService(repository).getPersonalAttendance(user.id, attendance.matchId),
-        repository.getAttendanceActor(user.id),
-      ]);
-      if (refreshed) current = refreshed;
-      canManageRoster = Boolean(
-        actor?.profileStatus === 'Approved'
-        && actor.profileRole === 'Captain'
-        && actor.captainTeamId
-        && actor.captainTeamId === current.teamId
-      );
-    }
-  } catch {
-    // Keep the parent-provided status if the refresh is unavailable.
-  }
-
+  const current = attendance;
   const yesSelected = current.status === 'Playing';
   const noSelected = current.status === 'NotPlaying';
   const selectedBox = '0 0 0 3px var(--cc-heading)';
@@ -95,7 +71,8 @@ export async function PersonalAttendanceCard({
         </form>
         {canManageRoster ? (
           <Link
-            href="?manage=roster"
+            href={`/captain/matches/${encodeURIComponent(current.matchId)}/roster`}
+            prefetch={false}
             style={{
               alignItems: 'center',
               border: '1px solid var(--cc-teal)',

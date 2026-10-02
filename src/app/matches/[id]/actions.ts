@@ -1,7 +1,8 @@
 'use server';
 
-import {revalidatePath} from 'next/cache';
+import {revalidatePath, revalidateTag} from 'next/cache';
 import {redirect} from 'next/navigation';
+import {publicMatchRosterTag} from '@/core/loadCachedPublicMatchRoster';
 import {MatchRosterService} from '@/domain/match-roster/MatchRosterService';
 import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
 import type {AttendanceResult, PersonalAttendance} from '@/domain/match-roster/MatchAttendance';
@@ -29,6 +30,7 @@ export async function setOwnMatchAttendance(formData: FormData) {
   }
   if (!result.ok) redirect(`${path}?attendanceError=${encodeURIComponent(result.message)}`);
 
+  revalidateTag(publicMatchRosterTag(matchId), 'max');
   revalidatePath(path);
   redirect(`${path}?attendanceNotice=${encodeURIComponent('Your availability was saved.')}`);
 }
@@ -40,18 +42,19 @@ export async function setCaptainMatchAttendance(formData: FormData) {
   if (!matchId || !playerId) redirect('/captain?error=Match and player are required.');
 
   const {service, userId, matchHref} = await getMatchRosterService(matchId);
-  const path = `${matchHref}?manage=roster`;
+  const path = `/captain/matches/${encodeURIComponent(matchId)}/roster`;
   let result: AttendanceResult<ManagedTeamRoster>;
   try {
     result = await service.setTeamAttendance(userId, matchId, playerId, status);
   } catch {
-    redirect(`${path}&captainError=${encodeURIComponent('Player attendance could not be saved.')}`);
+    redirect(`${path}?captainError=${encodeURIComponent('Player attendance could not be saved.')}`);
   }
-  if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirect(`${path}?captainError=${encodeURIComponent(result.message)}`);
 
+  revalidateTag(publicMatchRosterTag(matchId), 'max');
   revalidatePath(`/matches/${matchId}`);
   revalidatePath(matchHref);
-  redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was updated.')}`);
+  redirect(`${path}?captainNotice=${encodeURIComponent('Player availability was updated.')}`);
 }
 
 export async function clearCaptainMatchAttendance(formData: FormData) {
@@ -60,14 +63,14 @@ export async function clearCaptainMatchAttendance(formData: FormData) {
   if (!matchId || !playerId) redirect('/captain?error=Match and player are required.');
 
   const {service, userId, supabase, matchHref} = await getMatchRosterService(matchId);
-  const path = `${matchHref}?manage=roster`;
+  const path = `/captain/matches/${encodeURIComponent(matchId)}/roster`;
   const managedRosters = await service.getManagedTeamRosters(userId, matchId);
   const authorizedRoster = managedRosters.find((roster) => (
     roster.attendanceOpen
     && roster.players.some((player) => player.playerId === playerId)
   ));
   if (!authorizedRoster) {
-    redirect(`${path}&captainError=${encodeURIComponent('That player cannot be reset for this match.')}`);
+    redirect(`${path}?captainError=${encodeURIComponent('That player cannot be reset for this match.')}`);
   }
 
   try {
@@ -80,12 +83,13 @@ export async function clearCaptainMatchAttendance(formData: FormData) {
       .eq('player_id', playerId);
     if (error) throw error;
   } catch {
-    redirect(`${path}&captainError=${encodeURIComponent('Player attendance could not be reset.')}`);
+    redirect(`${path}?captainError=${encodeURIComponent('Player attendance could not be reset.')}`);
   }
 
+  revalidateTag(publicMatchRosterTag(matchId), 'max');
   revalidatePath(`/matches/${matchId}`);
   revalidatePath(matchHref);
-  redirect(`${path}&captainNotice=${encodeURIComponent('Player availability was reset to unconfirmed.')}`);
+  redirect(`${path}?captainNotice=${encodeURIComponent('Player availability was reset to unconfirmed.')}`);
 }
 
 export async function confirmCaptainMatchRoster(formData: FormData) {
@@ -94,19 +98,20 @@ export async function confirmCaptainMatchRoster(formData: FormData) {
   if (!matchId || !teamId) redirect('/captain?error=Match and team are required.');
 
   const {service, userId, matchHref} = await getMatchRosterService(matchId);
-  const path = `${matchHref}?manage=roster`;
+  const path = `/captain/matches/${encodeURIComponent(matchId)}/roster`;
   let result: AttendanceResult<ManagedTeamRoster>;
   try {
     result = await service.confirmTeamRoster(userId, matchId, teamId);
   } catch {
-    redirect(`${path}&captainError=${encodeURIComponent('The roster could not be confirmed.')}`);
+    redirect(`${path}?captainError=${encodeURIComponent('The roster could not be confirmed.')}`);
   }
-  if (!result.ok) redirect(`${path}&captainError=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirect(`${path}?captainError=${encodeURIComponent(result.message)}`);
 
+  revalidateTag(publicMatchRosterTag(matchId), 'max');
   revalidatePath(`/matches/${matchId}`);
   revalidatePath(matchHref);
   revalidatePath('/captain');
-  redirect(`${path}&captainNotice=${encodeURIComponent('Match roster confirmed.')}`);
+  redirect(`${path}?captainNotice=${encodeURIComponent('Match roster confirmed.')}`);
 }
 
 export async function addCommissionerSnapshotPlayer(formData: FormData) {
@@ -123,19 +128,20 @@ async function runCommissionerSnapshotAction(formData: FormData, operation: 'add
   const playerId = readFormValue(formData, 'playerId');
   if (!matchId || !teamId || !playerId) redirect('/schedule?error=Match, team, and player are required.');
   const {service, userId, matchHref} = await getMatchRosterService(matchId);
-  const path = `${matchHref}?manage=roster`;
+  const path = `/captain/matches/${encodeURIComponent(matchId)}/roster`;
   let result: AttendanceResult<OfficialMatchRoster>;
   try {
     result = operation === 'add'
       ? await service.commissionerAddSnapshotPlayer(userId, matchId, teamId, playerId)
       : await service.commissionerRemoveSnapshotPlayer(userId, matchId, teamId, playerId);
   } catch {
-    redirect(`${path}&commissionerError=${encodeURIComponent('Official roster correction could not be saved.')}`);
+    redirect(`${path}?commissionerError=${encodeURIComponent('Official roster correction could not be saved.')}`);
   }
-  if (!result.ok) redirect(`${path}&commissionerError=${encodeURIComponent(result.message)}`);
+  if (!result.ok) redirect(`${path}?commissionerError=${encodeURIComponent(result.message)}`);
+  revalidateTag(publicMatchRosterTag(matchId), 'max');
   revalidatePath(`/matches/${matchId}`);
   revalidatePath(matchHref);
-  redirect(`${path}&commissionerNotice=${encodeURIComponent(operation === 'add' ? 'Player added to the official roster.' : 'Player removed from the official roster.')}`);
+  redirect(`${path}?commissionerNotice=${encodeURIComponent(operation === 'add' ? 'Player added to the official roster.' : 'Player removed from the official roster.')}`);
 }
 
 async function getMatchRosterService(matchId: string) {
