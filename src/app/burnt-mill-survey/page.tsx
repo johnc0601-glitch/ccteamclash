@@ -20,7 +20,14 @@ export default function BurntMillSurveyPage() {
             aria-label="View Burnt Mill Creek Clash Gold and Clash Blue layouts on UDisc"
           >
             <span className={styles.udiscTopLine}>
-              <span className={styles.udiscName}>UDisc Layouts</span>
+              <span className={styles.udiscBrand}>
+                <img
+                  className={styles.udiscLogo}
+                  src="https://d1q6yb84lp43gi.cloudfront.net/logos2021/full/OW_UDisc%2BWordmark%2B500h.png"
+                  alt="UDisc"
+                />
+                <span className={styles.udiscLabel}>Layouts</span>
+              </span>
               <span className={styles.udiscBadge}>Course maps</span>
             </span>
             <span className={styles.udiscBottomLine}>
