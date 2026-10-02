@@ -31,6 +31,16 @@ create index launch_match_roster_loans_player_idx
   on public.launch_match_roster_loans(player_id)
   where removed_at is null;
 
+create index launch_match_roster_loans_original_team_idx
+  on public.launch_match_roster_loans(original_team_id);
+
+create index launch_match_roster_loans_added_by_idx
+  on public.launch_match_roster_loans(added_by);
+
+create index launch_match_roster_loans_removed_by_idx
+  on public.launch_match_roster_loans(removed_by)
+  where removed_by is not null;
+
 alter table public.launch_match_roster_loans enable row level security;
 revoke all on table public.launch_match_roster_loans from anon, authenticated;
 grant select on table public.launch_match_roster_loans to anon, authenticated;
