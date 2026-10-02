@@ -4,7 +4,6 @@ import type {OfficialMatchRoster, OfficialSnapshotState} from '@/domain/match-ro
 import type {PublicMatchday} from '@/services/matches/MatchdayService';
 import type {LazyRosterPlayer} from '@/app/matches/[id]/publicRosterActions';
 import {getStoredTeamById} from '@/services/teams/TeamStore';
-import {createClient} from '@/lib/supabase/server';
 import {LazyActiveRosterCard} from '@/components/matches/LazyActiveRosterCard';
 import {LazyAvailabilityRosterCard} from '@/components/matches/LazyAvailabilityRosterCard';
 import {LockedRosterPair} from '@/components/matches/LockedRosterPair';
@@ -44,10 +43,9 @@ export async function MatchRosterBoard({
   if (official?.status === 'complete') {
     const away = findRoster(official.rosters, matchday.awayTeam.id);
     const home = findRoster(official.rosters, matchday.homeTeam.id);
-    const [awayStoredTeam, homeStoredTeam, borrowedLabels] = await Promise.all([
+    const [awayStoredTeam, homeStoredTeam] = await Promise.all([
       getStoredTeamById(matchday.awayTeam.id),
       getStoredTeamById(matchday.homeTeam.id),
-      getBorrowedRosterLabels(matchday.id),
     ]);
 
     return (
@@ -61,20 +59,14 @@ export async function MatchRosterBoard({
             label: 'Away',
             logo: matchday.awayTeam.logo,
             accent: awayStoredTeam?.primaryColor,
-            players: away.players.map((player) => ({
-              name: player.playerNameSnapshot,
-              meta: borrowedLabels.get(player.playerId),
-            })),
+            players: away.players.map((player) => player.playerNameSnapshot),
           }}
           home={{
             name: home.teamNameSnapshot,
             label: 'Home',
             logo: matchday.homeTeam.logo,
             accent: homeStoredTeam?.primaryColor,
-            players: home.players.map((player) => ({
-              name: player.playerNameSnapshot,
-              meta: borrowedLabels.get(player.playerId),
-            })),
+            players: home.players.map((player) => player.playerNameSnapshot),
           }}
         />
       </section>
@@ -166,37 +158,4 @@ function toLazyRosterPlayer(player: LaunchPlayer): LazyRosterPlayer {
     clashIndex: player.clashIndex ?? null,
     clashIndexProvisional: player.clashIndexProvisional === true,
   };
-}
-
-
-async function getBorrowedRosterLabels(matchId: string): Promise<Map<string, string>> {
-  try {
-    const supabase = await createClient();
-    const {data, error} = await (supabase as any)
-      .from('launch_match_roster_loans')
-      .select('player_id,original_team_id')
-      .eq('match_id', matchId)
-      .is('removed_at', null);
-    if (error || !data?.length) return new Map();
-
-    const originalTeamIds = [...new Set(
-      data
-        .map((row: {original_team_id?: string}) => row.original_team_id)
-        .filter((teamId: string | undefined): teamId is string => Boolean(teamId)),
-    )];
-    const teams = await Promise.all(originalTeamIds.map((teamId) => getStoredTeamById(teamId)));
-    const names = new Map<string, string>();
-    for (const team of teams) {
-      if (team) names.set(team.id, team.name);
-    }
-
-    return new Map<string, string>(
-      data.map((row: {player_id: string; original_team_id: string}) => [
-        row.player_id,
-        `Borrowed · ${names.get(row.original_team_id) ?? 'League'}`,
-      ] as const),
-    );
-  } catch {
-    return new Map();
-  }
 }
