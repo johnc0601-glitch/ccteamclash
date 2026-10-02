@@ -6,17 +6,12 @@ import v1 from '@/app/matches/[id]/MatchdayV1.module.css';
 const PREVIEW_COUNT = 5;
 
 // Locked rosters expand in place so the team cards remain the single source of truth.
-type LockedRosterPlayer = {
-  name: string;
-  meta?: string;
-};
-
 type LockedRosterTeam = {
   name: string;
   label: 'Away' | 'Home';
   logo?: string;
   accent?: string;
-  players: LockedRosterPlayer[];
+  players: string[];
 };
 
 export function LockedRosterPair({away, home}: {away: LockedRosterTeam; home: LockedRosterTeam}) {
@@ -60,11 +55,8 @@ function LockedRosterCard({team, expanded}: {team: LockedRosterTeam; expanded: b
         <span>{team.label}</span>
       </div>
       <div className={v1.previewList}>
-        {visible.length ? visible.map((player, index) => (
-          <div className={v1.previewPlayer} key={`${player.name}-${index}`}>
-            <strong>{player.name}</strong>
-            {player.meta ? <span className={v1.playerMeta}>{player.meta}</span> : null}
-          </div>
+        {visible.length ? visible.map((name, index) => (
+          <div className={v1.previewPlayer} key={`${name}-${index}`}><strong>{name}</strong></div>
         )) : (
           <div className={v1.previewPlayer}><span className={v1.previewMore}>No players listed yet</span></div>
         )}
