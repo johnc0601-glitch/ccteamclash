@@ -185,17 +185,16 @@ async function getBorrowedRosterLabels(matchId: string): Promise<Map<string, str
         .filter((teamId: string | undefined): teamId is string => Boolean(teamId)),
     )];
     const teams = await Promise.all(originalTeamIds.map((teamId) => getStoredTeamById(teamId)));
-    const names = new Map(
-      teams
-        .filter((team): team is NonNullable<typeof team> => Boolean(team))
-        .map((team) => [team.id, team.name]),
-    );
+    const names = new Map<string, string>();
+    for (const team of teams) {
+      if (team) names.set(team.id, team.name);
+    }
 
-    return new Map(
+    return new Map<string, string>(
       data.map((row: {player_id: string; original_team_id: string}) => [
         row.player_id,
         `Borrowed · ${names.get(row.original_team_id) ?? 'League'}`,
-      ]),
+      ] as const),
     );
   } catch {
     return new Map();
