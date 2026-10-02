@@ -109,7 +109,7 @@ export async function returnRosteredPlayerToCommissioner(formData: FormData) {
   revalidatePath('/players');
   revalidatePath('/account');
   revalidatePath('/teams');
-  redirect(`/captain?notice=${encodeURIComponent('Player removed from your roster and sent to the commissioner for review.')}`);
+  redirect(`/captain?notice=${encodeURIComponent('Player removed from your roster.')}`);
 }
 
 export async function saveTeamAppearance(formData: FormData) {
