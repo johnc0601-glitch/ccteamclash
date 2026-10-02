@@ -188,7 +188,7 @@ as $
         or loan.borrowing_team_id <> target_team_id
       )
   );
-$;
+$$;
 
 revoke all on function private.is_launch_player_committed_elsewhere_on_date(text, text, text)
 from public, anon, authenticated;
