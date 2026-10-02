@@ -146,6 +146,17 @@
   line-height: 1;
 }
 
+.historical small {
+  display: block;
+  margin-top: 6px;
+  color: var(--match-muted);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
 .empty {
   margin: 0;
   padding: 18px;
