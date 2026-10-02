@@ -1,5 +1,4 @@
 import type {Metadata} from 'next';
-import {Footer} from '@/components/SiteHeader';
 import {SurveyForm} from './SurveyForm';
 import styles from './BurntMillSurvey.module.css';
 
@@ -70,7 +69,6 @@ export default function BurntMillSurveyPage() {
           </aside>
         </div>
       </main>
-      <Footer />
     </>
   );
 }
