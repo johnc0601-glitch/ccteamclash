@@ -7,7 +7,7 @@ import {hasSupabaseConfig} from '@/lib/supabase/config';
 
 type HeaderRole = 'commissioner' | 'captain' | null;
 
-type HeaderAccessState = {
+export type HeaderAccessState = {
   isSignedIn: boolean;
   role: HeaderRole;
   canCaptainManage: boolean;
@@ -34,6 +34,18 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
     const supabase = createClient();
     const db = supabase as any;
     let mounted = true;
+
+    const refreshServerAccess = async () => {
+      try {
+        const response = await fetch('/api/header-access', {cache: 'no-store'});
+        if (!response.ok) return false;
+        const nextAccess = await response.json() as HeaderAccessState;
+        if (mounted) setAccess(nextAccess);
+        return true;
+      } catch {
+        return false;
+      }
+    };
 
     const applySession = async (session: {user?: {id?: string}} | null) => {
       const userId = session?.user?.id;
@@ -143,10 +155,19 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
 
     window.addEventListener('clubhouse-read', handleClubhouseRead);
 
-    void supabase.auth.getSession().then(({data}) => applySession(data.session));
+    // The header must agree with server-rendered protected pages. Reading access
+    // through the server also works when the browser client has not hydrated its
+    // Supabase session yet (for example, immediately after a server-side sign-in).
+    void refreshServerAccess().then((loaded) => {
+      if (!loaded) void supabase.auth.getSession().then(({data}) => applySession(data.session));
+    });
 
     const {data: listener} = supabase.auth.onAuthStateChange((_event, session) => {
-      window.setTimeout(() => void applySession(session), 0);
+      window.setTimeout(() => {
+        void refreshServerAccess().then((loaded) => {
+          if (!loaded) void applySession(session);
+        });
+      }, 0);
     });
 
     return () => {
