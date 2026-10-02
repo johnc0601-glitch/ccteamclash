@@ -205,6 +205,7 @@ export function StatsTable({group, groupOptions, initialView, fullRowCount, team
                   <Link
                     className={`${styles.playerLink}${teamPillStyle ? ` ${styles.teamPlayerLink}` : ''}`}
                     href={`/players?player=${encodeURIComponent(row.playerId)}`}
+                    prefetch={false}
                     style={teamPillStyle}
                     title={row.currentTeamName ? `Current team: ${row.currentTeamName}` : undefined}
                     aria-label={row.currentTeamName ? `${row.playerName}, current team ${row.currentTeamName}` : undefined}
