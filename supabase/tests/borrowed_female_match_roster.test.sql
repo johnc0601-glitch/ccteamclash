@@ -1,6 +1,8 @@
 begin;
 
-select plan(9);
+create temporary table tap_diagnostics(result text);
+grant select, insert on table tap_diagnostics to anon, authenticated;
+insert into tap_diagnostics select plan(9);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -51,7 +53,7 @@ insert into public.launch_schedule_matches(
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '21000000-0000-0000-0000-000000000001', true);
 
-select is(
+insert into tap_diagnostics select is(
   (select count(*)::integer
    from public.captain_list_borrowable_females('borrow-female-target-match', 'dark-knights')
    where player_id = 'borrow-female-player'),
@@ -69,7 +71,7 @@ insert into public.launch_match_attendance(
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '21000000-0000-0000-0000-000000000001', true);
 
-select is(
+insert into tap_diagnostics select is(
   (select count(*)::integer
    from public.captain_list_borrowable_females('borrow-female-target-match', 'dark-knights')
    where player_id = 'borrow-female-player'
@@ -79,7 +81,7 @@ select is(
   'same-date player becomes borrowable after being marked NotPlaying for her team'
 );
 
-select is(
+insert into tap_diagnostics select is(
   (select count(*)::integer
    from public.captain_list_borrowable_females('borrow-female-target-match', 'dark-knights')
    where player_id = 'borrow-male-player'),
@@ -87,7 +89,7 @@ select is(
   'male players are never offered by the borrowed female picker'
 );
 
-select lives_ok(
+insert into tap_diagnostics select lives_ok(
   $$select public.captain_borrow_female_for_match(
       'borrow-female-target-match',
       'dark-knights',
@@ -96,7 +98,7 @@ select lives_ok(
   'captain can borrow a confirmed-available rostered female'
 );
 
-select is(
+insert into tap_diagnostics select is(
   (select original_team_id
    from public.launch_match_roster_loans
    where match_id = 'borrow-female-target-match'
@@ -107,13 +109,13 @@ select is(
   'loan preserves the players permanent team identity'
 );
 
-select is(
+insert into tap_diagnostics select is(
   (select current_team_id from public.launch_players where id = 'borrow-female-player'),
   'cougar-country',
   'borrowing does not change launch_players.current_team_id'
 );
 
-select lives_ok(
+insert into tap_diagnostics select lives_ok(
   $$select public.captain_save_match_roster_availability_batch(
       'borrow-female-target-match',
       'dark-knights',
@@ -122,7 +124,7 @@ select lives_ok(
   'borrowed player uses the normal captain attendance and round availability save'
 );
 
-select is(
+insert into tap_diagnostics select is(
   (select concat_ws(
       ':',
       attendance.team_id,
@@ -140,7 +142,7 @@ select is(
   'borrowed player is stored under the borrowing team with S/D availability'
 );
 
-select lives_ok(
+insert into tap_diagnostics select lives_ok(
   $$select public.captain_remove_borrowed_female_from_match(
       'borrow-female-target-match',
       'dark-knights',
@@ -149,5 +151,6 @@ select lives_ok(
   'captain can remove a borrowed player before lock'
 );
 
-select * from finish();
+insert into tap_diagnostics select * from finish();
+select * from tap_diagnostics;
 rollback;
