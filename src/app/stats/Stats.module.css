@@ -29,6 +29,24 @@
   text-underline-offset: 2px;
 }
 
+.captainPlayerSearchLink {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid #b69221;
+  border-radius: 8px;
+  background: #e7c24b;
+  color: #1a1b1b;
+  box-shadow: 0 3px 10px rgba(36, 39, 40, .08);
+}
+
+.captainPlayerSearchLink:hover {
+  background: #efd267;
+  color: #1a1b1b;
+  text-decoration: none;
+}
+
 .pageHeader h1 {
   margin: 4px 0 8px;
   color: #17191a;
@@ -412,6 +430,12 @@
 
   .playerSearchLink {
     margin-bottom: 5px;
+  }
+
+  .captainPlayerSearchLink {
+    min-height: 28px;
+    padding: 0 8px;
+    font-size: 9px;
   }
 
   .archiveNotice {

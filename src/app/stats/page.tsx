@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {StatsTable} from '@/components/stats/StatsTable';
+import {PlayerPortalLink} from '@/components/stats/PlayerPortalLink';
 import {loadServerStatsPageData} from '@/core/loadServerStatsPageData';
 import {redirect} from 'next/navigation';
 import type {StatsGroup, StatsRow} from '@/services/stats/StatsPageModel';
@@ -63,7 +64,7 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
           <span className="eyebrow">League players</span>
           <div className={styles.pageTitleRow}>
             <h1>Players</h1>
-            <Link className={styles.playerSearchLink} href="/players">Find Player →</Link>
+            <PlayerPortalLink />
           </div>
           <p>Player rankings and performance by season or across the full recorded Coastal Clash history.</p>
         </header>
