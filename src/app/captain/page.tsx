@@ -127,7 +127,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
         </section>
 
         <section className={styles.panel}>
-          <header className={styles.panelHeader}><span>Roster</span><h2>{team.name}</h2><p className={styles.muted}>{season?.canEditRegistrations ? 'Tap Edit registration to update player details or remove a player from your roster.' : 'Registration details are locked for this season. Open Roster options to request a removal or reassignment.'}</p></header>
+          <header className={styles.panelHeader}><span>Roster</span><h2>{team.name}</h2><p className={styles.muted}>{season?.canEditRegistrations ? 'Tap Edit registration to update player details or remove a player from your roster.' : 'Registration details are locked, but captains may still remove players. A player removed after the season starts cannot rejoin that season.'}</p></header>
           <div className={styles.list}>{roster.length ? roster.map((player) => (
             <article className={styles.row} key={player.id}>
               <div className={styles.playerIdentity}>
