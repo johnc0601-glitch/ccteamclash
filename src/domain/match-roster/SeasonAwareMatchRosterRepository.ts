@@ -40,18 +40,44 @@ export class SeasonAwareMatchRosterRepository extends SupabaseMatchRosterReposit
     if (!seasonId) return [];
 
     const launchSupabase = this.seasonSupabase as any;
-    const {data: memberships, error: membershipError} = await launchSupabase
-      .from('launch_season_roster_memberships')
-      .select('player_id')
-      .eq('season_id', seasonId)
-      .eq('team_id', teamId)
-      .eq('status', 'Active');
+    const [
+      {data: memberships, error: membershipError},
+      {data: loanRows, error: loanError},
+    ] = await Promise.all([
+      launchSupabase
+        .from('launch_season_roster_memberships')
+        .select('player_id')
+        .eq('season_id', seasonId)
+        .eq('team_id', teamId)
+        .eq('status', 'Active'),
+      launchSupabase
+        .from('launch_match_roster_loans')
+        .select('player_id,original_team_id')
+        .eq('match_id', matchId)
+        .eq('borrowing_team_id', teamId)
+        .is('removed_at', null),
+    ]);
     if (membershipError) throw membershipError;
+    if (loanError) throw loanError;
 
-    const playerIds = (memberships ?? []).map((membership: {player_id: string}) => membership.player_id);
+    const permanentPlayerIds = (memberships ?? []).map((membership: {player_id: string}) => membership.player_id);
+    const borrowedRows = (loanRows ?? []) as Array<{player_id: string; original_team_id: string}>;
+    const playerIds = [...new Set([
+      ...permanentPlayerIds,
+      ...borrowedRows.map((loan) => loan.player_id),
+    ])];
     if (!playerIds.length) return [];
 
-    const [{data: players, error: playerError}, {data: attendanceRows, error: attendanceError}] = await Promise.all([
+    const originalTeamIds = [...new Set(borrowedRows.map((loan) => loan.original_team_id))];
+    const originalTeamsPromise = originalTeamIds.length
+      ? launchSupabase.from('launch_teams').select('id,name').in('id', originalTeamIds)
+      : Promise.resolve({data: [], error: null});
+
+    const [
+      {data: players, error: playerError},
+      {data: attendanceRows, error: attendanceError},
+      {data: originalTeams, error: originalTeamError},
+    ] = await Promise.all([
       this.seasonSupabase
         .from('launch_players')
         .select('id,name')
@@ -63,9 +89,11 @@ export class SeasonAwareMatchRosterRepository extends SupabaseMatchRosterReposit
         .select('player_id,status')
         .eq('match_id', matchId)
         .eq('team_id', teamId),
+      originalTeamsPromise,
     ]);
     if (playerError) throw playerError;
     if (attendanceError) throw attendanceError;
+    if (originalTeamError) throw originalTeamError;
 
     const statuses = new Map<string, MatchAttendanceStatus>(
       (attendanceRows ?? []).map((row: {player_id: string; status: string}) => [
@@ -73,13 +101,27 @@ export class SeasonAwareMatchRosterRepository extends SupabaseMatchRosterReposit
         row.status as MatchAttendanceStatus,
       ]),
     );
+    const originalTeamNames = new Map<string, string>(
+      (originalTeams ?? []).map((team: {id: string; name: string}) => [team.id, team.name]),
+    );
+    const borrowedByPlayer = new Map(
+      borrowedRows.map((loan) => [loan.player_id, loan.original_team_id]),
+    );
 
-    return (players ?? []).map((player) => ({
-      playerId: player.id,
-      playerName: player.name,
-      teamId,
-      status: statuses.get(player.id) ?? 'Unconfirmed',
-    }));
+    return (players ?? []).map((player) => {
+      const originalTeamId = borrowedByPlayer.get(player.id);
+      return {
+        playerId: player.id,
+        playerName: player.name,
+        teamId,
+        status: statuses.get(player.id) ?? 'Unconfirmed',
+        ...(originalTeamId ? {
+          borrowed: true,
+          originalTeamId,
+          originalTeamName: originalTeamNames.get(originalTeamId),
+        } : {}),
+      };
+    });
   }
 
   private async getMatchSeasonId(matchId: string): Promise<string | undefined> {
