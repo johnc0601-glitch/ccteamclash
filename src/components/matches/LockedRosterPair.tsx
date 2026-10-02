@@ -43,14 +43,12 @@ function LockedRosterCard({team}: {team: LockedRosterTeam}) {
         {team.players.length ? team.players.map((player, index) => (
           <div className={v1.previewPlayer} key={`${player.playerName}-${index}`}>
             <span className={v1.playerStatusIdentity}>
-              {player.status === 'Playing' || player.status === 'NotPlaying' ? (
-                <span
-                  className={`${v1.statusLight} ${player.status === 'Playing' ? v1.statusLightPlaying : v1.statusLightNotPlaying}`}
-                  role="img"
-                  aria-label={player.status === 'Playing' ? 'Coming' : 'Not coming'}
-                  title={player.status === 'Playing' ? 'Coming' : 'Not coming'}
-                />
-              ) : <span className={v1.statusLightPlaceholder} aria-hidden="true" />}
+              <span
+                className={`${v1.statusLight} ${player.status === 'Playing' ? v1.statusLightPlaying : v1.statusLightNotPlaying}`}
+                role="img"
+                aria-label={player.status === 'Playing' ? 'Coming' : 'Not coming'}
+                title={player.status === 'Playing' ? 'Coming' : 'Not coming'}
+              />
               <strong>{player.playerName}</strong>
             </span>
           </div>

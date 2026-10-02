@@ -163,7 +163,6 @@ function lockedRosterPlayers(
 
 function attendanceStatusOrder(status: TeamAttendanceMember['status']): number {
   if (status === 'Playing') return 0;
-  if (status === 'NotPlaying') return 2;
   return 1;
 }
 

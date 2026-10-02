@@ -439,12 +439,6 @@
   gap: 8px;
 }
 
-.statusLightPlaceholder {
-  width: 9px;
-  height: 9px;
-  flex: 0 0 9px;
-}
-
 .statusLightPlaying {
   color: #5ee65f;
   background: #5ee65f;
