@@ -458,18 +458,6 @@ begin
   if exists (
     select 1
     from public.launch_schedule_matches own_match
-    join public.launch_match_attendance own_attendance
-      on own_attendance.match_id = own_match.id
-     and own_attendance.player_id = target_player_id
-    where own_match.date = target_match.date
-      and own_match.id <> target_match_id
-      and original_team_id in (own_match.home_team_id, own_match.away_team_id)
-      and own_match.status in ('Scheduled', 'Postponed', 'Rain Delay')
-      and own_attendance.status <> 'NotPlaying'
-  )
-  or exists (
-    select 1
-    from public.launch_schedule_matches own_match
     where own_match.date = target_match.date
       and own_match.id <> target_match_id
       and original_team_id in (own_match.home_team_id, own_match.away_team_id)
