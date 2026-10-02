@@ -34,6 +34,12 @@ type ResultsReadResult<T> =
   | {ok: true; data: T}
   | {ok: false; message: string};
 
+export type ResultRosterPlayer = {
+  id: string;
+  name: string;
+  teamId: string;
+};
+
 export async function loadResultsWorkspace(
   preferredRoundId = '',
 ): Promise<ResultsReadResult<ResultsWorkspace>> {
@@ -104,6 +110,42 @@ export async function loadResultContests(
     return {ok: true, data: await resultsService.getContests(normalizedMatchId)};
   } catch {
     return {ok: false, message: 'Player contests could not be loaded.'};
+  }
+}
+
+export async function loadResultRosterPlayers(
+  matchId: string,
+): Promise<ResultsReadResult<ResultRosterPlayer[]>> {
+  const normalizedMatchId = matchId.trim();
+  if (!normalizedMatchId || normalizedMatchId.length > 200) {
+    return {ok: false, message: 'A valid match is required.'};
+  }
+
+  const access = await getCommissionerAccess();
+  if (!access.ok) return access;
+
+  try {
+    const {data, error} = await (access.supabase as any)
+      .from('launch_match_roster_snapshot_players')
+      .select('team_id,player_id,player_name_snapshot')
+      .eq('match_id', normalizedMatchId)
+      .order('player_name_snapshot');
+    if (error) throw error;
+
+    return {
+      ok: true,
+      data: (data ?? []).map((row: {
+        team_id: string;
+        player_id: string;
+        player_name_snapshot: string;
+      }) => ({
+        id: row.player_id,
+        name: row.player_name_snapshot,
+        teamId: row.team_id,
+      })),
+    };
+  } catch {
+    return {ok: false, message: 'Official match roster could not be loaded.'};
   }
 }
 
