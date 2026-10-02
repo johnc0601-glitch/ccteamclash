@@ -1,4 +1,5 @@
 import {createServerTeamPageServices} from '@/core/createServerTeamPageServices';
+import {loadServerHistoricalTeamFormatStats} from '@/core/loadServerHistoricalTeamFormatStats';
 import {createClient} from '@/lib/supabase/server';
 import type {TeamFormatStatistics, TeamStatistics} from '@/services/statistics/StatisticsTypes';
 import styles from './MatchTeamStats.module.css';
@@ -30,21 +31,22 @@ export async function MatchTeamStats({
     ]);
     if (!services) return null;
 
-    const snapshot = await services.statistics.getMatchdayTeamStatisticsForTeams(
-      [awayTeam.id, homeTeam.id],
-      seasonId,
-      previousSeason?.id,
-    );
+    const teamIds = [awayTeam.id, homeTeam.id];
+    const [currentStatistics, previousByTeam] = await Promise.all([
+      services.statistics.getTeamStatisticsForTeams(teamIds, seasonId),
+      previousSeason
+        ? loadServerHistoricalTeamFormatStats(previousSeason.id, teamIds)
+        : Promise.resolve(new Map<string, TeamFormatStatistics>()),
+    ]);
 
-    const currentByTeam = new Map(snapshot.current.map((entry) => [entry.teamId, entry]));
-    const previousByTeam = new Map(snapshot.previousFormats.map((entry) => [entry.teamId, entry]));
+    const currentByTeam = new Map(currentStatistics.map((entry) => [entry.teamId, entry]));
 
     return (
       <section className={styles.section} aria-labelledby="match-team-stats-heading">
         <header className={styles.header}>
           <span>Season performance</span>
           <h2 id="match-team-stats-heading">Team stats</h2>
-          <p>Current season results plus last season’s team singles and doubles win rates.</p>
+          <p>Current season results plus last season’s archived singles and doubles performance.</p>
         </header>
 
         <div className={styles.grid}>
@@ -104,13 +106,15 @@ function TeamStatCard({
 
       <div className={styles.historyLabel}>{previousLabel}</div>
       <dl className={styles.historical}>
-        <Stat
+        <HistoricalStat
           label="Singles win %"
-          value={hasResults(previous?.singlesRecord) ? formatPercentage(previous?.singlesWinPercentage) : '—'}
+          record={previous?.singlesRecord}
+          percentage={previous?.singlesWinPercentage}
         />
-        <Stat
+        <HistoricalStat
           label="Doubles win %"
-          value={hasResults(previous?.doublesRecord) ? formatPercentage(previous?.doublesWinPercentage) : '—'}
+          record={previous?.doublesRecord}
+          percentage={previous?.doublesWinPercentage}
         />
       </dl>
     </article>
@@ -122,6 +126,25 @@ function Stat({label, value}: {label: string; value: string}) {
     <div>
       <dt>{label}</dt>
       <dd>{value}</dd>
+    </div>
+  );
+}
+
+function HistoricalStat({
+  label,
+  record,
+  percentage,
+}: {
+  label: string;
+  record: {wins: number; losses: number; ties: number} | undefined;
+  percentage: number | undefined;
+}) {
+  const available = hasResults(record);
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{available ? formatPercentage(percentage) : '—'}</dd>
+      {available && record ? <small>{formatRecordSummary(record)}</small> : null}
     </div>
   );
 }
@@ -147,6 +170,11 @@ function compactSeasonName(name: string) {
 
 function hasResults(record: {wins: number; losses: number; ties: number} | undefined) {
   return Boolean(record && record.wins + record.losses + record.ties > 0);
+}
+
+function formatRecordSummary(record: {wins: number; losses: number; ties: number}) {
+  const base = `${record.wins}-${record.losses}`;
+  return record.ties ? `${base}-${record.ties} W-L-T` : `${base} W-L`;
 }
 
 function formatPercentage(value: number | undefined) {
