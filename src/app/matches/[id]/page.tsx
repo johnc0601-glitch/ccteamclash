@@ -302,13 +302,13 @@ async function getPublicAvailability(
     ]),
   );
   const originalTeamNames = new Map<string, string>(
-    (originalTeams ?? []).map((team: {id: string; name: string}) => [team.id, team.name]),
+    (originalTeams ?? []).map((team: {id: string; name: string}) => [team.id, team.name] as const),
   );
   const loans = new Map<string, {teamId: string; originalTeamId: string}>(
     (loanRows ?? []).map((row: {borrowing_team_id: string; player_id: string; original_team_id: string}) => [
       row.player_id,
       {teamId: row.borrowing_team_id, originalTeamId: row.original_team_id},
-    ]),
+    ] as const),
   );
 
   const availability = new Map<string, TeamAttendanceMember[]>();
