@@ -40,16 +40,16 @@ export function SiteHeader() {
             </Link>
 
             <nav className="desktop-nav primary-nav" aria-label="Primary navigation">
-              <Link href="/schedule">Schedule</Link>
-              <Link href="/standings">Standings</Link>
-              <Link href="/stats">Players</Link>
-              <Link href="/teams">Teams</Link>
-              <Link href="/stories">Stories</Link>
-              <Link href="/courses">Courses</Link>
-              <Link href="/history">History</Link>
+              <Link href="/schedule" prefetch={false}>Schedule</Link>
+              <Link href="/standings" prefetch={false}>Standings</Link>
+              <Link href="/stats" prefetch={false}>Players</Link>
+              <Link href="/teams" prefetch={false}>Teams</Link>
+              <Link href="/stories" prefetch={false}>Stories</Link>
+              <Link href="/courses" prefetch={false}>Courses</Link>
+              <Link href="/history" prefetch={false}>History</Link>
               <FacebookLink size={20} />
               <DesktopRoleLinks />
-              <Link className="desktop-account" href="/account">My Profile</Link>
+              <Link className="desktop-account" href="/account" prefetch={false}>My Profile</Link>
             </nav>
 
             <div className="mobile-header-actions">
@@ -74,12 +74,12 @@ export function Footer() {
         </div>
         <p>{FOOTER_COPY}</p>
         <div className="footer-links">
-          <Link href="/schedule">Schedule</Link>
-          <Link href="/standings">Standings</Link>
-          <Link href="/stats">Players</Link>
-          <Link href="/history">History</Link>
-          <Link href="/teams">Teams</Link>
-          <Link href="/courses">Courses</Link>
+          <Link href="/schedule" prefetch={false}>Schedule</Link>
+          <Link href="/standings" prefetch={false}>Standings</Link>
+          <Link href="/stats" prefetch={false}>Players</Link>
+          <Link href="/history" prefetch={false}>History</Link>
+          <Link href="/teams" prefetch={false}>Teams</Link>
+          <Link href="/courses" prefetch={false}>Courses</Link>
           <FacebookLink size={20} />
         </div>
       </div>
