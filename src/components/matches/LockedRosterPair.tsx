@@ -7,6 +7,8 @@ type LockedRosterTeam = {
   label: 'Away' | 'Home';
   logo?: string;
   accent?: string;
+  maleCount: number;
+  femaleCount: number;
   players: Array<Pick<TeamAttendanceMember, 'playerName' | 'status'>>;
 };
 
@@ -35,7 +37,10 @@ function LockedRosterCard({team}: {team: LockedRosterTeam}) {
       <div className={`${v1.previewTeamHead} ${v1.previewTeamHeadColor}`} style={headerStyle}>
         <div className={v1.previewTeamIdentity}>
           {team.logo ? <img src={team.logo} alt={`${team.name} logo`} className={v1.previewTeamLogo} /> : null}
-          <span>{team.name}</span>
+          <span className={v1.lockedRosterTeamText}>
+            <small>M:{team.maleCount} F:{team.femaleCount}</small>
+            <strong>{team.name}</strong>
+          </span>
         </div>
         <span>{team.label}</span>
       </div>

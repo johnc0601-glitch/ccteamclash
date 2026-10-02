@@ -45,6 +45,10 @@ export async function MatchRosterBoard({
   if (official?.status === 'complete') {
     const away = findRoster(official.rosters, matchday.awayTeam.id);
     const home = findRoster(official.rosters, matchday.homeTeam.id);
+    const playerGenders = new Map(
+      [...matchday.awayTeam.roster, ...matchday.homeTeam.roster]
+        .map((player) => [player.id, player.gender] as const),
+    );
     const [awayStoredTeam, homeStoredTeam] = await Promise.all([
       getStoredTeamById(matchday.awayTeam.id),
       getStoredTeamById(matchday.homeTeam.id),
@@ -61,6 +65,7 @@ export async function MatchRosterBoard({
             label: 'Away',
             logo: matchday.awayTeam.logo,
             accent: awayStoredTeam?.primaryColor,
+            ...lockedRosterGenderCounts(away, playerGenders),
             players: lockedRosterPlayers(away, lockedAvailability?.get(away.teamId)),
           }}
           home={{
@@ -68,6 +73,7 @@ export async function MatchRosterBoard({
             label: 'Home',
             logo: matchday.homeTeam.logo,
             accent: homeStoredTeam?.primaryColor,
+            ...lockedRosterGenderCounts(home, playerGenders),
             players: lockedRosterPlayers(home, lockedAvailability?.get(home.teamId)),
           }}
         />
@@ -133,6 +139,21 @@ export async function MatchRosterBoard({
         />
       </div>
     </section>
+  );
+}
+
+function lockedRosterGenderCounts(
+  official: OfficialMatchRoster,
+  genders: ReadonlyMap<string, LaunchPlayer['gender']>,
+) {
+  return official.players.reduce(
+    (counts, player) => {
+      const gender = genders.get(player.playerId);
+      if (gender === 'Male') counts.maleCount += 1;
+      if (gender === 'Female') counts.femaleCount += 1;
+      return counts;
+    },
+    {maleCount: 0, femaleCount: 0},
   );
 }
 

@@ -383,6 +383,26 @@
   white-space: nowrap;
 }
 
+.lockedRosterTeamText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lockedRosterTeamText small {
+  color: rgba(255, 255, 255, .78);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.lockedRosterTeamText strong {
+  color: inherit;
+  font: inherit;
+}
+
 .previewTeamLogo {
   width: 34px;
   height: 34px;
