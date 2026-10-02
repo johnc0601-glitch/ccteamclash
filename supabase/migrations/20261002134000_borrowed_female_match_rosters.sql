@@ -158,7 +158,7 @@ language sql
 stable
 security definer
 set search_path = ''
-as $
+as $$
   with target as (
     select match.date
     from public.launch_schedule_matches match
