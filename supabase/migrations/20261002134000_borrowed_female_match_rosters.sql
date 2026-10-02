@@ -148,7 +148,7 @@ from public, anon, authenticated;
 grant execute on function private.is_launch_player_eligible_for_match_team(text, text, text)
 to authenticated;
 
-create or replace function private.is_launch_player_committed_elsewhere_in_round(
+create or replace function private.is_launch_player_committed_elsewhere_on_date(
   target_match_id text,
   target_player_id text,
   target_team_id text
@@ -158,9 +158,9 @@ language sql
 stable
 security definer
 set search_path = ''
-as $$
+as $
   with target as (
-    select match.round_id
+    select match.date
     from public.launch_schedule_matches match
     where match.id = target_match_id
   )
@@ -168,7 +168,7 @@ as $$
     select 1
     from public.launch_match_attendance attendance
     join public.launch_schedule_matches match on match.id = attendance.match_id
-    join target on target.round_id = match.round_id
+    join target on target.date = match.date
     where attendance.player_id = target_player_id
       and attendance.status = 'Playing'
       and (
@@ -180,7 +180,7 @@ as $$
     select 1
     from public.launch_match_roster_loans loan
     join public.launch_schedule_matches match on match.id = loan.match_id
-    join target on target.round_id = match.round_id
+    join target on target.date = match.date
     where loan.player_id = target_player_id
       and loan.removed_at is null
       and (
@@ -188,9 +188,9 @@ as $$
         or loan.borrowing_team_id <> target_team_id
       )
   );
-$$;
+$;
 
-revoke all on function private.is_launch_player_committed_elsewhere_in_round(text, text, text)
+revoke all on function private.is_launch_player_committed_elsewhere_on_date(text, text, text)
 from public, anon, authenticated;
 
 create or replace function private.validate_launch_match_attendance()
@@ -223,13 +223,13 @@ begin
   end if;
 
   if new.status = 'Playing'
-     and private.is_launch_player_committed_elsewhere_in_round(
+     and private.is_launch_player_committed_elsewhere_on_date(
        new.match_id,
        new.player_id,
        new.team_id
      )
   then
-    raise exception 'Player is already committed to another team in this round.' using errcode = '23514';
+    raise exception 'Player is already committed to another team on this date.' using errcode = '23514';
   end if;
 
   if tg_op = 'UPDATE' then
@@ -273,7 +273,7 @@ begin
     )
   limit 1;
 
-  select match.id, match.season_id, match.round_id, match.home_team_id, match.away_team_id, match.status
+  select match.id, match.season_id, match.date, match.home_team_id, match.away_team_id, match.status
   into target_match
   from public.launch_schedule_matches match
   where match.id = target_match_id;
@@ -319,7 +319,7 @@ begin
   left join lateral (
     select match.id
     from public.launch_schedule_matches match
-    where match.round_id = target_match.round_id
+    where match.date = target_match.date
       and match.id <> target_match_id
       and membership.team_id in (match.home_team_id, match.away_team_id)
       and match.status in ('Scheduled', 'Postponed', 'Rain Delay')
@@ -333,13 +333,14 @@ begin
     and membership.team_id <> target_team_id
     and membership.team_id <> target_match.home_team_id
     and membership.team_id <> target_match.away_team_id
+    and (own_match.id is null or own_attendance.status = 'NotPlaying')
     and not exists (
       select 1
       from public.launch_match_roster_loans loan
       join public.launch_schedule_matches loan_match on loan_match.id = loan.match_id
       where loan.player_id = membership.player_id
         and loan.removed_at is null
-        and loan_match.round_id = target_match.round_id
+        and loan_match.date = target_match.date
     )
     and not exists (
       select 1
@@ -347,7 +348,7 @@ begin
       join public.launch_schedule_matches attendance_match on attendance_match.id = attendance.match_id
       where attendance.player_id = membership.player_id
         and attendance.status = 'Playing'
-        and attendance_match.round_id = target_match.round_id
+        and attendance_match.date = target_match.date
     )
   order by team.name, player.name;
 end;
@@ -383,7 +384,7 @@ begin
     )
   limit 1;
 
-  select match.id, match.season_id, match.round_id, match.home_team_id, match.away_team_id, match.status
+  select match.id, match.season_id, match.date, match.home_team_id, match.away_team_id, match.status
   into target_match
   from public.launch_schedule_matches match
   where match.id = target_match_id
@@ -440,7 +441,7 @@ begin
     join public.launch_schedule_matches loan_match on loan_match.id = loan.match_id
     where loan.player_id = target_player_id
       and loan.removed_at is null
-      and loan_match.round_id = target_match.round_id
+      and loan_match.date = target_match.date
   )
   or exists (
     select 1
@@ -448,10 +449,41 @@ begin
     join public.launch_schedule_matches attendance_match on attendance_match.id = attendance.match_id
     where attendance.player_id = target_player_id
       and attendance.status = 'Playing'
-      and attendance_match.round_id = target_match.round_id
+      and attendance_match.date = target_match.date
   )
   then
-    raise exception 'That player is already committed in this round.' using errcode = '23514';
+    raise exception 'That player is already committed on this match date.' using errcode = '23514';
+  end if;
+
+  if exists (
+    select 1
+    from public.launch_schedule_matches own_match
+    join public.launch_match_attendance own_attendance
+      on own_attendance.match_id = own_match.id
+     and own_attendance.player_id = target_player_id
+    where own_match.date = target_match.date
+      and own_match.id <> target_match_id
+      and original_team_id in (own_match.home_team_id, own_match.away_team_id)
+      and own_match.status in ('Scheduled', 'Postponed', 'Rain Delay')
+      and own_attendance.status <> 'NotPlaying'
+  )
+  or exists (
+    select 1
+    from public.launch_schedule_matches own_match
+    where own_match.date = target_match.date
+      and own_match.id <> target_match_id
+      and original_team_id in (own_match.home_team_id, own_match.away_team_id)
+      and own_match.status in ('Scheduled', 'Postponed', 'Rain Delay')
+      and not exists (
+        select 1
+        from public.launch_match_attendance own_attendance
+        where own_attendance.match_id = own_match.id
+          and own_attendance.player_id = target_player_id
+          and own_attendance.status = 'NotPlaying'
+      )
+  )
+  then
+    raise exception 'That player is not confirmed available on this match date.' using errcode = '23514';
   end if;
 
   insert into public.launch_match_roster_loans(
