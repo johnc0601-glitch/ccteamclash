@@ -439,6 +439,18 @@
   white-space: nowrap;
 }
 
+.previewGrid .availabilityPlaying {
+  color: #5ee65f;
+}
+
+.previewGrid .availabilityNotPlaying {
+  color: #ff666b;
+}
+
+.previewGrid .availabilityUnconfirmed {
+  color: var(--cc-muted);
+}
+
 .rosterToggle {
   width: 100%;
   min-height: 48px;

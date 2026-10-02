@@ -75,10 +75,15 @@ function AvailabilityPlayerRow({player}: {player: TeamAttendanceMember}) {
     : player.status === 'NotPlaying'
       ? 'Not playing'
       : 'Unconfirmed';
+  const statusClass = player.status === 'Playing'
+    ? v1.availabilityPlaying
+    : player.status === 'NotPlaying'
+      ? v1.availabilityNotPlaying
+      : v1.availabilityUnconfirmed;
   return (
     <div className={v1.previewPlayer}>
       <strong>{player.playerName}</strong>
-      <span className={v1.playerMeta}>
+      <span className={`${v1.playerMeta} ${statusClass}`}>
         {player.borrowed ? `Borrowed · ${player.originalTeamName ?? 'League'} · ` : ''}{status}
       </span>
     </div>
