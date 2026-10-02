@@ -17,6 +17,122 @@ type BatchChange = {
   doublesAvailable: boolean;
 };
 
+export type BorrowableFemaleCandidate = {
+  playerId: string;
+  playerName: string;
+  originalTeamId: string;
+  originalTeamName: string;
+  clashIndex: number | null;
+  availabilityStatus: string;
+};
+
+export async function loadBorrowableFemaleCandidates(
+  matchId: string,
+  teamId: string,
+): Promise<{ok: true; players: BorrowableFemaleCandidate[]} | {ok: false; message: string}> {
+  const cleanMatchId = cleanId(matchId);
+  const cleanTeamId = cleanId(teamId);
+  if (!cleanMatchId || !cleanTeamId) return {ok: false, message: 'Available women could not be loaded.'};
+
+  try {
+    const {context} = await getManagementNavigation(cleanMatchId);
+    if (!context || !context.teamIds.includes(cleanTeamId)) {
+      return {ok: false, message: 'You cannot manage borrowed players for this roster.'};
+    }
+
+    const {data, error} = await (context.supabase as any).rpc('captain_list_borrowable_females', {
+      target_match_id: cleanMatchId,
+      target_team_id: cleanTeamId,
+    });
+    if (error) throw error;
+
+    return {
+      ok: true,
+      players: (data ?? []).map((row: any) => ({
+        playerId: String(row.player_id),
+        playerName: typeof row.player_name === 'string' ? row.player_name : '',
+        originalTeamId: String(row.original_team_id),
+        originalTeamName: typeof row.original_team_name === 'string' ? row.original_team_name : '',
+        clashIndex: typeof row.clash_index === 'number' ? row.clash_index : null,
+        availabilityStatus: typeof row.availability_status === 'string' ? row.availability_status : 'Unconfirmed',
+      })),
+    };
+  } catch (error) {
+    console.error('Borrowable female roster candidates could not be loaded.', {
+      matchId: cleanMatchId,
+      teamId: cleanTeamId,
+      errorClass: error instanceof Error ? error.name : 'UnknownError',
+    });
+    return {ok: false, message: 'Available women could not be loaded. Try again.'};
+  }
+}
+
+export async function borrowFemaleForMatch(formData: FormData) {
+  const matchId = readFormValue(formData, 'matchId');
+  const teamId = readFormValue(formData, 'teamId');
+  const playerId = readFormValue(formData, 'playerId');
+  if (!matchId || !teamId || !playerId) redirect('/captain?error=Match, team, and player are required.');
+
+  const {publicMatchPath, path, context} = await getManagementNavigation(matchId);
+  if (!context || !context.teamIds.includes(teamId)) {
+    redirect(`${path}&captainError=${encodeURIComponent('You cannot manage borrowed players for this roster.')}`);
+  }
+
+  try {
+    const {error} = await (context.supabase as any).rpc('captain_borrow_female_for_match', {
+      target_match_id: matchId,
+      target_team_id: teamId,
+      target_player_id: playerId,
+    });
+    if (error) throw error;
+  } catch (error) {
+    console.error('Borrowed female roster add failed.', {
+      matchId,
+      teamId,
+      playerId,
+      errorClass: error instanceof Error ? error.name : 'UnknownError',
+    });
+    redirect(`${path}&captainError=${encodeURIComponent('That player could not be borrowed for this match.')}`);
+  }
+
+  revalidatePath(publicMatchPath);
+  revalidatePath('/captain');
+  redirect(`${path}&captainNotice=${encodeURIComponent('Borrowed player added to this match roster.')}`);
+}
+
+export async function removeBorrowedFemaleFromMatch(formData: FormData) {
+  const matchId = readFormValue(formData, 'matchId');
+  const teamId = readFormValue(formData, 'teamId');
+  const playerId = readFormValue(formData, 'playerId');
+  if (!matchId || !teamId || !playerId) redirect('/captain?error=Match, team, and player are required.');
+
+  const {publicMatchPath, path, context} = await getManagementNavigation(matchId);
+  if (!context || !context.teamIds.includes(teamId)) {
+    redirect(`${path}&captainError=${encodeURIComponent('You cannot manage borrowed players for this roster.')}`);
+  }
+
+  try {
+    const {error} = await (context.supabase as any).rpc('captain_remove_borrowed_female_from_match', {
+      target_match_id: matchId,
+      target_team_id: teamId,
+      target_player_id: playerId,
+    });
+    if (error) throw error;
+  } catch (error) {
+    console.error('Borrowed female roster removal failed.', {
+      matchId,
+      teamId,
+      playerId,
+      errorClass: error instanceof Error ? error.name : 'UnknownError',
+    });
+    redirect(`${path}&captainError=${encodeURIComponent('Borrowed player could not be removed.')}`);
+  }
+
+  revalidatePath(publicMatchPath);
+  revalidatePath('/captain');
+  redirect(`${path}&captainNotice=${encodeURIComponent('Borrowed player removed from this match roster.')}`);
+}
+
 export async function saveCaptainRosterAvailabilityBatch(formData: FormData) {
   const matchId = readFormValue(formData, 'matchId');
   const teamId = readFormValue(formData, 'teamId');
@@ -221,6 +337,10 @@ function toRpcChanges(changes: BatchChange[]) {
     singles_available: change.singlesAvailable,
     doubles_available: change.doublesAvailable,
   }));
+}
+
+function cleanId(value: string): string {
+  return typeof value === 'string' ? value.trim().slice(0, 160) : '';
 }
 
 function readFormValue(formData: FormData, key: string): string {
