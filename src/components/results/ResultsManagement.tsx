@@ -3,9 +3,11 @@
 import {useMemo, useState} from 'react';
 import {
   loadResultContests,
+  loadResultRosterPlayers,
   loadResultsRound,
   loadResultsWorkspace,
   saveOfficeResult,
+  type ResultRosterPlayer,
 } from '@/app/office/results/actions';
 import type {Course} from '@/domain/course/Course';
 import type {
@@ -64,6 +66,7 @@ export function ResultsManagement({
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [contests, setContests] = useState<ResultContestInput[]>([]);
+  const [officialRosterPlayers, setOfficialRosterPlayers] = useState<ResultRosterPlayer[]>([]);
 
   async function load(preferredRoundId?: string) {
     const workspace = await loadResultsWorkspace(preferredRoundId || roundId);
@@ -100,13 +103,23 @@ export function ResultsManagement({
     setAwayScore(result?.awayScore === null || result?.awayScore === undefined ? '' : String(result.awayScore));
     setFieldErrors({});
     setMessage('');
-    const contestResult = await loadResultContests(match.id);
+    const [contestResult, rosterResult] = await Promise.all([
+      loadResultContests(match.id),
+      loadResultRosterPlayers(match.id),
+    ]);
     if (!contestResult.ok) {
       setContests([]);
+      setOfficialRosterPlayers([]);
       setMessage(contestResult.message);
       return;
     }
     setContests(contestResult.data.map(toContestInput));
+    if (rosterResult.ok) {
+      setOfficialRosterPlayers(rosterResult.data);
+    } else {
+      setOfficialRosterPlayers([]);
+      setMessage(rosterResult.message);
+    }
   }
 
   async function save(action: 'draft' | 'publish' | 'reopen') {
@@ -147,6 +160,22 @@ export function ResultsManagement({
     }
     return grouped;
   }, [initialPlayers]);
+
+  const officialPlayersByTeam = useMemo(() => {
+    const grouped = new Map<string, ResultRosterPlayer[]>();
+    for (const player of officialRosterPlayers) {
+      const rows = grouped.get(player.teamId) ?? [];
+      rows.push(player);
+      grouped.set(player.teamId, rows);
+    }
+    return grouped;
+  }, [officialRosterPlayers]);
+
+  function resultPlayersForTeam(teamId: string | null): Array<{id: string; name: string}> {
+    if (!teamId) return [];
+    const official = officialPlayersByTeam.get(teamId);
+    return official?.length ? official : playersByTeam.get(teamId) ?? [];
+  }
 
   function addContest(format: ResultContestFormat) {
     if (!editor?.match.homeTeamId || !editor.match.awayTeamId) return;
@@ -280,7 +309,7 @@ export function ResultsManagement({
                           onChange={(event) => updatePlayer(contestIndex, side, slot, event.target.value)}
                         >
                           <option value="">Select player</option>
-                          {(teamId ? playersByTeam.get(teamId) ?? [] : []).map((player) => <option value={player.id} key={player.id}>{player.name}</option>)}
+                          {resultPlayersForTeam(teamId).map((player) => <option value={player.id} key={player.id}>{player.name}</option>)}
                         </select>
                       </label>)}
                     </div>;
