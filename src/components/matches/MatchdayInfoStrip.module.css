@@ -63,6 +63,17 @@
   color: var(--match-muted);
 }
 
+.attendanceTotals .teamTotal {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  color: var(--match-text);
+}
+
+.teamTotal > span {
+  color: var(--match-muted);
+}
+
 .pending {
   color: var(--match-body);
   font-size: 13px;
@@ -97,6 +108,10 @@
   .attendanceTotals {
     gap: 7px;
     font-size: 11px;
+  }
+
+  .attendanceTotals .teamTotal {
+    gap: 7px;
   }
 
   .label {

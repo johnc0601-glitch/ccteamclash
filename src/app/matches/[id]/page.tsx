@@ -150,7 +150,12 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const attendanceTotals = availability
     ? summarizeAttendance(availability)
     : officialSnapshot?.status === 'complete'
-      ? await getLockedAttendanceTotals(supabase, matchId, officialSnapshot.rosters)
+      ? await getLockedAttendanceTotals(
+        supabase,
+        matchId,
+        officialSnapshot.rosters,
+        [matchday.awayTeam.id, matchday.homeTeam.id],
+      )
       : undefined;
 
   return (
@@ -355,9 +360,19 @@ async function getLockedAttendanceTotals(
   supabase: Awaited<ReturnType<typeof createClient>>,
   matchId: string,
   rosters: OfficialMatchRoster[],
+  teamOrder: string[],
 ): Promise<MatchdayAttendanceTotals> {
   const playerIds = rosters.flatMap((roster) => roster.players.map((player) => player.playerId));
-  const totals: MatchdayAttendanceTotals = {yes: 0, no: 0, unconfirmed: playerIds.length};
+  const rosterByTeam = new Map(rosters.map((roster) => [roster.teamId, roster]));
+  const totals: MatchdayAttendanceTotals = {
+    yes: playerIds.length,
+    no: 0,
+    unconfirmed: 0,
+    teams: teamOrder.flatMap((teamId) => {
+      const roster = rosterByTeam.get(teamId);
+      return roster ? [{name: roster.teamNameSnapshot, count: roster.players.length}] : [];
+    }),
+  };
   if (!playerIds.length) return totals;
 
   const {data, error} = await (supabase as any)
@@ -368,6 +383,7 @@ async function getLockedAttendanceTotals(
 
   if (error) return totals;
 
+  totals.yes = 0;
   totals.unconfirmed = playerIds.length;
   for (const row of data ?? []) {
     if (row.status === 'Playing') {

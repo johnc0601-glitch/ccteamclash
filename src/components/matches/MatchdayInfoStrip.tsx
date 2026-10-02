@@ -9,6 +9,7 @@ export type MatchdayAttendanceTotals = {
   yes: number;
   no: number;
   unconfirmed: number;
+  teams?: Array<{name: string; count: number}>;
 };
 
 export function MatchdayInfoStrip({
@@ -32,13 +33,27 @@ export function MatchdayInfoStrip({
       <div className={styles.attendance}>
         <span className={styles.label}>Attendance</span>
         {attendance ? (
-          <div className={styles.attendanceTotals} aria-label={`${attendance.yes} yes, ${attendance.no} no, ${attendance.unconfirmed} unconfirmed`}>
-            <strong>{attendance.yes} Yes</strong>
-            <span>·</span>
-            <strong>{attendance.no} No</strong>
-            <span>·</span>
-            <strong>{attendance.unconfirmed} Unconfirmed</strong>
-          </div>
+          attendance.teams?.length ? (
+            <div
+              className={styles.attendanceTotals}
+              aria-label={attendance.teams.map((team) => `${team.name} ${team.count}`).join(', ')}
+            >
+              {attendance.teams.map((team, index) => (
+                <span className={styles.teamTotal} key={team.name}>
+                  {index ? <span aria-hidden="true">·</span> : null}
+                  <strong>{team.name} {team.count}</strong>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.attendanceTotals} aria-label={`${attendance.yes} yes, ${attendance.no} no, ${attendance.unconfirmed} unconfirmed`}>
+              <strong>{attendance.yes} Yes</strong>
+              <span>·</span>
+              <strong>{attendance.no} No</strong>
+              <span>·</span>
+              <strong>{attendance.unconfirmed} Unconfirmed</strong>
+            </div>
+          )
         ) : (
           <strong className={styles.pending}>Totals pending</strong>
         )}
