@@ -125,6 +125,10 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     }
   }
 
+  const lockedAvailability = locked && officialSnapshot?.status === 'complete'
+    ? await getLockedAvailability(supabase, matchId, teamIds, officialSnapshot.rosters)
+    : undefined;
+
   const attendanceRepository = new SupabaseMatchRosterRepository(supabase);
   const actor = userId ? await attendanceRepository.getAttendanceActor(userId) : undefined;
   const openUnlockTeamIds = locked ? await getOpenRosterUnlockTeamIds(supabase, matchId) : new Set<string>();
@@ -190,6 +194,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             rosterUnavailable={rosterUnavailable}
             availability={availability ?? undefined}
             availabilityUnavailable={availabilityUnavailable}
+            lockedAvailability={lockedAvailability}
           />
 
           <Suspense fallback={null}>
@@ -395,4 +400,37 @@ async function getLockedAttendanceTotals(
     }
   }
   return totals;
+}
+
+async function getLockedAvailability(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  matchId: string,
+  teamIds: string[],
+  rosters: OfficialMatchRoster[],
+): Promise<Map<string, TeamAttendanceMember[]>> {
+  const {data, error} = await (supabase as any)
+    .from('launch_match_attendance')
+    .select('team_id,player_id,status')
+    .eq('match_id', matchId)
+    .in('team_id', teamIds);
+  if (error) return new Map();
+
+  const rows = (data ?? []) as Array<{team_id: string; player_id: string; status: TeamAttendanceMember['status']}>;
+  const officialNames = new Map(
+    rosters.flatMap((roster) => roster.players.map((player) => [player.playerId, player.playerNameSnapshot] as const)),
+  );
+  const players = await getPlayersByIds(supabase, [...new Set(rows.map((row) => row.player_id))]);
+  const names = new Map(players.map((player) => [player.id, player.name]));
+  const availability = new Map(teamIds.map((teamId) => [teamId, [] as TeamAttendanceMember[]]));
+  for (const row of rows) {
+    const playerName = names.get(row.player_id) ?? officialNames.get(row.player_id);
+    if (!playerName) continue;
+    availability.get(row.team_id)?.push({
+      playerId: row.player_id,
+      playerName,
+      teamId: row.team_id,
+      status: row.status,
+    });
+  }
+  return availability;
 }

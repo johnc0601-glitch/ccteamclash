@@ -424,6 +424,25 @@
   border-top: 0;
 }
 
+.statusLight {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  margin-left: auto;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.statusLightPlaying {
+  color: #5ee65f;
+  background: #5ee65f;
+}
+
+.statusLightNotPlaying {
+  color: #ff666b;
+  background: #ff666b;
+}
+
 .expandedRoster .previewPlayer:first-child {
   border-top: 1px solid var(--cc-card-border);
 }
@@ -433,6 +452,27 @@
   color: var(--cc-muted);
   font-size: 12px;
   font-weight: 850;
+}
+
+.previewMoreButton {
+  width: 100%;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.previewMoreButton:hover,
+.previewMoreButton:focus-visible {
+  color: var(--cc-heading);
+  background: color-mix(in srgb, var(--cc-heading) 6%, transparent);
+}
+
+.previewMoreButton:focus-visible {
+  outline: 2px solid var(--cc-teal);
+  outline-offset: -2px;
 }
 
 .playerMeta {

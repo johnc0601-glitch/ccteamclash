@@ -1,6 +1,7 @@
 'use client';
 
 import {useState} from 'react';
+import type {TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import v1 from '@/app/matches/[id]/MatchdayV1.module.css';
 
 const PREVIEW_COUNT = 5;
@@ -11,7 +12,7 @@ type LockedRosterTeam = {
   label: 'Away' | 'Home';
   logo?: string;
   accent?: string;
-  players: string[];
+  players: Array<Pick<TeamAttendanceMember, 'playerName' | 'status'>>;
 };
 
 export function LockedRosterPair({away, home}: {away: LockedRosterTeam; home: LockedRosterTeam}) {
@@ -19,8 +20,8 @@ export function LockedRosterPair({away, home}: {away: LockedRosterTeam; home: Lo
   return (
     <div>
       <div className={v1.previewGrid}>
-        <LockedRosterCard team={away} expanded={expanded} />
-        <LockedRosterCard team={home} expanded={expanded} />
+        <LockedRosterCard team={away} expanded={expanded} onExpand={() => setExpanded(true)} />
+        <LockedRosterCard team={home} expanded={expanded} onExpand={() => setExpanded(true)} />
       </div>
       {(away.players.length > PREVIEW_COUNT || home.players.length > PREVIEW_COUNT) ? (
         <button className={v1.rosterToggle} type="button" onClick={() => setExpanded((value) => !value)} aria-expanded={expanded}>
@@ -32,7 +33,15 @@ export function LockedRosterPair({away, home}: {away: LockedRosterTeam; home: Lo
   );
 }
 
-function LockedRosterCard({team, expanded}: {team: LockedRosterTeam; expanded: boolean}) {
+function LockedRosterCard({
+  team,
+  expanded,
+  onExpand,
+}: {
+  team: LockedRosterTeam;
+  expanded: boolean;
+  onExpand: () => void;
+}) {
   const visible = expanded ? team.players : team.players.slice(0, PREVIEW_COUNT);
   const remaining = Math.max(0, team.players.length - PREVIEW_COUNT);
   const isAway = team.label === 'Away';
@@ -55,13 +64,28 @@ function LockedRosterCard({team, expanded}: {team: LockedRosterTeam; expanded: b
         <span>{team.label}</span>
       </div>
       <div className={v1.previewList}>
-        {visible.length ? visible.map((name, index) => (
-          <div className={v1.previewPlayer} key={`${name}-${index}`}><strong>{name}</strong></div>
+        {visible.length ? visible.map((player, index) => (
+          <div className={v1.previewPlayer} key={`${player.playerName}-${index}`}>
+            <strong>{player.playerName}</strong>
+            <span
+              className={`${v1.statusLight} ${player.status === 'Playing' ? v1.statusLightPlaying : v1.statusLightNotPlaying}`}
+              role="img"
+              aria-label={player.status === 'Playing' ? 'Coming' : 'Not coming'}
+              title={player.status === 'Playing' ? 'Coming' : 'Not coming'}
+            />
+          </div>
         )) : (
           <div className={v1.previewPlayer}><span className={v1.previewMore}>No players listed yet</span></div>
         )}
         {!expanded && remaining > 0 ? (
-          <div className={v1.previewPlayer}><span className={v1.previewMore}>+ {remaining} more</span></div>
+          <button
+            className={`${v1.previewPlayer} ${v1.previewMore} ${v1.previewMoreButton}`}
+            type="button"
+            onClick={onExpand}
+            aria-label={`Show all ${team.players.length} ${team.name} players`}
+          >
+            + {remaining} more
+          </button>
         ) : null}
       </div>
     </article>

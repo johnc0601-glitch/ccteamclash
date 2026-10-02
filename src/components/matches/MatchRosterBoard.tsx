@@ -21,12 +21,14 @@ export async function MatchRosterBoard({
   rosterUnavailable = false,
   availability,
   availabilityUnavailable = false,
+  lockedAvailability,
 }: {
   matchday: PublicMatchday;
   official?: OfficialSnapshotState;
   rosterUnavailable?: boolean;
   availability?: PublicMatchAvailability;
   availabilityUnavailable?: boolean;
+  lockedAvailability?: PublicMatchAvailability;
 }) {
   if (official?.status === 'unavailable') {
     return <Unavailable title="Official roster temporarily unavailable" detail="The match page remains available while the official roster is recovered." />;
@@ -59,14 +61,14 @@ export async function MatchRosterBoard({
             label: 'Away',
             logo: matchday.awayTeam.logo,
             accent: awayStoredTeam?.primaryColor,
-            players: away.players.map((player) => player.playerNameSnapshot),
+            players: lockedRosterPlayers(away, lockedAvailability?.get(away.teamId)),
           }}
           home={{
             name: home.teamNameSnapshot,
             label: 'Home',
             logo: matchday.homeTeam.logo,
             accent: homeStoredTeam?.primaryColor,
-            players: home.players.map((player) => player.playerNameSnapshot),
+            players: lockedRosterPlayers(home, lockedAvailability?.get(home.teamId)),
           }}
         />
       </section>
@@ -132,6 +134,29 @@ export async function MatchRosterBoard({
       </div>
     </section>
   );
+}
+
+function lockedRosterPlayers(
+  official: OfficialMatchRoster,
+  attendance: TeamAttendanceMember[] | undefined,
+) {
+  const players = new Map(
+    (attendance ?? []).map((player) => [player.playerId, {
+      playerName: player.playerName,
+      status: player.status,
+    }]),
+  );
+  for (const player of official.players) {
+    if (!players.has(player.playerId)) {
+      players.set(player.playerId, {
+        playerName: player.playerNameSnapshot,
+        status: 'Playing' as const,
+      });
+    }
+  }
+  return [...players.values()]
+    .filter((player) => player.status === 'Playing' || player.status === 'NotPlaying')
+    .sort((left, right) => left.playerName.localeCompare(right.playerName, 'en', {sensitivity: 'base'}));
 }
 
 function Unavailable({title, detail}: {title: string; detail: string}) {
