@@ -23,8 +23,10 @@ export default function BurntMillSurveyPage() {
               <span className={styles.udiscBrand}>
                 <img
                   className={styles.udiscLogo}
-                  src="https://d1q6yb84lp43gi.cloudfront.net/logos2021/full/OW_UDisc%2BWordmark%2B500h.png"
+                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/UDisc_logo_2021_%28light-on-dark%29.svg"
                   alt="UDisc"
+                  loading="eager"
+                  decoding="async"
                 />
                 <span className={styles.udiscLabel}>Layouts</span>
               </span>
