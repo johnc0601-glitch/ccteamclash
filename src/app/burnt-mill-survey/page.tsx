@@ -44,6 +44,20 @@ export default function BurntMillSurveyPage() {
             <span className={styles.kicker}>Wilmington, North Carolina</span>
             <h1>Burnt Mill Creek Disc Golf Course</h1>
             <p className={styles.heroLead}>Community Interest Survey</p>
+            <a
+              className={styles.proposalCard}
+              href="/documents/disc-golf-proposal-wallace-mary-bridgers-park.pdf"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="View or download the disc golf project proposal PDF"
+            >
+              <span className={styles.proposalBadge}>PDF</span>
+              <span className={styles.proposalCopy}>
+                <strong>Project Proposal</strong>
+                <span>Wallace &amp; Mary Bridgers Park</span>
+              </span>
+              <span className={styles.proposalAction}>View / Download <span aria-hidden="true">›</span></span>
+            </a>
           </div>
         </section>
 

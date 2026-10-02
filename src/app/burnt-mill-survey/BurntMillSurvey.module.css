@@ -146,6 +146,79 @@
   font-weight: 650;
 }
 
+.proposalCard {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: min(520px, 100%);
+  margin-top: 18px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-left: 3px solid var(--cc-gold);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .07);
+  color: #fff;
+  text-decoration: none;
+  transition: background-color .15s ease, border-color .15s ease;
+}
+
+.proposalBadge {
+  display: grid;
+  width: 38px;
+  height: 28px;
+  flex: 0 0 38px;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--cc-gold);
+  color: #111;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.proposalCopy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.proposalCopy strong {
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.proposalCopy span {
+  overflow: hidden;
+  color: rgba(255, 255, 255, .7);
+  font-size: 11px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.proposalAction {
+  flex: 0 0 auto;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.proposalCard:hover,
+.proposalCard:focus-visible {
+  border-color: var(--cc-gold);
+  background: rgba(255, 255, 255, .12);
+}
+
+.proposalCard:focus-visible {
+  outline: 2px solid var(--cc-gold);
+  outline-offset: 3px;
+}
+
 .shell {
   padding: 34px 0 60px;
 }
@@ -464,6 +537,23 @@
 
   .heroInner {
     padding: 34px 4px 32px;
+  }
+
+  .proposalCard {
+    gap: 9px;
+    margin-top: 14px;
+    padding: 9px 10px;
+  }
+
+  .proposalBadge {
+    width: 34px;
+    height: 26px;
+    flex-basis: 34px;
+    font-size: 9px;
+  }
+
+  .proposalAction {
+    font-size: 9px;
   }
 
   .shell {
