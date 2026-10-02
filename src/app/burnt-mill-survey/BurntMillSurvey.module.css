@@ -4,6 +4,89 @@
   color: var(--cc-text);
 }
 
+
+.udiscStrip {
+  padding: 10px 0 12px;
+  background: #090b0c;
+  border-bottom: 1px solid #303538;
+}
+
+.udiscCard {
+  display: flex;
+  width: min(520px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 10px 12px 9px;
+  flex-direction: column;
+  gap: 5px;
+  color: #fff;
+  text-decoration: none;
+  background: rgba(20, 23, 25, .96);
+  border: 1px solid rgba(184, 137, 0, .58);
+  border-left: 3px solid var(--cc-gold);
+  border-radius: 10px;
+  box-shadow: 0 7px 20px rgba(0, 0, 0, .18);
+}
+
+.udiscTopLine,
+.udiscBottomLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.udiscName {
+  color: var(--cc-gold);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.udiscBadge {
+  flex: 0 0 auto;
+  color: var(--cc-gold);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.udiscSubtitle {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, .9);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.udiscAction {
+  flex: 0 0 auto;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.udiscCard:hover,
+.udiscCard:focus-visible {
+  border-color: var(--cc-gold);
+  background: #171a1c;
+}
+
+.udiscCard:focus-visible {
+  outline: 2px solid var(--cc-gold);
+  outline-offset: 3px;
+}
+
 .hero {
   background:
     radial-gradient(circle at 82% 18%, rgba(184, 137, 0, .16), transparent 34%),
@@ -111,15 +194,26 @@
   border-bottom: 0;
 }
 
-.question legend {
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.questionHeading {
   display: flex;
   gap: 12px;
   width: 100%;
-  padding: 0;
   color: var(--cc-text);
   font-size: 1.02rem;
   font-weight: 800;
-  line-height: 1.42;
+  line-height: 1.36;
 }
 
 .questionNumber {
@@ -322,17 +416,60 @@
     width: min(100% - 22px, 920px);
   }
 
+  .udiscStrip {
+    padding: 8px 0 9px;
+  }
+
+  .udiscCard {
+    width: calc(100% - 22px);
+    padding: 8px 10px 7px;
+    gap: 4px;
+    border-radius: 9px;
+  }
+
+  .udiscName {
+    font-size: 13px;
+  }
+
+  .udiscSubtitle {
+    font-size: 11px;
+  }
+
+  .udiscAction {
+    font-size: 10px;
+  }
+
   .heroInner {
-    padding: 40px 4px 38px;
+    padding: 34px 4px 32px;
   }
 
   .shell {
-    padding-top: 22px;
+    padding-top: 14px;
   }
 
   .introCard {
-    padding: 22px 18px;
+    padding: 18px 16px;
+    margin-bottom: 14px;
     border-radius: 14px;
+  }
+
+  .introCard h2 {
+    margin-bottom: 9px;
+  }
+
+  .introCard p {
+    margin-bottom: 9px;
+    line-height: 1.48;
+  }
+
+  .metaRow {
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .metaRow span {
+    padding: 5px 9px;
+    font-size: .76rem;
   }
 
   .form {
@@ -340,18 +477,25 @@
   }
 
   .question {
-    padding: 22px 17px;
+    padding: 16px 14px 18px;
   }
 
-  .question legend {
-    gap: 10px;
-    font-size: .97rem;
+  .questionHeading {
+    gap: 9px;
+    font-size: .92rem;
+    line-height: 1.28;
   }
 
   .questionNumber {
-    flex-basis: 28px;
-    width: 28px;
-    height: 28px;
+    flex-basis: 26px;
+    width: 26px;
+    height: 26px;
+    font-size: .75rem;
+  }
+
+  .required {
+    margin-left: 5px;
+    font-size: .64rem;
   }
 
   .hint,
@@ -362,11 +506,33 @@
   }
 
   .hint {
-    margin-top: 9px;
+    margin-top: 7px;
+    font-size: .8rem;
   }
 
   .optionList {
-    margin-top: 14px;
+    gap: 7px;
+    margin-top: 10px;
+  }
+
+  .option {
+    min-height: 40px;
+    gap: 9px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    font-size: .94rem;
+    line-height: 1.25;
+  }
+
+  .option input {
+    width: 17px;
+    height: 17px;
+    flex-basis: 17px;
+  }
+
+  .textarea,
+  .textInput {
+    margin-top: 10px;
   }
 
   .textarea,
