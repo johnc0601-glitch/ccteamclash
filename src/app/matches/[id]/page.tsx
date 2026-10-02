@@ -251,18 +251,83 @@ async function getOpenRosterUnlockTeamIds(supabase: Awaited<ReturnType<typeof cr
   return new Set((data ?? []).map((row: {team_id: string}) => row.team_id));
 }
 
-async function getPublicAvailability(supabase: Awaited<ReturnType<typeof createClient>>, matchId: string, matchday: PublicMatchday): Promise<Map<string, TeamAttendanceMember[]> | null> {
+async function getPublicAvailability(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  matchId: string,
+  matchday: PublicMatchday,
+): Promise<Map<string, TeamAttendanceMember[]> | null> {
   const teamIds = [matchday.awayTeam.id, matchday.homeTeam.id];
   const attendanceClient = supabase as any;
-  const {data, error} = await attendanceClient.from('launch_match_attendance').select('team_id,player_id,status').eq('match_id', matchId).in('team_id', teamIds);
-  if (error) {
-    console.error('Public match availability is unavailable.', {matchId, error: error.message});
+  const [
+    {data: attendanceRows, error: attendanceError},
+    {data: loanRows, error: loanError},
+  ] = await Promise.all([
+    attendanceClient
+      .from('launch_match_attendance')
+      .select('team_id,player_id,status')
+      .eq('match_id', matchId)
+      .in('team_id', teamIds),
+    attendanceClient
+      .from('launch_match_roster_loans')
+      .select('borrowing_team_id,player_id,original_team_id')
+      .eq('match_id', matchId)
+      .is('removed_at', null)
+      .in('borrowing_team_id', teamIds),
+  ]);
+  if (attendanceError || loanError) {
+    console.error('Public match availability is unavailable.', {
+      matchId,
+      attendanceError: attendanceError?.message,
+      loanError: loanError?.message,
+    });
     return null;
   }
-  const statuses = new Map<string, TeamAttendanceMember['status']>((data ?? []).map((row: {player_id: string; status: string}) => [row.player_id, row.status as TeamAttendanceMember['status']]));
+
+  const originalTeamIds = [...new Set(
+    (loanRows ?? [])
+      .map((row: {original_team_id: string}) => row.original_team_id)
+      .filter(Boolean),
+  )];
+  const {data: originalTeams, error: originalTeamError} = originalTeamIds.length
+    ? await attendanceClient.from('launch_teams').select('id,name').in('id', originalTeamIds)
+    : {data: [], error: null};
+  if (originalTeamError) {
+    console.error('Borrowed player team labels are unavailable.', {matchId, error: originalTeamError.message});
+  }
+
+  const statuses = new Map<string, TeamAttendanceMember['status']>(
+    (attendanceRows ?? []).map((row: {player_id: string; status: string}) => [
+      row.player_id,
+      row.status as TeamAttendanceMember['status'],
+    ]),
+  );
+  const originalTeamNames = new Map<string, string>(
+    (originalTeams ?? []).map((team: {id: string; name: string}) => [team.id, team.name]),
+  );
+  const loans = new Map<string, {teamId: string; originalTeamId: string}>(
+    (loanRows ?? []).map((row: {borrowing_team_id: string; player_id: string; original_team_id: string}) => [
+      row.player_id,
+      {teamId: row.borrowing_team_id, originalTeamId: row.original_team_id},
+    ]),
+  );
+
   const availability = new Map<string, TeamAttendanceMember[]>();
   for (const team of [matchday.awayTeam, matchday.homeTeam]) {
-    availability.set(team.id, team.roster.map((player) => ({playerId: player.id, playerName: player.name, teamId: team.id, status: statuses.get(player.id) ?? 'Unconfirmed'})));
+    availability.set(team.id, team.roster.map((player) => {
+      const loan = loans.get(player.id);
+      const borrowed = loan?.teamId === team.id;
+      return {
+        playerId: player.id,
+        playerName: player.name,
+        teamId: team.id,
+        status: statuses.get(player.id) ?? 'Unconfirmed',
+        ...(borrowed && loan ? {
+          borrowed: true,
+          originalTeamId: loan.originalTeamId,
+          originalTeamName: originalTeamNames.get(loan.originalTeamId),
+        } : {}),
+      };
+    }));
   }
   return availability;
 }
