@@ -5,8 +5,7 @@
     "deploymentEnabled": {
       "*": false,
       "main": true,
-      "preview/integration": true,
-      "matchday-historical-format-stats-20261001": true
+      "preview/integration": true
     }
   }
 }
