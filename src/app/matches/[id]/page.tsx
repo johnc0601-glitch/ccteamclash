@@ -84,7 +84,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const availabilityOpen = !locked && isMatchAttendanceOpen(match, now);
   const teamIds = [match.homeTeamId, match.awayTeamId];
   const [rosterPlayerIdsByTeam, teamResults, course] = await Promise.all([
-    locked ? Promise.resolve(new Map(teamIds.map((teamId) => [teamId, new Set<string>()]))) : getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds),
+    locked ? Promise.resolve(new Map(teamIds.map((teamId) => [teamId, new Set<string>()]))) : getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds, matchId),
     Promise.all(teamIds.map((teamId) => launchRepository.getTeam(teamId))),
     courseRepository.getById(match.courseId),
   ]);
@@ -293,14 +293,44 @@ async function getPlayersByIds(supabase: Awaited<ReturnType<typeof createClient>
   });
 }
 
-async function getSeasonRosterPlayerIdsByTeam(supabase: Awaited<ReturnType<typeof createClient>>, seasonId: string, teamIds: string[]): Promise<Map<string, Set<string>> | null> {
+async function getSeasonRosterPlayerIdsByTeam(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  seasonId: string,
+  teamIds: string[],
+  matchId: string,
+): Promise<Map<string, Set<string>> | null> {
   const rosterPlayerIdsByTeam = new Map(teamIds.map((teamId) => [teamId, new Set<string>()]));
-  const {data, error} = await supabase.from('launch_season_roster_memberships').select('team_id, player_id').eq('season_id', seasonId).eq('status', 'Active').in('team_id', teamIds);
-  if (error) {
-    console.error('Active season roster memberships are unavailable for matchday.', {seasonId, teamIds, error: error.message});
+  const [{data: memberships, error: membershipError}, {data: loans, error: loanError}] = await Promise.all([
+    supabase
+      .from('launch_season_roster_memberships')
+      .select('team_id, player_id')
+      .eq('season_id', seasonId)
+      .eq('status', 'Active')
+      .in('team_id', teamIds),
+    (supabase as any)
+      .from('launch_match_roster_loans')
+      .select('borrowing_team_id,player_id')
+      .eq('match_id', matchId)
+      .is('removed_at', null)
+      .in('borrowing_team_id', teamIds),
+  ]);
+  if (membershipError || loanError) {
+    console.error('Active match roster memberships are unavailable for matchday.', {
+      seasonId,
+      matchId,
+      teamIds,
+      membershipError: membershipError?.message,
+      loanError: loanError?.message,
+    });
     return null;
   }
-  for (const membership of data ?? []) rosterPlayerIdsByTeam.get(membership.team_id)?.add(membership.player_id);
+
+  for (const membership of memberships ?? []) {
+    rosterPlayerIdsByTeam.get(membership.team_id)?.add(membership.player_id);
+  }
+  for (const loan of loans ?? []) {
+    rosterPlayerIdsByTeam.get(loan.borrowing_team_id)?.add(loan.player_id);
+  }
   return rosterPlayerIdsByTeam;
 }
 
