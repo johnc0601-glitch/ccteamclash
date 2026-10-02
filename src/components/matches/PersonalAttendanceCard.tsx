@@ -69,10 +69,7 @@ export async function PersonalAttendanceCard({
             disabled={!current.attendanceOpen}
             name="status"
             style={{
-              background: '#4f7f32',
-              borderColor: '#4f7f32',
               boxShadow: yesSelected ? selectedBox : 'none',
-              color: '#fff',
               minHeight: '44px',
             }}
             type="submit"
@@ -87,10 +84,7 @@ export async function PersonalAttendanceCard({
             disabled={!current.attendanceOpen}
             name="status"
             style={{
-              background: '#b64040',
-              borderColor: '#b64040',
               boxShadow: noSelected ? selectedBox : 'none',
-              color: '#fff',
               minHeight: '44px',
             }}
             type="submit"
