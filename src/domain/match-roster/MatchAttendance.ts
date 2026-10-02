@@ -31,6 +31,9 @@ export type TeamAttendanceMember = {
   playerName: string;
   teamId: string;
   status: MatchAttendanceStatus | 'Unconfirmed';
+  borrowed?: boolean;
+  originalTeamId?: string;
+  originalTeamName?: string;
 };
 
 export type ManagedTeamAttendanceMember = TeamAttendanceMember & {
