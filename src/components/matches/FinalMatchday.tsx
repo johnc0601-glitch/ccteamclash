@@ -168,7 +168,7 @@ function ResultRow({contest}: {contest: FinalMatchContest}) {
       <div className={awayWon ? `${styles.playerSide} ${styles.awayWinner}` : styles.playerSide}>
         {contest.awayPlayers.map((player) => player.name).join(' / ') || '—'}
       </div>
-      <div className={styles.outcome}>{tie ? <span>TIE</span> : <small>{contest.position}</small>}</div>
+      <div className={styles.outcome}>{tie ? <span>TIE</span> : null}</div>
       <div className={homeWon ? `${styles.playerSide} ${styles.homeWinner}` : styles.playerSide}>
         {contest.homePlayers.map((player) => player.name).join(' / ') || '—'}
       </div>
