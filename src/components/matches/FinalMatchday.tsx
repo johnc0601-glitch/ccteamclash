@@ -129,16 +129,32 @@ function ResultRow({contest}: {contest: FinalMatchContest}) {
   const awayWon = contest.awayOutcome === 'W';
   const homeWon = contest.homeOutcome === 'W';
   const tie = contest.awayOutcome === 'T' && contest.homeOutcome === 'T';
+  const pairClass = contest.format === 'Doubles' ? styles.doublesPair : '';
   return (
     <div className={styles.resultRow}>
       <div className={awayWon ? `${styles.playerSide} ${styles.awayWinner}` : styles.playerSide}>
-        {contest.awayPlayers.map((player) => player.name).join(' / ') || '—'}
+        <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
       <div className={styles.outcome}>{tie ? <span>TIE</span> : null}</div>
       <div className={homeWon ? `${styles.playerSide} ${styles.homeWinner}` : styles.playerSide}>
-        {contest.homePlayers.map((player) => player.name).join(' / ') || '—'}
+        <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
       </div>
     </div>
+  );
+}
+
+function PlayerNames({
+  players,
+  pairClass,
+}: {
+  players: FinalMatchContest['awayPlayers'];
+  pairClass: string;
+}) {
+  if (!players.length) return <>—</>;
+  return (
+    <span className={`${styles.playerList} ${pairClass}`}>
+      {players.map((player) => <span className={styles.playerName} key={player.id}>{player.name}</span>)}
+    </span>
   );
 }
 

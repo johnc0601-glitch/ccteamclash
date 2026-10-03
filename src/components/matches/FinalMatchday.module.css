@@ -224,6 +224,19 @@
   text-align: right;
 }
 
+.playerList {
+  display: inline;
+}
+
+.playerName {
+  white-space: nowrap;
+}
+
+.playerName + .playerName::before {
+  content: ' / ';
+  white-space: pre;
+}
+
 .awayWinner,
 .homeWinner {
   color: #fff;
@@ -330,5 +343,19 @@
   .playerSide {
     padding: 6px 7px;
     font-size: 10px;
+  }
+
+  .doublesPair {
+    display: grid;
+    gap: 2px;
+    align-items: center;
+  }
+
+  .doublesPair .playerName + .playerName::before {
+    content: none;
+  }
+
+  .playerSide:last-child .doublesPair {
+    justify-items: end;
   }
 }
