@@ -239,26 +239,12 @@
   font-size: 12px;
 }
 
-.conditions {
-  padding: 14px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+.lockedConditions {
+  grid-template-columns: minmax(0, 1fr) !important;
 }
 
-.conditionsItems {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.conditionsItems > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--cc-heading);
-  font-size: 13px;
+.lockedConditions > div {
+  width: 100%;
 }
 
 @media (max-width: 700px) {
@@ -317,11 +303,4 @@
     font-size: 10px;
   }
 
-  .conditions {
-    padding: 12px 14px;
-  }
-
-  .conditionsItems {
-    gap: 12px;
-  }
 }
