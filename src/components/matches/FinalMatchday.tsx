@@ -25,29 +25,9 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
 
   return (
     <main className={pageStyles.page} style={pageStyle}>
-      <FinalHero snapshot={snapshot} />
+      <FinalHero snapshot={snapshot} singlesTotals={singlesTotals} doublesTotals={doublesTotals} />
       <div className={`shell ${pageStyles.content} ${styles.finalContent}`}>
         <section className={styles.resultsCard} aria-label="Final result breakdown">
-          <div className={styles.compactBreakdown}>
-            <div className={styles.breakdownScores}>
-              <ResultTotal
-                label="Singles"
-                awayTeam={snapshot.awayTeam}
-                homeTeam={snapshot.homeTeam}
-                awayScore={singlesTotals.away}
-                homeScore={singlesTotals.home}
-              />
-              <span className={styles.breakdownDivider} aria-hidden="true">·</span>
-              <ResultTotal
-                label="Doubles"
-                awayTeam={snapshot.awayTeam}
-                homeTeam={snapshot.homeTeam}
-                awayScore={doublesTotals.away}
-                homeScore={doublesTotals.home}
-              />
-            </div>
-          </div>
-
           <ResultDetails title="Singles results" contests={singles} />
           <ResultDetails title="Doubles results" contests={doubles} />
         </section>
@@ -56,7 +36,15 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
   );
 }
 
-function FinalHero({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
+function FinalHero({
+  snapshot,
+  singlesTotals,
+  doublesTotals,
+}: {
+  snapshot: FinalMatchdaySnapshot;
+  singlesTotals: {away: number; home: number};
+  doublesTotals: {away: number; home: number};
+}) {
   return (
     <section className={heroStyles.matchHero} data-matchday-hero>
       <div className={`${heroStyles.heroTeams} ${styles.finalHeroTeams}`}>
@@ -72,11 +60,19 @@ function FinalHero({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
             <div className={styles.scoreCell}>
               <strong>{snapshot.awayScore}</strong>
               <small>{shortTeam(snapshot.awayTeam)}</small>
+              <div className={styles.scoreBreakdown}>
+                <span>S {formatPoint(singlesTotals.away)}</span>
+                <span>D {formatPoint(doublesTotals.away)}</span>
+              </div>
             </div>
             <span className={styles.scoreDivider} aria-hidden="true" />
             <div className={styles.scoreCell}>
               <strong>{snapshot.homeScore}</strong>
               <small>{shortTeam(snapshot.homeTeam)}</small>
+              <div className={styles.scoreBreakdown}>
+                <span>S {formatPoint(singlesTotals.home)}</span>
+                <span>D {formatPoint(doublesTotals.home)}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -107,31 +103,6 @@ function TeamSide({team, side}: {team: FinalMatchTeam; side: 'away' | 'home'}) {
       <strong>{team.name}</strong>
       <span>{side === 'away' ? 'Away' : 'Home'}</span>
     </div>
-  );
-}
-
-function ResultTotal({
-  label,
-  awayTeam,
-  homeTeam,
-  awayScore,
-  homeScore,
-}: {
-  label: string;
-  awayTeam: FinalMatchTeam;
-  homeTeam: FinalMatchTeam;
-  awayScore: number;
-  homeScore: number;
-}) {
-  return (
-    <span className={styles.resultTotal}>
-      <em>{label}</em>
-      <strong>
-        <b>{shortTeam(awayTeam)} {formatPoint(awayScore)}</b>
-        <i>–</i>
-        <b>{formatPoint(homeScore)} {shortTeam(homeTeam)}</b>
-      </strong>
-    </span>
   );
 }
 
