@@ -206,20 +206,9 @@ export function ResultsManagement({
     updateContest(index, {
       homeOutcome,
       awayOutcome: homeOutcome === 'W' ? 'L' : homeOutcome === 'L' ? 'W' : 'T',
+      homeScore: null,
+      awayScore: null,
     });
-  }
-
-  function updateSinglesScore(index: number, side: ResultContestSide, value: string) {
-    const contest = contests[index];
-    const score = parseScore(value);
-    const homeScore = side === 'Home' ? score : contest.homeScore;
-    const awayScore = side === 'Away' ? score : contest.awayScore;
-    const update: Partial<ResultContestInput> = {homeScore, awayScore};
-    if (homeScore !== null && awayScore !== null) {
-      update.homeOutcome = homeScore > awayScore ? 'W' : homeScore < awayScore ? 'L' : 'T';
-      update.awayOutcome = update.homeOutcome === 'W' ? 'L' : update.homeOutcome === 'L' ? 'W' : 'T';
-    }
-    updateContest(index, update);
   }
 
   function updatePlayer(index: number, side: ResultContestSide, slot: 1 | 2, playerId: string) {
@@ -315,15 +304,12 @@ export function ResultsManagement({
                     </div>;
                   })}
                 </div>
-                {contest.format === 'Singles' ? <div className={styles.contestScores}>
-                  <label><span>Home score</span><input disabled={editor.result?.status === 'Published'} type="number" min="0" step="1" value={contest.homeScore ?? ''} onChange={(event) => updateSinglesScore(contestIndex, 'Home', event.target.value)} /></label>
-                  <label><span>Away score</span><input disabled={editor.result?.status === 'Published'} type="number" min="0" step="1" value={contest.awayScore ?? ''} onChange={(event) => updateSinglesScore(contestIndex, 'Away', event.target.value)} /></label>
-                </div> : <label className={styles.outcome}>
+                <label className={styles.outcome}>
                   <span>Home outcome</span>
                   <select disabled={editor.result?.status === 'Published'} value={contest.homeOutcome} onChange={(event) => updateOutcome(contestIndex, event.target.value as ResultContestOutcome)}>
                     <option value="W">Win</option><option value="L">Loss</option><option value="T">Tie</option>
                   </select>
-                </label>}
+                </label>
               </article>
             )) : <p className={styles.emptyContest}>No player contests entered yet. Team-only results remain supported.</p>}
             {fieldErrors.contests ? <p className={styles.contestError}>{fieldErrors.contests}</p> : null}
@@ -357,16 +343,12 @@ function toContestInput(contest: ResultContest): ResultContestInput {
     position: contest.position,
     homeOutcome: contest.homeOutcome,
     awayOutcome: contest.awayOutcome,
-    homeScore: contest.homeScore,
-    awayScore: contest.awayScore,
+    homeScore: null,
+    awayScore: null,
     players: contest.players.map(({playerId, teamId, side, slot}) => ({playerId, teamId, side, slot})),
   };
 }
 
-function parseScore(value: string): number | null {
-  if (!value.trim()) return null;
-  return Number(value);
-}
 
 function formatTime(value: string | null): string {
   if (!value) return 'Time TBD';

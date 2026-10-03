@@ -2,6 +2,7 @@ import {Suspense, type CSSProperties} from 'react';
 import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
+import {FinalMatchday} from '@/components/matches/FinalMatchday';
 import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
@@ -31,6 +32,7 @@ import type {Match} from '@/domain/schedule/Match';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 import {resolveMatchday, type PublicMatchday} from '@/services/matches/MatchdayService';
+import {getFinalMatchdaySnapshot} from '@/services/matches/FinalMatchdaySnapshot';
 import {canViewMatchPrediction} from '@/services/settings/MatchPredictionVisibility';
 import {buildPublicMatchPrediction} from '@/services/teamStrength/PublicMatchPrediction';
 import styles from './Matchday.module.css';
@@ -62,10 +64,22 @@ type LockedControls = {
 export default async function MatchdayPage({params, searchParams}: MatchdayPageProps) {
   const {id: matchId} = await params;
   const query = await searchParams;
-  const [scheduleService, resultsService, supabase] = await Promise.all([
+  const supabase = await createClient();
+  const finalSnapshot = await getFinalMatchdaySnapshot(supabase, matchId);
+
+  if (finalSnapshot) {
+    return (
+      <>
+        <SiteHeader />
+        <FinalMatchday snapshot={finalSnapshot} />
+        <Footer />
+      </>
+    );
+  }
+
+  const [scheduleService, resultsService] = await Promise.all([
     createServerScheduleService(),
     createServerResultsService(),
-    createClient(),
   ]);
   const launchRepository = new SupabaseLaunchRepository(supabase);
   const courseRepository = new SupabaseCourseRepository(supabase);

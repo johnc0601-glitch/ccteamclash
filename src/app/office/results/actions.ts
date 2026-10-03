@@ -5,6 +5,7 @@ import {createServerPlayoffService} from '@/core/createServerPlayoffService';
 import {createServerResultsService} from '@/core/createServerResultsService';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
 import type {Course} from '@/domain/course/Course';
+import {SupabaseCourseRepository} from '@/domain/course/SupabaseCourseRepository';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import type {
@@ -18,6 +19,9 @@ import type {Round} from '@/domain/schedule/Round';
 import type {Schedule} from '@/domain/schedule/Schedule';
 import {createClient} from '@/lib/supabase/server';
 import type {Team} from '@/models/Team';
+import {easternDate} from '@/services/weather/MatchWeather';
+import {getDailyMatchWeather} from '@/services/weather/MatchWeatherServer';
+import {saveFinalMatchdayWeather, type FinalMatchWeather} from '@/services/matches/FinalMatchdaySnapshot';
 
 type ResultsWorkspace = {
   schedules: Schedule[];
@@ -171,6 +175,10 @@ export async function saveOfficeResult(
       : await resultsService.reopen(normalizedMatchId);
   if (!result.ok) return result;
 
+  if (action === 'publish') {
+    await captureFinalMatchdayWeather(access.supabase, normalizedMatchId);
+  }
+
   if (action !== 'draft' && seasonId.trim()) {
     await (await createServerPlayoffService()).getBracket(seasonId.trim());
   }
@@ -206,4 +214,43 @@ function revalidateResultSurfaces(matchId: string) {
   revalidatePath('/teams');
   revalidatePath('/playoffs');
   revalidatePath(`/matches/${encodeURIComponent(matchId)}`);
+}
+
+
+async function captureFinalMatchdayWeather(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  matchId: string,
+) {
+  try {
+    const scheduleService = await createServerScheduleService();
+    const match = await scheduleService.getMatch(matchId);
+    if (!match?.courseId || !match.date) return;
+
+    const course = await new SupabaseCourseRepository(supabase).getById(match.courseId);
+    if (!course?.city || !course.state) return;
+
+    const forecast = await getDailyMatchWeather(course.city, course.state, match.date, easternDate());
+    if (!forecast) return;
+
+    const condition: FinalMatchWeather['condition'] = forecast.condition?.icon === 'storm'
+      ? 'storm'
+      : forecast.condition?.icon === 'rain'
+        ? 'rain'
+        : forecast.condition?.icon === 'sun'
+          ? 'sun'
+          : 'cloudy';
+
+    await saveFinalMatchdayWeather(supabase, matchId, {
+      temperature: forecast.high,
+      condition,
+      wind: forecast.wind,
+      windDirection: forecast.windDirection,
+    });
+  } catch (error) {
+    // Results are canonical even if supplemental weather capture is unavailable.
+    console.error('Final Matchday weather snapshot failed.', {
+      matchId,
+      errorClass: error instanceof Error ? error.name : 'UnknownError',
+    });
+  }
 }

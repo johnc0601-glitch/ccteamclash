@@ -46,7 +46,7 @@ export class ResultsService {
     const existing = await this.repository.getByMatchId(matchId);
     if (existing?.status === 'Published') return this.publishedLock();
     const fieldErrors = this.validateScores(input, false);
-    Object.assign(fieldErrors, this.validateContests(input.contests, false, match.homeTeamId, match.awayTeamId));
+    Object.assign(fieldErrors, this.validateContests(input.contests, match.homeTeamId, match.awayTeamId));
     if (Object.keys(fieldErrors).length) return this.validationFailure(fieldErrors);
     const now = new Date().toISOString();
     const saved = await this.repository.save({
@@ -79,7 +79,7 @@ export class ResultsService {
     }
     const fieldErrors = this.validateScores(input, true);
     const contests = input.contests ?? await this.repository.getContests(matchId);
-    Object.assign(fieldErrors, this.validateContests(contests, true, match.homeTeamId, match.awayTeamId));
+    Object.assign(fieldErrors, this.validateContests(contests, match.homeTeamId, match.awayTeamId));
     if (Object.keys(fieldErrors).length) return this.validationFailure(fieldErrors);
     const now = new Date().toISOString();
     if (input.contests) {
@@ -145,7 +145,6 @@ export class ResultsService {
 
   private validateContests(
     contests: ResultContestInput[] | undefined,
-    requireComplete: boolean,
     homeTeamId: string,
     awayTeamId: string,
   ): ResultsFieldErrors {
@@ -164,15 +163,14 @@ export class ResultsService {
       }
       if (contest.format === 'Singles') {
         const scoresPresent = contest.homeScore !== null && contest.awayScore !== null;
-        if (requireComplete && !scoresPresent) return {contests: 'Enter both singles scores before publishing.'};
         if ((contest.homeScore === null) !== (contest.awayScore === null)) {
-          return {contests: 'Enter both singles scores or leave both blank.'};
+          return {contests: 'Legacy singles scores must be both present or both blank.'};
         }
         if (scoresPresent && (!this.validScore(contest.homeScore!) || !this.validScore(contest.awayScore!))) {
-          return {contests: 'Singles scores must be non-negative whole numbers.'};
+          return {contests: 'Legacy singles scores must be non-negative whole numbers.'};
         }
         if (scoresPresent && this.outcomeFromScores(contest.homeScore!, contest.awayScore!) !== contest.homeOutcome) {
-          return {contests: 'Singles outcome must match the entered scores.'};
+          return {contests: 'Singles outcome must match the legacy score.'};
         }
       } else if (contest.homeScore !== null || contest.awayScore !== null) {
         return {contests: 'Doubles contests use W/L/T only.'};
@@ -207,7 +205,7 @@ export class ResultsService {
   }
 
   private validationFailure(fieldErrors: ResultsFieldErrors): ResultsServiceResult<MatchResult> {
-    return {ok: false, message: 'Review the highlighted scores.', fieldErrors};
+    return {ok: false, message: 'Review the highlighted results.', fieldErrors};
   }
 
   private matchNotFound(): ResultsServiceResult<MatchResult> {
