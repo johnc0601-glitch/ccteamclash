@@ -141,7 +141,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     && officialSnapshot?.status === 'complete'
     && canViewMatchPrediction('CaptainsCommissioner', actor)
   );
-  let matchPrediction: ReturnType<typeof buildPublicMatchPrediction>;
+  let matchPrediction: ReturnType<typeof buildPublicMatchPrediction> = undefined;
 
   if (canViewLockedPrediction && officialSnapshot?.status === 'complete') {
     const homeRoster = officialSnapshot.rosters.find((roster) => roster.teamId === match.homeTeamId);
