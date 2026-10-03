@@ -59,16 +59,20 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
 function FinalHero({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
   return (
     <section className={heroStyles.matchHero} data-matchday-hero>
-      <div className={heroStyles.heroTeams}>
+      <div className={`${heroStyles.heroTeams} ${styles.finalHeroTeams}`}>
         <div className={heroStyles.heroLabel}>
           <span>Team Matchday</span>
           {snapshot.roundNumber ? <strong>Round {snapshot.roundNumber}</strong> : null}
         </div>
 
         <TeamSide team={snapshot.awayTeam} side="away" />
-        <div className={styles.heroFinal} aria-label={`Final score ${snapshot.awayTeam.name} ${snapshot.awayScore}, ${snapshot.homeTeam.name} ${snapshot.homeScore}`}>
-          <strong>{snapshot.awayScore} – {snapshot.homeScore}</strong>
-          <span>Final</span>
+        <div className={styles.heroScoreboard} aria-label={`Final score ${snapshot.awayTeam.name} ${snapshot.awayScore}, ${snapshot.homeTeam.name} ${snapshot.homeScore}`}>
+          <span className={styles.finalTag}>Final</span>
+          <div className={styles.scoreLine}>
+            <strong>{snapshot.awayScore}</strong>
+            <span className={styles.scoreDivider} aria-hidden="true" />
+            <strong>{snapshot.homeScore}</strong>
+          </div>
         </div>
         <TeamSide team={snapshot.homeTeam} side="home" />
         <div className={heroStyles.centerGlow} aria-hidden="true" />
