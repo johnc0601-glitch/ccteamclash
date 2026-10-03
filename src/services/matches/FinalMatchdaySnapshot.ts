@@ -101,8 +101,8 @@ function parseSnapshot(row: SnapshotRow): FinalMatchdaySnapshot | undefined {
   const awayTeam = parseTeam(payload.awayTeam);
   const homeTeam = parseTeam(payload.homeTeam);
   const course = parseCourse(payload.course);
-  const awayScore = readInteger(payload.awayScore);
-  const homeScore = readInteger(payload.homeScore);
+  const awayScore = readMatchScore(payload.awayScore);
+  const homeScore = readMatchScore(payload.homeScore);
   const date = readString(payload.date);
   if (!awayTeam || !homeTeam || !course || awayScore === null || homeScore === null || !date) return undefined;
 
@@ -203,6 +203,15 @@ function readOutcome(value: unknown): 'W' | 'L' | 'T' | null {
 
 function readString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function readMatchScore(value: unknown): number | null {
+  return typeof value === 'number'
+    && Number.isFinite(value)
+    && value >= 0
+    && Number.isInteger(value * 2)
+    ? value
+    : null;
 }
 
 function readInteger(value: unknown): number | null {
