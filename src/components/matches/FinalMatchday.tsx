@@ -69,9 +69,15 @@ function FinalHero({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
         <div className={styles.heroScoreboard} aria-label={`Final score ${snapshot.awayTeam.name} ${snapshot.awayScore}, ${snapshot.homeTeam.name} ${snapshot.homeScore}`}>
           <span className={styles.finalTag}>Final</span>
           <div className={styles.scoreLine}>
-            <strong>{snapshot.awayScore}</strong>
+            <div className={styles.scoreCell}>
+              <strong>{snapshot.awayScore}</strong>
+              <small>{shortTeam(snapshot.awayTeam)}</small>
+            </div>
             <span className={styles.scoreDivider} aria-hidden="true" />
-            <strong>{snapshot.homeScore}</strong>
+            <div className={styles.scoreCell}>
+              <strong>{snapshot.homeScore}</strong>
+              <small>{shortTeam(snapshot.homeTeam)}</small>
+            </div>
           </div>
         </div>
         <TeamSide team={snapshot.homeTeam} side="home" />
