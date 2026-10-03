@@ -29,7 +29,6 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
       <div className={`shell ${pageStyles.content} ${styles.finalContent}`}>
         <section className={styles.resultsCard} aria-label="Final result breakdown">
           <div className={styles.compactBreakdown}>
-            <strong className={styles.breakdownLabel}>Results</strong>
             <div className={styles.breakdownScores}>
               <ResultTotal
                 label="Singles"
@@ -131,12 +130,10 @@ function MatchResultsDetails({
   singles: FinalMatchContest[];
   doubles: FinalMatchContest[];
 }) {
-  const total = singles.length + doubles.length;
   return (
     <details className={styles.resultDetails}>
       <summary>
         <span>Match results</span>
-        <small>{total} matchups</small>
       </summary>
       <div className={styles.resultGroups}>
         <ResultGroup title="Singles" contests={singles} />
