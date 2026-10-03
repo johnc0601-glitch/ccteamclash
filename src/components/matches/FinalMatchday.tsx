@@ -1,5 +1,6 @@
 import type {CSSProperties} from 'react';
 import {WeatherIcon} from '@/components/matches/WeatherIcon';
+import infoStyles from './MatchdayInfoStrip.module.css';
 import type {
   FinalMatchContest,
   FinalMatchdaySnapshot,
@@ -24,68 +25,70 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
 
   return (
     <main className={pageStyles.page} style={pageStyle}>
-      <FinalHero snapshot={snapshot} />
+      <FinalHero snapshot={snapshot} singlesTotals={singlesTotals} doublesTotals={doublesTotals} />
       <div className={`shell ${pageStyles.content} ${styles.finalContent}`}>
-        <section className={styles.resultsCard} aria-labelledby="final-results-heading">
-          <div className={styles.resultsHeading}>
-            <div>
-              <span>Final results</span>
-              <h1 id="final-results-heading">{snapshot.awayTeam.name} {snapshot.awayScore} – {snapshot.homeScore} {snapshot.homeTeam.name}</h1>
-            </div>
-            <strong className={styles.finalBadge}>FINAL</strong>
-          </div>
-
-          <div className={styles.sectionTotals}>
-            <ResultTotal
-              label="Singles"
-              awayTeam={snapshot.awayTeam}
-              homeTeam={snapshot.homeTeam}
-              awayScore={singlesTotals.away}
-              homeScore={singlesTotals.home}
-            />
-            <ResultTotal
-              label="Doubles"
-              awayTeam={snapshot.awayTeam}
-              homeTeam={snapshot.homeTeam}
-              awayScore={doublesTotals.away}
-              homeScore={doublesTotals.home}
-            />
-          </div>
-
+        <section className={styles.resultsCard} aria-label="Final result breakdown">
           <ResultDetails title="Singles results" contests={singles} />
           <ResultDetails title="Doubles results" contests={doubles} />
         </section>
-
-        {snapshot.weather ? <FinalConditions snapshot={snapshot} /> : null}
       </div>
     </main>
   );
 }
 
-function FinalHero({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
+function FinalHero({
+  snapshot,
+  singlesTotals,
+  doublesTotals,
+}: {
+  snapshot: FinalMatchdaySnapshot;
+  singlesTotals: {away: number; home: number};
+  doublesTotals: {away: number; home: number};
+}) {
   return (
     <section className={heroStyles.matchHero} data-matchday-hero>
-      <div className={heroStyles.heroTeams}>
+      <div className={`${heroStyles.heroTeams} ${styles.finalHeroTeams}`}>
         <div className={heroStyles.heroLabel}>
           <span>Team Matchday</span>
           {snapshot.roundNumber ? <strong>Round {snapshot.roundNumber}</strong> : null}
         </div>
 
         <TeamSide team={snapshot.awayTeam} side="away" />
-        <div className={styles.heroFinal} aria-label={`Final score ${snapshot.awayTeam.name} ${snapshot.awayScore}, ${snapshot.homeTeam.name} ${snapshot.homeScore}`}>
-          <strong>{snapshot.awayScore} – {snapshot.homeScore}</strong>
-          <span>Final</span>
+        <div className={styles.heroScoreboard} aria-label={`Final score ${snapshot.awayTeam.name} ${snapshot.awayScore}, ${snapshot.homeTeam.name} ${snapshot.homeScore}`}>
+          <span className={styles.finalTag}>Final</span>
+          <div className={styles.scoreLine}>
+            <div className={styles.scoreCell}>
+              <strong>{snapshot.awayScore}</strong>
+              <small>{shortTeam(snapshot.awayTeam)}</small>
+              <div className={styles.scoreBreakdown}>
+                <span>S {formatPoint(singlesTotals.away)}</span>
+                <span>D {formatPoint(doublesTotals.away)}</span>
+              </div>
+            </div>
+            <span className={styles.scoreDivider} aria-hidden="true" />
+            <div className={styles.scoreCell}>
+              <strong>{snapshot.homeScore}</strong>
+              <small>{shortTeam(snapshot.homeTeam)}</small>
+              <div className={styles.scoreBreakdown}>
+                <span>S {formatPoint(singlesTotals.home)}</span>
+                <span>D {formatPoint(doublesTotals.home)}</span>
+              </div>
+            </div>
+          </div>
         </div>
         <TeamSide team={snapshot.homeTeam} side="home" />
         <div className={heroStyles.centerGlow} aria-hidden="true" />
       </div>
 
-      <div className={`${heroStyles.heroMeta} matchday-hero-meta`}>
-        <span>{formatDate(snapshot.date)}</span>
-        <span>{formatTime(snapshot.time)}</span>
-        {snapshot.course.mapUrl
-          ? <a href={snapshot.course.mapUrl} target="_blank" rel="noreferrer">{snapshot.course.name}</a>
-          : <span>{snapshot.course.name}</span>}
+      <div className={`${heroStyles.heroMeta} ${styles.finalHeroMeta} matchday-hero-meta`}>
+        <div className={styles.heroMetaTop}>
+          <span>{formatDate(snapshot.date)}</span>
+          <span>{formatTime(snapshot.time)}</span>
+          {snapshot.course.mapUrl
+            ? <a href={snapshot.course.mapUrl} target="_blank" rel="noreferrer">{snapshot.course.name}</a>
+            : <span>{snapshot.course.name}</span>}
+        </div>
+        {snapshot.weather ? <FinalConditions snapshot={snapshot} /> : null}
       </div>
     </section>
   );
@@ -95,35 +98,14 @@ function TeamSide({team, side}: {team: FinalMatchTeam; side: 'away' | 'home'}) {
   return (
     <div className={heroStyles.heroTeam} data-side={side}>
       {team.logo
-        ? <img src={team.logo} alt={`${team.name} logo`} className={heroStyles.heroLogo} />
-        : <div className={heroStyles.heroLogoFallback}>{initials(team.name)}</div>}
+        ? <img
+            src={team.logo}
+            alt={`${team.name} logo`}
+            className={`${heroStyles.heroLogo} ${side === 'home' ? styles.finalHomeLogo : ''}`}
+          />
+        : <div className={`${heroStyles.heroLogoFallback} ${side === 'home' ? styles.finalHomeLogo : ''}`}>{initials(team.name)}</div>}
       <strong>{team.name}</strong>
       <span>{side === 'away' ? 'Away' : 'Home'}</span>
-    </div>
-  );
-}
-
-function ResultTotal({
-  label,
-  awayTeam,
-  homeTeam,
-  awayScore,
-  homeScore,
-}: {
-  label: string;
-  awayTeam: FinalMatchTeam;
-  homeTeam: FinalMatchTeam;
-  awayScore: number;
-  homeScore: number;
-}) {
-  return (
-    <div className={styles.resultTotal}>
-      <span>{label}</span>
-      <strong>
-        <b>{shortTeam(awayTeam)} {formatPoint(awayScore)}</b>
-        <i>–</i>
-        <b>{formatPoint(homeScore)} {shortTeam(homeTeam)}</b>
-      </strong>
     </div>
   );
 }
@@ -133,7 +115,6 @@ function ResultDetails({title, contests}: {title: string; contests: FinalMatchCo
     <details className={styles.resultDetails}>
       <summary>
         <span>{title}</span>
-        <small>{contests.length} matchups</small>
       </summary>
       <div className={styles.resultRows}>
         {contests.length
@@ -153,7 +134,7 @@ function ResultRow({contest}: {contest: FinalMatchContest}) {
       <div className={awayWon ? `${styles.playerSide} ${styles.awayWinner}` : styles.playerSide}>
         {contest.awayPlayers.map((player) => player.name).join(' / ') || '—'}
       </div>
-      <div className={styles.outcome}>{tie ? <span>TIE</span> : <small>{contest.position}</small>}</div>
+      <div className={styles.outcome}>{tie ? <span>TIE</span> : null}</div>
       <div className={homeWon ? `${styles.playerSide} ${styles.homeWinner}` : styles.playerSide}>
         {contest.homePlayers.map((player) => player.name).join(' / ') || '—'}
       </div>
@@ -170,13 +151,19 @@ function FinalConditions({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
       : `${weather.windDirection === 'Variable' ? 'Var' : weather.windDirection ?? ''} ${weather.wind} mph`.trim();
 
   return (
-    <section className={styles.conditions} aria-label="Matchday conditions">
-      <span className={styles.conditionsLabel}>Matchday conditions</span>
-      <div className={styles.conditionsItems}>
-        <span><WeatherIcon name={weather.condition === 'cloudy' ? 'cloud' : weather.condition} /><strong>{weather.temperature}°</strong></span>
-        <span><WeatherIcon name="wind" /><strong>{wind}</strong></span>
+    <div className={styles.heroConditions} aria-label="Matchday conditions">
+      <span className={infoStyles.label}>Conditions</span>
+      <div className={infoStyles.weatherItems}>
+        <span className={infoStyles.weatherItem}>
+          <WeatherIcon name={weather.condition === 'cloudy' ? 'cloud' : weather.condition} />
+          <strong>{weather.temperature}°</strong>
+        </span>
+        <span className={infoStyles.weatherItem}>
+          <WeatherIcon name="wind" />
+          <strong>{wind}</strong>
+        </span>
       </div>
-    </section>
+    </div>
   );
 }
 
