@@ -260,13 +260,13 @@ export function ResultsManagement({
           <div className={styles.scores}>
             <label>
               <span>{editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'TBD'} score</span>
-              <input type="number" min="0" step="1" value={homeScore} disabled={editor.result?.status === 'Published'} onChange={(event) => setHomeScore(event.target.value)} />
+              <input type="number" min="0" step="0.5" value={homeScore} disabled={editor.result?.status === 'Published'} onChange={(event) => setHomeScore(event.target.value)} />
               {fieldErrors.homeScore ? <small>{fieldErrors.homeScore}</small> : null}
             </label>
             <b>–</b>
             <label>
               <span>{editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'TBD'} score</span>
-              <input type="number" min="0" step="1" value={awayScore} disabled={editor.result?.status === 'Published'} onChange={(event) => setAwayScore(event.target.value)} />
+              <input type="number" min="0" step="0.5" value={awayScore} disabled={editor.result?.status === 'Published'} onChange={(event) => setAwayScore(event.target.value)} />
               {fieldErrors.awayScore ? <small>{fieldErrors.awayScore}</small> : null}
             </label>
           </div>

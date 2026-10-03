@@ -136,8 +136,8 @@ export class ResultsService {
       const value = input[field];
       if (value === null) {
         if (requireComplete) errors[field] = 'A score is required before publishing.';
-      } else if (!Number.isInteger(value) || value < 0) {
-        errors[field] = 'Enter a non-negative whole number.';
+      } else if (!Number.isFinite(value) || value < 0 || !Number.isInteger(value * 2)) {
+        errors[field] = 'Enter a non-negative score in 0.5-point increments.';
       }
     }
     return errors;
