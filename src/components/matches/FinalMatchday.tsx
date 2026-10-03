@@ -27,34 +27,29 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
     <main className={pageStyles.page} style={pageStyle}>
       <FinalHero snapshot={snapshot} />
       <div className={`shell ${pageStyles.content} ${styles.finalContent}`}>
-        <section className={styles.resultsCard} aria-labelledby="final-results-heading">
-          <div className={styles.resultsHeading}>
-            <div>
-              <span>Final results</span>
-              <h1 id="final-results-heading">{snapshot.awayTeam.name} {snapshot.awayScore} – {snapshot.homeScore} {snapshot.homeTeam.name}</h1>
+        <section className={styles.resultsCard} aria-label="Final result breakdown">
+          <div className={styles.compactBreakdown}>
+            <strong className={styles.breakdownLabel}>Results</strong>
+            <div className={styles.breakdownScores}>
+              <ResultTotal
+                label="Singles"
+                awayTeam={snapshot.awayTeam}
+                homeTeam={snapshot.homeTeam}
+                awayScore={singlesTotals.away}
+                homeScore={singlesTotals.home}
+              />
+              <span className={styles.breakdownDivider} aria-hidden="true">·</span>
+              <ResultTotal
+                label="Doubles"
+                awayTeam={snapshot.awayTeam}
+                homeTeam={snapshot.homeTeam}
+                awayScore={doublesTotals.away}
+                homeScore={doublesTotals.home}
+              />
             </div>
-            <strong className={styles.finalBadge}>FINAL</strong>
           </div>
 
-          <div className={styles.sectionTotals}>
-            <ResultTotal
-              label="Singles"
-              awayTeam={snapshot.awayTeam}
-              homeTeam={snapshot.homeTeam}
-              awayScore={singlesTotals.away}
-              homeScore={singlesTotals.home}
-            />
-            <ResultTotal
-              label="Doubles"
-              awayTeam={snapshot.awayTeam}
-              homeTeam={snapshot.homeTeam}
-              awayScore={doublesTotals.away}
-              homeScore={doublesTotals.home}
-            />
-          </div>
-
-          <ResultDetails title="Singles results" contests={singles} />
-          <ResultDetails title="Doubles results" contests={doubles} />
+          <MatchResultsDetails singles={singles} doubles={doubles} />
         </section>
 
         {snapshot.weather ? <FinalConditions snapshot={snapshot} /> : null}
@@ -118,30 +113,52 @@ function ResultTotal({
   homeScore: number;
 }) {
   return (
-    <div className={styles.resultTotal}>
-      <span>{label}</span>
+    <span className={styles.resultTotal}>
+      <em>{label}</em>
       <strong>
         <b>{shortTeam(awayTeam)} {formatPoint(awayScore)}</b>
         <i>–</i>
         <b>{formatPoint(homeScore)} {shortTeam(homeTeam)}</b>
       </strong>
-    </div>
+    </span>
   );
 }
 
-function ResultDetails({title, contests}: {title: string; contests: FinalMatchContest[]}) {
+function MatchResultsDetails({
+  singles,
+  doubles,
+}: {
+  singles: FinalMatchContest[];
+  doubles: FinalMatchContest[];
+}) {
+  const total = singles.length + doubles.length;
   return (
     <details className={styles.resultDetails}>
       <summary>
-        <span>{title}</span>
-        <small>{contests.length} matchups</small>
+        <span>Match results</span>
+        <small>{total} matchups</small>
       </summary>
+      <div className={styles.resultGroups}>
+        <ResultGroup title="Singles" contests={singles} />
+        <ResultGroup title="Doubles" contests={doubles} />
+      </div>
+    </details>
+  );
+}
+
+function ResultGroup({title, contests}: {title: string; contests: FinalMatchContest[]}) {
+  return (
+    <section className={styles.resultGroup}>
+      <header>
+        <strong>{title}</strong>
+        <span>{contests.length}</span>
+      </header>
       <div className={styles.resultRows}>
         {contests.length
           ? contests.map((contest) => <ResultRow contest={contest} key={contest.id} />)
           : <p className={styles.empty}>No individual results were posted.</p>}
       </div>
-    </details>
+    </section>
   );
 }
 
