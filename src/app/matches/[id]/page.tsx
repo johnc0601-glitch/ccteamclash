@@ -2,6 +2,7 @@ import {Suspense, type CSSProperties} from 'react';
 import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
+import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
@@ -30,6 +31,8 @@ import type {Match} from '@/domain/schedule/Match';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 import {resolveMatchday, type PublicMatchday} from '@/services/matches/MatchdayService';
+import {canViewMatchPrediction} from '@/services/settings/MatchPredictionVisibility';
+import {buildPublicMatchPrediction} from '@/services/teamStrength/PublicMatchPrediction';
 import styles from './Matchday.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -133,6 +136,44 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const actor = userId ? await attendanceRepository.getAttendanceActor(userId) : undefined;
   const openUnlockTeamIds = locked ? await getOpenRosterUnlockTeamIds(supabase, matchId) : new Set<string>();
 
+  const canViewLockedPrediction = Boolean(
+    locked
+    && officialSnapshot?.status === 'complete'
+    && canViewMatchPrediction('CaptainsCommissioner', actor)
+  );
+  let matchPrediction: ReturnType<typeof buildPublicMatchPrediction>;
+
+  if (canViewLockedPrediction && officialSnapshot?.status === 'complete') {
+    const homeRoster = officialSnapshot.rosters.find((roster) => roster.teamId === match.homeTeamId);
+    const awayRoster = officialSnapshot.rosters.find((roster) => roster.teamId === match.awayTeamId);
+
+    if (homeRoster && awayRoster) {
+      const homeIds = homeRoster.players.map((player) => player.playerId);
+      const awayIds = awayRoster.players.map((player) => player.playerId);
+      const lineupPlayers = await getPlayersByIds(supabase, [...new Set([...homeIds, ...awayIds])]);
+      const playersById = new Map(lineupPlayers.map((player) => [player.id, player]));
+      const homePredictionPlayers = homeIds
+        .map((playerId) => playersById.get(playerId))
+        .filter((player): player is LaunchPlayer => Boolean(player));
+      const awayPredictionPlayers = awayIds
+        .map((playerId) => playersById.get(playerId))
+        .filter((player): player is LaunchPlayer => Boolean(player));
+
+      matchPrediction = buildPublicMatchPrediction({
+        matchDate: match.date,
+        matchStatus: match.status,
+        hasPublishedResult: Boolean(publishedResult),
+        homeTeamId: match.homeTeamId,
+        awayTeamId: match.awayTeamId,
+        matchVenue: course?.homeTeamId === match.homeTeamId ? 'Home' : 'Neutral',
+        homePlayers: homePredictionPlayers,
+        awayPlayers: awayPredictionPlayers,
+        officialRosters: officialSnapshot.rosters,
+        now,
+      });
+    }
+  }
+
   const personalAttendance = !locked && userId ? await matchRosterService.getPersonalAttendance(userId, matchId) : undefined;
   let managedRosters = userId && readParam(query.manage) === 'roster'
     ? await matchRosterService.getManagedTeamRosters(userId, matchId)
@@ -172,6 +213,15 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
           <Suspense fallback={null}>
             <MatchPreview matchId={matchId} matchday={matchday} />
           </Suspense>
+
+          {matchPrediction ? (
+            <MatchPredictionCard
+              actor={actor}
+              prediction={matchPrediction}
+              awayTeamName={matchday.awayTeam.name}
+              homeTeamName={matchday.homeTeam.name}
+            />
+          ) : null}
 
           {publishedResult ? <MatchScoreboard matchday={matchday} result={publishedResult} contests={contests} /> : null}
 
