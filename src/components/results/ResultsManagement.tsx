@@ -16,6 +16,7 @@ import type {
   ResultContestFormat,
   ResultContestInput,
   ResultContestOutcome,
+  ResultContestSide,
   ResultsFieldErrors,
 } from '@/domain/results/MatchResult';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
