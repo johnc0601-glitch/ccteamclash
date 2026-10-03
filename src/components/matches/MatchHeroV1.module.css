@@ -97,6 +97,11 @@
   text-align: right;
 }
 
+.heroTeam[data-side='home'] .heroLogo,
+.heroTeam[data-side='home'] .heroLogoFallback {
+  transform: translateX(8px);
+}
+
 .heroTeam strong {
   max-width: 360px;
   font-family: var(--cc-font-display);
@@ -213,6 +218,11 @@
   .heroLogoFallback {
     width: 62px;
     height: 62px;
+  }
+
+  .heroTeam[data-side='home'] .heroLogo,
+  .heroTeam[data-side='home'] .heroLogoFallback {
+    transform: translateX(12px);
   }
 
   .heroVs {
