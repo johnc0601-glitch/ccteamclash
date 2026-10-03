@@ -88,9 +88,12 @@
 }
 
 .resultTotal {
-  padding: 14px 18px;
-  display: grid;
-  gap: 5px;
+  min-height: 58px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
 }
 
 .resultTotal + .resultTotal {
@@ -108,9 +111,11 @@
 .resultTotal > strong {
   display: flex;
   align-items: baseline;
+  justify-content: flex-end;
   gap: 8px;
   color: var(--cc-heading);
   font-size: 18px;
+  white-space: nowrap;
 }
 
 .resultTotal b {
@@ -287,7 +292,8 @@
   }
 
   .resultTotal {
-    padding: 11px 13px;
+    min-height: 52px;
+    padding: 10px 13px;
   }
 
   .resultTotal + .resultTotal {
