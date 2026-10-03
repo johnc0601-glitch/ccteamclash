@@ -350,6 +350,11 @@ function toContestInput(contest: ResultContest): ResultContestInput {
 }
 
 
+function parseScore(value: string): number | null {
+  if (!value.trim()) return null;
+  return Number(value);
+}
+
 function formatTime(value: string | null): string {
   if (!value) return 'Time TBD';
   const [hours, minutes] = value.split(':').map(Number);
