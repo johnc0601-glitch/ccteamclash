@@ -2,33 +2,60 @@
   gap: 16px !important;
 }
 
-.heroFinal {
+.finalHeroTeams {
+  grid-template-columns: minmax(0, 1fr) 138px minmax(0, 1fr) !important;
+}
+
+.heroScoreboard {
   position: relative;
-  z-index: 4;
+  z-index: 5;
+  align-self: center;
+  justify-self: center;
+  width: 126px;
+  padding: 10px 12px 11px;
   display: grid;
-  place-content: center;
   justify-items: center;
-  gap: 5px;
-  color: #fff;
-  text-align: center;
-  text-shadow: 0 3px 18px rgba(0, 0, 0, .72);
-  white-space: nowrap;
+  gap: 7px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 14px;
+  background: rgba(7, 11, 15, .78);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255,255,255,.04);
+  backdrop-filter: blur(8px);
 }
 
-.heroFinal strong {
-  font-family: var(--cc-font-display);
-  font-size: clamp(30px, 4vw, 48px);
-  font-style: italic;
-  letter-spacing: -.035em;
-  line-height: .9;
-}
-
-.heroFinal span {
+.finalTag {
   color: var(--cc-gold);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 950;
   letter-spacing: .18em;
+  line-height: 1;
   text-transform: uppercase;
+}
+
+.scoreLine {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  align-items: center;
+  gap: 9px;
+}
+
+.scoreLine strong {
+  color: #fff;
+  font-family: var(--cc-font-display);
+  font-size: 38px;
+  font-style: italic;
+  font-weight: 950;
+  letter-spacing: -.045em;
+  line-height: .9;
+  text-align: center;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, .65);
+}
+
+.scoreDivider {
+  width: 1px;
+  height: 34px;
+  background: rgba(255, 255, 255, .18);
 }
 
 .finalHeroMeta {
@@ -225,12 +252,31 @@
 }
 
 @media (max-width: 700px) {
-  .heroFinal strong {
-    font-size: 23px;
+  .finalHeroTeams {
+    grid-template-columns: minmax(0, 1fr) 112px minmax(0, 1fr) !important;
   }
 
-  .heroFinal span {
-    font-size: 8px;
+  .heroScoreboard {
+    width: 102px;
+    padding: 8px 8px 9px;
+    gap: 5px;
+    border-radius: 12px;
+  }
+
+  .finalTag {
+    font-size: 7px;
+  }
+
+  .scoreLine {
+    gap: 6px;
+  }
+
+  .scoreLine strong {
+    font-size: 30px;
+  }
+
+  .scoreDivider {
+    height: 27px;
   }
 
   .finalHeroMeta {
