@@ -42,80 +42,51 @@
   box-shadow: var(--cc-card-shadow);
 }
 
-.resultsHeading {
-  padding: 18px 20px;
+.compactBreakdown {
+  min-height: 60px;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
   border-bottom: 1px solid var(--cc-card-border);
 }
 
-.resultsHeading span,
-.conditionsLabel {
-  color: var(--cc-gold);
-  font-size: 10px;
-  font-weight: 950;
-  letter-spacing: .15em;
-  text-transform: uppercase;
-}
-
-.resultsHeading h1 {
-  margin: 4px 0 0;
-  color: var(--cc-heading);
-  font-family: var(--cc-font-display);
-  font-size: clamp(22px, 3vw, 34px);
-  font-style: italic;
-  letter-spacing: -.025em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.finalBadge {
-  padding: 6px 10px;
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 999px;
-  background: rgba(0,0,0,.26);
-  color: #fff;
-  font-size: 10px;
-  letter-spacing: .14em;
-}
-
-.sectionTotals {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-bottom: 1px solid var(--cc-card-border);
-}
-
-.resultTotal {
-  min-height: 58px;
-  padding: 12px 18px;
+.breakdownScores {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
 }
 
-.resultTotal + .resultTotal {
-  border-left: 1px solid var(--cc-card-border);
+.breakdownDivider {
+  flex: 0 0 auto;
+  color: var(--cc-muted);
+  font-size: 14px;
 }
 
-.resultTotal > span {
+.resultTotal {
+  min-width: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.resultTotal em {
   color: var(--cc-muted);
-  font-size: 10px;
+  font-size: 9px;
+  font-style: normal;
   font-weight: 950;
-  letter-spacing: .12em;
+  letter-spacing: .11em;
   text-transform: uppercase;
 }
 
 .resultTotal > strong {
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
-  justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
   color: var(--cc-heading);
-  font-size: 18px;
-  white-space: nowrap;
+  font-size: 16px;
 }
 
 .resultTotal b {
@@ -127,16 +98,11 @@
   font-style: normal;
 }
 
-.resultDetails + .resultDetails {
-  border-top: 1px solid var(--cc-card-border);
-}
-
 .resultDetails summary {
-  min-height: 48px;
+  min-height: 50px;
   padding: 12px 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   color: var(--cc-heading);
   cursor: pointer;
@@ -149,6 +115,7 @@
 
 .resultDetails summary::after {
   content: '⌄';
+  margin-left: auto;
   color: var(--cc-muted);
   font-size: 16px;
 }
@@ -163,11 +130,34 @@
   text-transform: uppercase;
 }
 
-.resultDetails summary small {
-  margin-left: auto;
+.resultGroups {
+  border-top: 1px solid var(--cc-card-border);
+}
+
+.resultGroup + .resultGroup {
+  border-top: 1px solid var(--cc-card-border);
+}
+
+.resultGroup > header {
+  min-height: 34px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   color: var(--cc-muted);
-  font-size: 10px;
-  font-weight: 850;
+  background: rgba(0, 0, 0, .12);
+}
+
+.resultGroup > header strong {
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.resultGroup > header span {
+  font-size: 9px;
+  font-weight: 900;
 }
 
 .resultRows {
@@ -260,35 +250,36 @@
     font-size: 8px;
   }
 
-  .resultsHeading {
-    padding: 14px;
+  .compactBreakdown {
+    min-height: 54px;
+    padding: 10px 12px;
   }
 
-  .resultsHeading h1 {
-    font-size: 20px;
+  .breakdownScores {
+    gap: 8px;
   }
 
-  .finalBadge {
-    padding: 5px 8px;
-    font-size: 8px;
-  }
-
-  .sectionTotals {
-    grid-template-columns: 1fr;
+  .breakdownDivider {
+    font-size: 11px;
   }
 
   .resultTotal {
-    min-height: 52px;
-    padding: 10px 13px;
+    gap: 5px;
   }
 
-  .resultTotal + .resultTotal {
-    border-top: 1px solid var(--cc-card-border);
-    border-left: 0;
+  .resultTotal em {
+    font-size: 8px;
+    letter-spacing: .08em;
   }
 
   .resultTotal > strong {
-    font-size: 16px;
+    gap: 4px;
+    font-size: 13px;
+  }
+
+  .resultDetails summary {
+    min-height: 46px;
+    padding: 10px 13px;
   }
 
   .resultRow {
@@ -302,5 +293,4 @@
     padding: 6px 7px;
     font-size: 10px;
   }
-
 }
