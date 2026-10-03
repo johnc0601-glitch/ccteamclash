@@ -103,12 +103,24 @@
   border-top: 1px solid var(--match-border);
 }
 
-.resultsCard,
-.conditions {
+.resultsCard {
   overflow: hidden;
-  border: 1px solid var(--cc-card-border);
+  border: 1px solid rgba(255, 255, 255, .11);
   border-radius: 12px;
-  background: var(--match-card-treatment);
+  background:
+    radial-gradient(circle at 18% 10%,
+      color-mix(in srgb, var(--match-away) 34%, transparent),
+      transparent 42%),
+    radial-gradient(circle at 82% 10%,
+      color-mix(in srgb, var(--match-home) 34%, transparent),
+      transparent 42%),
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--match-away) 34%, #091015) 0%,
+      color-mix(in srgb, var(--match-away) 20%, #0c1217) 38%,
+      #11161b 48%,
+      #11161b 52%,
+      color-mix(in srgb, var(--match-home) 20%, #0c1217) 62%,
+      color-mix(in srgb, var(--match-home) 34%, #091015) 100%);
   box-shadow: var(--cc-card-shadow);
 }
 
@@ -118,6 +130,7 @@
   display: flex;
   align-items: center;
   border-bottom: 1px solid var(--cc-card-border);
+  background: rgba(7, 11, 15, .18);
 }
 
 .breakdownScores {
@@ -181,6 +194,7 @@
   color: var(--cc-heading);
   cursor: pointer;
   list-style: none;
+  background: rgba(7, 11, 15, .22);
 }
 
 .resultDetails summary::-webkit-details-marker {
@@ -206,6 +220,12 @@
 
 .resultRows {
   border-top: 1px solid var(--cc-card-border);
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--match-away) 12%, rgba(8, 12, 16, .68)) 0%,
+      rgba(8, 12, 16, .68) 48%,
+      rgba(8, 12, 16, .68) 52%,
+      color-mix(in srgb, var(--match-home) 12%, rgba(8, 12, 16, .68)) 100%);
 }
 
 .resultRow {
@@ -216,6 +236,12 @@
   align-items: center;
   gap: 8px;
   border-top: 1px solid var(--cc-card-border);
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--match-away) 7%, transparent) 0%,
+      transparent 42%,
+      transparent 58%,
+      color-mix(in srgb, var(--match-home) 7%, transparent) 100%);
 }
 
 .resultRow:first-child {
