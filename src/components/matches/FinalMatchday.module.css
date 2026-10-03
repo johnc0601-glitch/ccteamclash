@@ -3,12 +3,10 @@
 }
 
 .heroFinal {
-  position: absolute;
-  z-index: 6;
-  left: 50%;
-  top: 53%;
-  transform: translate(-50%, -50%);
+  position: relative;
+  z-index: 4;
   display: grid;
+  place-content: center;
   justify-items: center;
   gap: 5px;
   color: #fff;
@@ -238,12 +236,8 @@
 }
 
 @media (max-width: 700px) {
-  .heroFinal {
-    top: 54%;
-  }
-
   .heroFinal strong {
-    font-size: 25px;
+    font-size: 23px;
   }
 
   .heroFinal span {
