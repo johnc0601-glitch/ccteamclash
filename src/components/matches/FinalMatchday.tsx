@@ -48,10 +48,9 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
             </div>
           </div>
 
-          <MatchResultsDetails singles={singles} doubles={doubles} />
+          <ResultDetails title="Singles results" contests={singles} />
+          <ResultDetails title="Doubles results" contests={doubles} />
         </section>
-
-        {snapshot.weather ? <FinalConditions snapshot={snapshot} /> : null}
       </div>
     </main>
   );
@@ -75,12 +74,15 @@ function FinalHero({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
         <div className={heroStyles.centerGlow} aria-hidden="true" />
       </div>
 
-      <div className={`${heroStyles.heroMeta} matchday-hero-meta`}>
-        <span>{formatDate(snapshot.date)}</span>
-        <span>{formatTime(snapshot.time)}</span>
-        {snapshot.course.mapUrl
-          ? <a href={snapshot.course.mapUrl} target="_blank" rel="noreferrer">{snapshot.course.name}</a>
-          : <span>{snapshot.course.name}</span>}
+      <div className={`${heroStyles.heroMeta} ${styles.finalHeroMeta} matchday-hero-meta`}>
+        <div className={styles.heroMetaTop}>
+          <span>{formatDate(snapshot.date)}</span>
+          <span>{formatTime(snapshot.time)}</span>
+          {snapshot.course.mapUrl
+            ? <a href={snapshot.course.mapUrl} target="_blank" rel="noreferrer">{snapshot.course.name}</a>
+            : <span>{snapshot.course.name}</span>}
+        </div>
+        {snapshot.weather ? <FinalConditions snapshot={snapshot} /> : null}
       </div>
     </section>
   );
@@ -123,39 +125,18 @@ function ResultTotal({
   );
 }
 
-function MatchResultsDetails({
-  singles,
-  doubles,
-}: {
-  singles: FinalMatchContest[];
-  doubles: FinalMatchContest[];
-}) {
+function ResultDetails({title, contests}: {title: string; contests: FinalMatchContest[]}) {
   return (
     <details className={styles.resultDetails}>
       <summary>
-        <span>Match results</span>
+        <span>{title}</span>
       </summary>
-      <div className={styles.resultGroups}>
-        <ResultGroup title="Singles" contests={singles} />
-        <ResultGroup title="Doubles" contests={doubles} />
-      </div>
-    </details>
-  );
-}
-
-function ResultGroup({title, contests}: {title: string; contests: FinalMatchContest[]}) {
-  return (
-    <section className={styles.resultGroup}>
-      <header>
-        <strong>{title}</strong>
-        <span>{contests.length}</span>
-      </header>
       <div className={styles.resultRows}>
         {contests.length
           ? contests.map((contest) => <ResultRow contest={contest} key={contest.id} />)
           : <p className={styles.empty}>No individual results were posted.</p>}
       </div>
-    </section>
+    </details>
   );
 }
 
@@ -185,21 +166,19 @@ function FinalConditions({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
       : `${weather.windDirection === 'Variable' ? 'Var' : weather.windDirection ?? ''} ${weather.wind} mph`.trim();
 
   return (
-    <section className={`${infoStyles.strip} ${styles.lockedConditions}`} aria-label="Matchday conditions">
-      <div className={infoStyles.weather}>
-        <span className={infoStyles.label}>Conditions</span>
-        <div className={infoStyles.weatherItems}>
-          <span className={infoStyles.weatherItem}>
-            <WeatherIcon name={weather.condition === 'cloudy' ? 'cloud' : weather.condition} />
-            <strong>{weather.temperature}°</strong>
-          </span>
-          <span className={infoStyles.weatherItem}>
-            <WeatherIcon name="wind" />
-            <strong>{wind}</strong>
-          </span>
-        </div>
+    <div className={styles.heroConditions} aria-label="Matchday conditions">
+      <span className={infoStyles.label}>Conditions</span>
+      <div className={infoStyles.weatherItems}>
+        <span className={infoStyles.weatherItem}>
+          <WeatherIcon name={weather.condition === 'cloudy' ? 'cloud' : weather.condition} />
+          <strong>{weather.temperature}°</strong>
+        </span>
+        <span className={infoStyles.weatherItem}>
+          <WeatherIcon name="wind" />
+          <strong>{wind}</strong>
+        </span>
       </div>
-    </section>
+    </div>
   );
 }
 
