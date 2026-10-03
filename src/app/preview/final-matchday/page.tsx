@@ -1,4 +1,3 @@
-import type {CSSProperties} from 'react';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {FinalMatchday} from '@/components/matches/FinalMatchday';
 import type {FinalMatchdaySnapshot} from '@/services/matches/FinalMatchdaySnapshot';
@@ -119,8 +118,8 @@ const preview: FinalMatchdaySnapshot = {
       id: 'preview-d4',
       format: 'Doubles',
       position: 4,
-      awayOutcome: 'T',
-      homeOutcome: 'T',
+      awayOutcome: 'W',
+      homeOutcome: 'L',
       awayPlayers: [
         {id: 'dalton-medlin', name: 'Dalton Medlin'},
         {id: 'tyler-carlin', name: 'Tyler Carlin'},
@@ -128,6 +127,66 @@ const preview: FinalMatchdaySnapshot = {
       homePlayers: [
         {id: 'alex-karp', name: 'Alex Karp'},
         {id: 'owen-shields', name: 'Owen Shields'},
+      ],
+    },
+    {
+      id: 'preview-d5',
+      format: 'Doubles',
+      position: 5,
+      awayOutcome: 'L',
+      homeOutcome: 'W',
+      awayPlayers: [
+        {id: 'ashlee-hynds', name: 'Ashlee Hynds'},
+        {id: 'player-account-0446b9e9-8c8c-4f53-a82d-f3e0574c58a5', name: 'Bae'},
+      ],
+      homePlayers: [
+        {id: 'rosa-carroll', name: 'Rosa Carroll'},
+        {id: 'player-account-af8f4c55-f515-4614-acf3-abe7cda5b49c', name: 'Sydney Lamphear'},
+      ],
+    },
+    {
+      id: 'preview-d6',
+      format: 'Doubles',
+      position: 6,
+      awayOutcome: 'L',
+      homeOutcome: 'W',
+      awayPlayers: [
+        {id: 'matt-miles-english', name: 'Matt-Miles English'},
+        {id: 'keith-connolly', name: 'Keith Connolly'},
+      ],
+      homePlayers: [
+        {id: 'owen-shields', name: 'Owen Shields'},
+        {id: 'justin-kent', name: 'Justin Kent'},
+      ],
+    },
+    {
+      id: 'preview-d7',
+      format: 'Doubles',
+      position: 7,
+      awayOutcome: 'L',
+      homeOutcome: 'W',
+      awayPlayers: [
+        {id: 'jimbo-lemire', name: 'JimBo Lemire'},
+        {id: 'derek-hynds', name: 'Derek Hynds'},
+      ],
+      homePlayers: [
+        {id: 'jordan-flor', name: 'Jordan Flor'},
+        {id: 'jason-long', name: 'Jason Long'},
+      ],
+    },
+    {
+      id: 'preview-d8',
+      format: 'Doubles',
+      position: 8,
+      awayOutcome: 'W',
+      homeOutcome: 'L',
+      awayPlayers: [
+        {id: 'john-loyd', name: 'John Loyd'},
+        {id: 'zach-redding', name: 'Zach Redding'},
+      ],
+      homePlayers: [
+        {id: 'eric-england', name: 'Eric England'},
+        {id: 'chuck-myers', name: 'Chuck Myers'},
       ],
     },
   ],
@@ -140,26 +199,10 @@ const preview: FinalMatchdaySnapshot = {
   publishedAt: '2026-10-03T17:00:00.000Z',
 };
 
-const noticeStyle: CSSProperties = {
-  margin: '14px auto 0',
-  width: 'min(1180px, calc(100% - 20px))',
-  padding: '10px 14px',
-  border: '1px solid rgba(255,255,255,.14)',
-  borderRadius: 10,
-  background: '#171b20',
-  color: '#f4f6f7',
-  fontSize: 12,
-  fontWeight: 850,
-  textAlign: 'center',
-};
-
 export default function FinalMatchdayPreviewPage() {
   return (
     <>
       <SiteHeader />
-      <div style={noticeStyle}>
-        PREVIEW ONLY · Sample result data for layout review · Nothing on this page publishes or changes league data
-      </div>
       <FinalMatchday snapshot={preview} />
       <Footer />
     </>
