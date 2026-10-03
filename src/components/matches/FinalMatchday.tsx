@@ -1,5 +1,6 @@
 import type {CSSProperties} from 'react';
 import {WeatherIcon} from '@/components/matches/WeatherIcon';
+import infoStyles from './MatchdayInfoStrip.module.css';
 import type {
   FinalMatchContest,
   FinalMatchdaySnapshot,
@@ -170,11 +171,19 @@ function FinalConditions({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
       : `${weather.windDirection === 'Variable' ? 'Var' : weather.windDirection ?? ''} ${weather.wind} mph`.trim();
 
   return (
-    <section className={styles.conditions} aria-label="Matchday conditions">
-      <span className={styles.conditionsLabel}>Matchday conditions</span>
-      <div className={styles.conditionsItems}>
-        <span><WeatherIcon name={weather.condition === 'cloudy' ? 'cloud' : weather.condition} /><strong>{weather.temperature}°</strong></span>
-        <span><WeatherIcon name="wind" /><strong>{wind}</strong></span>
+    <section className={`${infoStyles.strip} ${styles.lockedConditions}`} aria-label="Matchday conditions">
+      <div className={infoStyles.weather}>
+        <span className={infoStyles.label}>Conditions</span>
+        <div className={infoStyles.weatherItems}>
+          <span className={infoStyles.weatherItem}>
+            <WeatherIcon name={weather.condition === 'cloudy' ? 'cloud' : weather.condition} />
+            <strong>{weather.temperature}°</strong>
+          </span>
+          <span className={infoStyles.weatherItem}>
+            <WeatherIcon name="wind" />
+            <strong>{wind}</strong>
+          </span>
+        </div>
       </div>
     </section>
   );
