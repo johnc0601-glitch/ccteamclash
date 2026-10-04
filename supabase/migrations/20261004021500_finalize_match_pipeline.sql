@@ -18,6 +18,7 @@ create table if not exists public.launch_match_structural_points (
 alter table public.launch_match_structural_points enable row level security;
 
 grant select, insert, update, delete on public.launch_match_structural_points to authenticated;
+grant usage, select on sequence public.launch_match_structural_points_id_seq to authenticated;
 
 drop policy if exists "commissioners read match structural points" on public.launch_match_structural_points;
 create policy "commissioners read match structural points"
@@ -326,6 +327,18 @@ begin
       and algorithm_version = v_algorithm_version
   ) <> 1 then
     raise exception 'The frozen Matchday snapshot contains mixed venue classifications.'
+      using errcode = '23514';
+  end if;
+
+  if exists (
+    select 1
+    from public.launch_result_contests contest
+    left join public.launch_result_contest_players player on player.contest_id = contest.id
+    where contest.match_id = p_match_id
+    group by contest.id
+    having count(player.player_id) = 0
+  ) then
+    raise exception 'Every recorded contest needs at least one assigned player. Remove unused contest rows before finalizing.'
       using errcode = '23514';
   end if;
 
