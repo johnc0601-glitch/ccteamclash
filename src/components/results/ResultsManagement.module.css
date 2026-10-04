@@ -19,6 +19,30 @@
 .final { background: #dceac8; color: #36520d; }
 .editor { border-top: 4px solid #d5a91c; }
 .editor header button { border: 0; background: transparent; color: #59615d; font-weight: 900; cursor: pointer; }
+.aiImport { margin: 20px 24px 0; padding: 18px; border: 1px solid #d8dfcc; border-left: 4px solid #6f8a2b; border-radius: 6px; background: #f7f8f3; display: grid; gap: 14px; }
+.aiImportIntro { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.aiImportIntro > div { min-width: 0; }
+.aiImportIntro > div > span { color: #56701c; font-size: 10px; font-weight: 950; text-transform: uppercase; }
+.aiImport h3 { margin: 4px 0 6px; font-size: 18px; text-transform: uppercase; }
+.aiImport p { margin: 0; max-width: 720px; color: #626a65; line-height: 1.45; }
+.photoPicker { flex: 0 0 auto; min-height: 42px; padding: 0 14px; border: 1px solid #69786a; border-radius: 4px; background: #fff; color: #273028; display: inline-flex; align-items: center; justify-content: center; font-weight: 950; cursor: pointer; }
+.photoPicker input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.aiImportControls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.aiImportControls > span { color: #6a716d; font-size: 12px; font-weight: 800; }
+.aiImportControls button { min-height: 42px; padding: 0 15px; border: 1px solid #171a18; border-radius: 4px; background: #171a18; color: #fff; font-weight: 950; text-transform: uppercase; cursor: pointer; }
+.aiImportControls button:disabled { opacity: .45; cursor: default; }
+.aiImportStatus { padding: 12px 14px; border-radius: 5px; background: #edf2df; display: grid; gap: 5px; color: #435027; }
+.aiImportStatus > span { font-size: 12px; }
+.aiImportStatus ul { margin: 4px 0 0; padding-left: 18px; color: #666d63; font-size: 12px; }
+.contestNeedsReview { box-shadow: inset 4px 0 0 #b88716; background: #fffdf6; }
+.contestTitle { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.aiReviewBadge, .aiReadBadge { padding: 4px 7px; border-radius: 999px; font-size: 9px; font-weight: 950; text-transform: uppercase; letter-spacing: .03em; }
+.aiReviewBadge { background: #fff0bd; color: #755900; }
+.aiReadBadge { background: #e5eed5; color: #41610e; }
+.aiContestReview { padding: 11px 12px; border: 1px solid #e0c67f; border-radius: 5px; background: #fff8df; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.aiContestReview > div { display: grid; gap: 3px; }
+.aiContestReview span, .aiContestReview small { color: #675b38; font-size: 11px; }
+.aiContestReview button { min-height: 34px; flex: 0 0 auto; padding: 0 10px; border: 1px solid #8d742d; border-radius: 4px; background: #fff; color: #54471f; font-weight: 900; cursor: pointer; }
 .scores { padding: 32px 24px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 18px; }
 .scores label { display: grid; gap: 8px; }
 .scores label > span { font-size: 12px; font-weight: 900; }
@@ -55,4 +79,7 @@
   .scores > b { display: none; }
   .contests > header, .contestButtons { align-items: stretch; flex-direction: column; }
   .playerSides, .contestScores { grid-template-columns: 1fr; }
+  .aiImport { margin: 16px 14px 0; padding: 14px; }
+  .aiImportIntro, .aiImportControls, .aiContestReview { align-items: stretch; flex-direction: column; }
+  .photoPicker, .aiImportControls button, .aiContestReview button { width: 100%; }
 }
