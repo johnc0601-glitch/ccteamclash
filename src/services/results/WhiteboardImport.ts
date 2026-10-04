@@ -153,6 +153,12 @@ export function normalizeWhiteboardImport(
     formatOrder(left.format) - formatOrder(right.format) || left.position - right.position,
   );
 
+  flagDuplicateRoundPlayers(contests);
+  const singlesCount = contests.filter((contest) => contest.format === 'Singles').length;
+  const doublesCount = contests.filter((contest) => contest.format === 'Doubles').length;
+  if (singlesCount > 18) warnings.push(`AI found ${singlesCount} singles contests; review for duplicate or overlapping whiteboard rows.`);
+  if (doublesCount > 9) warnings.push(`AI found ${doublesCount} doubles contests; review for duplicate or overlapping whiteboard rows.`);
+
   const homeScore = halfPointScore(raw.homeScore);
   const awayScore = halfPointScore(raw.awayScore);
   if (raw.homeScore != null && homeScore == null) warnings.push('AI home score was invalid and was left blank.');
@@ -235,6 +241,39 @@ JSON SHAPE
   ],
   "warnings": [string]
 }`;
+}
+
+function flagDuplicateRoundPlayers(contests: WhiteboardImportedContest[]) {
+  const usage = new Map<string, WhiteboardImportedContest[]>();
+
+  for (const contest of contests) {
+    for (const player of contest.players) {
+      if (!player.playerId) continue;
+      const key = `${contest.format}::${player.playerId}`;
+      const rows = usage.get(key) ?? [];
+      rows.push(contest);
+      usage.set(key, rows);
+    }
+  }
+
+  for (const rows of usage.values()) {
+    if (rows.length < 2) continue;
+    for (const contest of rows) {
+      contest.reviewReasons = unique([
+        ...contest.reviewReasons,
+        `The same player appears in more than one ${contest.format.toLowerCase()} contest.`,
+      ]);
+      contest.confidence = 'Review';
+    }
+  }
+
+  for (const contest of contests) {
+    const ids = contest.players.map((player) => player.playerId).filter(Boolean);
+    if (new Set(ids).size !== ids.length) {
+      contest.reviewReasons = unique([...contest.reviewReasons, 'The same player appears on both sides of this contest.']);
+      contest.confidence = 'Review';
+    }
+  }
 }
 
 function normalizePlayerIds(
