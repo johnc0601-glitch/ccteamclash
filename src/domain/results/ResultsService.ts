@@ -177,14 +177,15 @@ export class ResultsService {
       }
       const expectedPlayers = contest.format === 'Singles' ? 2 : 4;
       if (contest.players.length !== expectedPlayers) {
-        return {contests: `${contest.format} contests require ${expectedPlayers} players.`};
+        return {contests: `${contest.format} contests require ${expectedPlayers} player slots.`};
       }
-      const playerIds = new Set(contest.players.map((player) => player.playerId));
-      if (playerIds.size !== expectedPlayers || playerIds.has('')) {
-        return {contests: 'Select every contest player once.'};
+      const selectedPlayers = contest.players.filter((player) => player.playerId.trim());
+      const playerIds = new Set(selectedPlayers.map((player) => player.playerId));
+      if (playerIds.size !== selectedPlayers.length) {
+        return {contests: 'A player can only occupy one slot in the same contest.'};
       }
       const slots = new Set(contest.players.map((player) => `${player.side}:${player.slot}`));
-      if (slots.size !== expectedPlayers || contest.players.some((player) =>
+      if (slots.size !== expectedPlayers || selectedPlayers.some((player) =>
         player.teamId !== (player.side === 'Home' ? homeTeamId : awayTeamId))) {
         return {contests: 'Contest players must use the scheduled home and away teams.'};
       }

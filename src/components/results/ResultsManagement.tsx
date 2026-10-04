@@ -3,11 +3,16 @@
 import {useMemo, useState} from 'react';
 import {
   loadResultContests,
+  loadResultProcessingStatus,
   loadResultRosterPlayers,
+  loadResultStructuralPoints,
   loadResultsRound,
   loadResultsWorkspace,
   saveOfficeResult,
+  type ResultProcessingStatus,
   type ResultRosterPlayer,
+  type ResultStructuralCategory,
+  type ResultStructuralPointInput,
 } from '@/app/office/results/actions';
 import type {Course} from '@/domain/course/Course';
 import type {
@@ -67,6 +72,9 @@ export function ResultsManagement({
   const [saving, setSaving] = useState(false);
   const [contests, setContests] = useState<ResultContestInput[]>([]);
   const [officialRosterPlayers, setOfficialRosterPlayers] = useState<ResultRosterPlayer[]>([]);
+  const [homeAdjustment, setHomeAdjustment] = useState<{category: ResultStructuralCategory | ''; note: string}>({category: '', note: ''});
+  const [awayAdjustment, setAwayAdjustment] = useState<{category: ResultStructuralCategory | ''; note: string}>({category: '', note: ''});
+  const [processingStatus, setProcessingStatus] = useState<ResultProcessingStatus | null>(null);
 
   async function load(preferredRoundId?: string) {
     const workspace = await loadResultsWorkspace(preferredRoundId || roundId);
@@ -103,13 +111,16 @@ export function ResultsManagement({
     setAwayScore(result?.awayScore === null || result?.awayScore === undefined ? '' : String(result.awayScore));
     setFieldErrors({});
     setMessage('');
-    const [contestResult, rosterResult] = await Promise.all([
+    const [contestResult, rosterResult, structuralResult, processingResult] = await Promise.all([
       loadResultContests(match.id),
       loadResultRosterPlayers(match.id),
+      loadResultStructuralPoints(match.id),
+      loadResultProcessingStatus(match.id),
     ]);
     if (!contestResult.ok) {
       setContests([]);
       setOfficialRosterPlayers([]);
+      setProcessingStatus(null);
       setMessage(contestResult.message);
       return;
     }
@@ -120,15 +131,67 @@ export function ResultsManagement({
       setOfficialRosterPlayers([]);
       setMessage(rosterResult.message);
     }
+    if (structuralResult.ok) {
+      const homePoint = structuralResult.data.find((point) => point.awardedTeamId === match.homeTeamId);
+      const awayPoint = structuralResult.data.find((point) => point.awardedTeamId === match.awayTeamId);
+      setHomeAdjustment({
+        category: homePoint?.category ?? '',
+        note: homePoint?.note ?? '',
+      });
+      setAwayAdjustment({
+        category: awayPoint?.category ?? '',
+        note: awayPoint?.note ?? '',
+      });
+    } else {
+      setHomeAdjustment({category: '', note: ''});
+      setAwayAdjustment({category: '', note: ''});
+    }
+    setProcessingStatus(processingResult.ok ? processingResult.data : null);
   }
 
   async function save(action: 'draft' | 'publish' | 'reopen') {
     if (!editor) return;
     setSaving(true);
     setFieldErrors({});
+
+    const parsedHomeScore = parseScore(homeScore);
+    const parsedAwayScore = parseScore(awayScore);
+    const audit = resultAudit(contests, parsedHomeScore, parsedAwayScore);
+
+    if (action === 'publish') {
+      if (audit.homeResidual < 0 || audit.awayResidual < 0) {
+        setSaving(false);
+        setMessage('The official score is lower than the entered matchup points. Review the result rows before finalizing.');
+        return;
+      }
+      if ((audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)) {
+        setSaving(false);
+        setMessage('Choose a reason for every additional scoring adjustment before finalizing.');
+        return;
+      }
+    }
+
+    const structuralPoints: ResultStructuralPointInput[] = [];
+    if (editor.match.homeTeamId && audit.homeResidual > 0 && homeAdjustment.category) {
+      structuralPoints.push({
+        awardedTeamId: editor.match.homeTeamId,
+        category: homeAdjustment.category,
+        points: audit.homeResidual,
+        note: homeAdjustment.note,
+      });
+    }
+    if (editor.match.awayTeamId && audit.awayResidual > 0 && awayAdjustment.category) {
+      structuralPoints.push({
+        awardedTeamId: editor.match.awayTeamId,
+        category: awayAdjustment.category,
+        points: audit.awayResidual,
+        note: awayAdjustment.note,
+      });
+    }
+
     const input = {
-      homeScore: parseScore(homeScore),
-      awayScore: parseScore(awayScore),
+      homeScore: parsedHomeScore,
+      awayScore: parsedAwayScore,
       contests,
     };
     const result = await saveOfficeResult(
@@ -136,6 +199,7 @@ export function ResultsManagement({
       editor.match.id,
       editor.match.seasonId,
       input,
+      structuralPoints,
     );
     setSaving(false);
     if (!result.ok) {
@@ -143,10 +207,25 @@ export function ResultsManagement({
       setMessage(result.message);
       return;
     }
-    setMessage(action === 'draft' ? 'Draft saved.' : action === 'publish' ? 'Result published.' : 'Result reopened.');
+    setMessage(
+      action === 'draft'
+        ? 'Draft saved.'
+        : action === 'publish'
+          ? 'Match finalized. Clash Index, stats, standings, and Clash Pulse data are ready.'
+          : 'Result reopened.',
+    );
     await load(roundId);
     setEditor({match: editor.match, result: result.data});
+    if (action === 'publish') {
+      const status = await loadResultProcessingStatus(editor.match.id);
+      setProcessingStatus(status.ok ? status.data : null);
+    }
   }
+
+  const audit = useMemo(
+    () => resultAudit(contests, parseScore(homeScore), parseScore(awayScore)),
+    [contests, homeScore, awayScore],
+  );
 
   const teamNames = useMemo(() => new Map(teams.map((team) => [team.id, team.name])), [teams]);
   const courseNames = useMemo(() => new Map(courses.map((course) => [course.id, course.name])), [courses]);
@@ -314,11 +393,80 @@ export function ResultsManagement({
             )) : <p className={styles.emptyContest}>No player contests entered yet. Team-only results remain supported.</p>}
             {fieldErrors.contests ? <p className={styles.contestError}>{fieldErrors.contests}</p> : null}
           </section>
-          <p className={styles.review}>
-            {editor.result?.status === 'Published'
-              ? 'This result is final and locked. Reopen it before making a correction.'
-              : 'Review both team scores before publishing. Drafts are visible only in the Commissioner Office.'}
-          </p>
+          <div className={styles.review}>
+            <strong>Finalize audit</strong>
+            <div style={{display: 'grid', gap: 4, marginTop: 6}}>
+              <span>Recorded matchups: {formatPoints(audit.homeContestPoints)}–{formatPoints(audit.awayContestPoints)}</span>
+              {audit.automaticHomePoints || audit.automaticAwayPoints ? (
+                <span>
+                  Automatic matchup slots: {editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'Home'} +{formatPoints(audit.automaticHomePoints)}
+                  {' · '}
+                  {editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'Away'} +{formatPoints(audit.automaticAwayPoints)}
+                </span>
+              ) : null}
+              {audit.homeResidual > 0 ? (
+                <label>
+                  <span>{editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'Home'} additional +{formatPoints(audit.homeResidual)}</span>
+                  <select
+                    disabled={editor.result?.status === 'Published'}
+                    value={homeAdjustment.category}
+                    onChange={(event) => setHomeAdjustment((current) => ({...current, category: event.target.value as ResultStructuralCategory | ''}))}
+                  >
+                    <option value="">Choose reason</option>
+                    <option value="NoShow">No-show</option>
+                    <option value="WomenBonus">Women bonus</option>
+                    <option value="Penalty">Penalty</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Optional note"
+                    disabled={editor.result?.status === 'Published'}
+                    value={homeAdjustment.note}
+                    onChange={(event) => setHomeAdjustment((current) => ({...current, note: event.target.value}))}
+                  />
+                </label>
+              ) : null}
+              {audit.awayResidual > 0 ? (
+                <label>
+                  <span>{editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'Away'} additional +{formatPoints(audit.awayResidual)}</span>
+                  <select
+                    disabled={editor.result?.status === 'Published'}
+                    value={awayAdjustment.category}
+                    onChange={(event) => setAwayAdjustment((current) => ({...current, category: event.target.value as ResultStructuralCategory | ''}))}
+                  >
+                    <option value="">Choose reason</option>
+                    <option value="NoShow">No-show</option>
+                    <option value="WomenBonus">Women bonus</option>
+                    <option value="Penalty">Penalty</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Optional note"
+                    disabled={editor.result?.status === 'Published'}
+                    value={awayAdjustment.note}
+                    onChange={(event) => setAwayAdjustment((current) => ({...current, note: event.target.value}))}
+                  />
+                </label>
+              ) : null}
+              {audit.homeResidual < 0 || audit.awayResidual < 0 ? (
+                <span>Score audit mismatch — the official score is below the entered matchup points.</span>
+              ) : null}
+              {editor.result?.status === 'Published' && processingStatus?.ciProcessed ? (
+                <span>CI processed · {processingStatus.factCount} rating facts · {processingStatus.playerUpdateCount} players updated · Clash Pulse ready</span>
+              ) : editor.result?.status === 'Published' ? (
+                <span>Published result · CI processing has not been completed for this match.</span>
+              ) : null}
+            </div>
+            <p style={{marginBottom: 0}}>
+              {editor.result?.status === 'Published'
+                ? processingStatus?.ciProcessed
+                  ? 'This result is final and CI-locked. Corrections require the CI replay workflow.'
+                  : 'This result is final. It can still be reopened because CI has not been published.'
+                : 'Finalizing publishes the scoreboard, updates CI, refreshes stats/standings, and makes verified Clash Pulse facts available.'}
+            </p>
+          </div>
           {message ? <p className={styles.message} role="status">{message}</p> : null}
           <div className={styles.actions}>
             {editor.result?.status === 'Published' ? (
@@ -326,7 +474,14 @@ export function ResultsManagement({
             ) : (
               <>
                 <button type="button" className={styles.secondary} disabled={saving} onClick={() => void save('draft')}>Save draft</button>
-                <button type="button" className={styles.primary} disabled={saving} onClick={() => void save('publish')}>Publish final result</button>
+                <button
+                  type="button"
+                  className={styles.primary}
+                  disabled={saving || audit.homeResidual < 0 || audit.awayResidual < 0 || (audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)}
+                  onClick={() => void save('publish')}
+                >
+                  Finalize match
+                </button>
               </>
             )}
           </div>
@@ -349,6 +504,48 @@ function toContestInput(contest: ResultContest): ResultContestInput {
   };
 }
 
+
+function resultAudit(
+  contests: ResultContestInput[],
+  homeScore: number | null,
+  awayScore: number | null,
+) {
+  let homeContestPoints = 0;
+  let awayContestPoints = 0;
+  let automaticHomePoints = 0;
+  let automaticAwayPoints = 0;
+
+  for (const contest of contests) {
+    const maximumPoints = contest.format === 'Singles' ? 1 : 2;
+    const expectedPlayersPerSide = contest.format === 'Singles' ? 1 : 2;
+    if (contest.homeOutcome === 'W') {
+      homeContestPoints += maximumPoints;
+    } else if (contest.homeOutcome === 'L') {
+      awayContestPoints += maximumPoints;
+    } else {
+      homeContestPoints += maximumPoints / 2;
+      awayContestPoints += maximumPoints / 2;
+    }
+
+    const homePlayers = contest.players.filter((player) => player.side === 'Home' && player.playerId.trim()).length;
+    const awayPlayers = contest.players.filter((player) => player.side === 'Away' && player.playerId.trim()).length;
+    automaticHomePoints += Math.max(0, expectedPlayersPerSide - awayPlayers);
+    automaticAwayPoints += Math.max(0, expectedPlayersPerSide - homePlayers);
+  }
+
+  return {
+    homeContestPoints,
+    awayContestPoints,
+    automaticHomePoints,
+    automaticAwayPoints,
+    homeResidual: homeScore == null ? 0 : homeScore - homeContestPoints,
+    awayResidual: awayScore == null ? 0 : awayScore - awayContestPoints,
+  };
+}
+
+function formatPoints(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
 
 function parseScore(value: string): number | null {
   if (!value.trim()) return null;

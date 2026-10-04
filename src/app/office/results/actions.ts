@@ -17,6 +17,7 @@ import type {
 import type {Match} from '@/domain/schedule/Match';
 import type {Round} from '@/domain/schedule/Round';
 import type {Schedule} from '@/domain/schedule/Schedule';
+import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 import type {Team} from '@/models/Team';
 import {easternDate} from '@/services/weather/MatchWeather';
@@ -42,6 +43,22 @@ export type ResultRosterPlayer = {
   id: string;
   name: string;
   teamId: string;
+};
+
+export type ResultStructuralCategory = 'NoShow' | 'WomenBonus' | 'Penalty' | 'Other';
+
+export type ResultStructuralPointInput = {
+  awardedTeamId: string;
+  category: ResultStructuralCategory;
+  points: number;
+  note?: string;
+};
+
+export type ResultProcessingStatus = {
+  ciProcessed: boolean;
+  factCount: number;
+  playerUpdateCount: number;
+  processedAt: string | null;
 };
 
 export async function loadResultsWorkspace(
@@ -153,11 +170,85 @@ export async function loadResultRosterPlayers(
   }
 }
 
+
+export async function loadResultStructuralPoints(
+  matchId: string,
+): Promise<ResultsReadResult<ResultStructuralPointInput[]>> {
+  const normalizedMatchId = matchId.trim();
+  if (!normalizedMatchId || normalizedMatchId.length > 200) {
+    return {ok: false, message: 'A valid match is required.'};
+  }
+
+  const access = await getCommissionerAccess();
+  if (!access.ok) return access;
+
+  try {
+    const {data, error} = await (access.supabase as any)
+      .from('launch_match_structural_points')
+      .select('awarded_team_id,category,points,note')
+      .eq('match_id', normalizedMatchId)
+      .order('awarded_team_id')
+      .order('category');
+    if (error) throw error;
+
+    return {
+      ok: true,
+      data: (data ?? []).map((row: {
+        awarded_team_id: string;
+        category: ResultStructuralCategory;
+        points: number | string;
+        note: string | null;
+      }) => ({
+        awardedTeamId: row.awarded_team_id,
+        category: row.category,
+        points: Number(row.points),
+        note: row.note ?? undefined,
+      })),
+    };
+  } catch {
+    return {ok: false, message: 'Additional scoring adjustments could not be loaded.'};
+  }
+}
+
+export async function loadResultProcessingStatus(
+  matchId: string,
+): Promise<ResultsReadResult<ResultProcessingStatus>> {
+  const normalizedMatchId = matchId.trim();
+  if (!normalizedMatchId || normalizedMatchId.length > 200) {
+    return {ok: false, message: 'A valid match is required.'};
+  }
+
+  const access = await getCommissionerAccess();
+  if (!access.ok) return access;
+
+  try {
+    const {data, error} = await (createAdminClient() as any)
+      .from('clash_match_publications')
+      .select('fact_count,player_update_count,published_at')
+      .eq('match_id', normalizedMatchId)
+      .maybeSingle();
+    if (error) throw error;
+
+    return {
+      ok: true,
+      data: {
+        ciProcessed: Boolean(data),
+        factCount: Number(data?.fact_count ?? 0),
+        playerUpdateCount: Number(data?.player_update_count ?? 0),
+        processedAt: data?.published_at ?? null,
+      },
+    };
+  } catch {
+    return {ok: false, message: 'Post-match processing status could not be loaded.'};
+  }
+}
+
 export async function saveOfficeResult(
   action: 'draft' | 'publish' | 'reopen',
   matchId: string,
   seasonId: string,
   input: MatchResultInput,
+  structuralPoints: ResultStructuralPointInput[] = [],
 ): Promise<ResultsServiceResult<MatchResult>> {
   const normalizedMatchId = matchId.trim();
   if (!normalizedMatchId || normalizedMatchId.length > 200) {
@@ -168,22 +259,114 @@ export async function saveOfficeResult(
   if (!access.ok) return access;
 
   const resultsService = await createServerResultsService();
-  const result = action === 'draft'
-    ? await resultsService.saveDraft(normalizedMatchId, input)
-    : action === 'publish'
-      ? await resultsService.publish(normalizedMatchId, input)
-      : await resultsService.reopen(normalizedMatchId);
-  if (!result.ok) return result;
 
-  if (action === 'publish') {
-    await captureFinalMatchdayWeather(access.supabase, normalizedMatchId);
+  try {
+    let result: ResultsServiceResult<MatchResult>;
+
+    if (action === 'reopen') {
+      result = await resultsService.reopen(normalizedMatchId);
+    } else {
+      // Persist the editable payload first. Finalization operates only on the
+      // persisted Draft so a CI failure can never leave a public partial result.
+      result = await resultsService.saveDraft(normalizedMatchId, input);
+      if (!result.ok) return result;
+
+      const structuralSave = await replaceResultStructuralPoints(
+        access.supabase,
+        normalizedMatchId,
+        structuralPoints,
+      );
+      if (!structuralSave.ok) return structuralSave;
+
+      if (action === 'publish') {
+        const {error} = await (access.supabase as any).rpc(
+          'finalize_clash_match_result',
+          {p_match_id: normalizedMatchId},
+        );
+        if (error) {
+          return {
+            ok: false,
+            message: cleanFinalizationError(error.message),
+          };
+        }
+
+        const published = await resultsService.getResult(normalizedMatchId);
+        if (!published || published.status !== 'Published') {
+          return {ok: false, message: 'Finalization completed without a published result. Review the Matchday before retrying.'};
+        }
+        result = {ok: true, data: published};
+      }
+    }
+
+    if (!result.ok) return result;
+
+    if (action === 'publish') {
+      await captureFinalMatchdayWeather(access.supabase, normalizedMatchId);
+    }
+
+    if (action !== 'draft' && seasonId.trim()) {
+      await (await createServerPlayoffService()).getBracket(seasonId.trim());
+    }
+    revalidateResultSurfaces(normalizedMatchId);
+    return result;
+  } catch (error) {
+    return {
+      ok: false,
+      message: cleanFinalizationError(error instanceof Error ? error.message : 'Result processing failed.'),
+    };
+  }
+}
+
+async function replaceResultStructuralPoints(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  matchId: string,
+  points: ResultStructuralPointInput[],
+): Promise<{ok: true} | {ok: false; message: string}> {
+  const normalized = points.filter((point) =>
+    point.awardedTeamId.trim()
+    && Number.isFinite(point.points)
+    && point.points > 0
+    && Number.isInteger(point.points * 2)
+    && ['NoShow', 'WomenBonus', 'Penalty', 'Other'].includes(point.category),
+  );
+
+  if (normalized.length !== points.length) {
+    return {ok: false, message: 'Review the additional scoring adjustments before finalizing.'};
   }
 
-  if (action !== 'draft' && seasonId.trim()) {
-    await (await createServerPlayoffService()).getBracket(seasonId.trim());
+  const {error: deleteError} = await (supabase as any)
+    .from('launch_match_structural_points')
+    .delete()
+    .eq('match_id', matchId);
+  if (deleteError) {
+    return {ok: false, message: 'Existing scoring adjustments could not be replaced.'};
   }
-  revalidateResultSurfaces(normalizedMatchId);
-  return result;
+
+  if (!normalized.length) return {ok: true};
+
+  const {error: insertError} = await (supabase as any)
+    .from('launch_match_structural_points')
+    .insert(normalized.map((point) => ({
+      match_id: matchId,
+      awarded_team_id: point.awardedTeamId,
+      category: point.category,
+      points: point.points,
+      note: point.note?.trim() || null,
+      updated_at: new Date().toISOString(),
+    })));
+  if (insertError) {
+    return {ok: false, message: 'Additional scoring adjustments could not be saved.'};
+  }
+
+  return {ok: true};
+}
+
+function cleanFinalizationError(message: string): string {
+  const normalized = message.replace(/^.*?error:\s*/i, '').trim();
+  if (normalized.includes('This Matchday has already updated Clash Index')) {
+    return 'This Matchday has already updated Clash Index. Use the CI correction workflow instead of reopening it.';
+  }
+  return normalized || 'Match finalization failed.';
 }
 
 async function getCommissionerAccess() {

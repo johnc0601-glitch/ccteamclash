@@ -92,6 +92,24 @@ test('player contest validation rejects incomplete singles, malformed doubles, a
   if (!invalid.ok) assert.match(invalid.fieldErrors?.contests ?? '', /scheduled home and away teams/i);
 });
 
+test('an unfilled opponent slot can be saved as an automatic structural matchup point', async () => {
+  const service = createService();
+  const matchId = 'summer-2026-r1-dark-ninjas';
+  const contests = validContests(matchId);
+  contests[0].players[1].playerId = '';
+
+  const saved = await service.saveDraft(matchId, {
+    homeScore: 2,
+    awayScore: 1,
+    contests,
+  });
+
+  assert.equal(saved.ok, true);
+  const stored = await service.getContests(matchId);
+  assert.equal(stored[0].players.length, 1);
+  assert.equal(stored[0].players[0].side, 'Home');
+});
+
 function validContests(matchId: string): ResultContestInput[] {
   return [
     {
