@@ -90,9 +90,9 @@ export class SupabaseResultsRepository implements ResultsRepository {
         updated_at: now,
       })));
     if (contestError) throw contestError;
-    const {error: playerError} = await this.supabase
-      .from('launch_result_contest_players')
-      .insert(contests.flatMap((contest) => contest.players.map((player) => ({
+    const selectedPlayers = contests.flatMap((contest) => contest.players
+      .filter((player) => player.playerId.trim())
+      .map((player) => ({
         contest_id: contest.id,
         player_id: player.playerId,
         team_id: player.teamId,
@@ -102,8 +102,13 @@ export class SupabaseResultsRepository implements ResultsRepository {
         team_name: player.teamId,
         created_at: now,
         updated_at: now,
-      }))));
-    if (playerError) throw playerError;
+      })));
+    if (selectedPlayers.length) {
+      const {error: playerError} = await this.supabase
+        .from('launch_result_contest_players')
+        .insert(selectedPlayers);
+      if (playerError) throw playerError;
+    }
     return this.getContests(matchId);
   }
 }
