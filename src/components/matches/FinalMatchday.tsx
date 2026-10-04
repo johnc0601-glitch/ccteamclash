@@ -18,10 +18,7 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
   const singles = snapshot.contests.filter((contest) => contest.format === 'Singles');
   const doubles = snapshot.contests.filter((contest) => contest.format === 'Doubles');
   const doublesTotals = contestPoints(doubles, 2);
-  const singlesTotals = {
-    away: Math.max(0, snapshot.awayScore - doublesTotals.away),
-    home: Math.max(0, snapshot.homeScore - doublesTotals.home),
-  };
+  const singlesTotals = contestPoints(singles, 1);
 
   return (
     <main className={`${pageStyles.page} ${snapshot.awayTeam.id === 'kb' ? styles.kbAwayMuted : ''}`} style={pageStyle}>
