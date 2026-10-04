@@ -252,6 +252,47 @@
   background: color-mix(in srgb, var(--match-home) 84%, #091015);
 }
 
+/* KB's cyan is intentionally vivid in the hero. In result cards, mute only
+   the left/away treatment so winner pills remain readable without dominating. */
+.kbAwayMuted .resultsCard {
+  background:
+    radial-gradient(circle at 18% 10%,
+      color-mix(in srgb, var(--match-away) 24%, transparent),
+      transparent 42%),
+    radial-gradient(circle at 82% 10%,
+      color-mix(in srgb, var(--match-home) 34%, transparent),
+      transparent 42%),
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--match-away) 24%, #091015) 0%,
+      color-mix(in srgb, var(--match-away) 14%, #0c1217) 38%,
+      #11161b 48%,
+      #11161b 52%,
+      color-mix(in srgb, var(--match-home) 20%, #0c1217) 62%,
+      color-mix(in srgb, var(--match-home) 34%, #091015) 100%);
+}
+
+.kbAwayMuted .resultRows {
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--match-away) 8%, rgba(8, 12, 16, .68)) 0%,
+      rgba(8, 12, 16, .68) 48%,
+      rgba(8, 12, 16, .68) 52%,
+      color-mix(in srgb, var(--match-home) 12%, rgba(8, 12, 16, .68)) 100%);
+}
+
+.kbAwayMuted .resultRow {
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--match-away) 4%, transparent) 0%,
+      transparent 42%,
+      transparent 58%,
+      color-mix(in srgb, var(--match-home) 7%, transparent) 100%);
+}
+
+.kbAwayMuted .awayWinner {
+  background: color-mix(in srgb, var(--match-away) 68%, #10242a);
+}
+
 .outcome {
   display: grid;
   place-items: center;
