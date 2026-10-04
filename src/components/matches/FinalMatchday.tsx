@@ -24,7 +24,7 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
   };
 
   return (
-    <main className={pageStyles.page} style={pageStyle}>
+    <main className={`${pageStyles.page} ${snapshot.awayTeam.id === 'kb' ? styles.kbAwayMuted : ''}`} style={pageStyle}>
       <FinalHero snapshot={snapshot} singlesTotals={singlesTotals} doublesTotals={doublesTotals} />
       <div className={`shell ${pageStyles.content} ${styles.finalContent}`}>
         <section className={styles.resultsCard} aria-label="Final result breakdown">
