@@ -23,11 +23,11 @@ export default async function OfficeSettingsPage({searchParams}: OfficeSettingsP
           <span>Match pages</span>
           <h2 id="matchup-predictor-access">Matchup predictor access</h2>
           <p>
-            Chance of Victory percentages appear only after the official match rosters lock.
-            They are visible only to approved captains and commissioners.
+            Matchup percentages are visible only to approved captains and commissioners.
+            They begin as roster-based estimates, update from confirmed availability, and recalculate from the official rosters after lock.
           </p>
           <p className={styles.current}>
-            Current policy: Captains + Commissioner · Locked rosters only
+            Current policy: Captains + Commissioner · Recalculates through roster lock
           </p>
         </section>
       </div>
