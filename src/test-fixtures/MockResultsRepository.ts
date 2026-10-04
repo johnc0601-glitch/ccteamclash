@@ -31,11 +31,13 @@ export class MockResultsRepository implements ResultsRepository {
     const stored = contests.map((contest): ResultContest => ({
       ...contest,
       matchId,
-      players: contest.players.map((player) => ({
-        ...player,
-        playerName: player.playerId,
-        teamName: player.teamId,
-      })),
+      players: contest.players
+        .filter((player) => player.playerId.trim())
+        .map((player) => ({
+          ...player,
+          playerName: player.playerId,
+          teamName: player.teamId,
+        })),
       createdAt: existing.get(contest.id)?.createdAt ?? now,
       updatedAt: now,
     }));
