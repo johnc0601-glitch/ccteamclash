@@ -24,7 +24,23 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
     <main className={`${pageStyles.page} ${snapshot.awayTeam.id === 'kb' ? styles.kbAwayMuted : ''}`} style={pageStyle}>
       <FinalHero snapshot={snapshot} singlesTotals={singlesTotals} doublesTotals={doublesTotals} />
       <div className={`shell ${pageStyles.content} ${styles.finalContent}`}>
-        <section className={styles.resultsCard} aria-label="Final result breakdown">
+        <section className={styles.desktopScoreboard} aria-label="Final result scoreboard">
+          <DesktopResultBoard
+            title="Singles results"
+            contests={singles}
+            totals={singlesTotals}
+            awayTeam={snapshot.awayTeam}
+            homeTeam={snapshot.homeTeam}
+          />
+          <DesktopResultBoard
+            title="Doubles results"
+            contests={doubles}
+            totals={doublesTotals}
+            awayTeam={snapshot.awayTeam}
+            homeTeam={snapshot.homeTeam}
+          />
+        </section>
+        <section className={styles.mobileResultsCard} aria-label="Final result breakdown">
           <ResultDetails title="Singles results" contests={singles} />
           <ResultDetails title="Doubles results" contests={doubles} />
         </section>
@@ -103,6 +119,62 @@ function TeamSide({team, side}: {team: FinalMatchTeam; side: 'away' | 'home'}) {
         : <div className={`${heroStyles.heroLogoFallback} ${side === 'home' ? styles.finalHomeLogo : ''}`}>{initials(team.name)}</div>}
       <strong>{team.name}</strong>
       <span>{side === 'away' ? 'Away' : 'Home'}</span>
+    </div>
+  );
+}
+
+function DesktopResultBoard({
+  title,
+  contests,
+  totals,
+  awayTeam,
+  homeTeam,
+}: {
+  title: string;
+  contests: FinalMatchContest[];
+  totals: {away: number; home: number};
+  awayTeam: FinalMatchTeam;
+  homeTeam: FinalMatchTeam;
+}) {
+  return (
+    <section className={styles.desktopBoard}>
+      <header className={styles.desktopBoardHeader}>
+        <strong>{title}</strong>
+        <span>({contests.length})</span>
+      </header>
+      <div className={styles.desktopBoardRows}>
+        {contests.length
+          ? contests.map((contest) => <DesktopResultRow contest={contest} key={contest.id} />)
+          : <p className={styles.empty}>No individual results were posted.</p>}
+      </div>
+      <div className={styles.desktopBoardTotals} aria-label={`${title} totals: ${awayTeam.name} ${formatPoint(totals.away)}, ${homeTeam.name} ${formatPoint(totals.home)}`}>
+        <strong>{formatPoint(totals.away)}</strong>
+        <span>{awayTeam.name}</span>
+        <i aria-hidden="true" />
+        <span>{homeTeam.name}</span>
+        <strong>{formatPoint(totals.home)}</strong>
+      </div>
+    </section>
+  );
+}
+
+function DesktopResultRow({contest}: {contest: FinalMatchContest}) {
+  const awayWon = contest.awayOutcome === 'W';
+  const homeWon = contest.homeOutcome === 'W';
+  const tie = contest.awayOutcome === 'T' && contest.homeOutcome === 'T';
+  const pairClass = contest.format === 'Doubles' ? styles.desktopDoublesPair : '';
+  const rowLabel = contest.format === 'Doubles' ? `D${contest.position}` : String(contest.position);
+
+  return (
+    <div className={styles.desktopResultRow}>
+      <span className={styles.desktopPosition}>{rowLabel}</span>
+      <div className={awayWon ? `${styles.desktopPlayerSide} ${styles.awayWinner}` : styles.desktopPlayerSide}>
+        <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
+      </div>
+      <div className={styles.desktopVs}>{tie ? 'TIE' : 'VS'}</div>
+      <div className={homeWon ? `${styles.desktopPlayerSide} ${styles.homeWinner}` : styles.desktopPlayerSide}>
+        <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
+      </div>
     </div>
   );
 }
