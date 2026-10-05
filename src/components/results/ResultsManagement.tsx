@@ -29,6 +29,12 @@ import type {Match} from '@/domain/schedule/Match';
 import type {Round} from '@/domain/schedule/Round';
 import type {Schedule} from '@/domain/schedule/Schedule';
 import type {Team} from '@/models/Team';
+import {
+  calculateMatchPointsAvailability,
+  pointsPercentage,
+  type MatchPlayerGender,
+  type MatchPointsAvailability,
+} from '@/services/results/MatchPointsAvailability';
 import styles from './ResultsManagement.module.css';
 
 type EditorState = {
@@ -132,8 +138,10 @@ export function ResultsManagement({
       setMessage(rosterResult.message);
     }
     if (structuralResult.ok) {
-      const homePoint = structuralResult.data.find((point) => point.awardedTeamId === match.homeTeamId);
-      const awayPoint = structuralResult.data.find((point) => point.awardedTeamId === match.awayTeamId);
+      const homePoint = structuralResult.data.find((point) =>
+        point.awardedTeamId === match.homeTeamId && point.category !== 'WomenBonus');
+      const awayPoint = structuralResult.data.find((point) =>
+        point.awardedTeamId === match.awayTeamId && point.category !== 'WomenBonus');
       setHomeAdjustment({
         category: homePoint?.category ?? '',
         note: homePoint?.note ?? '',
@@ -156,7 +164,7 @@ export function ResultsManagement({
 
     const parsedHomeScore = parseScore(homeScore);
     const parsedAwayScore = parseScore(awayScore);
-    const audit = resultAudit(contests, parsedHomeScore, parsedAwayScore);
+    const audit = resultAudit(contests, parsedHomeScore, parsedAwayScore, playerGenders);
 
     if (action === 'publish') {
       if (audit.homeResidual < 0 || audit.awayResidual < 0) {
@@ -222,9 +230,19 @@ export function ResultsManagement({
     }
   }
 
+  const playerGenders = useMemo(
+    () => new Map(initialPlayers.map((player) => [player.id, player.gender] as const)),
+    [initialPlayers],
+  );
+
   const audit = useMemo(
-    () => resultAudit(contests, parseScore(homeScore), parseScore(awayScore)),
-    [contests, homeScore, awayScore],
+    () => resultAudit(contests, parseScore(homeScore), parseScore(awayScore), playerGenders),
+    [contests, homeScore, awayScore, playerGenders],
+  );
+
+  const displayAvailability = useMemo(
+    () => publishedAvailability(editor?.result) ?? audit.availability,
+    [editor?.result, audit.availability],
   );
 
   const teamNames = useMemo(() => new Map(teams.map((team) => [team.id, team.name])), [teams]);
@@ -397,6 +415,25 @@ export function ResultsManagement({
             <strong>Finalize audit</strong>
             <div style={{display: 'grid', gap: 4, marginTop: 6}}>
               <span>Recorded matchups: {formatPoints(audit.homeContestPoints)}–{formatPoints(audit.awayContestPoints)}</span>
+              <span>
+                Points available: {editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'Home'} {formatPoints(displayAvailability.homePointsAvailable)}
+                {' · '}
+                {editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'Away'} {formatPoints(displayAvailability.awayPointsAvailable)}
+              </span>
+              {displayAvailability.homeGenderBonusAvailable || displayAvailability.awayGenderBonusAvailable ? (
+                <span>
+                  Automatic gender bonus: {editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'Home'} +{formatPoints(displayAvailability.homeGenderBonusAvailable)}
+                  {' · '}
+                  {editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'Away'} +{formatPoints(displayAvailability.awayGenderBonusAvailable)}
+                </span>
+              ) : null}
+              {parseScore(homeScore) !== null && parseScore(awayScore) !== null ? (
+                <span>
+                  Points %: {editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'Home'} {formatPercentage(pointsPercentage(parseScore(homeScore)!, displayAvailability.homePointsAvailable))}
+                  {' · '}
+                  {editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'Away'} {formatPercentage(pointsPercentage(parseScore(awayScore)!, displayAvailability.awayPointsAvailable))}
+                </span>
+              ) : null}
               {audit.automaticHomePoints || audit.automaticAwayPoints ? (
                 <span>
                   Automatic matchup slots: {editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'Home'} +{formatPoints(audit.automaticHomePoints)}
@@ -414,7 +451,6 @@ export function ResultsManagement({
                   >
                     <option value="">Choose reason</option>
                     <option value="NoShow">No-show</option>
-                    <option value="WomenBonus">Women bonus</option>
                     <option value="Penalty">Penalty</option>
                     <option value="Other">Other</option>
                   </select>
@@ -437,7 +473,6 @@ export function ResultsManagement({
                   >
                     <option value="">Choose reason</option>
                     <option value="NoShow">No-show</option>
-                    <option value="WomenBonus">Women bonus</option>
                     <option value="Penalty">Penalty</option>
                     <option value="Other">Other</option>
                   </select>
@@ -509,6 +544,7 @@ function resultAudit(
   contests: ResultContestInput[],
   homeScore: number | null,
   awayScore: number | null,
+  playerGenders: ReadonlyMap<string, MatchPlayerGender>,
 ) {
   let homeContestPoints = 0;
   let awayContestPoints = 0;
@@ -533,14 +569,44 @@ function resultAudit(
     automaticAwayPoints += Math.max(0, expectedPlayersPerSide - homePlayers);
   }
 
+  const availability = calculateMatchPointsAvailability(contests, playerGenders);
+
   return {
     homeContestPoints,
     awayContestPoints,
     automaticHomePoints,
     automaticAwayPoints,
-    homeResidual: homeScore == null ? 0 : homeScore - homeContestPoints,
-    awayResidual: awayScore == null ? 0 : awayScore - awayContestPoints,
+    availability,
+    homeResidual: homeScore == null
+      ? 0
+      : homeScore - homeContestPoints - availability.homeGenderBonusAvailable,
+    awayResidual: awayScore == null
+      ? 0
+      : awayScore - awayContestPoints - availability.awayGenderBonusAvailable,
   };
+}
+
+function publishedAvailability(result: MatchResult | undefined): MatchPointsAvailability | undefined {
+  if (result?.status !== 'Published'
+    || result.homeBasePointsAvailable == null
+    || result.awayBasePointsAvailable == null
+    || result.homeGenderBonusAvailable == null
+    || result.awayGenderBonusAvailable == null
+    || result.homePointsAvailable == null
+    || result.awayPointsAvailable == null) return undefined;
+
+  return {
+    homeBasePointsAvailable: result.homeBasePointsAvailable,
+    awayBasePointsAvailable: result.awayBasePointsAvailable,
+    homeGenderBonusAvailable: result.homeGenderBonusAvailable,
+    awayGenderBonusAvailable: result.awayGenderBonusAvailable,
+    homePointsAvailable: result.homePointsAvailable,
+    awayPointsAvailable: result.awayPointsAvailable,
+  };
+}
+
+function formatPercentage(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
 }
 
 function formatPoints(value: number): string {
