@@ -360,12 +360,6 @@ export async function saveOfficeResult(
   }
 }
 
-type PersistedMatchAvailability = {
-  homeTeamId: string;
-  awayTeamId: string;
-  data: MatchPointsAvailability;
-};
-
 async function calculatePersistedMatchAvailability(
   supabase: Awaited<ReturnType<typeof createClient>>,
   resultsService: Awaited<ReturnType<typeof createServerResultsService>>,
