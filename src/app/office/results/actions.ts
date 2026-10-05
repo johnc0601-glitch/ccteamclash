@@ -23,6 +23,11 @@ import type {Team} from '@/models/Team';
 import {easternDate} from '@/services/weather/MatchWeather';
 import {getDailyMatchWeather} from '@/services/weather/MatchWeatherServer';
 import {saveFinalMatchdayWeather, type FinalMatchWeather} from '@/services/matches/FinalMatchdaySnapshot';
+import {
+  calculateMatchPointsAvailability,
+  type MatchPlayerGender,
+  type MatchPointsAvailability,
+} from '@/services/results/MatchPointsAvailability';
 
 type ResultsWorkspace = {
   schedules: Schedule[];
@@ -271,12 +276,50 @@ export async function saveOfficeResult(
       result = await resultsService.saveDraft(normalizedMatchId, input);
       if (!result.ok) return result;
 
+      const availability = await calculatePersistedMatchAvailability(
+        access.supabase,
+        resultsService,
+        normalizedMatchId,
+      );
+      if (!availability.ok) return availability;
+
+      const availabilitySave = await persistMatchPointsAvailability(
+        access.supabase,
+        normalizedMatchId,
+        availability.data,
+      );
+      if (!availabilitySave.ok) return availabilitySave;
+
+      const reviewedStructuralPoints = structuralPoints
+        .filter((point) => point.category !== 'WomenBonus');
+      if (availability.data.homeGenderBonusAvailable > 0) {
+        reviewedStructuralPoints.push({
+          awardedTeamId: availability.homeTeamId,
+          category: 'WomenBonus',
+          points: availability.data.homeGenderBonusAvailable,
+          note: 'Automatically calculated from the finalized matchup genders.',
+        });
+      }
+      if (availability.data.awayGenderBonusAvailable > 0) {
+        reviewedStructuralPoints.push({
+          awardedTeamId: availability.awayTeamId,
+          category: 'WomenBonus',
+          points: availability.data.awayGenderBonusAvailable,
+          note: 'Automatically calculated from the finalized matchup genders.',
+        });
+      }
+
       const structuralSave = await replaceResultStructuralPoints(
         access.supabase,
         normalizedMatchId,
-        structuralPoints,
+        reviewedStructuralPoints,
       );
       if (!structuralSave.ok) return structuralSave;
+
+      if (action === 'draft') {
+        const refreshedDraft = await resultsService.getResult(normalizedMatchId);
+        if (refreshedDraft) result = {ok: true, data: refreshedDraft};
+      }
 
       if (action === 'publish') {
         const {error} = await (access.supabase as any).rpc(
@@ -315,6 +358,83 @@ export async function saveOfficeResult(
       message: cleanFinalizationError(error instanceof Error ? error.message : 'Result processing failed.'),
     };
   }
+}
+
+type PersistedMatchAvailability = {
+  homeTeamId: string;
+  awayTeamId: string;
+  data: MatchPointsAvailability;
+};
+
+async function calculatePersistedMatchAvailability(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  resultsService: Awaited<ReturnType<typeof createServerResultsService>>,
+  matchId: string,
+): Promise<
+  | {ok: true; homeTeamId: string; awayTeamId: string; data: MatchPointsAvailability}
+  | {ok: false; message: string}
+> {
+  try {
+    const scheduleService = await createServerScheduleService();
+    const [match, contests] = await Promise.all([
+      scheduleService.getMatch(matchId),
+      resultsService.getContests(matchId),
+    ]);
+    if (!match?.homeTeamId || !match.awayTeamId) {
+      return {ok: false, message: 'Both scheduled teams are required to calculate points available.'};
+    }
+
+    const playerIds = [...new Set(
+      contests.flatMap((contest) => contest.players.map((player) => player.playerId))
+        .filter(Boolean),
+    )];
+    const genderByPlayerId = new Map<string, MatchPlayerGender>();
+    if (playerIds.length) {
+      const {data, error} = await (supabase as any)
+        .from('launch_players')
+        .select('id,gender')
+        .in('id', playerIds);
+      if (error) throw error;
+      for (const player of data ?? []) {
+        genderByPlayerId.set(
+          player.id,
+          player.gender === 'Female' || player.gender === 'Male' ? player.gender : 'Unknown',
+        );
+      }
+    }
+
+    return {
+      ok: true,
+      homeTeamId: match.homeTeamId,
+      awayTeamId: match.awayTeamId,
+      data: calculateMatchPointsAvailability(contests, genderByPlayerId),
+    };
+  } catch {
+    return {ok: false, message: 'Points available could not be calculated from the loaded scoreboard.'};
+  }
+}
+
+async function persistMatchPointsAvailability(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  matchId: string,
+  availability: MatchPointsAvailability,
+): Promise<{ok: true} | {ok: false; message: string}> {
+  const {error} = await (supabase as any)
+    .from('launch_match_results')
+    .update({
+      home_base_points_available: availability.homeBasePointsAvailable,
+      away_base_points_available: availability.awayBasePointsAvailable,
+      home_gender_bonus_available: availability.homeGenderBonusAvailable,
+      away_gender_bonus_available: availability.awayGenderBonusAvailable,
+      home_points_available: availability.homePointsAvailable,
+      away_points_available: availability.awayPointsAvailable,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('match_id', matchId);
+  if (error) {
+    return {ok: false, message: 'Points available could not be saved with the match result.'};
+  }
+  return {ok: true};
 }
 
 async function replaceResultStructuralPoints(
