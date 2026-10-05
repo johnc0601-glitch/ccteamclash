@@ -11,11 +11,15 @@ export default async function OfficeStandingsPage() {
       <section className="office-module-frame">
         <span>Automatic standings</span>
         <h2>{standings?.season.name ?? 'No active season'}</h2>
-        <p>Calculated from published match results. Draft and reopened results are excluded.</p>
+        <p>
+          Published regular-season results only. Ranking order: wins, head-to-head, then points percentage.
+        </p>
         <div style={{margin: '22px 0'}}>
           <Link className="office-public-link" href="/office/standings">Refresh standings</Link>
         </div>
-        {standings ? <StandingsTable entries={standings.entries} /> : <p>No standings are available.</p>}
+        {standings ? (
+          <StandingsTable entries={standings.entries} rounds={standings.rounds} />
+        ) : <p>No standings are available.</p>}
       </section>
     </OfficePage>
   );
