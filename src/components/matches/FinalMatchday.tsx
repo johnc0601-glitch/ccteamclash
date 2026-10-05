@@ -232,9 +232,11 @@ function ResultDetails({
     <details className={styles.resultDetails} open={initiallyOpen}>
       <summary>
         <span className={styles.resultSummaryTitle}>{title}</span>
-        <span className={styles.resultSummaryScore} aria-label={`${formatPoint(totals.away)} to ${formatPoint(totals.home)}`}>
+        <span className={styles.resultSummaryScore} aria-label={`${awayTeam.name} ${formatPoint(totals.away)} to ${homeTeam.name} ${formatPoint(totals.home)}`}>
+          <small className={styles.resultSummaryTeam}>{shortTeam(awayTeam)}</small>
           <strong>{formatPoint(totals.away)}</strong>
           <small>–</small>
+          <small className={styles.resultSummaryTeam}>{shortTeam(homeTeam)}</small>
           <strong>{formatPoint(totals.home)}</strong>
         </span>
       </summary>
