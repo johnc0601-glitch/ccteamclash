@@ -142,16 +142,27 @@ function DesktopResultBoard({
         <strong>{title}</strong>
         <span>({contests.length})</span>
       </header>
+      <div className={styles.desktopColumnHeader} aria-hidden="true">
+        <span>#</span>
+        <span>{awayTeam.name}</span>
+        <span>Result</span>
+        <span>{homeTeam.name}</span>
+      </div>
       <div className={styles.desktopBoardRows}>
         {contests.length
           ? contests.map((contest) => <DesktopResultRow contest={contest} key={contest.id} />)
           : <p className={styles.empty}>No individual results were posted.</p>}
       </div>
       <div className={styles.desktopBoardTotals} aria-label={`${title} totals: ${awayTeam.name} ${formatPoint(totals.away)}, ${homeTeam.name} ${formatPoint(totals.home)}`}>
-        <strong>{formatPoint(totals.away)}</strong>
-        <span>{awayTeam.name}</span>
-        <span>{homeTeam.name}</span>
-        <strong>{formatPoint(totals.home)}</strong>
+        <div className={styles.desktopTeamTotal}>
+          <strong>{formatPoint(totals.away)}</strong>
+          <span>{awayTeam.name}</span>
+        </div>
+        <span className={styles.desktopTotalLabel}>Section score</span>
+        <div className={`${styles.desktopTeamTotal} ${styles.desktopHomeTotal}`}>
+          <span>{homeTeam.name}</span>
+          <strong>{formatPoint(totals.home)}</strong>
+        </div>
       </div>
     </section>
   );

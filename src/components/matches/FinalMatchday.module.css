@@ -172,13 +172,38 @@
   font-weight: 900;
 }
 
+.desktopColumnHeader {
+  min-height: 29px;
+  padding: 0 10px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  border-bottom: 1px solid rgba(255, 255, 255, .13);
+  background: rgba(5, 9, 12, .58);
+  color: rgba(255, 255, 255, .55);
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.desktopColumnHeader span:first-child,
+.desktopColumnHeader span:nth-child(3) {
+  text-align: center;
+}
+
+.desktopColumnHeader span:last-child {
+  text-align: right;
+}
+
 .desktopBoardRows {
   display: grid;
 }
 
 .desktopResultRow {
   min-height: 46px;
-  padding: 6px 10px;
+  padding: 0 10px;
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) 38px minmax(0, 1fr);
   align-items: center;
@@ -198,15 +223,17 @@
 
 .desktopBoard:first-child .desktopResultRow {
   min-height: 41px;
-  padding-block: 4px;
 }
 
 .desktopBoard:last-child .desktopResultRow {
   min-height: 82px;
-  padding-block: 8px;
 }
 
 .desktopPosition {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border-right: 1px solid rgba(255,255,255,.06);
   color: rgba(255,255,255,.72);
   font-size: 10px;
   font-weight: 950;
@@ -214,9 +241,12 @@
 }
 
 .desktopPlayerSide {
+  height: 100%;
   min-width: 0;
-  padding: 7px 10px;
-  border-radius: 7px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  border-radius: 2px;
   color: var(--cc-body-text);
   font-size: 11px;
   font-weight: 800;
@@ -224,10 +254,17 @@
 }
 
 .desktopPlayerSide:last-child {
+  justify-content: flex-end;
   text-align: right;
 }
 
 .desktopVs {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border-right: 1px solid rgba(255,255,255,.06);
+  border-left: 1px solid rgba(255,255,255,.06);
+  background: rgba(4, 8, 11, .22);
   color: var(--cc-muted);
   font-size: 8px;
   font-weight: 950;
@@ -236,31 +273,41 @@
 }
 
 .desktopDoublesPair {
+  height: 100%;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
+  display: grid;
+  grid-template-rows: repeat(2, 1fr);
+  gap: 0;
 }
 
 .desktopDoublesPair .playerName {
-  display: block;
+  display: flex;
+  align-items: center;
 }
 
 .desktopDoublesPair .playerName + .playerName::before {
   content: none;
 }
 
+.desktopDoublesPair .playerName + .playerName {
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
 .desktopPlayerSide:last-child .desktopDoublesPair {
-  align-items: flex-end;
+  justify-items: stretch;
+}
+
+.desktopPlayerSide:last-child .desktopDoublesPair .playerName {
+  justify-content: flex-end;
 }
 
 .desktopBoardTotals {
   min-height: 56px;
   padding: 10px 16px;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   border-top: 1px solid var(--cc-card-border);
   background: rgba(6, 10, 14, .72);
 }
@@ -274,7 +321,19 @@
   line-height: 1;
 }
 
-.desktopBoardTotals span {
+.desktopTeamTotal {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.desktopHomeTotal {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.desktopTeamTotal span {
   color: var(--cc-heading);
   font-size: 11px;
   font-weight: 950;
@@ -282,8 +341,13 @@
   white-space: nowrap;
 }
 
-.desktopBoardTotals span:nth-of-type(2) {
-  margin-left: auto;
+.desktopTotalLabel {
+  color: rgba(255,255,255,.42);
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .mobileResultsCard {
