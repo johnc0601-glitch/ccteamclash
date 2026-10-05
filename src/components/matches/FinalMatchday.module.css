@@ -196,6 +196,16 @@
   border-top: 0;
 }
 
+.desktopBoard:first-child .desktopResultRow {
+  min-height: 41px;
+  padding-block: 4px;
+}
+
+.desktopBoard:last-child .desktopResultRow {
+  min-height: 82px;
+  padding-block: 8px;
+}
+
 .desktopPosition {
   color: rgba(255,255,255,.72);
   font-size: 10px;
