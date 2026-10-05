@@ -18,6 +18,7 @@ type MutableStanding = {
   losses: number;
   pointsFor: number;
   pointsAgainst: number;
+  pointsAvailable: number;
   roundResults: TeamRoundStanding[];
 };
 
@@ -28,6 +29,8 @@ type ResolvedRegularResult = {
   awayTeamId: string;
   homeScore: number;
   awayScore: number;
+  homePointsAvailable: number;
+  awayPointsAvailable: number;
 };
 
 export class StandingsService {
@@ -62,6 +65,7 @@ export class StandingsService {
         losses: 0,
         pointsFor: 0,
         pointsAgainst: 0,
+        pointsAvailable: 0,
         roundResults: [],
       },
     ]));
@@ -81,6 +85,8 @@ export class StandingsService {
       home.pointsAgainst += result.awayScore;
       away.pointsFor += result.awayScore;
       away.pointsAgainst += result.homeScore;
+      home.pointsAvailable += result.homePointsAvailable;
+      away.pointsAvailable += result.awayPointsAvailable;
 
       const homeOutcome = outcome(result.homeScore, result.awayScore);
       const awayOutcome = outcome(result.awayScore, result.homeScore);
@@ -92,30 +98,27 @@ export class StandingsService {
         home.losses += 1;
       }
 
-      const pointsAvailable = result.homeScore + result.awayScore;
       home.roundResults.push({
         roundId: result.roundId,
         matchId: result.matchId,
         outcome: homeOutcome,
         pointsFor: result.homeScore,
-        pointsAvailable,
+        pointsAvailable: result.homePointsAvailable,
       });
       away.roundResults.push({
         roundId: result.roundId,
         matchId: result.matchId,
         outcome: awayOutcome,
         pointsFor: result.awayScore,
-        pointsAvailable,
+        pointsAvailable: result.awayPointsAvailable,
       });
     }
 
     const calculated = [...entries.values()].map((entry): TeamStanding => {
-      const pointsAvailable = entry.pointsFor + entry.pointsAgainst;
       return {
         ...entry,
         rank: 0,
-        pointsAvailable,
-        pointsPercentage: pointsAvailable ? entry.pointsFor / pointsAvailable : 0,
+        pointsPercentage: entry.pointsAvailable ? entry.pointsFor / entry.pointsAvailable : 0,
         pointDifferential: entry.pointsFor - entry.pointsAgainst,
         winningPercentage: entry.gamesPlayed ? entry.wins / entry.gamesPlayed : 0,
         roundResults: [...entry.roundResults].sort((left, right) =>
@@ -150,6 +153,8 @@ export class StandingsService {
       awayTeamId: match.awayTeamId,
       homeScore: result.homeScore,
       awayScore: result.awayScore,
+      homePointsAvailable: result.homePointsAvailable ?? result.homeScore + result.awayScore,
+      awayPointsAvailable: result.awayPointsAvailable ?? result.homeScore + result.awayScore,
     };
   }
 
