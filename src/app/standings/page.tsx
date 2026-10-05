@@ -16,7 +16,7 @@ export default async function StandingsPage() {
           <span className="eyebrow">Current season</span>
           <h2>{standings?.season.name ?? 'No active season'}</h2>
           <p>
-            Ranked by wins, then head-to-head, then percentage of available Clash points earned.
+            Ranked by wins, then head-to-head, then percentage of available Clash points earned. Updates automatically from published Matchday results.
           </p>
           {standings ? (
             <StandingsTable entries={standings.entries} rounds={standings.rounds} />
