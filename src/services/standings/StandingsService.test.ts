@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {ResultsService} from '@/domain/results/ResultsService';
 import type {Match} from '@/domain/schedule/Match';
+import type {Round} from '@/domain/schedule/Round';
 import type {ScheduleService} from '@/domain/schedule/ScheduleService';
 import type {SeasonService} from '@/domain/season/SeasonService';
 import type {Team} from '@/models/Team';
@@ -19,8 +20,14 @@ const MATCHES: Match[] = [
 
 function createContext() {
   const matches = new Map(MATCHES.map((entry) => [entry.id, entry]));
+  const rounds = new Map<string, Round>([
+    ['round-1', round('round-1', 1, 'October')],
+    ['round-2', round('round-2', 2, 'November')],
+    ['round-3', round('round-3', 3, 'December')],
+  ]);
   const scheduleProvider = {
     getMatch: async (id: string) => matches.get(id),
+    getRound: async (id: string) => rounds.get(id),
   };
   const results = new ResultsService(
     new MockResultsRepository(),
@@ -76,8 +83,21 @@ test('standings calculate records and points after one published result', async 
       pointsAgainst: alpha.pointsAgainst,
       differential: alpha.pointDifferential,
       percentage: alpha.winningPercentage,
+      pointsAvailable: alpha.pointsAvailable,
+      pointsPercentage: alpha.pointsPercentage,
     },
-    {rank: 1, games: 1, wins: 1, losses: 0, pointsFor: 10, pointsAgainst: 6, differential: 4, percentage: 1},
+    {
+      rank: 1,
+      games: 1,
+      wins: 1,
+      losses: 0,
+      pointsFor: 10,
+      pointsAgainst: 6,
+      differential: 4,
+      percentage: 1,
+      pointsAvailable: 16,
+      pointsPercentage: 0.625,
+    },
   );
   assert.equal(bravo?.losses, 1);
 });
@@ -97,7 +117,7 @@ test('standings aggregate published results across multiple rounds', async () =>
   assert.equal(charlie?.wins, 1);
 });
 
-test('standings apply winning percentage, differential, points for, then deterministic ordering', async () => {
+test('standings rank by wins, head-to-head, then points percentage', async () => {
   const {results, standings} = createContext();
   await results.publish('match-1', {homeScore: 10, awayScore: 5});
   await results.publish('match-2', {homeScore: 12, awayScore: 7});
@@ -107,7 +127,7 @@ test('standings apply winning percentage, differential, points for, then determi
   const entries = await standings.getSeasonStandings('season-1');
   assert.deepEqual(
     entries.slice(0, 4).map((entry) => entry.team.id),
-    ['team-e', 'team-c', 'team-a', 'team-b'],
+    ['team-e', 'team-a', 'team-b', 'team-c'],
   );
 
   const emptyEntries = await createContext().standings.getSeasonStandings('season-1');
@@ -140,6 +160,8 @@ test('empty seasons include every active team with zero totals', async () => {
     entry.gamesPlayed === 0
     && entry.wins === 0
     && entry.losses === 0
+    && entry.pointsAvailable === 0
+    && entry.pointsPercentage === 0
     && entry.winningPercentage === 0,
   ));
 });
@@ -182,6 +204,21 @@ function team(id: string, name: string): Team {
     facebook: '',
     description: '',
     active: true,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  };
+}
+
+
+function round(id: string, number: number, name: string): Round {
+  return {
+    id,
+    scheduleId: 'schedule-1',
+    seasonId: 'season-1',
+    number,
+    name,
+    date: `2026-${String(number + 9).padStart(2, '0')}-03`,
+    published: true,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
   };
