@@ -272,7 +272,7 @@
   text-align: center;
 }
 
-.desktopDoublesPair {
+.playerList.desktopDoublesPair {
   height: 100%;
   width: 100%;
   display: grid;
