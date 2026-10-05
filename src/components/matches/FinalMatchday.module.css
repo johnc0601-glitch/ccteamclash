@@ -3,7 +3,7 @@
 }
 
 .finalHeroTeams {
-  grid-template-columns: minmax(0, 1fr) 164px minmax(0, 1fr) !important;
+  grid-template-columns: minmax(0, 1fr) 213px minmax(0, 1fr) !important;
 }
 
 .finalHomeLogo {
@@ -15,13 +15,13 @@
   z-index: 5;
   align-self: center;
   justify-self: center;
-  width: 154px;
-  padding: 8px 9px 9px;
+  width: 200px;
+  padding: 10px 12px 12px;
   display: grid;
   justify-items: center;
-  gap: 6px;
+  gap: 8px;
   border: 1px solid rgba(255, 255, 255, .22);
-  border-radius: 12px;
+  border-radius: 15px;
   background: rgba(32, 38, 44, .92);
   box-shadow: 0 14px 34px rgba(0, 0, 0, .30), inset 0 1px 0 rgba(255,255,255,.08);
   backdrop-filter: blur(8px);
@@ -29,10 +29,10 @@
 
 .finalTag {
   width: 100%;
-  padding-bottom: 5px;
+  padding-bottom: 7px;
   border-bottom: 1px solid rgba(255,255,255,.14);
   color: var(--cc-gold);
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 950;
   letter-spacing: .18em;
   line-height: 1;
@@ -45,16 +45,16 @@
   display: grid;
   grid-template-columns: 1fr 1px 1fr;
   align-items: stretch;
-  gap: 7px;
+  gap: 9px;
 }
 
 .scoreCell {
   min-width: 0;
-  padding: 4px 3px 3px;
+  padding: 5px 4px 4px;
   display: grid;
   justify-items: center;
-  gap: 2px;
-  border-radius: 7px;
+  gap: 3px;
+  border-radius: 9px;
   background: rgba(7, 11, 15, .28);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
 }
@@ -62,7 +62,7 @@
 .scoreCell strong {
   color: #fff;
   font-family: var(--cc-font-display);
-  font-size: 38px;
+  font-size: 49px;
   font-style: italic;
   font-weight: 950;
   letter-spacing: -.045em;
@@ -73,7 +73,7 @@
 
 .scoreCell small {
   color: rgba(255,255,255,.66);
-  font-size: 7px;
+  font-size: 9px;
   font-weight: 950;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -81,14 +81,14 @@
 
 .scoreBreakdown {
   width: 100%;
-  margin-top: 3px;
-  padding-top: 4px;
+  margin-top: 4px;
+  padding-top: 5px;
   display: flex;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   border-top: 1px solid rgba(255,255,255,.08);
   color: rgba(255,255,255,.72);
-  font-size: 7px;
+  font-size: 9px;
   font-weight: 900;
   letter-spacing: .04em;
   line-height: 1;
