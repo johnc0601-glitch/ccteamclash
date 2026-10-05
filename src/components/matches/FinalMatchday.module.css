@@ -122,8 +122,158 @@
   border-top: 1px solid var(--match-border);
 }
 
-.resultsCard {
+.desktopScoreboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+  align-items: start;
+  gap: 18px;
+}
+
+.desktopBoard {
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .11);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 12% 8%,
+      color-mix(in srgb, var(--match-away) 18%, transparent),
+      transparent 42%),
+    radial-gradient(circle at 88% 8%,
+      color-mix(in srgb, var(--match-home) 18%, transparent),
+      transparent 42%),
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--match-away) 12%, #091015) 0%,
+      #0d1318 46%,
+      #0d1318 54%,
+      color-mix(in srgb, var(--match-home) 12%, #091015) 100%);
+  box-shadow: var(--cc-card-shadow);
+}
+
+.desktopBoardHeader {
+  min-height: 48px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  border-bottom: 1px solid var(--cc-card-border);
+  background: rgba(7, 11, 15, .34);
+  color: var(--cc-heading);
+  text-transform: uppercase;
+}
+
+.desktopBoardHeader strong {
+  font-size: 13px;
+  font-weight: 950;
+  letter-spacing: .02em;
+}
+
+.desktopBoardHeader span {
+  color: var(--cc-muted);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.desktopBoardRows {
+  display: grid;
+}
+
+.desktopResultRow {
+  min-height: 46px;
+  padding: 6px 10px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  border-top: 1px solid var(--cc-card-border);
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--match-away) 5%, transparent) 0%,
+      transparent 43%,
+      transparent 57%,
+      color-mix(in srgb, var(--match-home) 5%, transparent) 100%);
+}
+
+.desktopResultRow:first-child {
+  border-top: 0;
+}
+
+.desktopPosition {
+  color: rgba(255,255,255,.72);
+  font-size: 10px;
+  font-weight: 950;
+  text-align: center;
+}
+
+.desktopPlayerSide {
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: 7px;
+  color: var(--cc-body-text);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.desktopPlayerSide:last-child {
+  text-align: right;
+}
+
+.desktopVs {
+  color: var(--cc-muted);
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-align: center;
+}
+
+.desktopDoublesPair {
+  display: grid;
+  gap: 2px;
+  align-items: center;
+}
+
+.desktopDoublesPair .playerName + .playerName::before {
+  content: none;
+}
+
+.desktopPlayerSide:last-child .desktopDoublesPair {
+  justify-items: end;
+}
+
+.desktopBoardTotals {
+  min-height: 56px;
+  padding: 10px 16px;
+  display: grid;
+  grid-template-columns: auto auto minmax(28px, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--cc-card-border);
+  background: rgba(6, 10, 14, .72);
+}
+
+.desktopBoardTotals strong {
+  color: #fff;
+  font-family: var(--cc-font-display);
+  font-size: 27px;
+  font-style: italic;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.desktopBoardTotals span {
+  color: var(--cc-heading);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.desktopBoardTotals i {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.32), rgba(255,255,255,.08));
+}
+
+.mobileResultsCard {
+  display: none;
   border: 1px solid rgba(255, 255, 255, .11);
   border-radius: 12px;
   background:
@@ -254,7 +404,7 @@
 
 /* KB's cyan is intentionally vivid in the hero. In result cards, mute only
    the left/away treatment so winner pills remain readable without dominating. */
-.kbAwayMuted .resultsCard {
+.kbAwayMuted .mobileResultsCard {
   background:
     radial-gradient(circle at 18% 10%,
       color-mix(in srgb, var(--match-away) 24%, transparent),
@@ -313,6 +463,16 @@
   padding: 16px;
   color: var(--cc-muted);
   font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .desktopScoreboard {
+    display: none;
+  }
+
+  .mobileResultsCard {
+    display: block;
+  }
 }
 
 @media (max-width: 700px) {
