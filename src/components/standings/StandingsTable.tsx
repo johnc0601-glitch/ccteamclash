@@ -77,13 +77,19 @@ export function StandingsTable({
       </div>
 
       <div className={styles.mobileList}>
+        <div className={styles.mobileColumnHeader}>
+          <span>Team</span>
+          <span>W–L</span>
+          <span>Win %</span>
+          <span aria-hidden="true" />
+        </div>
         {entries.map((entry) => {
           const results = new Map(entry.roundResults.map((result) => [result.roundId, result]));
           return (
-            <article className={styles.mobileCard} key={entry.team.id}>
-              <header className={styles.mobileHeader}>
+            <details className={styles.mobileRow} key={entry.team.id}>
+              <summary className={styles.mobileSummary}>
                 <span className={styles.mobileRank}>{entry.rank}</span>
-                <Link href={`/teams/${entry.team.id}`} className={styles.mobileTeam}>
+                <span className={styles.mobileTeam}>
                   {entry.team.logo ? (
                     <img
                       className={styles.mobileLogo}
@@ -94,48 +100,59 @@ export function StandingsTable({
                     />
                   ) : null}
                   <strong>{entry.team.name}</strong>
-                </Link>
-              </header>
+                </span>
+                <strong className={styles.mobileRecord}>
+                  {entry.wins}–{entry.losses}
+                </strong>
+                <strong className={styles.mobileWinPct}>
+                  {formatPercentage(entry.winningPercentage)}
+                </strong>
+                <span className={styles.mobileChevron} aria-hidden="true">⌄</span>
+              </summary>
 
-              <div className={styles.mobileMetrics}>
-                <Metric label="Wins" value={String(entry.wins)} emphasis />
-                <Metric label="Points %" value={formatPercentage(entry.pointsPercentage)} />
-                <Metric
-                  label="Points"
-                  value={`${formatPoints(entry.pointsFor)} / ${formatPoints(entry.pointsAvailable)}`}
-                />
-              </div>
+              <div className={styles.mobileDetails}>
+                <div className={styles.mobileMetrics}>
+                  <Metric label="Points %" value={formatPercentage(entry.pointsPercentage)} />
+                  <Metric
+                    label="Points"
+                    value={`${formatPoints(entry.pointsFor)} / ${formatPoints(entry.pointsAvailable)}`}
+                  />
+                  <Link href={`/teams/${entry.team.id}`} className={styles.teamPageLink}>
+                    Team page
+                  </Link>
+                </div>
 
-              <div className={styles.mobileRounds}>
-                {rounds.map((round) => {
-                  const result = results.get(round.id);
-                  const content = (
-                    <>
-                      <span className={styles.mobileRoundLabel}>{formatRoundLabel(round)}</span>
-                      <strong className={outcomeClass(result?.outcome)}>
-                        {result?.outcome ?? '—'}
-                      </strong>
-                      <span>
-                        {result
-                          ? `${formatPoints(result.pointsFor)} / ${formatPoints(result.pointsAvailable)}`
-                          : 'Not played'}
-                      </span>
-                    </>
-                  );
-                  return result ? (
-                    <Link
-                      className={styles.mobileRound}
-                      href={`/matches/${result.matchId}`}
-                      key={round.id}
-                    >
-                      {content}
-                    </Link>
-                  ) : (
-                    <div className={styles.mobileRound} key={round.id}>{content}</div>
-                  );
-                })}
+                <div className={styles.mobileRounds}>
+                  {rounds.map((round) => {
+                    const result = results.get(round.id);
+                    const detail = (
+                      <>
+                        <span className={styles.mobileRoundLabel}>{formatRoundLabel(round)}</span>
+                        <strong className={outcomeClass(result?.outcome)}>
+                          {result?.outcome ?? '—'}
+                        </strong>
+                        <span>
+                          {result
+                            ? `${formatPoints(result.pointsFor)} / ${formatPoints(result.pointsAvailable)}`
+                            : 'Not played'}
+                        </span>
+                      </>
+                    );
+                    return result ? (
+                      <Link
+                        className={styles.mobileRound}
+                        href={`/matches/${result.matchId}`}
+                        key={round.id}
+                      >
+                        {detail}
+                      </Link>
+                    ) : (
+                      <div className={styles.mobileRound} key={round.id}>{detail}</div>
+                    );
+                  })}
+                </div>
               </div>
-            </article>
+            </details>
           );
         })}
       </div>
