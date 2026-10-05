@@ -81,7 +81,6 @@ export function StandingsTable({
           <span>Team</span>
           <span>W–L</span>
           <span>Win %</span>
-          <span aria-hidden="true" />
         </div>
         {entries.map((entry) => {
           const results = new Map(entry.roundResults.map((result) => [result.roundId, result]));
@@ -105,18 +104,14 @@ export function StandingsTable({
                   {entry.wins}–{entry.losses}
                 </strong>
                 <strong className={styles.mobileWinPct}>
-                  {formatPercentage(entry.winningPercentage)}
+                  {formatPercentage(entry.pointsPercentage)}
                 </strong>
-                <span className={styles.mobileChevron} aria-hidden="true">⌄</span>
               </summary>
 
               <div className={styles.mobileDetails}>
                 <div className={styles.mobileMetrics}>
-                  <Metric label="Points %" value={formatPercentage(entry.pointsPercentage)} />
-                  <Metric
-                    label="Points"
-                    value={`${formatPoints(entry.pointsFor)} / ${formatPoints(entry.pointsAvailable)}`}
-                  />
+                  <Metric label="Points won" value={formatPoints(entry.pointsFor)} />
+                  <Metric label="Available" value={formatPoints(entry.pointsAvailable)} />
                   <Link href={`/teams/${entry.team.id}`} className={styles.teamPageLink}>
                     Team page
                   </Link>
