@@ -220,8 +220,11 @@ function makeStanding(team: Team, index: number): TeamStanding {
     losses: index,
     pointsFor: 30 - index,
     pointsAgainst: 10 + index,
+    pointsAvailable: 40,
+    pointsPercentage: (30 - index) / 40,
     pointDifferential: 20 - index * 2,
     winningPercentage: (3 - index) / 3,
+    roundResults: [],
   };
 }
 
