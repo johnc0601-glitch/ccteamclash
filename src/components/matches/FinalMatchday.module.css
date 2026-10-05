@@ -283,9 +283,6 @@
 .desktopDoublesPair .playerName {
   display: flex;
   align-items: center;
-  margin: 3px 0;
-  padding: 0 10px;
-  border-radius: 7px;
 }
 
 .desktopDoublesPair .playerName + .playerName::before {
@@ -293,7 +290,7 @@
 }
 
 .desktopDoublesPair .playerName + .playerName {
-  border-top: 0;
+  border-top: 1px solid rgba(255,255,255,.12);
 }
 
 .desktopPlayerSide:last-child .desktopDoublesPair {
@@ -305,25 +302,7 @@
 }
 
 .desktopBoard:last-child .desktopPlayerSide {
-  height: 100%;
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.desktopBoard:last-child .awayWinner .playerName {
-  background: color-mix(in srgb, var(--match-away) 84%, #091015);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.13);
-}
-
-.desktopBoard:last-child .homeWinner .playerName {
-  background: color-mix(in srgb, var(--match-home) 84%, #091015);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.13);
-}
-
-.kbAwayMuted .desktopBoard:last-child .awayWinner .playerName {
-  background: color-mix(in srgb, var(--match-away) 68%, #10242a);
+  height: calc(100% - 4px);
 }
 
 .desktopBoardTotals {
