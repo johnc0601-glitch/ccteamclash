@@ -38,6 +38,12 @@ export type MatchResult = {
   matchId: string;
   homeScore: number | null;
   awayScore: number | null;
+  homeBasePointsAvailable: number | null;
+  awayBasePointsAvailable: number | null;
+  homeGenderBonusAvailable: number | null;
+  awayGenderBonusAvailable: number | null;
+  homePointsAvailable: number | null;
+  awayPointsAvailable: number | null;
   status: MatchResultStatus;
   publishedAt: string | null;
   reopenedAt: string | null;
