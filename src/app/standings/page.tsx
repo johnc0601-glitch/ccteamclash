@@ -11,12 +11,15 @@ export default async function StandingsPage() {
     <>
       <SiteHeader />
       <main className="shell page-shell">
-        <h1>Standings</h1>
+        <h1>Team Standings</h1>
         <section className="season-archive season-archive-current">
           <span className="eyebrow">Current season</span>
           <h2>{standings?.season.name ?? 'No active season'}</h2>
+          <p>
+            Ranked by wins, then head-to-head, then percentage of available Clash points earned.
+          </p>
           {standings ? (
-            <StandingsTable entries={standings.entries} />
+            <StandingsTable entries={standings.entries} rounds={standings.rounds} />
           ) : <p>No active season is available.</p>}
         </section>
       </main>
