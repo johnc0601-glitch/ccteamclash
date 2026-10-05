@@ -150,7 +150,6 @@ function DesktopResultBoard({
       <div className={styles.desktopBoardTotals} aria-label={`${title} totals: ${awayTeam.name} ${formatPoint(totals.away)}, ${homeTeam.name} ${formatPoint(totals.home)}`}>
         <strong>{formatPoint(totals.away)}</strong>
         <span>{awayTeam.name}</span>
-        <i aria-hidden="true" />
         <span>{homeTeam.name}</span>
         <strong>{formatPoint(totals.home)}</strong>
       </div>
@@ -162,17 +161,28 @@ function DesktopResultRow({contest}: {contest: FinalMatchContest}) {
   const awayWon = contest.awayOutcome === 'W';
   const homeWon = contest.homeOutcome === 'W';
   const tie = contest.awayOutcome === 'T' && contest.homeOutcome === 'T';
+  const singlesTie = tie && contest.format === 'Singles';
   const pairClass = contest.format === 'Doubles' ? styles.desktopDoublesPair : '';
   const rowLabel = contest.format === 'Doubles' ? `D${contest.position}` : String(contest.position);
+  const awayClass = awayWon
+    ? `${styles.desktopPlayerSide} ${styles.awayWinner}`
+    : singlesTie
+      ? `${styles.desktopPlayerSide} ${styles.tiePlayer}`
+      : styles.desktopPlayerSide;
+  const homeClass = homeWon
+    ? `${styles.desktopPlayerSide} ${styles.homeWinner}`
+    : singlesTie
+      ? `${styles.desktopPlayerSide} ${styles.tiePlayer}`
+      : styles.desktopPlayerSide;
 
   return (
     <div className={styles.desktopResultRow}>
       <span className={styles.desktopPosition}>{rowLabel}</span>
-      <div className={awayWon ? `${styles.desktopPlayerSide} ${styles.awayWinner}` : styles.desktopPlayerSide}>
+      <div className={awayClass}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
       <div className={styles.desktopVs}>{tie ? 'TIE' : 'VS'}</div>
-      <div className={homeWon ? `${styles.desktopPlayerSide} ${styles.homeWinner}` : styles.desktopPlayerSide}>
+      <div className={homeClass}>
         <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
       </div>
     </div>
