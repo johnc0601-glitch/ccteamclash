@@ -658,7 +658,19 @@
   }
 
   .finalHomeLogo {
-    transform: translateX(12px);
+    transform: none;
+  }
+
+  .finalHeroTeam {
+    min-width: 0;
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+
+  .finalHeroTeam strong {
+    max-width: 100%;
+    font-size: clamp(16px, 5vw, 22px);
+    overflow-wrap: anywhere;
   }
 
   .heroScoreboard {

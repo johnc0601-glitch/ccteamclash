@@ -122,7 +122,7 @@ function FinalHero({
 
 function TeamSide({team, side}: {team: FinalMatchTeam; side: 'away' | 'home'}) {
   return (
-    <div className={heroStyles.heroTeam} data-side={side}>
+    <div className={`${heroStyles.heroTeam} ${styles.finalHeroTeam}`} data-side={side}>
       {team.logo
         ? <img
             src={team.logo}
