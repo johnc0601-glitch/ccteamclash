@@ -397,7 +397,7 @@
 
 .resultDetails summary::after {
   content: '⌄';
-  margin-left: auto;
+  margin-left: 4px;
   color: var(--cc-muted);
   font-size: 16px;
 }
@@ -406,14 +406,60 @@
   content: '⌃';
 }
 
-.resultDetails summary span {
+.resultSummaryTitle {
   font-size: 12px;
   font-weight: 950;
   text-transform: uppercase;
 }
 
-.resultRows {
+.resultSummaryScore {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  color: var(--cc-heading);
+  font-family: var(--cc-font-display);
+}
+
+.resultSummaryScore strong {
+  font-size: 19px;
+  font-style: italic;
+  line-height: 1;
+}
+
+.resultSummaryScore small {
+  color: var(--cc-muted);
+  font-family: inherit;
+  font-size: 10px;
+}
+
+.mobileColumnHeader {
+  min-height: 27px;
+  padding: 0 10px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
   border-top: 1px solid var(--cc-card-border);
+  border-bottom: 1px solid var(--cc-card-border);
+  background: rgba(5, 9, 12, .56);
+  color: rgba(255,255,255,.54);
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.mobileColumnHeader span:first-child,
+.mobileColumnHeader span:nth-child(3) {
+  text-align: center;
+}
+
+.mobileColumnHeader span:last-child {
+  text-align: right;
+}
+
+.resultRows {
   background:
     linear-gradient(90deg,
       color-mix(in srgb, var(--match-away) 12%, rgba(8, 12, 16, .68)) 0%,
@@ -426,7 +472,7 @@
   min-height: 50px;
   padding: 8px 14px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+  grid-template-columns: 28px minmax(0, 1fr) 40px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   border-top: 1px solid var(--cc-card-border);
@@ -440,6 +486,13 @@
 
 .resultRow:first-child {
   border-top: 0;
+}
+
+.resultPosition {
+  color: rgba(255,255,255,.62);
+  font-size: 9px;
+  font-weight: 950;
+  text-align: center;
 }
 
 .playerSide {
@@ -547,6 +600,41 @@
   font-weight: 950;
 }
 
+.mobileSectionTotals {
+  min-height: 48px;
+  padding: 8px 13px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--cc-card-border);
+  background: rgba(6, 10, 14, .74);
+  color: var(--cc-heading);
+  font-size: 9px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.mobileSectionTotals span:last-child {
+  text-align: right;
+}
+
+.mobileSectionTotals strong {
+  color: #fff;
+  font-family: var(--cc-font-display);
+  font-size: 23px;
+  font-style: italic;
+  line-height: 1;
+}
+
+.mobileSectionTotals small {
+  color: rgba(255,255,255,.4);
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
 .empty {
   margin: 0;
   padding: 16px;
@@ -566,7 +654,7 @@
 
 @media (max-width: 700px) {
   .finalHeroTeams {
-    grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr) !important;
+    grid-template-columns: minmax(0, 1fr) clamp(150px, 46vw, 182px) minmax(0, 1fr) !important;
   }
 
   .finalHomeLogo {
@@ -574,18 +662,18 @@
   }
 
   .heroScoreboard {
-    width: 140px;
-    padding: 7px 7px 8px;
-    gap: 5px;
-    border-radius: 10px;
+    width: clamp(140px, 44vw, 182px);
+    padding: 8px 9px 10px;
+    gap: 6px;
+    border-radius: 12px;
   }
 
   .finalTag {
-    font-size: 7px;
+    font-size: clamp(7px, 2.3vw, 9px);
   }
 
   .scoreLine {
-    gap: 5px;
+    gap: 6px;
   }
 
   .scoreCell {
@@ -593,16 +681,16 @@
   }
 
   .scoreCell strong {
-    font-size: 29px;
+    font-size: clamp(29px, 9.7vw, 38px);
   }
 
   .scoreCell small {
-    font-size: 6px;
+    font-size: clamp(6px, 2vw, 8px);
   }
 
   .scoreBreakdown {
-    gap: 5px;
-    font-size: 6px;
+    gap: 6px;
+    font-size: clamp(6px, 2vw, 8px);
   }
 
   .finalHeroMeta {
@@ -626,8 +714,14 @@
   .resultRow {
     min-height: 46px;
     padding: 7px 9px;
-    grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr);
+    grid-template-columns: 24px minmax(0, 1fr) 32px minmax(0, 1fr);
     gap: 5px;
+  }
+
+  .mobileColumnHeader {
+    grid-template-columns: 24px minmax(0, 1fr) 32px minmax(0, 1fr);
+    gap: 5px;
+    padding: 0 9px;
   }
 
   .playerSide {

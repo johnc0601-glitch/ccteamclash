@@ -41,8 +41,21 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
           />
         </section>
         <section className={styles.mobileResultsCard} aria-label="Final result breakdown">
-          <ResultDetails title="Singles results" contests={singles} />
-          <ResultDetails title="Doubles results" contests={doubles} />
+          <ResultDetails
+            title="Singles results"
+            contests={singles}
+            totals={singlesTotals}
+            awayTeam={snapshot.awayTeam}
+            homeTeam={snapshot.homeTeam}
+            initiallyOpen
+          />
+          <ResultDetails
+            title="Doubles results"
+            contests={doubles}
+            totals={doublesTotals}
+            awayTeam={snapshot.awayTeam}
+            homeTeam={snapshot.homeTeam}
+          />
         </section>
       </div>
     </main>
@@ -200,16 +213,46 @@ function DesktopResultRow({contest}: {contest: FinalMatchContest}) {
   );
 }
 
-function ResultDetails({title, contests}: {title: string; contests: FinalMatchContest[]}) {
+function ResultDetails({
+  title,
+  contests,
+  totals,
+  awayTeam,
+  homeTeam,
+  initiallyOpen = false,
+}: {
+  title: string;
+  contests: FinalMatchContest[];
+  totals: {away: number; home: number};
+  awayTeam: FinalMatchTeam;
+  homeTeam: FinalMatchTeam;
+  initiallyOpen?: boolean;
+}) {
   return (
-    <details className={styles.resultDetails}>
+    <details className={styles.resultDetails} open={initiallyOpen}>
       <summary>
-        <span>{title}</span>
+        <span className={styles.resultSummaryTitle}>{title}</span>
+        <span className={styles.resultSummaryScore} aria-label={`${formatPoint(totals.away)} to ${formatPoint(totals.home)}`}>
+          <strong>{formatPoint(totals.away)}</strong>
+          <small>–</small>
+          <strong>{formatPoint(totals.home)}</strong>
+        </span>
       </summary>
+      <div className={styles.mobileColumnHeader} aria-hidden="true">
+        <span>#</span>
+        <span>{shortTeam(awayTeam)}</span>
+        <span>Result</span>
+        <span>{shortTeam(homeTeam)}</span>
+      </div>
       <div className={styles.resultRows}>
         {contests.length
           ? contests.map((contest) => <ResultRow contest={contest} key={contest.id} />)
           : <p className={styles.empty}>No individual results were posted.</p>}
+      </div>
+      <div className={styles.mobileSectionTotals} aria-label={`${title} totals: ${awayTeam.name} ${formatPoint(totals.away)}, ${homeTeam.name} ${formatPoint(totals.home)}`}>
+        <span><strong>{formatPoint(totals.away)}</strong> {shortTeam(awayTeam)}</span>
+        <small>Section score</small>
+        <span>{shortTeam(homeTeam)} <strong>{formatPoint(totals.home)}</strong></span>
       </div>
     </details>
   );
@@ -219,14 +262,27 @@ function ResultRow({contest}: {contest: FinalMatchContest}) {
   const awayWon = contest.awayOutcome === 'W';
   const homeWon = contest.homeOutcome === 'W';
   const tie = contest.awayOutcome === 'T' && contest.homeOutcome === 'T';
+  const singlesTie = tie && contest.format === 'Singles';
   const pairClass = contest.format === 'Doubles' ? styles.doublesPair : '';
+  const rowLabel = contest.format === 'Doubles' ? `D${contest.position}` : String(contest.position);
+  const awayClass = awayWon
+    ? `${styles.playerSide} ${styles.awayWinner}`
+    : singlesTie
+      ? `${styles.playerSide} ${styles.tiePlayer}`
+      : styles.playerSide;
+  const homeClass = homeWon
+    ? `${styles.playerSide} ${styles.homeWinner}`
+    : singlesTie
+      ? `${styles.playerSide} ${styles.tiePlayer}`
+      : styles.playerSide;
   return (
     <div className={styles.resultRow}>
-      <div className={awayWon ? `${styles.playerSide} ${styles.awayWinner}` : styles.playerSide}>
+      <span className={styles.resultPosition}>{rowLabel}</span>
+      <div className={awayClass}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
       <div className={styles.outcome}>{tie ? <span>TIE</span> : null}</div>
-      <div className={homeWon ? `${styles.playerSide} ${styles.homeWinner}` : styles.playerSide}>
+      <div className={homeClass}>
         <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
       </div>
     </div>
