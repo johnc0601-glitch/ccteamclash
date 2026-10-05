@@ -559,8 +559,14 @@ export type Database = {
       }
       launch_match_results: {
         Row: {
+          away_base_points_available: number | null
+          away_gender_bonus_available: number | null
+          away_points_available: number | null
           away_score: number | null
           created_at: string
+          home_base_points_available: number | null
+          home_gender_bonus_available: number | null
+          home_points_available: number | null
           home_score: number | null
           match_id: string
           published_at: string | null
@@ -569,8 +575,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          away_base_points_available?: number | null
+          away_gender_bonus_available?: number | null
+          away_points_available?: number | null
           away_score?: number | null
           created_at?: string
+          home_base_points_available?: number | null
+          home_gender_bonus_available?: number | null
+          home_points_available?: number | null
           home_score?: number | null
           match_id: string
           published_at?: string | null
@@ -579,8 +591,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          away_base_points_available?: number | null
+          away_gender_bonus_available?: number | null
+          away_points_available?: number | null
           away_score?: number | null
           created_at?: string
+          home_base_points_available?: number | null
+          home_gender_bonus_available?: number | null
+          home_points_available?: number | null
           home_score?: number | null
           match_id?: string
           published_at?: string | null
