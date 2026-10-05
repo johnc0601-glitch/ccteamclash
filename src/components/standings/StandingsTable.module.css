@@ -221,10 +221,10 @@
 
   .mobileColumnHeader {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 54px 64px 20px;
+    grid-template-columns: minmax(0, 1fr) 46px 58px;
     align-items: center;
-    gap: 8px;
-    padding: 0 12px 2px 56px;
+    gap: 6px;
+    padding: 0 10px 2px 46px;
     color: var(--cc-light-muted);
     font-size: 9px;
     font-weight: 950;
@@ -247,11 +247,11 @@
 
   .mobileSummary {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr) 54px 64px 20px;
+    grid-template-columns: 34px minmax(0, 1fr) 46px 58px;
     align-items: center;
-    gap: 8px;
-    min-height: 58px;
-    padding: 0 10px 0 0;
+    gap: 6px;
+    min-height: 54px;
+    padding: 0 8px 0 0;
     cursor: pointer;
     list-style: none;
   }
@@ -266,30 +266,29 @@
     place-items: center;
     background: #111516;
     color: #fff;
-    font-size: 17px;
+    font-size: 14px;
     font-weight: 950;
   }
 
   .mobileTeam {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     min-width: 0;
     color: var(--cc-light-text);
   }
 
   .mobileTeam strong {
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
     white-space: nowrap;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 950;
   }
 
   .mobileLogo {
-    width: 32px;
-    height: 32px;
-    flex: 0 0 32px;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
     border-radius: 50%;
     object-fit: cover;
     background: #fff;
@@ -299,22 +298,9 @@
   .mobileRecord,
   .mobileWinPct {
     text-align: center;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 950;
     font-variant-numeric: tabular-nums;
-  }
-
-  .mobileChevron {
-    display: inline-grid;
-    place-items: center;
-    color: var(--cc-light-muted);
-    font-size: 18px;
-    line-height: 1;
-    transition: transform .16s ease;
-  }
-
-  .mobileRow[open] .mobileChevron {
-    transform: rotate(180deg);
   }
 
   .mobileDetails {
