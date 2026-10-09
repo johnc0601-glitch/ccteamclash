@@ -1,7 +1,12 @@
 import type {Story} from '@/shared/types';
 
 export function getStoryPreview(story: Pick<Story, 'body'>, maxLength = 170): string {
-  const clean = story.body.join(' ').replace(/\s+/g, ' ').trim();
+  const clean = story.body.join(' ')
+    .replace(/^#{2,3}\s+/gm, '')
+    .replace(/(?:^|\s)(?:[-*]|\d+\.)\s+/g, ' ')
+    .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/g, '$1')
+    .replace(/\*\*([^*]+)\*\*|__([^_]+)__|\*([^*]+)\*/g, (_match, bold, underlined, italic) => bold || underlined || italic || '')
+    .replace(/\s+/g, ' ').trim();
   if (!clean) return '';
   if (clean.length <= maxLength) return clean;
 

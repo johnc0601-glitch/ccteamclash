@@ -89,28 +89,41 @@ function StoryBodyBlock({paragraph}: {paragraph: string}) {
   const trimmed = paragraph.trim();
   if (!trimmed) return null;
 
+  if (trimmed.startsWith('### ')) {
+    return <h3 className="article-subheading article-subheading-small">{renderInline(trimmed.slice(4))}</h3>;
+  }
   if (trimmed.startsWith('## ')) {
-    return <h2 className="article-subheading">{trimmed.slice(3)}</h2>;
+    return <h2 className="article-subheading">{renderInline(trimmed.slice(3))}</h2>;
+  }
+
+  const lines = trimmed.split('\n').map((line) => line.trim()).filter(Boolean);
+  if (lines.length > 0 && lines.every((line) => /^[-*] /.test(line))) {
+    return <ul className="article-list">{lines.map((line, index) => <li key={index}>{renderInline(line.slice(2))}</li>)}</ul>;
+  }
+  if (lines.length > 0 && lines.every((line) => /^\d+\. /.test(line))) {
+    return <ol className="article-list">{lines.map((line, index) => <li key={index}>{renderInline(line.replace(/^\d+\. /, ''))}</li>)}</ol>;
   }
 
   return (
     <p className="article-paragraph">
-      {trimmed.split('\n').map((line, index) => {
-        const value = line.trim();
-        const isUrl = /^https?:\/\/\S+$/.test(value);
-
-        return (
-          <span className="article-line" key={`${index}-${value.slice(0, 30)}`}>
-            {isUrl ? (
-              <a className="article-link" href={value} target="_blank" rel="noreferrer">
-                {value.replace(/^https?:\/\//, '')}
-              </a>
-            ) : value}
-          </span>
-        );
-      })}
+      {lines.map((line, index) => (
+        <span className="article-line" key={index}>{renderInline(line)}</span>
+      ))}
     </p>
   );
+}
+
+function renderInline(value: string) {
+  const tokens = value.split(/(\[[^\]]+\]\(https?:\/\/[^\s)]+\)|\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*)/g);
+  return tokens.map((token, index) => {
+    const link = token.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
+    if (link) return <a className="article-link" href={link[2]} target="_blank" rel="noopener noreferrer" key={index}>{link[1]}</a>;
+    if (token.startsWith('**') && token.endsWith('**')) return <strong key={index}>{token.slice(2, -2)}</strong>;
+    if (token.startsWith('__') && token.endsWith('__')) return <u key={index}>{token.slice(2, -2)}</u>;
+    if (token.startsWith('*') && token.endsWith('*')) return <em key={index}>{token.slice(1, -1)}</em>;
+    if (/^https?:\/\/\S+$/.test(token)) return <a className="article-link" href={token} target="_blank" rel="noopener noreferrer" key={index}>{token.replace(/^https?:\/\//, '')}</a>;
+    return token;
+  });
 }
 
 function StoryPhoto({className, image, alt}: {className: string; image: string; alt: string}) {
