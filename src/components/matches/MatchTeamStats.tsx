@@ -1,6 +1,6 @@
 import {createServerTeamPageServices} from '@/core/createServerTeamPageServices';
 import {loadServerHistoricalTeamFormatStats} from '@/core/loadServerHistoricalTeamFormatStats';
-import {createClient} from '@/lib/supabase/server';
+import {createHistoricalStatsReadClient} from '@/core/createHistoricalStatsReadClient';
 import type {TeamFormatStatistics, TeamStatistics} from '@/services/statistics/StatisticsTypes';
 import styles from './MatchTeamStats.module.css';
 
@@ -9,10 +9,9 @@ type TeamIdentity = {
   name: string;
 };
 
-type SeasonSummary = {
+type PreviousSeason = {
   id: string;
   name: string;
-  start_date: string;
 };
 
 export async function MatchTeamStats({
@@ -149,17 +148,23 @@ function HistoricalStat({
   );
 }
 
-async function getPreviousSeason(currentSeasonId: string): Promise<SeasonSummary | undefined> {
-  const supabase = await createClient();
+async function getPreviousSeason(currentSeasonId: string): Promise<PreviousSeason | undefined> {
+  // The public launch_seasons policy hides archived seasons. Historical contest
+  // facts remain publicly readable, so derive the previous available season
+  // from that archive instead of querying launch_seasons with public RLS.
+  // Canonical season IDs start with coastal-clash-YYYY-YYYY, which sorts by year.
+  const supabase = await createHistoricalStatsReadClient();
   const {data, error} = await supabase
-    .from('launch_seasons')
-    .select('id,name,start_date')
-    .order('start_date', {ascending: false});
+    .from('historical_clash_contest_rating_facts')
+    .select('season_id')
+    .lt('season_id', currentSeasonId)
+    .order('season_id', {ascending: false})
+    .limit(1)
+    .maybeSingle();
   if (error) throw error;
+  if (!data?.season_id) return undefined;
 
-  const seasons = (data ?? []) as SeasonSummary[];
-  const currentIndex = seasons.findIndex((season) => season.id === currentSeasonId);
-  return currentIndex >= 0 ? seasons[currentIndex + 1] : undefined;
+  return {id: data.season_id, name: data.season_id};
 }
 
 function compactSeasonName(name: string) {
