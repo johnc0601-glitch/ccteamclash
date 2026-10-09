@@ -1250,10 +1250,13 @@ td,
 
 
 /* Story article readability */
-.article-copy {
+.article .article-copy {
   max-width: 700px;
+  color: var(--cc-body-text);
   font-size: 18px;
   line-height: 1.65;
+  font-weight: 400;
+  overflow-wrap: break-word;
 }
 
 .article-paragraph {
@@ -1261,15 +1264,19 @@ td,
 }
 
 .article-line {
-  display: block;
+  display: inline;
+}
+
+.article-line + .article-line::before {
+  content: " ";
 }
 
 .article-subheading {
-  margin: 34px 0 12px;
+  margin: 38px 0 14px;
   color: var(--cc-heading);
   font-family: var(--cc-font-display);
   font-size: 26px;
-  line-height: 1.15;
+  line-height: 1.2;
   letter-spacing: -.02em;
 }
 
@@ -1302,9 +1309,9 @@ td,
     margin: 26px 0 30px;
   }
 
-  .article-copy {
+  .article .article-copy {
     max-width: 100%;
-    font-size: 18px;
+    font-size: 17px;
     line-height: 1.62;
   }
 
