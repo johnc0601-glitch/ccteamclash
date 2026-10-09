@@ -68,3 +68,43 @@
   align-items: center;
   min-height: 36px;
 }
+
+.scoreCenter {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  gap: 5px;
+  padding-top: 14px;
+  text-align: center;
+}
+
+.scoreLabel {
+  color: var(--cc-text-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  line-height: 1.2;
+}
+
+.scoreValue {
+  color: var(--cc-gold);
+  font-family: var(--cc-font-display);
+  font-size: clamp(15px, 1.55vw, 21px);
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.04em;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.pending {
+  align-self: start;
+  padding-top: 27px;
+  color: var(--cc-text-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
