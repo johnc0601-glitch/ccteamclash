@@ -54,6 +54,7 @@ export function StoryManager() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const storyTextRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,6 +121,45 @@ export function StoryManager() {
   function updateDraft(field: keyof StoryDraft, value: string | boolean | null) {
     setDraft((current) => ({...current, [field]: value}));
     setStatus('Unsaved changes.');
+  }
+
+  function formatStory(command: 'bold' | 'italic' | 'underline' | 'h2' | 'h3' | 'bullets' | 'numbers' | 'link') {
+    const field = storyTextRef.current;
+    if (!field) return;
+    const start = field.selectionStart;
+    const end = field.selectionEnd;
+    const value = draft.body;
+    const selected = value.slice(start, end);
+    let replacement = '';
+    let cursorStart = start;
+    let cursorEnd = end;
+    if (command === 'bold' || command === 'italic' || command === 'underline' || command === 'link') {
+      const placeholder = selected || (command === 'link' ? 'link text' : 'text');
+      const before = command === 'bold' ? '**' : command === 'italic' ? '*' : command === 'underline' ? '__' : '[';
+      const after = command === 'link' ? '](https://example.com)' : before;
+      replacement = before + placeholder + after;
+      cursorStart = start + before.length;
+      cursorEnd = cursorStart + placeholder.length;
+    } else {
+      const lineStart = value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+      const lineEnd = value.indexOf('\n', end);
+      const effectiveEnd = lineEnd === -1 ? value.length : lineEnd;
+      const original = value.slice(lineStart, effectiveEnd);
+      const prefix = command === 'h2' ? '## ' : command === 'h3' ? '### ' : command === 'bullets' ? '- ' : '1. ';
+      replacement = original.split('\n').map((line, index) => command === 'numbers' ? `${index + 1}. ${line}` : prefix + line).join('\n');
+      const updated = value.slice(0, lineStart) + replacement + value.slice(effectiveEnd);
+      updateDraft('body', updated);
+      requestAnimationFrame(() => {
+        field.focus();
+        field.setSelectionRange(lineStart, lineStart + replacement.length);
+      });
+      return;
+    }
+    updateDraft('body', value.slice(0, start) + replacement + value.slice(end));
+    requestAnimationFrame(() => {
+      field.focus();
+      field.setSelectionRange(cursorStart, cursorEnd);
+    });
   }
 
   function startNewStory() {
@@ -405,10 +445,25 @@ export function StoryManager() {
             </div>
           </label>
 
-          <label>
-            Story
-            <textarea rows={13} value={draft.body} onChange={(event) => updateDraft('body', event.target.value)} placeholder="Use a blank line between paragraphs." />
-          </label>
+          <div className="story-format-field">
+            <label htmlFor="story-body-editor">Story</label>
+            <div className="story-format-toolbar" role="toolbar" aria-label="Story formatting">
+              {([
+                ['bold', 'Bold', 'B'], ['italic', 'Italic', 'I'], ['underline', 'Underline', 'U'],
+                ['h2', 'Heading 2', 'H2'], ['h3', 'Heading 3', 'H3'],
+                ['bullets', 'Bulleted list', '• List'], ['numbers', 'Numbered list', '1. List'],
+                ['link', 'Insert link', 'Link'],
+              ] as const).map(([command, label, text]) => (
+                <button key={command} type="button" title={label} aria-label={label}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => formatStory(command)}>{text}</button>
+              ))}
+            </div>
+            <textarea id="story-body-editor" ref={storyTextRef} rows={13} value={draft.body}
+              onChange={(event) => updateDraft('body', event.target.value)}
+              placeholder="Write your story. Select text and use the formatting toolbar. Separate paragraphs with a blank line." />
+            <small>Highlight text to format it. Headings and lists apply to selected lines. Formatting is visible when published.</small>
+          </div>
 
           {sourceFacts.length > 0 ? <VerifiedSourceFacts facts={sourceFacts} /> : null}
 
