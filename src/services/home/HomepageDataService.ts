@@ -186,7 +186,7 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
     ? daysBetweenDates(latestRecent.scheduledDate, today)
     : Infinity;
   const displayedRoundId = todayMatch?.roundId
-    ?? (recentAge >= 0 && recentAge <= RECENT_ROUND_HOLD_DAYS ? latestRecent.roundId : undefined)
+    ?? (latestRecent && recentAge >= 0 && recentAge <= RECENT_ROUND_HOLD_DAYS ? latestRecent.roundId : undefined)
     ?? upcoming[0]?.roundId
     ?? latestRecent?.roundId;
   const homeEvents = displayedRoundId
