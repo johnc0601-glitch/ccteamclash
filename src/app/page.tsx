@@ -4,6 +4,7 @@ import {ClashCountdown} from '@/components/ClashCountdown';
 import {ClashCastPromo} from '@/components/ClashCastPromo';
 import {ClashPulse} from '@/components/ClashPulse';
 import {HomeMatchCarousel} from '@/components/HomeMatchCarousel';
+import {HomeScoreAutoRefresh} from '@/components/HomeScoreAutoRefresh';
 import {Intro} from '@/components/intro/Intro';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchCard} from '@/components/MatchCard';
@@ -23,6 +24,7 @@ export default async function Home() {
   ]);
   const {storyData, teams: teamLogos, homeEvents, publishedScores, feedPreviews, roundLabel} = homepageData;
   const today = easternDate();
+  const hasUnpublishedMatchToday = homeEvents.some((match) => match.scheduledDate === today && !publishedScores.has(match.id));
   const lead = storyData.lead;
 
   return (
@@ -45,6 +47,7 @@ export default async function Home() {
       ) : null}
 
       <section className="shell home-matches-section">
+        <HomeScoreAutoRefresh enabled={hasUnpublishedMatchToday} />
         <div className="home-matches-heading">
           <h2>{roundLabel}</h2>
         </div>
