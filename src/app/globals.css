@@ -1324,3 +1324,32 @@ td,
     font-size: 23px;
   }
 }
+
+/* Commissioner story formatting controls */
+.story-format-field { display: grid; gap: 9px; min-width: 0; }
+.story-format-field > label { margin: 0; font-weight: 800; }
+.story-format-field > small { font-size: 12px; line-height: 1.5; color: var(--cc-text-muted); }
+.story-format-field textarea {
+  display: block; width: 100%; min-height: 270px; resize: vertical;
+  padding: 14px; font: 500 15px/1.65 var(--cc-font-body);
+  border: 1px solid var(--cc-panel-border); border-radius: 8px;
+  color: var(--cc-text); background: var(--cc-surface);
+}
+.story-format-toolbar {
+  display: flex; flex-wrap: wrap; gap: 5px; padding: 7px;
+  border: 1px solid var(--cc-panel-border); border-radius: 8px;
+  background: var(--cc-surface-raised);
+}
+.story-format-toolbar button {
+  cursor: pointer; min-width: 36px; min-height: 34px; padding: 5px 9px;
+  border: 1px solid var(--cc-panel-border); border-radius: 6px;
+  background: var(--cc-surface); color: var(--cc-text); font: 800 12px var(--cc-font-body);
+}
+.story-format-toolbar button:hover,
+.story-format-toolbar button:focus-visible {
+  border-color: var(--cc-gold); outline-offset: 2px;
+}
+.article-list { margin: 0 0 22px; padding-left: 1.6em; }
+.article-list li { margin-bottom: 8px; }
+.article-subheading-small { font-size: 21px; margin-top: 28px; }
+@media (max-width: 800px) { .article-subheading-small { font-size: 19px; } }
