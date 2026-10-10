@@ -38,10 +38,8 @@ begin
     raise exception 'That roster cannot be unlocked.' using errcode='22023';
   end if;
 
-  lock_at := (
-    (target_match.date - ((extract(dow from target_match.date)::int + 2) % 7))::timestamp
-    + time '15:00'
-  ) at time zone 'America/New_York';
+  -- Use the same match-week Friday cutoff as snapshots and attendance.
+  lock_at := private.launch_match_lock_at(target_match.date);
   if pg_catalog.now() < lock_at then
     raise exception 'That roster is not locked yet.' using errcode='55000';
   end if;
