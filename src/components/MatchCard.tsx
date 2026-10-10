@@ -31,8 +31,6 @@ export function MatchCard({match, teams, today, result}: MatchCardProps) {
   const awayTeam = findTeam(teams, match.awayTeamId, match.away);
   const isMatchday = match.scheduledDate === today;
   const isPast = Boolean(match.scheduledDate && match.scheduledDate < today);
-  const showScore = Boolean(result) || isMatchday;
-  const scoreLabel = result ? 'FINAL' : 'MATCHDAY';
 
   return (
     <article className={`dark-panel story-home-card home-match-card ${styles.card}`}>
@@ -41,10 +39,15 @@ export function MatchCard({match, teams, today, result}: MatchCardProps) {
           <TeamMatchLogo name={match.away} logo={awayTeam?.logo} />
           <strong>{match.away}</strong>
         </Link>
-        {showScore ? (
-          <div className={styles.scoreCenter} aria-label={`${match.away} ${result?.awayScore ?? 0}, ${match.home} ${result?.homeScore ?? 0}; ${scoreLabel.toLowerCase()}`}>
-            <span className={styles.scoreLabel}>{scoreLabel}</span>
-            <strong className={styles.scoreValue}>{result?.awayScore ?? 0}–{result?.homeScore ?? 0}</strong>
+        {result ? (
+          <div className={styles.scoreCenter} aria-label={`${match.away} ${result.awayScore}, ${match.home} ${result.homeScore}; final`}>
+            <span className={styles.scoreLabel}>FINAL</span>
+            <strong className={styles.scoreValue}>{result.awayScore}–{result.homeScore}</strong>
+          </div>
+        ) : isMatchday ? (
+          <div className={styles.scoreCenter} aria-label="Matchday; final score pending">
+            <span className={styles.scoreLabel}>MATCHDAY</span>
+            <strong className={styles.scoreValue}>VS</strong>
           </div>
         ) : isPast ? (
           <span className={styles.pending}>PENDING</span>
