@@ -71,6 +71,9 @@ function FinalHero({
   singlesTotals: {away: number; home: number};
   doublesTotals: {away: number; home: number};
 }) {
+  const awayAdjustments = Math.max(0, snapshot.awayScore - singlesTotals.away - doublesTotals.away);
+  const homeAdjustments = Math.max(0, snapshot.homeScore - singlesTotals.home - doublesTotals.home);
+
   return (
     <section className={heroStyles.matchHero} data-matchday-hero>
       <div className={`${heroStyles.heroTeams} ${styles.finalHeroTeams}`}>
@@ -90,6 +93,7 @@ function FinalHero({
                 <span>S {formatPoint(singlesTotals.away)}</span>
                 <span>D {formatPoint(doublesTotals.away)}</span>
               </div>
+              {awayAdjustments > 0 ? <small aria-label={`${formatPoint(awayAdjustments)} additional team points`}>Adj +{formatPoint(awayAdjustments)}</small> : null}
             </div>
             <span className={styles.scoreDivider} aria-hidden="true" />
             <div className={styles.scoreCell}>
@@ -99,6 +103,7 @@ function FinalHero({
                 <span>S {formatPoint(singlesTotals.home)}</span>
                 <span>D {formatPoint(doublesTotals.home)}</span>
               </div>
+              {homeAdjustments > 0 ? <small aria-label={`${formatPoint(homeAdjustments)} additional team points`}>Adj +{formatPoint(homeAdjustments)}</small> : null}
             </div>
           </div>
         </div>
