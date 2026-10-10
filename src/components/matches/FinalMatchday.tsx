@@ -93,7 +93,7 @@ function FinalHero({
                 <span>S {formatPoint(singlesTotals.away)}</span>
                 <span>D {formatPoint(doublesTotals.away)}</span>
               </div>
-              {awayAdjustments > 0 ? <small aria-label={`${formatPoint(awayAdjustments)} additional team points`}>Adj +{formatPoint(awayAdjustments)}</small> : null}
+              {awayAdjustments > 0 ? <small aria-label={`${formatPoint(awayAdjustments)} additional team points`}>{snapshot.awayAdjustmentLabel || 'Adj'} +{formatPoint(awayAdjustments)}</small> : null}
             </div>
             <span className={styles.scoreDivider} aria-hidden="true" />
             <div className={styles.scoreCell}>
@@ -103,7 +103,7 @@ function FinalHero({
                 <span>S {formatPoint(singlesTotals.home)}</span>
                 <span>D {formatPoint(doublesTotals.home)}</span>
               </div>
-              {homeAdjustments > 0 ? <small aria-label={`${formatPoint(homeAdjustments)} additional team points`}>Adj +{formatPoint(homeAdjustments)}</small> : null}
+              {homeAdjustments > 0 ? <small aria-label={`${formatPoint(homeAdjustments)} additional team points`}>{snapshot.homeAdjustmentLabel || 'Adj'} +{formatPoint(homeAdjustments)}</small> : null}
             </div>
           </div>
         </div>
@@ -210,7 +210,7 @@ function DesktopResultRow({contest}: {contest: FinalMatchContest}) {
       <div className={awayClass}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
-      <div className={styles.desktopVs}>{tie ? 'TIE' : 'VS'}</div>
+      <div className={styles.desktopVs}>{contest.unplayed ? 'NO SHOW' : tie ? 'TIE' : 'VS'}</div>
       <div className={homeClass}>
         <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
       </div>
@@ -288,7 +288,7 @@ function ResultRow({contest}: {contest: FinalMatchContest}) {
       <div className={awayClass}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
-      <div className={styles.outcome}>{tie ? <span>TIE</span> : null}</div>
+      <div className={styles.outcome}>{contest.unplayed ? <span>NO SHOW</span> : tie ? <span>TIE</span> : null}</div>
       <div className={homeClass}>
         <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
       </div>
