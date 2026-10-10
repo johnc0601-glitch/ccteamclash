@@ -28,6 +28,7 @@ export type FinalMatchContest = {
   homeOutcome: 'W' | 'L' | 'T';
   awayPlayers: FinalMatchPlayer[];
   homePlayers: FinalMatchPlayer[];
+  unplayed?: boolean;
 };
 
 export type FinalMatchWeather = {
@@ -48,6 +49,8 @@ export type FinalMatchdaySnapshot = {
   awayScore: number;
   homeScore: number;
   contests: FinalMatchContest[];
+  homeAdjustmentLabel?: string;
+  awayAdjustmentLabel?: string;
   weather: FinalMatchWeather | null;
   publishedAt: string | null;
 };
@@ -117,6 +120,8 @@ function parseSnapshot(row: SnapshotRow): FinalMatchdaySnapshot | undefined {
     awayScore,
     homeScore,
     contests: parseContests(payload.contests),
+    homeAdjustmentLabel: readString(payload.homeAdjustmentLabel) ?? undefined,
+    awayAdjustmentLabel: readString(payload.awayAdjustmentLabel) ?? undefined,
     weather: parseWeather(row.weather),
     publishedAt: row.published_at,
   };
@@ -166,6 +171,7 @@ function parseContests(value: unknown): FinalMatchContest[] {
       homeOutcome,
       awayPlayers: parsePlayers(contest.awayPlayers),
       homePlayers: parsePlayers(contest.homePlayers),
+      unplayed: contest.unplayed === true,
     }];
   });
 }
