@@ -4,21 +4,27 @@ import {ClashCountdown} from '@/components/ClashCountdown';
 import {ClashCastPromo} from '@/components/ClashCastPromo';
 import {ClashPulse} from '@/components/ClashPulse';
 import {HomeMatchCarousel} from '@/components/HomeMatchCarousel';
+import {HomeScoreAutoRefresh} from '@/components/HomeScoreAutoRefresh';
 import {Intro} from '@/components/intro/Intro';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchCard} from '@/components/MatchCard';
 import {getHomepageData} from '@/services/home/HomepageDataService';
 import {getHomepageClashPulseItems} from '@/services/home/ClashPulseService';
+import {easternDate} from '@/services/weather/MatchWeather';
 import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
 
-export const revalidate = 21_600;
+// Regenerate the score cards regularly on Matchday while the other homepage
+// queries stay cached. Result publication also invalidates this route.
+export const revalidate = 60;
 
 export default async function Home() {
   const [homepageData, clashPulseItems] = await Promise.all([
     getHomepageData(),
     getHomepageClashPulseItems(),
   ]);
-  const {storyData, teams: teamLogos, homeEvents, feedPreviews, roundLabel} = homepageData;
+  const {storyData, teams: teamLogos, homeEvents, publishedScores, feedPreviews, roundLabel} = homepageData;
+  const today = easternDate();
+  const hasUnpublishedMatchToday = homeEvents.some((match) => match.scheduledDate === today && !publishedScores.has(match.id));
   const lead = storyData.lead;
 
   return (
@@ -41,12 +47,13 @@ export default async function Home() {
       ) : null}
 
       <section className="shell home-matches-section">
+        <HomeScoreAutoRefresh enabled={hasUnpublishedMatchToday} />
         <div className="home-matches-heading">
           <h2>{roundLabel}</h2>
         </div>
         <HomeMatchCarousel count={homeEvents.length}>
           {homeEvents.map((match) => (
-            <MatchCard key={match.id} match={match} teams={teamLogos} feedPreview={feedPreviews.get(match.id)} />
+            <MatchCard key={match.id} match={match} teams={teamLogos} feedPreview={feedPreviews.get(match.id)} today={today} result={publishedScores.get(match.id)} />
           ))}
         </HomeMatchCarousel>
       </section>

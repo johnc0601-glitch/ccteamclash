@@ -6,16 +6,24 @@ import {createPublicClient} from '@/lib/supabase/public';
 import type {Team} from '@/models/Team';
 import type {HomepageMatchFeedPreview} from '@/services/media/HomepageMatchFeedService';
 import type {HomepageStory, HomepageStoryData} from '@/services/stories/HomepageStoryService';
+import {easternDate} from '@/services/weather/MatchWeather';
 
 const MATCH_DISPLAY_WINDOW_DAYS = 14;
+const RECENT_ROUND_HOLD_DAYS = 3;
 const HOME_STORY_COLUMNS = 'id,slug,title,published_at,image,body,featured';
 const LATEST_STORY_COUNT = 2;
 const HOMEPAGE_CACHE_SECONDS = 86_400;
+
+export type HomepagePublishedScore = {
+  awayScore: number;
+  homeScore: number;
+};
 
 export type HomepageData = {
   storyData: HomepageStoryData;
   teams: Team[];
   homeEvents: PublicScheduleEvent[];
+  publishedScores: Map<string, HomepagePublishedScore>;
   roundLabel: string;
   feedPreviews: Map<string, HomepageMatchFeedPreview>;
 };
@@ -165,23 +173,28 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
     .filter((event: HomepageScheduleEvent | null): event is HomepageScheduleEvent => Boolean(event))
     .sort((left, right) => left.dateTime.getTime() - right.dateTime.getTime());
 
+  // Matchday takes priority; keep the completed round visible briefly so
+  // official scores do not disappear as soon as the next round becomes upcoming.
+  const today = easternDate(referenceDate);
+  const todayMatch = events.find((event) => event.scheduledDate === today);
   const upcoming = events.filter((event) => event.bucket === 'upcoming');
-  let homeEvents: HomepageScheduleEvent[];
-  if (upcoming.length > 0) {
-    const nextRoundId = upcoming[0].roundId;
-    homeEvents = events
-      .filter((event) => event.roundId === nextRoundId)
+  const recent = events
+    .filter((event) => event.bucket === 'recent')
+    .sort((left, right) => right.dateTime.getTime() - left.dateTime.getTime());
+  const latestRecent = recent[0];
+  const recentAge = latestRecent?.scheduledDate
+    ? daysBetweenDates(latestRecent.scheduledDate, today)
+    : Infinity;
+  const displayedRoundId = todayMatch?.roundId
+    ?? (latestRecent && recentAge >= 0 && recentAge <= RECENT_ROUND_HOLD_DAYS ? latestRecent.roundId : undefined)
+    ?? upcoming[0]?.roundId
+    ?? latestRecent?.roundId;
+  const homeEvents = displayedRoundId
+    ? events
+      .filter((event) => event.roundId === displayedRoundId)
       .sort((left, right) => left.dateTime.getTime() - right.dateTime.getTime())
-      .slice(0, 4);
-  } else {
-    const recent = events
-      .filter((event) => event.bucket === 'recent')
-      .sort((left, right) => right.dateTime.getTime() - left.dateTime.getTime());
-    const latestRoundId = recent[0]?.roundId;
-    homeEvents = latestRoundId
-      ? recent.filter((event) => event.roundId === latestRoundId).slice(0, 4)
-      : [];
-  }
+      .slice(0, 4)
+    : [];
 
   const homeMatchIds = new Set(homeEvents.map((event) => event.id));
   const feedPreviews = new Map<string, HomepageMatchFeedPreview>();
@@ -201,9 +214,28 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
     });
   }
 
+  // Use the same published result that powers Matchday; never expose draft
+  // scores. Only read the four displayed matches, and only on page regeneration.
+  const publishedScores = new Map<string, HomepagePublishedScore>();
+  if (homeEvents.length) {
+    const {data: results, error: resultsError} = await (publicSupabase as any)
+      .from('launch_match_results')
+      .select('match_id,away_score,home_score')
+      .eq('status', 'Published')
+      .in('match_id', homeEvents.map((event) => event.id));
+    logHomepageReadError('published match scores', resultsError);
+    for (const result of results ?? []) {
+      const awayScore = parsePublishedScore(result.away_score);
+      const homeScore = parsePublishedScore(result.home_score);
+      if (awayScore !== null && homeScore !== null && homeMatchIds.has(clean(result.match_id))) {
+        publishedScores.set(clean(result.match_id), {awayScore, homeScore});
+      }
+    }
+  }
+
   const displayedRound = publishedRounds.find((round: any) => clean(round.id) === homeEvents[0]?.roundId);
   const roundLabel = displayedRound?.number ? `Round ${displayedRound.number}` : 'Matches';
-  return {storyData, teams, homeEvents, feedPreviews, roundLabel};
+  return {storyData, teams, homeEvents, publishedScores, feedPreviews, roundLabel};
 }
 
 function mapPublicEvent(
@@ -231,8 +263,8 @@ function mapPublicEvent(
     ? new Date(`${anchorDate}T00:00:00`)
     : dateTime;
   const bucket = storedStatus === 'Completed'
-    ? getCompletedEventBucket(safeDateTime, referenceDate)
-    : getEventBucket(safeDateTime, referenceDate);
+    ? getCompletedEventBucket(anchorDate, referenceDate)
+    : getEventBucket(anchorDate, referenceDate);
   const course = courses.get(courseId);
   const publicRef = publicSlugs.get(id) || id;
 
@@ -240,7 +272,8 @@ function mapPublicEvent(
     id,
     roundId,
     href: `/matches/${encodeURIComponent(publicRef)}`,
-    date: date ? formatEventDate(date) : 'TBD',
+    date: date ? formatEventDate(date) : formatEventDate(anchorDate),
+    scheduledDate: anchorDate,
     time: formatEventTime(time),
     course: course?.name ?? courseId,
     directionsUrl: course?.mapUrl ?? '',
@@ -254,21 +287,27 @@ function mapPublicEvent(
   };
 }
 
-function getEventBucket(dateTime: Date, referenceDate: Date): ScheduleEventBucket {
-  const today = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
-  const eventDay = new Date(dateTime.getFullYear(), dateTime.getMonth(), dateTime.getDate());
-  if (eventDay.getTime() >= today.getTime()) return 'upcoming';
-  const cutoff = new Date(today);
-  cutoff.setDate(cutoff.getDate() - MATCH_DISPLAY_WINDOW_DAYS);
-  return eventDay.getTime() >= cutoff.getTime() ? 'recent' : 'past';
+function getEventBucket(eventDate: string, referenceDate: Date): ScheduleEventBucket {
+  const today = easternDate(referenceDate);
+  if (eventDate >= today) return 'upcoming';
+  return eventDate >= dateKeyDaysBefore(today, MATCH_DISPLAY_WINDOW_DAYS) ? 'recent' : 'past';
 }
 
-function getCompletedEventBucket(dateTime: Date, referenceDate: Date): ScheduleEventBucket {
-  const today = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
-  const eventDay = new Date(dateTime.getFullYear(), dateTime.getMonth(), dateTime.getDate());
-  const cutoff = new Date(today);
-  cutoff.setDate(cutoff.getDate() - MATCH_DISPLAY_WINDOW_DAYS);
-  return eventDay.getTime() >= cutoff.getTime() ? 'recent' : 'past';
+function getCompletedEventBucket(eventDate: string, referenceDate: Date): ScheduleEventBucket {
+  const today = easternDate(referenceDate);
+  return eventDate >= dateKeyDaysBefore(today, MATCH_DISPLAY_WINDOW_DAYS) ? 'recent' : 'past';
+}
+
+function dateKeyDaysBefore(dateKey: string, days: number): string {
+  const date = new Date(`${dateKey}T12:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() - days);
+  return date.toISOString().slice(0, 10);
+}
+
+function daysBetweenDates(from: string, to: string): number {
+  return Math.round(
+    (Date.parse(`${to}T12:00:00.000Z`) - Date.parse(`${from}T12:00:00.000Z`)) / 86_400_000,
+  );
 }
 
 function formatEventDate(value: string): string {
@@ -323,6 +362,12 @@ function mapTeam(row: any): Team {
 
 function clean(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function parsePublishedScore(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const score = Number(value);
+  return Number.isFinite(score) && score >= 0 && Number.isInteger(score * 2) ? score : null;
 }
 
 function safeCount(value: unknown): number {

@@ -7,6 +7,7 @@ import {useState} from 'react';
 import type {Team} from '@/models/Team';
 import {createSlug} from '@/shared/utils';
 import type {PublicScheduleEvent} from '@/domain/schedule/ScheduleService';
+import type {HomepagePublishedScore} from '@/services/home/HomepageDataService';
 import styles from './MatchCard.module.css';
 
 export type MatchFeedPreview = {
@@ -21,11 +22,17 @@ type MatchCardProps = {
   match: PublicScheduleEvent;
   teams: Team[];
   feedPreview?: MatchFeedPreview;
+  today: string;
+  result?: HomepagePublishedScore;
 };
 
-export function MatchCard({match, teams}: MatchCardProps) {
+export function MatchCard({match, teams, today, result}: MatchCardProps) {
   const homeTeam = findTeam(teams, match.homeTeamId, match.home);
   const awayTeam = findTeam(teams, match.awayTeamId, match.away);
+  const isMatchday = match.scheduledDate === today;
+  const isPast = Boolean(match.scheduledDate && match.scheduledDate < today);
+  const showScore = Boolean(result) || isMatchday;
+  const scoreLabel = result ? 'FINAL' : 'MATCHDAY';
 
   return (
     <article className={`dark-panel story-home-card home-match-card ${styles.card}`}>
@@ -34,7 +41,16 @@ export function MatchCard({match, teams}: MatchCardProps) {
           <TeamMatchLogo name={match.away} logo={awayTeam?.logo} />
           <strong>{match.away}</strong>
         </Link>
-        <b>VS</b>
+        {showScore ? (
+          <div className={styles.scoreCenter} aria-label={`${match.away} ${result?.awayScore ?? 0}, ${match.home} ${result?.homeScore ?? 0}; ${scoreLabel.toLowerCase()}`}>
+            <span className={styles.scoreLabel}>{scoreLabel}</span>
+            <strong className={styles.scoreValue}>{result?.awayScore ?? 0}–{result?.homeScore ?? 0}</strong>
+          </div>
+        ) : isPast ? (
+          <span className={styles.pending}>PENDING</span>
+        ) : (
+          <b>VS</b>
+        )}
         <Link className="match-team-link" href={`/teams/${encodeURIComponent(match.homeTeamId)}`}>
           <TeamMatchLogo name={match.home} logo={homeTeam?.logo} />
           <strong>{match.home}</strong>
