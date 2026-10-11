@@ -36,6 +36,37 @@ type EditorState = {
   result?: MatchResult;
 };
 
+type AiContestMeta = {
+  needsReview: boolean;
+  confidenceScore: number | null;
+  reviewReasons: string[];
+  sourceNote: string;
+};
+
+type AiImportMeta = {
+  imageCount: number;
+  warnings: string[];
+  scoreSource: 'Visible' | 'Computed' | 'Unknown';
+  model: string;
+};
+
+type AiWhiteboardResponse = {
+  homeScore: number | null;
+  awayScore: number | null;
+  scoreSource: 'Visible' | 'Computed' | 'Unknown';
+  contests: Array<ResultContestInput & {
+    confidence: 'High' | 'Review';
+    confidenceScore: number | null;
+    reviewReasons: string[];
+    sourceNote: string;
+  }>;
+  warnings: string[];
+  reviewCount: number;
+  model: string;
+  imageCount: number;
+  error?: string;
+};
+
 type ResultsManagementProps = {
   initialSchedules: Schedule[];
   initialRounds: Round[];
@@ -75,6 +106,11 @@ export function ResultsManagement({
   const [homeAdjustment, setHomeAdjustment] = useState<{category: ResultStructuralCategory | ''; note: string}>({category: '', note: ''});
   const [awayAdjustment, setAwayAdjustment] = useState<{category: ResultStructuralCategory | ''; note: string}>({category: '', note: ''});
   const [processingStatus, setProcessingStatus] = useState<ResultProcessingStatus | null>(null);
+  const [whiteboardFiles, setWhiteboardFiles] = useState<File[]>([]);
+  const [whiteboardInputVersion, setWhiteboardInputVersion] = useState(0);
+  const [aiImporting, setAiImporting] = useState(false);
+  const [aiImportMeta, setAiImportMeta] = useState<AiImportMeta | null>(null);
+  const [aiContestMetaById, setAiContestMetaById] = useState<Record<string, AiContestMeta>>({});
 
   async function load(preferredRoundId?: string) {
     const workspace = await loadResultsWorkspace(preferredRoundId || roundId);
@@ -101,6 +137,9 @@ export function ResultsManagement({
     }
     setMatches(round.data);
     setEditor(null);
+    setWhiteboardFiles([]);
+    setAiImportMeta(null);
+    setAiContestMetaById({});
     setMessage('');
   }
 
@@ -110,6 +149,10 @@ export function ResultsManagement({
     setHomeScore(result?.homeScore === null || result?.homeScore === undefined ? '' : String(result.homeScore));
     setAwayScore(result?.awayScore === null || result?.awayScore === undefined ? '' : String(result.awayScore));
     setFieldErrors({});
+    setWhiteboardFiles([]);
+    setWhiteboardInputVersion((value) => value + 1);
+    setAiImportMeta(null);
+    setAiContestMetaById({});
     setMessage('');
     const [contestResult, rosterResult, structuralResult, processingResult] = await Promise.all([
       loadResultContests(match.id),
@@ -149,6 +192,81 @@ export function ResultsManagement({
     setProcessingStatus(processingResult.ok ? processingResult.data : null);
   }
 
+  async function analyzeWhiteboards() {
+    if (!editor || editor.result?.status === 'Published') return;
+    if (!whiteboardFiles.length) {
+      setMessage('Take or choose at least one whiteboard photo.');
+      return;
+    }
+
+    setAiImporting(true);
+    setFieldErrors({});
+    setMessage('AI is reading the whiteboards…');
+
+    try {
+      const formData = new FormData();
+      formData.append('matchId', editor.match.id);
+      whiteboardFiles.forEach((file) => formData.append('files', file));
+
+      const response = await fetch('/api/office/results/whiteboard-import', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json().catch(() => null) as AiWhiteboardResponse | null;
+
+      if (!response.ok || !data) {
+        setMessage(data?.error || 'Whiteboard AI import failed.');
+        return;
+      }
+
+      const importedContests = data.contests.map((contest) => ({
+        id: contest.id,
+        format: contest.format,
+        position: contest.position,
+        homeOutcome: contest.homeOutcome,
+        awayOutcome: contest.awayOutcome,
+        homeScore: null,
+        awayScore: null,
+        players: contest.players,
+      }));
+      const contestMeta: Record<string, AiContestMeta> = {};
+      for (const contest of data.contests) {
+        contestMeta[contest.id] = {
+          needsReview: contest.confidence === 'Review',
+          confidenceScore: contest.confidenceScore,
+          reviewReasons: contest.reviewReasons,
+          sourceNote: contest.sourceNote,
+        };
+      }
+
+      setContests(importedContests);
+      if (data.homeScore !== null) setHomeScore(String(data.homeScore));
+      if (data.awayScore !== null) setAwayScore(String(data.awayScore));
+      setHomeAdjustment({category: '', note: ''});
+      setAwayAdjustment({category: '', note: ''});
+      setAiContestMetaById(contestMeta);
+      setAiImportMeta({
+        imageCount: data.imageCount,
+        warnings: data.warnings,
+        scoreSource: data.scoreSource,
+        model: data.model,
+      });
+      setWhiteboardFiles([]);
+      setWhiteboardInputVersion((value) => value + 1);
+
+      const reviewCount = Object.values(contestMeta).filter((item) => item.needsReview).length;
+      setMessage(
+        reviewCount
+          ? `AI filled the draft. Review ${reviewCount} highlighted contest${reviewCount === 1 ? '' : 's'} before finalizing.`
+          : 'AI filled the draft. Review the score audit, then finalize when it is correct.',
+      );
+    } catch {
+      setMessage('Whiteboard AI import could not complete. Try the photos again.');
+    } finally {
+      setAiImporting(false);
+    }
+  }
+
   async function save(action: 'draft' | 'publish' | 'reopen') {
     if (!editor) return;
     setSaving(true);
@@ -159,6 +277,12 @@ export function ResultsManagement({
     const audit = resultAudit(contests, parsedHomeScore, parsedAwayScore);
 
     if (action === 'publish') {
+      const unresolvedAiReviews = Object.values(aiContestMetaById).filter((item) => item.needsReview).length;
+      if (unresolvedAiReviews > 0) {
+        setSaving(false);
+        setMessage(`Review the ${unresolvedAiReviews} highlighted AI contest${unresolvedAiReviews === 1 ? '' : 's'} before finalizing.`);
+        return;
+      }
       if (audit.homeResidual < 0 || audit.awayResidual < 0) {
         setSaving(false);
         setMessage('The official score is lower than the entered matchup points. Review the result rows before finalizing.');
@@ -278,7 +402,35 @@ export function ResultsManagement({
   }
 
   function updateContest(index: number, update: Partial<ResultContestInput>) {
+    const contestId = contests[index]?.id;
     setContests(contests.map((contest, contestIndex) => contestIndex === index ? {...contest, ...update} : contest));
+    if (contestId && aiContestMetaById[contestId]?.needsReview) {
+      setAiContestMetaById((current) => ({
+        ...current,
+        [contestId]: {...current[contestId], needsReview: false},
+      }));
+    }
+  }
+
+  function markAiContestReviewed(contestId: string) {
+    const meta = aiContestMetaById[contestId];
+    if (!meta) return;
+    setAiContestMetaById((current) => ({
+      ...current,
+      [contestId]: {...meta, needsReview: false},
+    }));
+  }
+
+  function removeContest(index: number) {
+    const contestId = contests[index]?.id;
+    setContests(contests.filter((_, contestIndex) => contestIndex !== index));
+    if (contestId && aiContestMetaById[contestId]) {
+      setAiContestMetaById((current) => {
+        const next = {...current};
+        delete next[contestId];
+        return next;
+      });
+    }
   }
 
   function updateOutcome(index: number, homeOutcome: ResultContestOutcome) {
@@ -336,6 +488,48 @@ export function ResultsManagement({
             <div><span>Result entry</span><h2>{editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'TBD'} vs {editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'TBD'}</h2></div>
             <button type="button" onClick={() => setEditor(null)}>Close</button>
           </header>
+          {editor.result?.status !== 'Published' ? (
+            <section className={styles.aiImport}>
+              <div className={styles.aiImportIntro}>
+                <div>
+                  <span>AI whiteboard import</span>
+                  <h3>Photos → result draft</h3>
+                  <p>Take or upload the handwritten result boards. AI matches names against the locked rosters and fills the draft for you to review.</p>
+                </div>
+                <label className={styles.photoPicker}>
+                  <input
+                    key={whiteboardInputVersion}
+                    type="file"
+                    accept="image/*,.heic,.heif"
+                    multiple
+                    onChange={(event) => setWhiteboardFiles(Array.from(event.target.files ?? []).slice(0, 4))}
+                  />
+                  <span>Take / choose photos</span>
+                </label>
+              </div>
+              <div className={styles.aiImportControls}>
+                <span>{whiteboardFiles.length ? `${whiteboardFiles.length} photo${whiteboardFiles.length === 1 ? '' : 's'} ready` : 'Up to 4 photos'}</span>
+                <button
+                  type="button"
+                  disabled={aiImporting || !whiteboardFiles.length}
+                  onClick={() => void analyzeWhiteboards()}
+                >
+                  {aiImporting ? 'Reading whiteboards…' : 'Analyze whiteboards'}
+                </button>
+              </div>
+              {aiImportMeta ? (
+                <div className={styles.aiImportStatus}>
+                  <strong>
+                    AI draft loaded · {Object.values(aiContestMetaById).filter((item) => item.needsReview).length} need review
+                  </strong>
+                  <span>Team score: {aiImportMeta.scoreSource.toLowerCase()} · {aiImportMeta.imageCount} photo{aiImportMeta.imageCount === 1 ? '' : 's'}</span>
+                  {aiImportMeta.warnings.length ? (
+                    <ul>{aiImportMeta.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
+                  ) : null}
+                </div>
+              ) : null}
+            </section>
+          ) : null}
           <div className={styles.scores}>
             <label>
               <span>{editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'TBD'} score</span>
@@ -357,12 +551,27 @@ export function ResultsManagement({
                 <button type="button" onClick={() => addContest('Doubles')}>Add doubles</button>
               </div> : null}
             </header>
-            {contests.length ? contests.map((contest, contestIndex) => (
-              <article className={styles.contest} key={contest.id}>
+            {contests.length ? contests.map((contest, contestIndex) => {
+              const aiMeta = aiContestMetaById[contest.id];
+              return (
+              <article className={`${styles.contest} ${aiMeta?.needsReview ? styles.contestNeedsReview : ''}`} key={contest.id}>
                 <div className={styles.contestHeading}>
-                  <strong>{contest.format} {contest.position}</strong>
-                  {editor.result?.status !== 'Published' ? <button type="button" onClick={() => setContests(contests.filter((_, index) => index !== contestIndex))}>Remove</button> : null}
+                  <div className={styles.contestTitle}>
+                    <strong>{contest.format} {contest.position}</strong>
+                    {aiMeta ? <span className={aiMeta.needsReview ? styles.aiReviewBadge : styles.aiReadBadge}>{aiMeta.needsReview ? 'AI review' : 'AI read'}</span> : null}
+                  </div>
+                  {editor.result?.status !== 'Published' ? <button type="button" onClick={() => removeContest(contestIndex)}>Remove</button> : null}
                 </div>
+                {aiMeta?.needsReview ? (
+                  <div className={styles.aiContestReview}>
+                    <div>
+                      <strong>Check this result</strong>
+                      {aiMeta.reviewReasons.map((reason) => <span key={reason}>{reason}</span>)}
+                      {aiMeta.sourceNote ? <small>Board note: {aiMeta.sourceNote}</small> : null}
+                    </div>
+                    <button type="button" onClick={() => markAiContestReviewed(contest.id)}>Mark reviewed</button>
+                  </div>
+                ) : null}
                 <div className={styles.playerSides}>
                   {(['Home', 'Away'] as const).map((side) => {
                     const teamId = side === 'Home' ? editor.match.homeTeamId : editor.match.awayTeamId;
@@ -390,7 +599,8 @@ export function ResultsManagement({
                   </select>
                 </label>
               </article>
-            )) : <p className={styles.emptyContest}>No player contests entered yet. Team-only results remain supported.</p>}
+              );
+            }) : <p className={styles.emptyContest}>No player contests entered yet. Use AI whiteboard import above or add contests manually.</p>}
             {fieldErrors.contests ? <p className={styles.contestError}>{fieldErrors.contests}</p> : null}
           </section>
           <div className={styles.review}>
@@ -477,7 +687,7 @@ export function ResultsManagement({
                 <button
                   type="button"
                   className={styles.primary}
-                  disabled={saving || audit.homeResidual < 0 || audit.awayResidual < 0 || (audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)}
+                  disabled={saving || Object.values(aiContestMetaById).some((item) => item.needsReview) || audit.homeResidual < 0 || audit.awayResidual < 0 || (audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)}
                   onClick={() => void save('publish')}
                 >
                   Finalize match
