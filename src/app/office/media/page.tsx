@@ -34,7 +34,7 @@ export default async function OfficeMediaPage({searchParams}: {searchParams?: Pr
   return (
     <OfficePage sectionId="media">
       <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, marginBottom: 20}}>
-        <section style={mediaCardStyle}>
+        <section className="office-podcast-card" style={mediaCardStyle}>
           <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10}}>
             <strong>Clash Cast</strong>
             <span style={{fontSize: 11, fontWeight: 850, opacity: .8}}>{active ? 'NEW EPISODE ACTIVE' : 'NO NEW EPISODE'}</span>
@@ -63,17 +63,17 @@ export default async function OfficeMediaPage({searchParams}: {searchParams?: Pr
                 style={{width: '100%', padding: '10px 11px', border: '1px solid rgba(127,127,127,.5)', borderRadius: 5, background: 'var(--cc-surface-deep)', color: 'var(--cc-text)', font: 'inherit'}}
               />
             </label>
-            <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
-              <button type="submit" name="episodeAction" value="save">Save latest episode</button>
-              <button type="submit" name="episodeAction" value="announce">Save &amp; mark NEW (7 days)</button>
+            <div className="office-podcast-actions">
+              <button className="office-podcast-button office-podcast-button-secondary" type="submit" name="episodeAction" value="save">Save latest episode</button>
+              <button className="office-podcast-button office-podcast-button-primary" type="submit" name="episodeAction" value="announce">Save &amp; mark NEW (7 days)</button>
             </div>
           </form>
           {expiresAt ? <p style={{fontSize: 12, margin: '0 0 10px'}}>Indicator expires {expiresLabel}.</p> : null}
           {query.episodeNotice ? <p role="status" style={{fontSize: 13}}>{query.episodeNotice}</p> : null}
           {query.episodeError ? <p role="alert" style={{fontSize: 13, color: '#c0392b'}}>{query.episodeError}</p> : null}
-          <form action={setPodcastEpisodeIndicator} style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
-            <button type="submit" name="intent" value="activate">{active ? 'Restart 7-day indicator' : 'Mark new episode'}</button>
-            {active ? <button type="submit" name="intent" value="clear">Clear indicator</button> : null}
+          <form action={setPodcastEpisodeIndicator} className="office-podcast-actions office-podcast-indicator-actions">
+            <button className="office-podcast-button office-podcast-button-secondary" type="submit" name="intent" value="activate">{active ? 'Restart 7-day indicator' : 'Mark new episode'}</button>
+            {active ? <button className="office-podcast-button office-podcast-button-clear" type="submit" name="intent" value="clear">Clear NEW indicator</button> : null}
           </form>
         </section>
         <section style={mediaCardStyle}>
