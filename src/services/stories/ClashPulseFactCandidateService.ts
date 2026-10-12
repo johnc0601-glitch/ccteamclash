@@ -489,14 +489,18 @@ function toCandidate(story: RatedStory): ClashPulseFactCandidate {
   if (story.format === 'Team') {
     const type = primaryStoryType(story);
     if (type === 'Above Expectations') {
-      const text = `${story.teamName} scored ${formatScore(story.teamScore!)} standard points against ${story.opponentTeamName}, ${story.performanceVsExpected.toFixed(1)} above the ${story.expectedScore!.toFixed(1)} projection. Extra roster penalty points excluded.`;
+      const points = `+${story.performanceVsExpected.toFixed(1)} points`;
+      const percent = story.expectedScore! > 0
+        ? Math.round(story.performanceVsExpected / story.expectedScore! * 100) : null;
+      const achievement = percent == null ? `${points} above expectations` : `${percent}% above expectations`;
+      const text = `${story.teamName} scored ${formatScore(story.teamScore!)} standard points against ${story.opponentTeamName}: ${achievement} (${points}), against a ${story.expectedScore!.toFixed(1)} projection. Extra roster penalty points excluded.`;
       return {
         id: story.key, primaryStoryType: type, topics: [type],
         detail: `${story.seasonLabel} · ${story.eventLabel} · ${story.predictionProvenance}`,
         format: 'Team', venue: story.side === 'Home' ? 'Home' : 'Road',
         angles: {[type]: {storyType: type, headline: `${story.teamName} beat its expected score`,
-          value: `+${story.performanceVsExpected.toFixed(1)} POINTS ABOVE EXPECTED`,
-          badges: ['TEAM MATCH', story.predictionProvenance ?? 'Saved forecast'], pulseText: text.slice(0, 240)}},
+          value: achievement.toUpperCase(),
+          badges: [points, 'TEAM MATCH', story.predictionProvenance ?? 'Saved forecast'], pulseText: text.slice(0, 240)}},
       };
     }
     const probability = Math.max(0, Math.min(100, Math.round(story.winProbability * 100)));
