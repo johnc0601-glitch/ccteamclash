@@ -1,6 +1,6 @@
 // Read-only audit: node --env-file=<env> --loader ./scripts/ts-paths-loader.mjs scripts/audit_clash_pulse_upsets.mjs
 import {createClient} from '@supabase/supabase-js';
-import {analyzeFrozenTeamMatch} from '../src/services/teamStrength/FrozenTeamMatchAnalysis.ts';
+import {calculateLockedRosterPrediction} from '../src/services/teamStrength/LockedRosterPrediction.ts';
 
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
@@ -12,13 +12,17 @@ for (const result of results) {
   const {data: facts, error: factError} = await db.from('clash_contest_rating_facts')
     .select('*').eq('match_id', result.match_id);
   if (factError) throw factError;
-  const analysis = analyzeFrozenTeamMatch({facts, venue: facts[0]?.venue,
-    homeScore: result.home_score, awayScore: result.away_score});
-  if (!analysis) throw new Error(`Cannot verify frozen facts for ${result.match_id}`);
+  const {data: rosterPlayers, error: rosterError} = await db.from('launch_match_roster_snapshot_players')
+    .select('team_id,player_id').eq('match_id', result.match_id);
+  if (rosterError) throw rosterError;
+  const homeTeamId = facts.find((fact) => fact.side === 'Home')?.team_id;
+  const awayTeamId = facts.find((fact) => fact.side === 'Away')?.team_id;
+  const analysis = calculateLockedRosterPrediction({homeTeamId, awayTeamId,
+    rosterPlayers, frozenRatings: facts, venue: facts[0]?.venue});
   const homeName = facts.find((fact) => fact.side === 'Home')?.team_name;
   const awayName = facts.find((fact) => fact.side === 'Away')?.team_name;
   const homeWon = result.home_score > result.away_score;
-  const chance = homeWon ? analysis.homeChanceOfVictory : analysis.awayChanceOfVictory;
+  const chance = analysis ? (homeWon ? analysis.homeChanceOfVictory : analysis.awayChanceOfVictory) : null;
   const winners = new Map();
   for (const fact of facts) {
     if (fact.outcome !== 'W' || Number(fact.win_probability) >= 0.5) continue;
@@ -30,8 +34,9 @@ for (const result of results) {
   console.log(JSON.stringify({match: `${awayName} at ${homeName}`,
     final: `${result.away_score}–${result.home_score}`,
     teamWinner: homeWon ? homeName : awayName,
-    winnerModeledChance: chance,
-    teamUpset: result.home_score !== result.away_score && chance < 0.5,
+    winnerLockedRosterChance: chance,
+    teamUpset: chance == null ? null : result.home_score !== result.away_score && chance < 0.5,
+    unavailableReason: analysis ? undefined : 'Missing frozen CI for a locked roster player',
     ...analysis,
     contestUpsets: [...winners.values()],
   }, null, 2));

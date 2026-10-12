@@ -1,7 +1,7 @@
 import 'server-only';
 
 import {createClient} from '@/lib/supabase/server';
-import {analyzeFrozenTeamMatch} from '@/services/teamStrength/FrozenTeamMatchAnalysis';
+import {calculateLockedRosterPrediction, type LockedRosterPlayer} from '@/services/teamStrength/LockedRosterPrediction';
 import type {
   ClashPulseFactCandidate,
   ClashPulseFactData,
@@ -108,17 +108,6 @@ type LiveFactRow = {
   ci_delta: number;
 };
 
-type HistoricalTeamMatchRow = {
-  id: number;
-  season_name: string;
-  event_label: string;
-  away_team_name: string;
-  home_team_name: string;
-  away_score: number | string | null;
-  home_score: number | string | null;
-  ci_venue: string | null;
-};
-
 const PAGE_SIZE = 1000;
 const FILTER_LIMIT = 18;
 const TOP_FACT_LIMIT = 12;
@@ -127,7 +116,7 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
   const supabase = await createClient();
   const db = supabase as any;
 
-  const [historicalRows, matchupRows, historicalTeamMatches, liveRows, seasonRows] = await Promise.all([
+  const [historicalRows, matchupRows, liveRows, seasonRows] = await Promise.all([
     loadPaged<HistoricalFactRow>(
       db,
       'historical_clash_contest_rating_facts',
@@ -137,11 +126,6 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
       db,
       'historical_player_matchups',
       'deduplication_key,season_id,season_name,historical_team_match_id,event_label,player_id,opponent_one_player_name,opponent_two_player_name',
-    ),
-    loadPaged<HistoricalTeamMatchRow>(
-      db,
-      'historical_team_matches',
-      'id,season_name,event_label,away_team_name,home_team_name,away_score,home_score,ci_venue',
     ),
     loadPaged<LiveFactRow>(
       db,
@@ -185,17 +169,11 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
     ? await hydrateLiveMembers(db, liveRows, seasonRows.data ?? [])
     : [];
 
-  const historicalTeamStories = buildHistoricalTeamUpsetStories(
-    historicalRows,
-    matchupRows,
-    historicalTeamMatches,
-  );
   const liveTeamStories = liveRows.length
     ? await buildLiveTeamUpsetStories(db, liveRows, seasonRows.data ?? [])
     : [];
   const allStories = [
     ...groupWinningStories([...historicalMembers, ...liveMembers]),
-    ...historicalTeamStories,
     ...liveTeamStories,
   ];
   const activeSeason = (seasonRows.data ?? []).find((season: any) => season.active && !season.archived);
@@ -506,7 +484,7 @@ function toCandidate(story: RatedStory): ClashPulseFactCandidate {
     const score = story.teamScore != null && story.opponentScore != null
       ? `${formatScore(story.teamScore)}–${formatScore(story.opponentScore)} FINAL`
       : 'TEAM WIN';
-    const probabilityValue = `MODEL EST. ${probability}% WIN CHANCE`;
+    const probabilityValue = `${probability}% LOCKED-ROSTER CHANCE`;
 
     return {
       id: story.key,
@@ -524,9 +502,9 @@ function toCandidate(story: RatedStory): ClashPulseFactCandidate {
             'TEAM MATCH',
             venue,
             score,
-            'RATED-MATCHUP MODEL',
+            'LOCKED ROSTERS',
           ],
-          pulseText: `${story.teamName} upset ${story.opponentTeamName}${story.teamScore != null && story.opponentScore != null ? ` ${formatScore(story.teamScore)}–${formatScore(story.opponentScore)}` : ''} — ${probability}% modeled team win chance using frozen CI, recorded matchups and official scoring.`.slice(0, 240),
+          pulseText: `${story.teamName} upset ${story.opponentTeamName}${story.teamScore != null && story.opponentScore != null ? ` ${formatScore(story.teamScore)}–${formatScore(story.opponentScore)}` : ''} after entering with a ${probability}% team win chance based on locked rosters.`.slice(0, 240),
         },
       },
     };
@@ -727,84 +705,8 @@ function commonCiDelta(story: RatedStory): number | null {
   return unique.length === 1 ? unique[0] : null;
 }
 
-function buildHistoricalTeamUpsetStories(
-  facts: HistoricalFactRow[],
-  matchups: HistoricalMatchupRow[],
-  matches: HistoricalTeamMatchRow[],
-): RatedStory[] {
-  const matchupByFact = new Map(
-    matchups.map((row) => [`${row.deduplication_key}:${row.player_id}`, row]),
-  );
-  const seasonIdByTeamMatch = new Map<number, string>();
-  for (const row of matchups) {
-    if (row.historical_team_match_id != null && !seasonIdByTeamMatch.has(row.historical_team_match_id)) {
-      seasonIdByTeamMatch.set(row.historical_team_match_id, row.season_id);
-    }
-  }
-
-  const factsByMatch = new Map<number, HistoricalFactRow[]>();
-  for (const fact of facts) {
-    const matchup = matchupByFact.get(`${fact.matchup_deduplication_key}:${fact.player_id}`);
-    const teamMatchId = matchup?.historical_team_match_id;
-    if (teamMatchId == null) continue;
-
-    const rows = factsByMatch.get(teamMatchId) ?? [];
-    rows.push(fact);
-    factsByMatch.set(teamMatchId, rows);
-  }
-
-  const stories: RatedStory[] = [];
-  for (const match of matches) {
-    if (match.ci_venue === 'Neutral') continue;
-    const matchFacts = factsByMatch.get(match.id);
-    if (!matchFacts?.length) continue;
-    const awayActual = numericOrNull(match.away_score);
-    const homeActual = numericOrNull(match.home_score);
-    if (homeActual == null || awayActual == null) continue;
-    const analysis = analyzeFrozenTeamMatch({
-      facts: matchFacts,
-      venue: 'Home',
-      homeScore: homeActual,
-      awayScore: awayActual,
-    });
-    if (!analysis) continue;
-    if (awayActual === homeActual) continue;
-
-    const awayWon = awayActual > homeActual;
-    const winnerName = awayWon ? match.away_team_name : match.home_team_name;
-    const loserName = awayWon ? match.home_team_name : match.away_team_name;
-    const winnerExpected = awayWon ? analysis.awayExpectedPoints : analysis.homeExpectedPoints;
-    const winnerScore = awayWon ? awayActual : homeActual;
-    const loserScore = awayWon ? homeActual : awayActual;
-    const probability = awayWon ? analysis.awayChanceOfVictory : analysis.homeChanceOfVictory;
-    if (probability == null || probability >= 0.5) continue;
-
-    const seasonId = seasonIdByTeamMatch.get(match.id) ?? match.season_name;
-    stories.push({
-      key: `team:${seasonId}:${match.id}`,
-      seasonId,
-      seasonLabel: shortSeason(match.season_name),
-      eventLabel: match.event_label,
-      subjectIds: [`team:${winnerName}`],
-      subjectNames: [winnerName],
-      teamId: winnerName,
-      teamName: winnerName,
-      opponentNames: [],
-      opponentTeamName: loserName,
-      side: awayWon ? 'Away' : 'Home',
-      format: 'Team',
-      winProbability: probability,
-      performanceVsExpected: winnerScore - winnerExpected,
-      ciDeltas: [],
-      clashIndexBefore: 0,
-      opponentEffectiveCi: 0,
-      teamScore: winnerScore,
-      opponentScore: loserScore,
-    });
-  }
-  return stories;
-}
-
+// Historical contest facts do not preserve official locked rosters. They may
+// support player stories, but cannot establish roster-lock team upset odds.
 async function buildLiveTeamUpsetStories(
   db: any,
   facts: LiveFactRow[],
@@ -813,9 +715,11 @@ async function buildLiveTeamUpsetStories(
   const matchIds = [...new Set(facts.map((row) => row.match_id))];
   if (!matchIds.length) return [];
 
-  const [matches, results] = await Promise.all([
+  const [matches, results, rosterPlayers, rosterManifests] = await Promise.all([
     selectInBatches<any>(db, 'launch_schedule_matches', 'id,season_id,round_id,date,home_team_id,away_team_id', 'id', matchIds),
     selectInBatches<any>(db, 'launch_match_results', 'match_id,home_score,away_score,status', 'match_id', matchIds),
+    selectInBatches<LockedRosterPlayer & {match_id: string}>(db, 'launch_match_roster_snapshot_players', 'match_id,team_id,player_id', 'match_id', matchIds),
+    selectInBatches<{match_id: string; team_id: string}>(db, 'launch_match_roster_snapshots', 'match_id,team_id', 'match_id', matchIds),
   ]);
 
   const roundIds = [...new Set(matches.map((match) => match.round_id).filter(Boolean))] as string[];
@@ -855,13 +759,21 @@ async function buildLiveTeamUpsetStories(
     if (homeScore == null || awayScore == null || homeScore === awayScore) continue;
     const venue = matchFacts[0].venue;
     if (!['Home', 'Neutral'].includes(venue) || matchFacts.some((fact) => fact.venue !== venue)) continue;
-    const analysis = analyzeFrozenTeamMatch({facts: matchFacts, venue, homeScore, awayScore});
+    if (![match.home_team_id, match.away_team_id].every((teamId) => rosterManifests.some(
+      (roster) => roster.match_id === match.id && roster.team_id === teamId,
+    ))) continue;
+    const analysis = calculateLockedRosterPrediction({
+      homeTeamId: match.home_team_id,
+      awayTeamId: match.away_team_id,
+      rosterPlayers: rosterPlayers.filter((player) => player.match_id === match.id),
+      frozenRatings: matchFacts,
+      venue,
+    });
     if (!analysis) continue;
 
     const homeWon = homeScore > awayScore;
     const winnerName = homeWon ? homeName : awayName;
     const loserName = homeWon ? awayName : homeName;
-    const winnerExpected = homeWon ? analysis.homeExpectedPoints : analysis.awayExpectedPoints;
     const probability = homeWon ? analysis.homeChanceOfVictory : analysis.awayChanceOfVictory;
     if (probability == null || probability >= 0.5) continue;
 
@@ -881,7 +793,7 @@ async function buildLiveTeamUpsetStories(
       side: homeWon ? 'Home' : 'Away',
       format: 'Team',
       winProbability: probability,
-      performanceVsExpected: (homeWon ? homeScore : awayScore) - winnerExpected,
+      performanceVsExpected: 1 - probability,
       ciDeltas: [],
       clashIndexBefore: 0,
       opponentEffectiveCi: 0,
