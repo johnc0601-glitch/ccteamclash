@@ -569,3 +569,59 @@
   .office-closeout-item-actions {gap:18px;}
   .office-closeout-footnote {padding:10px 16px 14px;}
 }
+
+/* Commissioner Media: make podcast management actions unmistakably clickable. */
+.office-podcast-card .office-podcast-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  gap: 9px;
+  width: 100%;
+}
+.office-podcast-card .office-podcast-button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--cc-gold-soft);
+  border-radius: 6px;
+  background: var(--cc-surface);
+  color: var(--cc-gold-ink);
+  font: 850 12px/1.3 var(--cc-font-body);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.office-podcast-card .office-podcast-button-primary {
+  background: var(--cc-gold);
+  border-color: var(--cc-gold);
+  color: var(--cc-on-accent);
+  font-weight: 950;
+}
+.office-podcast-card .office-podcast-button-secondary {
+  background: var(--cc-surface-raised);
+  border-color: var(--cc-gold-soft);
+  color: var(--cc-heading);
+}
+.office-podcast-card .office-podcast-button-clear {
+  background: var(--cc-surface);
+  color: #9b3939;
+  border-color: #b36b6b;
+}
+.office-podcast-card .office-podcast-button:hover {
+  border-color: var(--cc-gold);
+  box-shadow: 0 2px 9px rgba(49,38,4,.13);
+  filter: brightness(.98);
+}
+.office-podcast-card .office-podcast-button:focus-visible {
+  outline: 3px solid var(--cc-gold);
+  outline-offset: 3px;
+}
+.office-podcast-card .office-podcast-indicator-actions {
+  padding-top: 13px;
+  margin-top: 4px;
+  border-top: 1px solid var(--cc-panel-border);
+}
