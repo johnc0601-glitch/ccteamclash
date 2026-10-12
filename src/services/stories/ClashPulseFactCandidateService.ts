@@ -715,11 +715,16 @@ async function buildLiveTeamUpsetStories(
   const matchIds = [...new Set(facts.map((row) => row.match_id))];
   if (!matchIds.length) return [];
 
-  const [matches, results, rosterPlayers, rosterManifests] = await Promise.all([
+  const [matches, results, rosterPlayers, rosterManifests, frozenRosterRatings] = await Promise.all([
     selectInBatches<any>(db, 'launch_schedule_matches', 'id,season_id,round_id,date,home_team_id,away_team_id', 'id', matchIds),
     selectInBatches<any>(db, 'launch_match_results', 'match_id,home_score,away_score,status', 'match_id', matchIds),
     selectInBatches<LockedRosterPlayer & {match_id: string}>(db, 'launch_match_roster_snapshot_players', 'match_id,team_id,player_id', 'match_id', matchIds),
     selectInBatches<{match_id: string; team_id: string}>(db, 'launch_match_roster_snapshots', 'match_id,team_id', 'match_id', matchIds),
+    // The pre-result roster-lock CI is immutable. Using contest-result facts here
+    // makes team upset eligibility depend on the later scoring/publication pipeline.
+    selectInBatches<LockedRosterPlayer & {match_id: string; clash_index_before: number}>(
+      db, 'clash_match_rating_snapshots', 'match_id,team_id,player_id,clash_index_before', 'match_id', matchIds,
+    ),
   ]);
 
   const roundIds = [...new Set(matches.map((match) => match.round_id).filter(Boolean))] as string[];
@@ -766,9 +771,11 @@ async function buildLiveTeamUpsetStories(
       homeTeamId: match.home_team_id,
       awayTeamId: match.away_team_id,
       rosterPlayers: rosterPlayers.filter((player) => player.match_id === match.id),
-      frozenRatings: matchFacts,
+      frozenRatings: frozenRosterRatings.filter((rating) => rating.match_id === match.id),
       venue,
     });
+    // Never publish a team upset if the complete locked roster cannot be
+    // reconstructed. Missing freezes must not be approximated by contestants.
     if (!analysis) continue;
 
     const homeWon = homeScore > awayScore;
