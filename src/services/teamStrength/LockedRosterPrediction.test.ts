@@ -55,3 +55,28 @@ test('uses roster depth weights, rather than actual singles or doubles pairings'
   assert.equal(result.homeStrength, 905);
   assert.equal(result.awayStrength, 900);
 });
+
+
+test('DK vs KB on Oct 3: the frozen locked roster makes DK the favorite, not a team upset', () => {
+  // Immutable 2026-10-02 pre-match CI snapshots (21 DK players; 19 KB players).
+  // The completed official result was DK 23, KB 13, but scores do not enter this prediction.
+  const dkRatings = [1000,981,977,954,954,940,937,936,929,921,919,915,914,905,864,860,826,813,727,662,587];
+  const kbRatings = [1007,987,950,944,937,937,934,930,914,912,907,903,895,870,869,849,840,709,550];
+  const dkPlayers = dkRatings.map((rating, i) => ({
+    team_id: 'dark-knights', player_id: `dk-${i}`, clash_index_before: rating,
+  }));
+  const kbPlayers = kbRatings.map((rating, i) => ({
+    team_id: 'kb', player_id: `kb-${i}`, clash_index_before: rating,
+  }));
+  const frozenRatings = [...dkPlayers, ...kbPlayers];
+  const chance = calculateLockedRosterPrediction({
+    homeTeamId: 'dark-knights',
+    awayTeamId: 'kb',
+    venue: 'Neutral',
+    rosterPlayers: frozenRatings.map(({team_id, player_id}) => ({team_id, player_id})),
+    frozenRatings,
+  });
+  assert.ok(chance);
+  assert.ok(chance.homeChanceOfVictory > 0.64 && chance.homeChanceOfVictory < 0.66);
+  assert.ok(chance.homeChanceOfVictory > 0.5, 'DK should not qualify as the underdog');
+});
