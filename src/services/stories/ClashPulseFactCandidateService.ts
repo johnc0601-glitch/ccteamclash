@@ -55,6 +55,7 @@ type RatedStory = {
   clashIndexBefore: number;
   opponentEffectiveCi: number;
   teamScore?: number;
+  publishedTeamScore?: number;
   opponentScore?: number;
   expectedScore?: number;
   predictionProvenance?: string;
@@ -493,7 +494,10 @@ function toCandidate(story: RatedStory): ClashPulseFactCandidate {
       const percent = story.expectedScore! > 0
         ? Math.round(story.performanceVsExpected / story.expectedScore! * 100) : null;
       const achievement = percent == null ? `${points} above expectations` : `${percent}% above expectations`;
-      const text = `${story.teamName} scored ${formatScore(story.teamScore!)} standard points against ${story.opponentTeamName}: ${achievement} (${points}), against a ${story.expectedScore!.toFixed(1)} projection. Extra roster penalty points excluded.`;
+      const finalScore = story.publishedTeamScore ?? story.teamScore!;
+      const opponentScore = story.opponentScore!;
+      const result = finalScore > opponentScore ? 'beat' : finalScore < opponentScore ? 'lost to' : 'tied';
+      const text = `${story.teamName} ${result} ${story.opponentTeamName} ${formatScore(finalScore)}–${formatScore(opponentScore)}, scoring ${achievement}—${story.performanceVsExpected.toFixed(1)} points more than projected.`;
       return {
         id: story.key, primaryStoryType: type, topics: [type],
         detail: `${story.seasonLabel} · ${story.eventLabel} · ${story.predictionProvenance}`,
@@ -841,6 +845,7 @@ async function buildLiveTeamUpsetStories(
           opponentNames: [], opponentTeamName: side === 'Home' ? awayName : homeName,
           side, format: 'Team', winProbability: side === 'Home' ? analysis.homeChanceOfVictory : analysis.awayChanceOfVictory,
           performanceVsExpected: actual - expected, expectedScore: expected, teamScore: actual,
+          publishedTeamScore: publishedScore, opponentScore: side === 'Home' ? awayScore : homeScore,
           predictionProvenance: saved ? 'Saved roster-lock forecast' : 'Historical reconstruction',
           ciDeltas: [], clashIndexBefore: 0, opponentEffectiveCi: 0,
         });
