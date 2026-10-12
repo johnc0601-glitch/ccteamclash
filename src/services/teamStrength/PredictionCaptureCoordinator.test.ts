@@ -64,14 +64,14 @@ test('requires official rosters after roster lock', async () => {
   const repository = new MemoryRepository();
   const missing = await captureCurrentRosterPrediction({
     ...baseInput(repository),
-    now: new Date('2026-10-03T19:01:00.000Z'),
+    now: new Date('2026-10-02T19:01:00.000Z'),
   });
   assert.deepEqual(missing, {captured: false, reason: 'MissingInputs'});
 
   const complete = await captureCurrentRosterPrediction({
     ...baseInput(repository),
     officialRosters: [officialRoster('home', 'home-0'), officialRoster('away', 'away-0')],
-    now: new Date('2026-10-03T19:01:00.000Z'),
+    now: new Date('2026-10-02T19:01:00.000Z'),
   });
   assert.equal(complete.captured, true);
   if (!complete.captured) return;

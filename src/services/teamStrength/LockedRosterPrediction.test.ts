@@ -11,6 +11,15 @@ const input = {
   ],
 };
 
+test('a late opposing-roster duplicate uses only its original frozen team', () => {
+  assert.deepEqual(calculateLockedRosterPrediction({...input, rosterPlayers: [
+    ...input.rosterPlayers, {team_id: 'home', player_id: 'a'},
+  ]}), calculateLockedRosterPrediction(input));
+  assert.equal(calculateLockedRosterPrediction({...input, rosterPlayers: [
+    ...input.rosterPlayers, {team_id: 'home', player_id: 'a'},
+  ], frozenRatings: [...input.frozenRatings, {team_id: 'home', player_id: 'a', clash_index_before: 900}]}), undefined);
+});
+
 test('uses the locked roster stage curve and applies +8 home advantage once', () => {
   const result = calculateLockedRosterPrediction(input);
   assert.ok(result);

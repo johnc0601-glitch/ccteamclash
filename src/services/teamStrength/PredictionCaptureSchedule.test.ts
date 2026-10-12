@@ -63,3 +63,9 @@ test('returns the exact checkpoint for audit metadata', () => {
   );
   assert.equal(captureAtForSource('bad-date', 'activeRoster'), undefined);
 });
+
+test('refuses late capture even when a match still says Scheduled', () => {
+  assert.equal(currentPredictionCaptureSource('2026-10-03', new Date('2026-10-03T03:59:59Z')), 'matchLineup');
+  assert.equal(currentPredictionCaptureSource('2026-10-03', new Date('2026-10-03T04:00:00Z')), undefined);
+  assert.equal(currentPredictionCaptureSource('2026-10-03', new Date('2026-10-05T12:00:00Z')), undefined);
+});
