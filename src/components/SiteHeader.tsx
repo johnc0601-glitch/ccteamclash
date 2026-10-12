@@ -44,12 +44,12 @@ export async function SiteHeader() {
             </Link>
 
             <nav className="desktop-nav primary-nav" aria-label="Primary navigation">
+              <HeaderPodcastPlayer isNew={podcastIsNew} episodeTitle={podcast.latestEpisodeTitle} episodeUrl={podcast.latestEpisodeUrl} />
               <Link href="/schedule" prefetch={false}>Schedule</Link>
               <Link href="/standings" prefetch={false}>Standings</Link>
               <Link href="/stats" prefetch={false}>Players</Link>
               <Link href="/teams" prefetch={false}>Teams</Link>
               <Link href="/stories" prefetch={false}>Stories</Link>
-              <HeaderPodcastPlayer isNew={podcastIsNew} episodeTitle={podcast.latestEpisodeTitle} episodeUrl={podcast.latestEpisodeUrl} />
               <Link href="/courses" prefetch={false}>Courses</Link>
               <Link href="/history" prefetch={false}>History</Link>
               <FacebookLink size={20} />
