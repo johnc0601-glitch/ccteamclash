@@ -1,6 +1,6 @@
 import styles from './ClashCastPromo.module.css';
 
-const SPOTIFY_SHOW_URL =
+export const SPOTIFY_SHOW_URL =
   'https://open.spotify.com/show/14aM6HGYzqloa098b9FVlj?si=8INp9Nl0QYGHPulLtyor5A&utm_source=copy-link';
 
 export function ClashCastPromo() {
