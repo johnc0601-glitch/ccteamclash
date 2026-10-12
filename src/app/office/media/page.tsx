@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import {OfficePage} from '@/components/commissioner/OfficePage';
 import {StoryManager} from '@/components/StoryManager';
-import {getPodcastEpisodeAt, isPodcastEpisodeNew, PODCAST_NEW_EPISODE_DURATION_MS} from '@/services/podcast/PodcastEpisodeStatus';
-import {setPodcastEpisodeIndicator} from './podcastActions';
+import {getPodcastStatus, isPodcastEpisodeNew, PODCAST_NEW_EPISODE_DURATION_MS} from '@/services/podcast/PodcastEpisodeStatus';
+import {savePodcastEpisodeDetails, setPodcastEpisodeIndicator} from './podcastActions';
 
 const mediaCardStyle = {
   border: '1px solid rgba(127,127,127,.35)',
@@ -17,7 +17,8 @@ type OfficeMediaSearchParams = {
 
 export default async function OfficeMediaPage({searchParams}: {searchParams?: Promise<OfficeMediaSearchParams>}) {
   const query = searchParams ? await searchParams : {};
-  const markedAt = await getPodcastEpisodeAt();
+  const podcast = await getPodcastStatus();
+  const markedAt = podcast.newEpisodeAt;
   const active = isPodcastEpisodeNew(markedAt);
   const expiresAt = markedAt && active
     ? new Date(Date.parse(markedAt) + PODCAST_NEW_EPISODE_DURATION_MS)
@@ -38,7 +39,35 @@ export default async function OfficeMediaPage({searchParams}: {searchParams?: Pr
             <strong>Clash Cast</strong>
             <span style={{fontSize: 11, fontWeight: 850, opacity: .8}}>{active ? 'NEW EPISODE ACTIVE' : 'NO NEW EPISODE'}</span>
           </div>
-          <p style={{margin: '8px 0 10px'}}>Mark a new podcast episode to display a small NEW indicator beside Clash Cast in the site header for seven days.</p>
+          <p style={{margin: '8px 0 12px'}}>Set the latest episode title and link. The title stays visible in the desktop header until you replace it; the optional NEW badge lasts seven days.</p>
+          <form action={savePodcastEpisodeDetails} style={{display: 'grid', gap: 10, marginBottom: 14}}>
+            <label style={{display: 'grid', gap: 4, fontSize: 12, fontWeight: 800}}>
+              Latest episode title
+              <input
+                name="episodeTitle"
+                type="text"
+                maxLength={140}
+                defaultValue={podcast.latestEpisodeTitle ?? ''}
+                placeholder="Enter the published episode title"
+                style={{width: '100%', padding: '10px 11px', border: '1px solid rgba(127,127,127,.5)', borderRadius: 5, background: 'var(--cc-surface-deep)', color: 'var(--cc-text)', font: 'inherit'}}
+              />
+            </label>
+            <label style={{display: 'grid', gap: 4, fontSize: 12, fontWeight: 800}}>
+              Spotify episode link (optional)
+              <input
+                name="episodeUrl"
+                type="url"
+                maxLength={500}
+                defaultValue={podcast.latestEpisodeUrl ?? ''}
+                placeholder="https://open.spotify.com/episode/..."
+                style={{width: '100%', padding: '10px 11px', border: '1px solid rgba(127,127,127,.5)', borderRadius: 5, background: 'var(--cc-surface-deep)', color: 'var(--cc-text)', font: 'inherit'}}
+              />
+            </label>
+            <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
+              <button type="submit" name="episodeAction" value="save">Save latest episode</button>
+              <button type="submit" name="episodeAction" value="announce">Save &amp; mark NEW (7 days)</button>
+            </div>
+          </form>
           {expiresAt ? <p style={{fontSize: 12, margin: '0 0 10px'}}>Indicator expires {expiresLabel}.</p> : null}
           {query.episodeNotice ? <p role="status" style={{fontSize: 13}}>{query.episodeNotice}</p> : null}
           {query.episodeError ? <p role="alert" style={{fontSize: 13, color: '#c0392b'}}>{query.episodeError}</p> : null}
