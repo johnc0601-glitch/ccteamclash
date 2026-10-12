@@ -1,7 +1,7 @@
 import 'server-only';
 
 import {createClient} from '@/lib/supabase/server';
-import {regularSeasonChanceOfVictoryFromExpectedPoints} from '@/services/teamStrength/TeamStrength';
+import {analyzeFrozenTeamMatch} from '@/services/teamStrength/FrozenTeamMatchAnalysis';
 import type {
   ClashPulseFactCandidate,
   ClashPulseFactData,
@@ -89,6 +89,7 @@ type HistoricalMatchupRow = {
 };
 
 type LiveFactRow = {
+  venue: 'Home' | 'Neutral';
   contest_id: string;
   match_id: string;
   player_id: string;
@@ -145,7 +146,7 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
     loadPaged<LiveFactRow>(
       db,
       'clash_contest_rating_facts',
-      'contest_id,match_id,player_id,team_id,player_name,team_name,side,format,outcome,clash_index_before,opponent_effective_ci,win_probability,expected_points,actual_points,performance_vs_expected,ci_delta',
+      'contest_id,match_id,player_id,team_id,player_name,team_name,side,format,outcome,clash_index_before,opponent_effective_ci,win_probability,expected_points,actual_points,performance_vs_expected,ci_delta,venue',
     ),
     db.from('launch_seasons').select('id,name,year,active,archived').order('year', {ascending: false}),
   ]);
@@ -505,13 +506,7 @@ function toCandidate(story: RatedStory): ClashPulseFactCandidate {
     const score = story.teamScore != null && story.opponentScore != null
       ? `${formatScore(story.teamScore)}–${formatScore(story.opponentScore)} FINAL`
       : 'TEAM WIN';
-    const isEstimatedHistoricalProbability = story.seasonLabel === '2024–25';
-    const probabilityValue = isEstimatedHistoricalProbability
-      ? `MODEL EST. ${probability}% WIN CHANCE`
-      : `${probability}% TEAM WIN CHANCE`;
-    const probabilityText = isEstimatedHistoricalProbability
-      ? `the rated-matchup model estimated a ${probability}% pre-match team win chance`
-      : `a ${probability}% pre-match team win chance`;
+    const probabilityValue = `MODEL EST. ${probability}% WIN CHANCE`;
 
     return {
       id: story.key,
@@ -529,9 +524,9 @@ function toCandidate(story: RatedStory): ClashPulseFactCandidate {
             'TEAM MATCH',
             venue,
             score,
-            ...(isEstimatedHistoricalProbability ? ['RATED-MATCHUP MODEL'] : []),
+            'RATED-MATCHUP MODEL',
           ],
-          pulseText: `${story.teamName} upset ${story.opponentTeamName}${story.teamScore != null && story.opponentScore != null ? ` ${formatScore(story.teamScore)}–${formatScore(story.opponentScore)}` : ''} after entering with ${probabilityText}.`.slice(0, 240),
+          pulseText: `${story.teamName} upset ${story.opponentTeamName}${story.teamScore != null && story.opponentScore != null ? ` ${formatScore(story.teamScore)}–${formatScore(story.opponentScore)}` : ''} — ${probability}% modeled team win chance using frozen CI, recorded matchups and official scoring.`.slice(0, 240),
         },
       },
     };
@@ -747,52 +742,41 @@ function buildHistoricalTeamUpsetStories(
     }
   }
 
-  const aggregates = new Map<number, Map<string, Map<string, {format: 'Singles' | 'Doubles'; expected: number; actual: number}>>>();
+  const factsByMatch = new Map<number, HistoricalFactRow[]>();
   for (const fact of facts) {
     const matchup = matchupByFact.get(`${fact.matchup_deduplication_key}:${fact.player_id}`);
     const teamMatchId = matchup?.historical_team_match_id;
     if (teamMatchId == null) continue;
 
-    const byTeam = aggregates.get(teamMatchId) ?? new Map();
-    const byContest = byTeam.get(fact.team_name) ?? new Map();
-    const current = byContest.get(fact.contest_id);
-    const expected = Number(fact.expected_points);
-    const actual = Number(fact.actual_points);
-    if (!current || expected > current.expected) {
-      byContest.set(fact.contest_id, {
-        format: fact.format,
-        expected,
-        actual,
-      });
-    }
-    byTeam.set(fact.team_name, byContest);
-    aggregates.set(teamMatchId, byTeam);
+    const rows = factsByMatch.get(teamMatchId) ?? [];
+    rows.push(fact);
+    factsByMatch.set(teamMatchId, rows);
   }
 
   const stories: RatedStory[] = [];
   for (const match of matches) {
     if (match.ci_venue === 'Neutral') continue;
-    const byTeam = aggregates.get(match.id);
-    if (!byTeam) continue;
-
-    const away = teamAggregate(byTeam.get(match.away_team_name));
-    const home = teamAggregate(byTeam.get(match.home_team_name));
-    if (!away || !home) continue;
-
-    const sourceAway = numericOrNull(match.away_score);
-    const sourceHome = numericOrNull(match.home_score);
-    const awayActual = sourceAway ?? away.actualPoints;
-    const homeActual = sourceHome ?? home.actualPoints;
+    const matchFacts = factsByMatch.get(match.id);
+    if (!matchFacts?.length) continue;
+    const awayActual = numericOrNull(match.away_score);
+    const homeActual = numericOrNull(match.home_score);
+    if (homeActual == null || awayActual == null) continue;
+    const analysis = analyzeFrozenTeamMatch({
+      facts: matchFacts,
+      venue: 'Home',
+      homeScore: homeActual,
+      awayScore: awayActual,
+    });
+    if (!analysis) continue;
     if (awayActual === homeActual) continue;
 
     const awayWon = awayActual > homeActual;
     const winnerName = awayWon ? match.away_team_name : match.home_team_name;
     const loserName = awayWon ? match.home_team_name : match.away_team_name;
-    const winnerExpected = awayWon ? away.expectedPoints : home.expectedPoints;
-    const loserExpected = awayWon ? home.expectedPoints : away.expectedPoints;
+    const winnerExpected = awayWon ? analysis.awayExpectedPoints : analysis.homeExpectedPoints;
     const winnerScore = awayWon ? awayActual : homeActual;
     const loserScore = awayWon ? homeActual : awayActual;
-    const probability = regularSeasonChanceOfVictoryFromExpectedPoints(winnerExpected, loserExpected);
+    const probability = awayWon ? analysis.awayChanceOfVictory : analysis.homeChanceOfVictory;
     if (probability == null || probability >= 0.5) continue;
 
     const seasonId = seasonIdByTeamMatch.get(match.id) ?? match.season_name;
@@ -842,23 +826,11 @@ async function buildLiveTeamUpsetStories(
   const seasonById = new Map(seasons.map((season: any) => [season.id, season]));
   const resultByMatch = new Map(results.filter((row) => row.status === 'Published').map((row) => [row.match_id, row]));
 
-  const aggregates = new Map<string, Map<string, Map<string, {format: 'Singles' | 'Doubles'; expected: number; actual: number; teamName: string}>>>();
+  const factsByMatch = new Map<string, LiveFactRow[]>();
   for (const fact of facts) {
-    const byTeam = aggregates.get(fact.match_id) ?? new Map();
-    const byContest = byTeam.get(fact.team_id) ?? new Map();
-    const current = byContest.get(fact.contest_id);
-    const expected = Number(fact.expected_points);
-    const actual = Number(fact.actual_points);
-    if (!current || expected > current.expected) {
-      byContest.set(fact.contest_id, {
-        format: fact.format,
-        expected,
-        actual,
-        teamName: fact.team_name,
-      });
-    }
-    byTeam.set(fact.team_id, byContest);
-    aggregates.set(fact.match_id, byTeam);
+    const rows = factsByMatch.get(fact.match_id) ?? [];
+    rows.push(fact);
+    factsByMatch.set(fact.match_id, rows);
   }
 
   const stories: RatedStory[] = [];
@@ -872,28 +844,25 @@ async function buildLiveTeamUpsetStories(
       ?? 'Current season';
     if (/semi|champ|3rd|playoff/i.test(String(eventLabel))) continue;
 
-    const byTeam = aggregates.get(match.id);
-    if (!byTeam) continue;
-    const homeContests = byTeam.get(match.home_team_id);
-    const awayContests = byTeam.get(match.away_team_id);
-    const home = teamAggregate(homeContests);
-    const away = teamAggregate(awayContests);
-    if (!home || !away) continue;
-
-    const homeName = firstTeamName(homeContests);
-    const awayName = firstTeamName(awayContests);
+    const matchFacts = factsByMatch.get(match.id);
+    if (!matchFacts?.length) continue;
+    const homeName = matchFacts.find((fact) => fact.team_id === match.home_team_id)?.team_name;
+    const awayName = matchFacts.find((fact) => fact.team_id === match.away_team_id)?.team_name;
     if (!homeName || !awayName) continue;
 
-    const homeScore = Number(result.home_score);
-    const awayScore = Number(result.away_score);
-    if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore) || homeScore === awayScore) continue;
+    const homeScore = numericOrNull(result.home_score);
+    const awayScore = numericOrNull(result.away_score);
+    if (homeScore == null || awayScore == null || homeScore === awayScore) continue;
+    const venue = matchFacts[0].venue;
+    if (!['Home', 'Neutral'].includes(venue) || matchFacts.some((fact) => fact.venue !== venue)) continue;
+    const analysis = analyzeFrozenTeamMatch({facts: matchFacts, venue, homeScore, awayScore});
+    if (!analysis) continue;
 
     const homeWon = homeScore > awayScore;
     const winnerName = homeWon ? homeName : awayName;
     const loserName = homeWon ? awayName : homeName;
-    const winnerExpected = homeWon ? home.expectedPoints : away.expectedPoints;
-    const loserExpected = homeWon ? away.expectedPoints : home.expectedPoints;
-    const probability = regularSeasonChanceOfVictoryFromExpectedPoints(winnerExpected, loserExpected);
+    const winnerExpected = homeWon ? analysis.homeExpectedPoints : analysis.awayExpectedPoints;
+    const probability = homeWon ? analysis.homeChanceOfVictory : analysis.awayChanceOfVictory;
     if (probability == null || probability >= 0.5) continue;
 
     const season = seasonById.get(match.season_id);
@@ -922,30 +891,6 @@ async function buildLiveTeamUpsetStories(
   }
 
   return stories;
-}
-
-function teamAggregate(
-  contests: Map<string, {format: 'Singles' | 'Doubles'; expected: number; actual: number; teamName?: string}> | undefined,
-): {expectedPoints: number; actualPoints: number} | undefined {
-  if (!contests?.size) return undefined;
-  let expectedPoints = 0;
-  let actualPoints = 0;
-  for (const row of contests.values()) {
-    const weight = row.format === 'Doubles' ? 2 : 1;
-    expectedPoints += row.expected * weight;
-    actualPoints += row.actual * weight;
-  }
-  return {expectedPoints, actualPoints};
-}
-
-function firstTeamName(
-  contests: Map<string, {teamName?: string}> | undefined,
-): string | undefined {
-  if (!contests) return undefined;
-  for (const row of contests.values()) {
-    if (row.teamName) return row.teamName;
-  }
-  return undefined;
 }
 
 function numericOrNull(value: number | string | null): number | null {
