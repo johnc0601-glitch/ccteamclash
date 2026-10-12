@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import {DesktopRoleLinks} from '@/components/HeaderAccessProvider';
+import {SPOTIFY_SHOW_URL} from '@/components/ClashCastPromo';
 import {MobileAccountLink} from '@/components/MobileAccountLink';
 import {MobileNav} from '@/components/MobileNav';
 import {BRAND_LOGO, BRAND_NAME, BRAND_TAGLINE, FOOTER_COPY} from '@/shared/constants';
@@ -27,6 +28,26 @@ function FacebookLink({size = 20}: {size?: number}) {
   );
 }
 
+function HeaderPodcastLink() {
+  return (
+    <a
+      className="header-podcast-link"
+      href={SPOTIFY_SHOW_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Listen to Clash Cast on Spotify"
+      title="Listen to Clash Cast on Spotify"
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 14v-3a9 9 0 0 1 18 0v3" />
+        <rect x="3" y="13" width="4" height="7" rx="1.5" />
+        <rect x="17" y="13" width="4" height="7" rx="1.5" />
+      </svg>
+      <span className="header-podcast-text">Clash Cast</span>
+    </a>
+  );
+}
+
 export function SiteHeader() {
   return (
       <header className="site-header">
@@ -45,6 +66,7 @@ export function SiteHeader() {
               <Link href="/stats" prefetch={false}>Players</Link>
               <Link href="/teams" prefetch={false}>Teams</Link>
               <Link href="/stories" prefetch={false}>Stories</Link>
+              <HeaderPodcastLink />
               <Link href="/courses" prefetch={false}>Courses</Link>
               <Link href="/history" prefetch={false}>History</Link>
               <FacebookLink size={20} />
@@ -53,6 +75,7 @@ export function SiteHeader() {
             </nav>
 
             <div className="mobile-header-actions">
+              <HeaderPodcastLink />
               <MobileAccountLink />
               <MobileNav />
             </div>
