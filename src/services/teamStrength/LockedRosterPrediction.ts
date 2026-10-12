@@ -1,5 +1,5 @@
 import {rosterStageChanceOfVictoryFromStrengthDifference} from './MatchPrediction';
-import {calculateActiveRosterStrength, TEAM_HOME_CI_BONUS} from './TeamStrength';
+import {calculateActiveRosterStrength, expectedTeamPointShare, STANDARD_MATCH_POINTS, TEAM_HOME_CI_BONUS} from './TeamStrength';
 
 export type LockedRosterPlayer = {team_id: string; player_id: string};
 export type FrozenRosterRating = LockedRosterPlayer & {clash_index_before: number};
@@ -33,5 +33,10 @@ export function calculateLockedRosterPrediction(input: {
   if (homeStrength == null || awayStrength == null) return undefined;
   const difference = homeStrength - awayStrength + (input.venue === 'Home' ? TEAM_HOME_CI_BONUS : 0);
   const homeChanceOfVictory = rosterStageChanceOfVictoryFromStrengthDifference(difference, 'matchLineup');
-  return {homeStrength, awayStrength, homeChanceOfVictory, awayChanceOfVictory: 1 - homeChanceOfVictory};
+  const homeExpectedScore = expectedTeamPointShare(homeStrength, awayStrength, input.venue) * STANDARD_MATCH_POINTS;
+  return {
+    homeStrength, awayStrength, homeChanceOfVictory, awayChanceOfVictory: 1 - homeChanceOfVictory,
+    homeExpectedScore, awayExpectedScore: STANDARD_MATCH_POINTS - homeExpectedScore,
+    expectedMargin: 2 * homeExpectedScore - STANDARD_MATCH_POINTS,
+  };
 }

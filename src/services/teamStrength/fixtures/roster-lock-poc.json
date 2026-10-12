@@ -1,0 +1,994 @@
+[
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "rosa-carroll",
+    "player_name_snapshot": "Rosa Carroll",
+    "clash_index_before": 727,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "player-account-3714b8aa-a049-49d3-87e3-a0c0470d01eb",
+    "player_name_snapshot": "Jacob Johnson",
+    "clash_index_before": 944,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "dalton-medlin",
+    "player_name_snapshot": "Dalton Medlin",
+    "clash_index_before": 937,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "derek-hynds",
+    "player_name_snapshot": "Derek Hynds",
+    "clash_index_before": 869,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "eli-batazhan",
+    "player_name_snapshot": "Eli Batazhan",
+    "clash_index_before": 905,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "john-grant",
+    "player_name_snapshot": "John Grant",
+    "clash_index_before": 895,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "alex-wetherell",
+    "player_name_snapshot": "Alex Wetherell",
+    "clash_index_before": 1000,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "chuck-myers",
+    "player_name_snapshot": "Chuck Myers",
+    "clash_index_before": 914,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "ian-roberts",
+    "player_name_snapshot": "Ian Roberts",
+    "clash_index_before": 954,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "jake-stephenson",
+    "player_name_snapshot": "Jake Stephenson",
+    "clash_index_before": 940,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "jason-long",
+    "player_name_snapshot": "Jason Long",
+    "clash_index_before": 826,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "alex-karp",
+    "player_name_snapshot": "Alex Karp",
+    "clash_index_before": 954,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "jordan-flor",
+    "player_name_snapshot": "Jordan Flor",
+    "clash_index_before": 864,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "dan-moles",
+    "player_name_snapshot": "Dan Moles",
+    "clash_index_before": 987,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "john-loyd",
+    "player_name_snapshot": "John Loyd",
+    "clash_index_before": 907,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "ashlee-hynds",
+    "player_name_snapshot": "Ashlee Hynds",
+    "clash_index_before": 709,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "jimbo-lemire",
+    "player_name_snapshot": "JimBo Lemire",
+    "clash_index_before": 870,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "john-blackburn",
+    "player_name_snapshot": "John Blackburn",
+    "clash_index_before": 1007,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "john-carroll",
+    "player_name_snapshot": "John Carroll",
+    "clash_index_before": 936,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "jordan-darby",
+    "player_name_snapshot": "Jordan Darby",
+    "clash_index_before": 912,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "justin-kent",
+    "player_name_snapshot": "Justin Kent",
+    "clash_index_before": 915,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "keith-connolly",
+    "player_name_snapshot": "Keith Connolly",
+    "clash_index_before": 849,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "mitchell-puttbach",
+    "player_name_snapshot": "Mitchell Puttbach",
+    "clash_index_before": 981,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "richie-abshner",
+    "player_name_snapshot": "Richie Absher",
+    "clash_index_before": 813,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "randy-giles",
+    "player_name_snapshot": "Randy Giles",
+    "clash_index_before": 662,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "alex-bradshaw",
+    "player_name_snapshot": "Alex Bradshaw",
+    "clash_index_before": 919,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "eric-england",
+    "player_name_snapshot": "Eric England",
+    "clash_index_before": 977,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "owen-shields",
+    "player_name_snapshot": "Owen Shields",
+    "clash_index_before": 921,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "phil-hood",
+    "player_name_snapshot": "Phil Hood",
+    "clash_index_before": 937,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "philip-murray",
+    "player_name_snapshot": "Philip Murray",
+    "clash_index_before": 860,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "sawyer-webster",
+    "player_name_snapshot": "Sawyer Webster",
+    "clash_index_before": 914,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "scott-strickland",
+    "player_name_snapshot": "Scott Strickland",
+    "clash_index_before": 934,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "zach-redding",
+    "player_name_snapshot": "Zach Redding",
+    "clash_index_before": 930,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "lawrence-shotwell",
+    "player_name_snapshot": "Lawrence Shotwell",
+    "clash_index_before": 903,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "matt-miles-english",
+    "player_name_snapshot": "Matt-Miles English",
+    "clash_index_before": 937,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "mike-duncan",
+    "player_name_snapshot": "Mike Duncan",
+    "clash_index_before": 950,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "player-account-af8f4c55-f515-4614-acf3-abe7cda5b49c",
+    "player_name_snapshot": "Sydney Lamphear",
+    "clash_index_before": 587,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "dark-knights",
+    "player_id": "stone-tippett",
+    "player_name_snapshot": "Stone Tippett",
+    "clash_index_before": 929,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "tyler-carlin",
+    "player_name_snapshot": "Tyler Carlin",
+    "clash_index_before": 840,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "aidan-prince",
+    "player_name_snapshot": "Aidan Prince",
+    "clash_index_before": 876,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "anthony-hardee",
+    "player_name_snapshot": "Anthony Hardee",
+    "clash_index_before": 836,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "ben-curl",
+    "player_name_snapshot": "Ben Curl",
+    "clash_index_before": 913,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "brandon-burckhalter",
+    "player_name_snapshot": "Brandon Burckhalter",
+    "clash_index_before": 895,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "brandon-taylor",
+    "player_name_snapshot": "Brandon Taylor",
+    "clash_index_before": 876,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "charlie-johnson",
+    "player_name_snapshot": "Charlie Johnson",
+    "clash_index_before": 903,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "darell-matthews",
+    "player_name_snapshot": "Darell Matthews",
+    "clash_index_before": 917,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "david-burke",
+    "player_name_snapshot": "David Burke",
+    "clash_index_before": 884,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "david-clays",
+    "player_name_snapshot": "David Claeys",
+    "clash_index_before": 899,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "drew-massey",
+    "player_name_snapshot": "Drew Massey",
+    "clash_index_before": 952,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "jamie-hensley",
+    "player_name_snapshot": "Jamie Hensley",
+    "clash_index_before": 818,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "jeff-king",
+    "player_name_snapshot": "Jeff King",
+    "clash_index_before": 917,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "jeff-parsley",
+    "player_name_snapshot": "Jeff Parsley",
+    "clash_index_before": 831,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "joe-barker",
+    "player_name_snapshot": "Joe Barker",
+    "clash_index_before": 767,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "josh-beardsley",
+    "player_name_snapshot": "Josh Beardsley",
+    "clash_index_before": 904,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "kevin-shelton",
+    "player_name_snapshot": "Kevin Shelton",
+    "clash_index_before": 903,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "khalil-peterson",
+    "player_name_snapshot": "Khalil Peterson",
+    "clash_index_before": 912,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "kim-mchale",
+    "player_name_snapshot": "Kim Mchale",
+    "clash_index_before": 713,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "logan-canale",
+    "player_name_snapshot": "Logan Canale",
+    "clash_index_before": 818,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "logan-mchale",
+    "player_name_snapshot": "Logan McHale",
+    "clash_index_before": 887,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "mike-bloch",
+    "player_name_snapshot": "Mike Bloch",
+    "clash_index_before": 880,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "peter-hourigan",
+    "player_name_snapshot": "Peter Hourigan",
+    "clash_index_before": 883,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "player-account-261e0506-d784-4350-8a09-e787f79cb1e8",
+    "player_name_snapshot": "Levi derouin",
+    "clash_index_before": 825,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "player-account-8870d889-e0b9-4f12-80c3-c39b368bc5f2",
+    "player_name_snapshot": "Eric Bruders",
+    "clash_index_before": 826,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "player-account-b4668c8c-76d5-4e82-bbb4-921b7648ea72",
+    "player_name_snapshot": "Darren Horton",
+    "clash_index_before": 941,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "player-account-baf86697-0092-49db-9b1d-aef697d0928a",
+    "player_name_snapshot": "Graham Greenland",
+    "clash_index_before": 947,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "player-account-bef7bf5a-d6b5-4e0e-a3c6-f9778f6bde7e",
+    "player_name_snapshot": "Dillon Newsome",
+    "clash_index_before": 825,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "player-account-d18cb1b1-ac8a-467d-81d5-ed1c3a201988",
+    "player_name_snapshot": "Kelly Greenland",
+    "clash_index_before": 700,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "player-account-e7dcaadf-9d63-4514-99ab-070952855097",
+    "player_name_snapshot": "Phoenix Richardson",
+    "clash_index_before": 887,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "player-craig-a-smith-f3b5bdc4-85e2-4cf4-ba7e-778fd68db45d",
+    "player_name_snapshot": "Craig A Smith",
+    "clash_index_before": 825,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "player-harvey-lyliston-ed90f42c-b091-4fcb-96ff-a649d5f5e8d6",
+    "player_name_snapshot": "Harvey Lyliston",
+    "clash_index_before": 825,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "robert-scribner",
+    "player_name_snapshot": "Robert Scribner",
+    "clash_index_before": 946,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "roy-strawderman",
+    "player_name_snapshot": "Roy Strawderman",
+    "clash_index_before": 851,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "sam-white",
+    "player_name_snapshot": "Sam White",
+    "clash_index_before": 889,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "scott-keaton",
+    "player_name_snapshot": "Scott Keaton",
+    "clash_index_before": 848,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "scott-prince",
+    "player_name_snapshot": "Scott Prince",
+    "clash_index_before": 900,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "seth-stetson",
+    "player_name_snapshot": "Seth Stetson",
+    "clash_index_before": 965,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "tommy-phillips",
+    "player_name_snapshot": "Tommy Phillips",
+    "clash_index_before": 947,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "tony-robbins",
+    "player_name_snapshot": "Tony Robbins",
+    "clash_index_before": 812,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "wild-turkey",
+    "player_id": "zach-teague",
+    "player_name_snapshot": "Zach Teague",
+    "clash_index_before": 831,
+    "venue": "Home"
+  },
+  {
+    "match_id": "ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f",
+    "team_id": "kb",
+    "player_id": "player-account-0446b9e9-8c8c-4f53-a82d-f3e0574c58a5",
+    "player_name_snapshot": "Bae",
+    "clash_index_before": 550,
+    "venue": "Neutral"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "aj-lehmann",
+    "player_name_snapshot": "A.J. Lehmann",
+    "clash_index_before": 855,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "travis-baucom",
+    "player_name_snapshot": "Travis Baucom",
+    "clash_index_before": 896,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "alan-layh",
+    "player_name_snapshot": "Alan Layh",
+    "clash_index_before": 895,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "jarrod-honeycutt",
+    "player_name_snapshot": "Jarrod Honeycutt",
+    "clash_index_before": 867,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "jake-lehmann",
+    "player_name_snapshot": "Jake Lehmann",
+    "clash_index_before": 949,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "phil-turnage",
+    "player_name_snapshot": "Phil Turnage",
+    "clash_index_before": 906,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "michael-snipes",
+    "player_name_snapshot": "Michael Snipes",
+    "clash_index_before": 875,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "matt-rockwell",
+    "player_name_snapshot": "Matt Rockwell",
+    "clash_index_before": 773,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "lucian-odom",
+    "player_name_snapshot": "Lucian Odom",
+    "clash_index_before": 871,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "player-damon-underwood-e5efec68-e250-478e-a36d-1b5c676a5a79",
+    "player_name_snapshot": "Damon Underwood",
+    "clash_index_before": 858,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "player-andrew-hollers-9a0e262c-0704-4ad5-a673-1533e3afad69",
+    "player_name_snapshot": "Andrew Hollers",
+    "clash_index_before": 891,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "brandon-cosimo",
+    "player_name_snapshot": "Brandon Cosimo",
+    "clash_index_before": 867,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "kurtis-brandenburg",
+    "player_name_snapshot": "Kurt Ferguson",
+    "clash_index_before": 904,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "player-nick-coleman-4f3bb245-0640-4512-b6c5-c9a0161f92e1",
+    "player_name_snapshot": "Nick Coleman",
+    "clash_index_before": 844,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "player-account-5336905a-62ba-4f96-807d-791d91987dfc",
+    "player_name_snapshot": "Paul Atkinson",
+    "clash_index_before": 825,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "austin-gratton",
+    "player_name_snapshot": "Austin Gratton",
+    "clash_index_before": 901,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "travis-webster",
+    "player_name_snapshot": "Travis Webster",
+    "clash_index_before": 828,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "conner-garrett",
+    "player_name_snapshot": "Conner Garrett",
+    "clash_index_before": 907,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "player-dave-van-essendelft-23f83dd0-6706-4bcb-bbf7-949315324e90",
+    "player_name_snapshot": "DAVE VAN ESSENDELFT",
+    "clash_index_before": 825,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "jodie-lehman",
+    "player_name_snapshot": "Jodie Lehmann",
+    "clash_index_before": 720,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "player-alicia-atkinson-6772c669-fdb4-4eca-af01-e1040efafd59",
+    "player_name_snapshot": "Alicia Atkinson",
+    "clash_index_before": 700,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "ariel-cosimo",
+    "player_name_snapshot": "Ariel Dunlap Cosimo",
+    "clash_index_before": 781,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "hayneous-og-s",
+    "player_id": "player-account-2b1562e5-8dd1-47f3-a65c-395d3f202d4c",
+    "player_name_snapshot": "Alli Cornish",
+    "clash_index_before": 700,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "patrick-kimbrell",
+    "player_name_snapshot": "Patrick kimbrell",
+    "clash_index_before": 918,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "andrew-wilson",
+    "player_name_snapshot": "Andrew Wilson",
+    "clash_index_before": 932,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "william-hill",
+    "player_name_snapshot": "William Hill",
+    "clash_index_before": 940,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "player-account-3542e16c-31d5-40c5-ba4d-583db30cd5b6",
+    "player_name_snapshot": "Michael Cowan",
+    "clash_index_before": 825,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "randal-vaughan",
+    "player_name_snapshot": "Randal Vaughan",
+    "clash_index_before": 919,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "russell-chastain",
+    "player_name_snapshot": "Russell Chastain",
+    "clash_index_before": 925,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "bruce-baginski",
+    "player_name_snapshot": "Bruce Baginski",
+    "clash_index_before": 935,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "player-account-bb69ae3a-40ea-4358-9919-4a536bf95912",
+    "player_name_snapshot": "Mac Givens",
+    "clash_index_before": 994,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "jason-russo",
+    "player_name_snapshot": "Jason Russo",
+    "clash_index_before": 892,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "player-account-81841b4b-8e7e-471d-bab0-e4007716201e",
+    "player_name_snapshot": "Steven McCarty",
+    "clash_index_before": 825,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "albert-ducharme",
+    "player_name_snapshot": "Albert Ducharme",
+    "clash_index_before": 882,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "jeremy-lewis",
+    "player_name_snapshot": "Jeremy Lewis",
+    "clash_index_before": 908,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "player-account-39f56436-e622-4c11-a91b-bfbcbb9e988e",
+    "player_name_snapshot": "Marcus Kinsman",
+    "clash_index_before": 950,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "player-account-55014ef2-7b9f-436d-9833-673bbde19a1d",
+    "player_name_snapshot": "Zach Lindsay",
+    "clash_index_before": 911,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "david-marunowski",
+    "player_name_snapshot": "David Marunowski",
+    "clash_index_before": 819,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "eric-pierre",
+    "player_name_snapshot": "Eric Pierre",
+    "clash_index_before": 798,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "ernie-raymond",
+    "player_name_snapshot": "Ernie Raymond",
+    "clash_index_before": 832,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "j-baus",
+    "player_name_snapshot": "J Baus",
+    "clash_index_before": 907,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "nadya-gutierrez",
+    "player_name_snapshot": "Nadya Givens",
+    "clash_index_before": 797,
+    "venue": "Home"
+  },
+  {
+    "match_id": "hayneous-og-s-vs-dark-knights-c1b325a9-473a-4bed-a85c-0dec6766a766",
+    "team_id": "ninjas",
+    "player_id": "player-account-a660b6e7-66e3-4a51-aae9-59b6bf204189",
+    "player_name_snapshot": "Jackie Alcott",
+    "clash_index_before": 771,
+    "venue": "Home"
+  },
+  {
+    "match_id": "wild-turkey-vs-team-focus-7fafa1dc-4ee3-4e7f-85dc-4b5f866275f2",
+    "team_id": "cougar-country",
+    "player_id": "jeff-parsley",
+    "player_name_snapshot": "Jeff Parsley",
+    "clash_index_before": null,
+    "venue": null
+  }
+]

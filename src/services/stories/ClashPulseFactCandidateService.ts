@@ -2,6 +2,8 @@ import 'server-only';
 
 import {createClient} from '@/lib/supabase/server';
 import {calculateLockedRosterPrediction, type LockedRosterPlayer} from '@/services/teamStrength/LockedRosterPrediction';
+import {TEAM_STRENGTH_VERSION} from '@/services/teamStrength/TeamStrength';
+import {comparePredictionPerformance} from '@/services/teamStrength/PredictionPerformance';
 import type {
   ClashPulseFactCandidate,
   ClashPulseFactData,
@@ -54,6 +56,8 @@ type RatedStory = {
   opponentEffectiveCi: number;
   teamScore?: number;
   opponentScore?: number;
+  expectedScore?: number;
+  predictionProvenance?: string;
 };
 
 type HistoricalFactRow = {
@@ -424,6 +428,10 @@ function buildScope(
   const topStories = diversify(sorted, TOP_FACT_LIMIT, 1, 2);
 
   const topicStories = new Map<ClashPulseStoryType, RatedStory[]>([
+    ['Above Expectations', diversify(
+      sorted.filter((story) => topicsFor(story).includes('Above Expectations')),
+      FILTER_LIMIT, 2, 4,
+    )],
     ['Upset', diversify(
       sorted.filter((story) => topicsFor(story).includes('Upset'))
         .sort((a, b) => a.winProbability - b.winProbability),
@@ -479,6 +487,18 @@ function buildScope(
 
 function toCandidate(story: RatedStory): ClashPulseFactCandidate {
   if (story.format === 'Team') {
+    const type = primaryStoryType(story);
+    if (type === 'Above Expectations') {
+      const text = `${story.teamName} scored ${formatScore(story.teamScore!)} standard points against ${story.opponentTeamName}, ${story.performanceVsExpected.toFixed(1)} above the ${story.expectedScore!.toFixed(1)} projection. Extra roster penalty points excluded.`;
+      return {
+        id: story.key, primaryStoryType: type, topics: [type],
+        detail: `${story.seasonLabel} · ${story.eventLabel} · ${story.predictionProvenance}`,
+        format: 'Team', venue: story.side === 'Home' ? 'Home' : 'Road',
+        angles: {[type]: {storyType: type, headline: `${story.teamName} beat its expected score`,
+          value: `+${story.performanceVsExpected.toFixed(1)} POINTS ABOVE EXPECTED`,
+          badges: ['TEAM MATCH', story.predictionProvenance ?? 'Saved forecast'], pulseText: text.slice(0, 240)}},
+      };
+    }
     const probability = Math.max(0, Math.min(100, Math.round(story.winProbability * 100)));
     const venue = story.side === 'Home' ? 'Home' : 'Road';
     const score = story.teamScore != null && story.opponentScore != null
@@ -646,7 +666,7 @@ function standoutValue(story: RatedStory, probability: number): string {
 }
 
 function primaryStoryType(story: RatedStory): ClashPulseStoryType {
-  if (story.format === 'Team') return 'Match Upset';
+  if (story.format === 'Team') return story.expectedScore != null ? 'Above Expectations' : 'Match Upset';
   if (story.winProbability <= 0.35) return 'Upset';
   if (maxCiDelta(story) >= 10) return 'CI Mover';
   if (Math.abs(story.winProbability - 0.5) <= 0.08) return 'Close Match';
@@ -654,7 +674,7 @@ function primaryStoryType(story: RatedStory): ClashPulseStoryType {
 }
 
 function topicsFor(story: RatedStory): ClashPulseStoryType[] {
-  if (story.format === 'Team') return ['Match Upset'];
+  if (story.format === 'Team') return [primaryStoryType(story)];
   const topics: ClashPulseStoryType[] = [];
   if (story.winProbability < 0.5) topics.push('Upset');
   if (maxCiDelta(story) >= 8) topics.push('CI Mover');
@@ -715,7 +735,7 @@ async function buildLiveTeamUpsetStories(
   const matchIds = [...new Set(facts.map((row) => row.match_id))];
   if (!matchIds.length) return [];
 
-  const [matches, results, rosterPlayers, rosterManifests, frozenRosterRatings] = await Promise.all([
+  const [matches, results, rosterPlayers, rosterManifests, frozenRosterRatings, savedPredictions, finalSnapshots] = await Promise.all([
     selectInBatches<any>(db, 'launch_schedule_matches', 'id,season_id,round_id,date,home_team_id,away_team_id', 'id', matchIds),
     selectInBatches<any>(db, 'launch_match_results', 'match_id,home_score,away_score,status', 'match_id', matchIds),
     selectInBatches<LockedRosterPlayer & {match_id: string}>(db, 'launch_match_roster_snapshot_players', 'match_id,team_id,player_id', 'match_id', matchIds),
@@ -725,6 +745,8 @@ async function buildLiveTeamUpsetStories(
     selectInBatches<LockedRosterPlayer & {match_id: string; clash_index_before: number}>(
       db, 'clash_match_rating_snapshots', 'match_id,team_id,player_id,clash_index_before', 'match_id', matchIds,
     ),
+    selectInBatches<any>(db, 'team_strength_prediction_snapshots', '*', 'match_id', matchIds),
+    selectInBatches<any>(db, 'launch_match_final_snapshots', 'match_id,payload,locked', 'match_id', matchIds),
   ]);
 
   const roundIds = [...new Set(matches.map((match) => match.round_id).filter(Boolean))] as string[];
@@ -761,13 +783,22 @@ async function buildLiveTeamUpsetStories(
 
     const homeScore = numericOrNull(result.home_score);
     const awayScore = numericOrNull(result.away_score);
-    if (homeScore == null || awayScore == null || homeScore === awayScore) continue;
+    if (homeScore == null || awayScore == null) continue;
     const venue = matchFacts[0].venue;
     if (!['Home', 'Neutral'].includes(venue) || matchFacts.some((fact) => fact.venue !== venue)) continue;
     if (![match.home_team_id, match.away_team_id].every((teamId) => rosterManifests.some(
       (roster) => roster.match_id === match.id && roster.team_id === teamId,
     ))) continue;
-    const analysis = calculateLockedRosterPrediction({
+    const saved = savedPredictions.find((row) => row.match_id === match.id && row.side === 'Home'
+      && row.source === 'matchLineup' && row.model_version === TEAM_STRENGTH_VERSION
+      && row.team_id === match.home_team_id && row.opponent_team_id === match.away_team_id
+      && row.prediction_readiness !== 'Unavailable');
+    const analysis = saved ? {
+      homeChanceOfVictory: Number(saved.chance_of_victory),
+      awayChanceOfVictory: 1 - Number(saved.chance_of_victory),
+      homeExpectedScore: Number(saved.expected_score),
+      awayExpectedScore: 36 - Number(saved.expected_score),
+    } : calculateLockedRosterPrediction({
       homeTeamId: match.home_team_id,
       awayTeamId: match.away_team_id,
       rosterPlayers: rosterPlayers.filter((player) => player.match_id === match.id),
@@ -778,6 +809,41 @@ async function buildLiveTeamUpsetStories(
     // reconstructed. Missing freezes must not be approximated by contestants.
     if (!analysis) continue;
 
+    const final = finalSnapshots.find((row) => row.match_id === match.id && row.locked)?.payload;
+    if (final && Array.isArray(final.contests) && final.contests.length === 27
+      && final.homeTeam?.id === match.home_team_id && final.awayTeam?.id === match.away_team_id) {
+      for (const side of ['Home', 'Away'] as const) {
+        // Standard contest points include automatic missing-slot wins. Extra
+        // roster penalties are outside this total and cannot inflate performance.
+        const actual = final.contests.reduce((sum: number, contest: any) => {
+          const outcome = side === 'Home' ? contest.homeOutcome : contest.awayOutcome;
+          const weight = contest.format === 'Doubles' ? 2 : 1;
+          return sum + (outcome === 'W' ? weight : outcome === 'T' ? weight / 2 : 0);
+        }, 0);
+        const expected = side === 'Home' ? analysis.homeExpectedScore : analysis.awayExpectedScore;
+        const publishedScore = side === 'Home' ? homeScore : awayScore;
+        const performance = comparePredictionPerformance({expectedScore: expected,
+          chanceOfVictory: side === 'Home' ? analysis.homeChanceOfVictory : analysis.awayChanceOfVictory,
+          actualScore: publishedScore, opponentActualScore: side === 'Home' ? awayScore : homeScore,
+          extraPenaltyPoints: publishedScore - actual});
+        if (!performance?.aboveExpectations) continue;
+        const season = seasonById.get(match.season_id);
+        const teamName = side === 'Home' ? homeName : awayName;
+        const teamId = side === 'Home' ? match.home_team_id : match.away_team_id;
+        stories.push({
+          key: `team-performance:${match.season_id}:${match.id}:${side}`, matchId: match.id,
+          seasonId: match.season_id, seasonLabel: shortSeason(season?.name ?? match.season_id), eventLabel,
+          subjectIds: [`team:${teamId}`], subjectNames: [teamName], teamId, teamName,
+          opponentNames: [], opponentTeamName: side === 'Home' ? awayName : homeName,
+          side, format: 'Team', winProbability: side === 'Home' ? analysis.homeChanceOfVictory : analysis.awayChanceOfVictory,
+          performanceVsExpected: actual - expected, expectedScore: expected, teamScore: actual,
+          predictionProvenance: saved ? 'Saved roster-lock forecast' : 'Historical reconstruction',
+          ciDeltas: [], clashIndexBefore: 0, opponentEffectiveCi: 0,
+        });
+      }
+    }
+
+    if (homeScore === awayScore) continue;
     const homeWon = homeScore > awayScore;
     const winnerName = homeWon ? homeName : awayName;
     const loserName = homeWon ? awayName : homeName;

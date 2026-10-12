@@ -16,7 +16,7 @@ export type PredictionCaptureCheckpoint = {
  * PreMatch is captured when match-week attendance opens (Friday 12:00 AM ET),
  * before availability data begins to replace the active-roster view.
  * AttendanceFinal is captured at the player response lock (Friday 12:00 PM ET).
- * MatchLineup is captured at the official roster lock (match date 3:00 PM ET).
+ * MatchLineup is captured at the official roster lock (Friday 3:00 PM ET).
  */
 export function predictionCaptureCheckpoints(
   matchDate: string,
@@ -59,7 +59,11 @@ export function currentPredictionCaptureSource(
     && timestamp < rosterLock.captureAt.getTime()
   ) return 'confirmedAvailableRoster';
 
-  if (timestamp >= rosterLock.captureAt.getTime()) return 'matchLineup';
+  // Never capture from live ratings after match day has begun in Eastern time.
+  const easternDay = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(now);
+  if (timestamp >= rosterLock.captureAt.getTime() && easternDay < matchDate) return 'matchLineup';
 
   return undefined;
 }

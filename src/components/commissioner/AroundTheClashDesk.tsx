@@ -10,7 +10,7 @@ import type {
 } from './clashPulseFacts';
 import styles from './AroundTheClashDesk.module.css';
 
-const storyTypes: ClashPulseStoryType[] = ['Upset', 'Match Upset', 'CI Mover', 'Close Match', 'Standout'];
+const storyTypes: ClashPulseStoryType[] = ['Upset', 'Match Upset', 'Above Expectations', 'CI Mover', 'Close Match', 'Standout'];
 const contexts: ClashPulseContextFilter[] = ['All', 'Team', 'Singles', 'Doubles', 'Home', 'Road'];
 
 type CardView = {
@@ -362,6 +362,7 @@ function matchesContext(item: ClashPulseFactCandidate, context: ClashPulseContex
 }
 
 function labelStoryType(type: ClashPulseStoryType): string {
+  if (type === 'Above Expectations') return type;
   if (type === 'Upset') return 'Upsets';
   if (type === 'Match Upset') return 'Match Upsets';
   if (type === 'CI Mover') return 'CI Movers';
