@@ -1353,3 +1353,82 @@ td,
 .article-list li { margin-bottom: 8px; }
 .article-subheading-small { font-size: 21px; margin-top: 28px; }
 @media (max-width: 800px) { .article-subheading-small { font-size: 19px; } }
+
+
+/* Homepage story artwork: show full landscape posters without cropping. */
+.story-home-hero {
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  min-height: 0;
+}
+
+.story-home-photo {
+  min-height: 0;
+  aspect-ratio: 16 / 9;
+  background-color: #05090a;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.story-home-content {
+  padding: clamp(28px, 3.5vw, 56px);
+}
+
+.story-home-content h1 {
+  font-size: clamp(38px, 4.5vw, 72px);
+}
+
+.story-home-bottom .compact-story {
+  grid-template-columns: minmax(0, 44%) minmax(0, 1fr);
+}
+
+.story-home-bottom .compact-photo {
+  height: auto;
+  min-height: 140px;
+  background-color: #0f181a;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+@media (max-width: 900px) {
+  .story-home-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .story-home-photo {
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+  }
+
+  .story-home-content {
+    padding: 34px 28px 56px;
+  }
+
+  .story-home-content h1 {
+    font-size: clamp(38px, 7vw, 58px);
+  }
+
+  .story-home-bottom .compact-story {
+    grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
+  }
+
+  .story-home-bottom .compact-photo {
+    min-height: 140px;
+  }
+
+  .home-matches-section {
+    margin-top: -12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .story-home-bottom .compact-story {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .story-home-bottom .compact-photo {
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+  }
+}
