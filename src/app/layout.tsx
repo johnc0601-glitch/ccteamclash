@@ -9,6 +9,7 @@ import "./header.css";
 import "./canonical-theme.css";
 import "./matchday-theme.css";
 import "./responsive-header-fix.css";
+import "./clash-cast-player.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://ccteamclash.com"),
