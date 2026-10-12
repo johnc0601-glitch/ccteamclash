@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import type {ReactNode} from 'react';
 import {ClashCountdown} from '@/components/ClashCountdown';
-import {ClashCastPromo} from '@/components/ClashCastPromo';
 import {ClashPulse} from '@/components/ClashPulse';
 import {HomeMatchCarousel} from '@/components/HomeMatchCarousel';
 import {HomeScoreAutoRefresh} from '@/components/HomeScoreAutoRefresh';
@@ -41,7 +40,6 @@ export default async function Home() {
 
       {lead ? (
         <section className="story-home-hero">
-          <div className="story-home-podcast"><ClashCastPromo /></div>
           <StoryPhoto className="story-home-photo" image={lead.image} />
           <div className="story-home-content">
             <span className="eyebrow">Featured story</span>
