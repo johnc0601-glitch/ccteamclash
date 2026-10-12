@@ -1,0 +1,178 @@
+/* Clash Cast: accessible, on-demand Spotify player. No iframe before the user opens it. */
+.site-header .header-podcast-trigger {
+  appearance: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 40px;
+  min-height: 42px;
+  padding: 7px 10px;
+  border: 1px solid rgba(209, 161, 25, .65);
+  border-radius: 5px;
+  background: rgba(209, 161, 25, .11);
+  color: #e9bf4c;
+  font: 900 11px/1.2 var(--cc-font-body);
+  letter-spacing: .025em;
+  text-transform: uppercase;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.site-header .header-podcast-trigger:hover,
+.site-header .header-podcast-trigger:focus-visible {
+  border-color: #e1b43a;
+  background: rgba(209, 161, 25, .22);
+  outline-offset: 2px;
+}
+.site-header .header-podcast-trigger svg {flex: 0 0 19px;}
+.site-header .header-podcast-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 0;
+  max-width: 176px;
+}
+.site-header .header-podcast-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.site-header .header-podcast-text {color: #e9bf4c;white-space: nowrap;}
+.site-header .header-podcast-episode {
+  display: block;
+  overflow: hidden;
+  max-width: 170px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: left;
+  color: #e1e5e4;
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.site-header .header-podcast-trigger .header-podcast-new {
+  position: static;
+  padding: 3px 5px;
+  background: #d3aa36;
+  color: #101315;
+}
+@media (min-width: 1201px) {
+  .primary-header .desktop-nav.primary-nav {gap: 11px !important;}
+  .site-header .desktop-nav .header-podcast-trigger {max-width: 215px;}
+}
+@media (min-width: 1081px) and (max-width: 1200px) {
+  .site-header .desktop-nav .header-podcast-trigger {padding: 0 10px;}
+  .site-header .desktop-nav .header-podcast-copy {display: none;}
+  .site-header .desktop-nav .header-podcast-new {
+    position: absolute;right: -6px;top: -5px;font-size: 8px;
+  }
+}
+@media (max-width: 1080px) {
+  .site-header .mobile-header-actions .header-podcast-episode {display: none;}
+  .site-header .mobile-header-actions .header-podcast-trigger {min-height: 38px;}
+  .site-header .mobile-header-actions .header-podcast-copy {max-width: 86px;}
+  .site-header .mobile-header-actions .header-podcast-new {
+    position: absolute;right: -6px;top: -5px;font-size: 8px;
+  }
+}
+@media (max-width: 430px) {
+  .site-header .mobile-header-actions .header-podcast-copy {display: none;}
+  .site-header .mobile-header-actions .header-podcast-trigger {width: 38px;min-width: 38px;padding: 0;}
+}
+
+.clash-cast-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(520px, calc(100vw - 28px));
+  max-width: min(520px, calc(100vw - 28px));
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  margin: auto;
+  overflow-y: auto;
+  border: 1px solid #534725;
+  border-top: 4px solid #d3aa36;
+  border-radius: 12px;
+  background: #111517;
+  color: #f5f5f2;
+  box-shadow: 0 25px 75px rgba(0,0,0,.65);
+}
+.clash-cast-dialog::backdrop {background: rgba(0,0,0,.78);}
+.clash-cast-dialog-content {padding: 22px;display: grid;gap: 14px;}
+.clash-cast-dialog-heading {display: flex;justify-content: space-between;align-items: flex-start;gap: 14px;}
+.clash-cast-dialog-titles {min-width: 0;}
+.clash-cast-dialog-titles > span {
+  display: block;
+  color: #d3aa36;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.clash-cast-dialog-titles h2 {
+  margin: 4px 0 0;
+  color: #f5f5f2;
+  font-size: 27px;
+  font-style: italic;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.clash-cast-dialog-episode-title {
+  margin: 0;
+  color: #f5f5f2;
+  font-size: 17px;
+  font-weight: 780;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.clash-cast-dialog-new {
+  justify-self: start;
+  padding: 5px 7px;
+  border-radius: 4px;
+  background: #d3aa36;
+  color: #111517;
+  font-size: 10px;
+  font-weight: 900;
+}
+.clash-cast-dialog-close {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  min-width: 38px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #4c5355;
+  border-radius: 6px;
+  background: #22292b;
+  color: #f5f5f2;
+  font: 30px/1 Arial, sans-serif;
+  cursor: pointer;
+}
+.clash-cast-dialog-close:hover,.clash-cast-dialog-close:focus-visible {border-color: #d3aa36;color: #d3aa36;}
+.clash-cast-dialog-embed {min-width:0;}
+.clash-cast-dialog-bottom {display:flex;align-items: center;justify-content:space-between;gap: 12px;flex-wrap:wrap;}
+.clash-cast-dialog-bottom > span {color: #aeb7b9;font-size:12px;}
+.clash-cast-dialog-bottom > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 8px 11px;
+  border: 1px solid #d3aa36;
+  border-radius: 5px;
+  background: #d3aa36;
+  color: #151719 !important;
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.clash-cast-dialog-bottom > a:hover {background: #f3cd61;}
+@media (max-width: 520px) {
+  .clash-cast-dialog-content {padding: 15px;gap:12px;}
+  .clash-cast-dialog-titles h2 {font-size: 23px;}
+  .clash-cast-dialog-episode-title {font-size: 15px;}
+}
