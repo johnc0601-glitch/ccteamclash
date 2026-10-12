@@ -41,16 +41,14 @@ export default async function Home() {
 
       {lead ? (
         <section className="story-home-hero">
+          <div className="story-home-podcast"><ClashCastPromo /></div>
           <StoryPhoto className="story-home-photo" image={lead.image} />
-          <div className="story-home-side">
-            <div className="story-home-podcast"><ClashCastPromo /></div>
-            <div className="story-home-content">
-              <span className="eyebrow">Featured story</span>
-              <h1>{lead.title}</h1>
-              <p>{leadPreview}</p>
-              <div className="home-actions">
-                <Link href={`/stories/${lead.slug}`} className="button gold-button">Read story <span>-&gt;</span></Link>
-              </div>
+          <div className="story-home-content">
+            <span className="eyebrow">Featured story</span>
+            <h1>{lead.title}</h1>
+            <p>{leadPreview}</p>
+            <div className="home-actions">
+              <Link href={`/stories/${lead.slug}`} className="button gold-button">Read story <span>-&gt;</span></Link>
             </div>
           </div>
         </section>
