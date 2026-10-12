@@ -6,13 +6,13 @@ These are historical reconstructions from official roster IDs and frozen pre-res
 | --- | ---: | --- | --- | --- |
 | DK–KB, Oct 3 | 64.9% | 19.04–16.96 | 23–13 | DK +3.96 |
 | Ninjas–OG, Oct 10 | 95.0% (model cap) | 25.35–10.65 | 30–7.5 | Ninjas +3.15 |
-| Cougar–Wild Turkey, Oct 3 | Unavailable | Unavailable | 22.5–13.5 | Unavailable |
+| Cougar–Wild Turkey, Oct 3 | 88.3% | 21.37–14.63 | 22.5–13.5 | Cougar +1.13 |
 
 DK and Ninjas are above-expectation performances, not team upsets. A team upset requires the winner to have a locked-roster win chance below 50%.
 
 Ninjas' standard score is 28.5. Its extra 1.5 roster penalty points are excluded from performance: 28.5 − 25.3456 = +3.1544. Automatic missing-slot contest wins remain part of the standard contest score. Neither kind of point changes the roster-only odds or projected score.
 
-Cougar's official roster contains Jeff Parsley, but his frozen CI is missing. Calculating from only 19 of the 20 Cougar players would change the locked roster. The correct result is unavailable, rather than a fabricated percentage.
+Jeff Parsley's original Wild Turkey entry and CI 831 were frozen October 2. An erroneous Cougar entry was appended October 4. The corrected replay counts him only for Wild Turkey, leaving 19 Cougar players and 21 Wild Turkey players. His current CI 823 is not used. The source database row is retained; historical reconstruction resolves this opposing-roster duplicate from the unambiguous original frozen team.
 
 ## Implementation
 
