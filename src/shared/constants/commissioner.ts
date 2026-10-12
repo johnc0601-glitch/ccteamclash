@@ -60,6 +60,11 @@ export const OFFICE_SECTIONS = {
     description: 'Maintain the course directory used across league operations.',
     href: '/office/courses',
   },
+  clashPulse: {
+    title: 'Clash Pulse',
+    description: 'Review league facts, manage the Pulse Queue, and publish Clash Pulse updates.',
+    href: '/office/clash-pulse',
+  },
   media: {
     title: 'Media',
     description: 'Coordinate league stories, photos, and publishing assets.',
