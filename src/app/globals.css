@@ -1432,3 +1432,89 @@ td,
     aspect-ratio: 16 / 9;
   }
 }
+
+
+/* Featured story: compact mobile teaser and separate podcast placement. */
+.story-home-side {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.story-home-podcast {
+  flex: 0 0 auto;
+  padding: 12px 20px;
+  background: #11161a;
+}
+
+.story-home-podcast > a {
+  top: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.story-home-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.story-home-content .eyebrow {
+  margin-bottom: 8px;
+}
+
+.story-home-content h1 {
+  margin: 6px 0 16px;
+  line-height: .96;
+}
+
+@media (max-width: 900px) {
+  .story-home-content {
+    flex: none;
+    align-content: start;
+    padding: 20px 22px 26px;
+  }
+
+  .story-home-content .eyebrow {
+    margin-bottom: 7px;
+    font-size: 10px;
+  }
+
+  .story-home-content h1 {
+    margin: 0 0 12px;
+    font-size: clamp(30px, 7vw, 40px);
+    line-height: 1.01;
+  }
+
+  .story-home-content p {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  .story-home-content .home-actions {
+    margin-top: 16px;
+  }
+
+  .story-home-content .home-actions .button {
+    padding: 11px 15px;
+    font-size: 12px;
+  }
+
+  .story-home-podcast {
+    padding: 9px 12px;
+  }
+
+  .story-home-podcast > a {
+    top: 0;
+    width: 100%;
+    padding: 8px 10px;
+  }
+
+  .home-matches-section {
+    margin-top: 0;
+  }
+}
