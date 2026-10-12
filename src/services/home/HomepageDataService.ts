@@ -11,7 +11,7 @@ import {easternDate} from '@/services/weather/MatchWeather';
 const MATCH_DISPLAY_WINDOW_DAYS = 14;
 const RECENT_ROUND_HOLD_DAYS = 3;
 const HOME_STORY_COLUMNS = 'id,slug,title,published_at,image,body,featured';
-const LATEST_STORY_COUNT = 2;
+const LATEST_STORY_COUNT = 3;
 const HOMEPAGE_CACHE_SECONDS = 86_400;
 
 export type HomepagePublishedScore = {
@@ -118,7 +118,7 @@ const getCachedHomepageRows = unstable_cache(
       previews: previewsResult.data ?? [],
     };
   },
-  ['public-homepage-rows-v4'],
+  ['public-homepage-rows-v5'],
   {
     revalidate: HOMEPAGE_CACHE_SECONDS,
     tags: ['public:homepage', 'public:stories', 'public:teams', 'public:schedule', 'public:match-feed'],
@@ -134,11 +134,13 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
   const rows = await getCachedHomepageRows();
   const publicSupabase = createPublicClient();
 
-  const latest: HomepageStory[] = rows.latest.map((row: any) => mapHomepageStory(row));
+  const candidates: HomepageStory[] = rows.latest.map((row: any) => mapHomepageStory(row));
   const featured = rows.featured[0] ? mapHomepageStory(rows.featured[0]) : null;
+  const lead = featured ?? candidates[0] ?? null;
   const storyData: HomepageStoryData = {
-    lead: featured ?? latest[0] ?? null,
-    latest,
+    lead,
+    // Keep the main feature out of Latest Stories; show two other articles.
+    latest: candidates.filter((story) => story.id !== lead?.id).slice(0, 2),
   };
 
   const teams: Team[] = rows.teams.map((row: any) => mapTeam(row));
