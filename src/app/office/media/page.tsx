@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import {OfficePage} from '@/components/commissioner/OfficePage';
 import {StoryManager} from '@/components/StoryManager';
+import {getPodcastEpisodeAt, isPodcastEpisodeNew, PODCAST_NEW_EPISODE_DURATION_MS} from '@/services/podcast/PodcastEpisodeStatus';
+import {setPodcastEpisodeIndicator} from './podcastActions';
 
 const mediaCardStyle = {
   border: '1px solid rgba(127,127,127,.35)',
@@ -8,10 +10,43 @@ const mediaCardStyle = {
   padding: 16,
 } as const;
 
-export default function OfficeMediaPage() {
+type OfficeMediaSearchParams = {
+  episodeNotice?: string;
+  episodeError?: string;
+};
+
+export default async function OfficeMediaPage({searchParams}: {searchParams?: Promise<OfficeMediaSearchParams>}) {
+  const query = searchParams ? await searchParams : {};
+  const markedAt = await getPodcastEpisodeAt();
+  const active = isPodcastEpisodeNew(markedAt);
+  const expiresAt = markedAt && active
+    ? new Date(Date.parse(markedAt) + PODCAST_NEW_EPISODE_DURATION_MS)
+    : null;
+  const expiresLabel = expiresAt ? new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  }).format(expiresAt) : '';
   return (
     <OfficePage sectionId="media">
       <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, marginBottom: 20}}>
+        <section style={mediaCardStyle}>
+          <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10}}>
+            <strong>Clash Cast</strong>
+            <span style={{fontSize: 11, fontWeight: 850, opacity: .8}}>{active ? 'NEW EPISODE ACTIVE' : 'NO NEW EPISODE'}</span>
+          </div>
+          <p style={{margin: '8px 0 10px'}}>Mark a new podcast episode to display a small NEW indicator beside Clash Cast in the site header for seven days.</p>
+          {expiresAt ? <p style={{fontSize: 12, margin: '0 0 10px'}}>Indicator expires {expiresLabel}.</p> : null}
+          {query.episodeNotice ? <p role="status" style={{fontSize: 13}}>{query.episodeNotice}</p> : null}
+          {query.episodeError ? <p role="alert" style={{fontSize: 13, color: '#c0392b'}}>{query.episodeError}</p> : null}
+          <form action={setPodcastEpisodeIndicator} style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
+            <button type="submit" name="intent" value="activate">{active ? 'Restart 7-day indicator' : 'Mark new episode'}</button>
+            {active ? <button type="submit" name="intent" value="clear">Clear indicator</button> : null}
+          </form>
+        </section>
         <section style={mediaCardStyle}>
           <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap'}}>
             <div>
