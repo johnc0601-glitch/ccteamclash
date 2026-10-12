@@ -26,6 +26,13 @@ export default async function Home() {
   const today = easternDate();
   const hasUnpublishedMatchToday = homeEvents.some((match) => match.scheduledDate === today && !publishedScores.has(match.id));
   const lead = storyData.lead;
+  // Story bodies can begin with a matchup label and a duplicate headline.
+  // Use the first full paragraph for the compact homepage teaser.
+  const firstParagraph = lead?.body.findIndex((part) => part.trim().length >= 90) ?? -1;
+  const previewBody = lead && firstParagraph > 0 && firstParagraph <= 2
+    ? lead.body.slice(firstParagraph)
+    : lead?.body ?? [];
+  const leadPreview = lead ? getStoryPreview({...lead, body: previewBody}, 145) : '';
 
   return (
     <main className="home-page">
@@ -34,13 +41,16 @@ export default async function Home() {
 
       {lead ? (
         <section className="story-home-hero">
-          <StoryPhoto className="story-home-photo" image={lead.image}><ClashCastPromo /></StoryPhoto>
-          <div className="story-home-content">
-            <span className="eyebrow">Featured story</span>
-            <h1>{lead.title}</h1>
-            <p>{getStoryPreview(lead)}</p>
-            <div className="home-actions">
-              <Link href={`/stories/${lead.slug}`} className="button gold-button">Read story <span>-&gt;</span></Link>
+          <StoryPhoto className="story-home-photo" image={lead.image} />
+          <div className="story-home-side">
+            <div className="story-home-podcast"><ClashCastPromo /></div>
+            <div className="story-home-content">
+              <span className="eyebrow">Featured story</span>
+              <h1>{lead.title}</h1>
+              <p>{leadPreview}</p>
+              <div className="home-actions">
+                <Link href={`/stories/${lead.slug}`} className="button gold-button">Read story <span>-&gt;</span></Link>
+              </div>
             </div>
           </div>
         </section>
