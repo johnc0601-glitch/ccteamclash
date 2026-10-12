@@ -1,6 +1,6 @@
 'use client';
 
-import {useRef, useState} from 'react';
+import {useId, useRef, useState} from 'react';
 import {SPOTIFY_SHOW_URL} from '@/components/ClashCastPromo';
 
 const SPOTIFY_SHOW_ID = '14aM6HGYzqloa098b9FVlj';
@@ -16,6 +16,7 @@ type HeaderPodcastPlayerProps = {
  * Closing the dialog unmounts it so audio stops and the next visit starts fresh.
  */
 export function HeaderPodcastPlayer({isNew, episodeTitle, episodeUrl}: HeaderPodcastPlayerProps) {
+  const titleId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -72,13 +73,13 @@ export function HeaderPodcastPlayer({isNew, episodeTitle, episodeUrl}: HeaderPod
         onClick={(event) => {
           if (event.target === event.currentTarget) closePlayer();
         }}
-        aria-labelledby="clash-cast-player-heading"
+        aria-labelledby={titleId}
       >
         <div className="clash-cast-dialog-content">
           <div className="clash-cast-dialog-heading">
             <div className="clash-cast-dialog-titles">
               <span>Coastal Carolina Team Clash</span>
-              <h2 id="clash-cast-player-heading">Clash Cast</h2>
+              <h2 id={titleId}>Clash Cast</h2>
             </div>
             <button type="button" className="clash-cast-dialog-close" onClick={closePlayer} aria-label="Close podcast player">×</button>
           </div>
