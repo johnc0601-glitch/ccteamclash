@@ -21,14 +21,9 @@ export default async function Home() {
     getHomepageData(),
     getHomepageClashPulseItems(),
   ]);
-  const {storyData, teams: teamLogos, homeEvents, publishedScores, feedPreviews} = homepageData;
+  const {storyData, teams: teamLogos, homeEvents, publishedScores, feedPreviews, roundLabel} = homepageData;
   const today = easternDate();
   const hasUnpublishedMatchToday = homeEvents.some((match) => match.scheduledDate === today && !publishedScores.has(match.id));
-  const matchGroups = [
-    {title: 'Upcoming matches', matches: homeEvents.filter((match) => !publishedScores.has(match.id) && (!match.scheduledDate || match.scheduledDate >= today))},
-    {title: 'Awaiting results', matches: homeEvents.filter((match) => !publishedScores.has(match.id) && match.scheduledDate && match.scheduledDate < today)},
-    {title: 'Recent results', matches: homeEvents.filter((match) => publishedScores.has(match.id)).sort((a, b) => b.dateTime.getTime() - a.dateTime.getTime())},
-  ].filter((group) => group.matches.length);
   const lead = storyData.lead;
   // Story bodies can begin with a matchup label and a duplicate headline.
   // Use the first full paragraph for the compact homepage teaser.
@@ -57,17 +52,17 @@ export default async function Home() {
         </section>
       ) : null}
 
-      <HomeScoreAutoRefresh enabled={hasUnpublishedMatchToday} />
-      {matchGroups.map((group) => (
-        <section className="shell home-matches-section" key={group.title}>
-          <div className="home-matches-heading"><h2>{group.title}</h2><Link href="/schedule" prefetch={false}>Full schedule →</Link></div>
-          <HomeMatchCarousel count={group.matches.length}>
-            {group.matches.map((match) => (
-              <MatchCard key={match.id} match={match} teams={teamLogos} feedPreview={feedPreviews.get(match.id)} today={today} result={publishedScores.get(match.id)} />
-            ))}
-          </HomeMatchCarousel>
-        </section>
-      ))}
+      <section className="shell home-matches-section">
+        <HomeScoreAutoRefresh enabled={hasUnpublishedMatchToday} />
+        <div className="home-matches-heading">
+          <h2>{roundLabel}</h2>
+        </div>
+        <HomeMatchCarousel count={homeEvents.length}>
+          {homeEvents.map((match) => (
+            <MatchCard key={match.id} match={match} teams={teamLogos} feedPreview={feedPreviews.get(match.id)} today={today} result={publishedScores.get(match.id)} />
+          ))}
+        </HomeMatchCarousel>
+      </section>
 
       <section className="shell story-home-bottom">
         <section className="dark-panel latest-panel">
