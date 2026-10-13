@@ -160,7 +160,8 @@
   text-transform: uppercase;
 }
 
-.desktopBoardHeader strong {
+.desktopBoardHeader h2 {
+  margin: 0;
   font-size: 13px;
   font-weight: 950;
   letter-spacing: .02em;
@@ -407,6 +408,8 @@
 }
 
 .resultSummaryTitle {
+  margin: 0;
+  line-height: 1.3;
   font-size: 12px;
   font-weight: 950;
   text-transform: uppercase;
@@ -666,17 +669,24 @@
     grid-template-columns: minmax(0, 1fr) clamp(150px, 46vw, 182px) minmax(0, 1fr) !important;
   }
 
+  .finalHeroTeams img {
+    max-width: 100%;
+    object-fit: contain;
+  }
+
   .finalHomeLogo {
     transform: none;
   }
 
-  .finalHeroTeam {
+  .finalHeroTeams .finalHeroTeam {
+    grid-template-columns: minmax(0, 1fr);
     min-width: 0;
     padding-right: 6px;
     padding-left: 6px;
   }
 
-  .finalHeroTeam strong {
+  .finalHeroTeams .finalHeroTeam strong {
+    overflow-wrap: anywhere;
     max-width: 100%;
     font-size: clamp(15px, 4.7vw, 21px);
   }
@@ -762,4 +772,16 @@
   .playerSide:last-child .doublesPair {
     justify-items: end;
   }
+}
+
+.pageTitle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }

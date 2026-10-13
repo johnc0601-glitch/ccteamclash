@@ -12,6 +12,7 @@ export function MatchHero({
 
   return (
     <section className={styles.matchHero} data-matchday-hero>
+      <h1 className={styles.pageTitle}>{matchday.awayTeam.name} at {matchday.homeTeam.name} — Matchday</h1>
       <div className={styles.heroTeams}>
         <div className={styles.heroLabel}>
           <span>Team Matchday</span>
