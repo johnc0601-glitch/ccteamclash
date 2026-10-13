@@ -8,5 +8,5 @@ type Props = Omit<ComponentProps<typeof Link>, 'href' | 'onNavigate'> & {href: s
 
 export function MatchdayLink({href, matchDate, ...props}: Props) {
   const start = useMatchdayIntro();
-  return <Link {...props} href={href} onNavigate={() => start(href, matchDate)} />;
+  return <Link prefetch={false} {...props} href={href} onNavigate={() => start(href, matchDate)} />;
 }

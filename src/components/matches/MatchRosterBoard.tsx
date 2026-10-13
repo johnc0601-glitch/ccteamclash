@@ -1,3 +1,4 @@
+import {lockedRosterGenderCounts} from '@/services/matches/LockedRosterGenderCounts';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import type {TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import type {OfficialMatchRoster, OfficialSnapshotState} from '@/domain/match-roster/MatchRosterSnapshot';
@@ -22,9 +23,11 @@ export async function MatchRosterBoard({
   availability,
   availabilityUnavailable = false,
   lockedAvailability,
+  officialPlayers = [],
 }: {
   matchday: PublicMatchday;
   official?: OfficialSnapshotState;
+  officialPlayers?: Pick<LaunchPlayer, 'id' | 'gender'>[];
   rosterUnavailable?: boolean;
   availability?: PublicMatchAvailability;
   availabilityUnavailable?: boolean;
@@ -46,7 +49,7 @@ export async function MatchRosterBoard({
     const away = findRoster(official.rosters, matchday.awayTeam.id);
     const home = findRoster(official.rosters, matchday.homeTeam.id);
     const playerGenders = new Map(
-      [...matchday.awayTeam.roster, ...matchday.homeTeam.roster]
+      officialPlayers
         .map((player) => [player.id, player.gender] as const),
     );
     const [awayStoredTeam, homeStoredTeam] = await Promise.all([
@@ -139,21 +142,6 @@ export async function MatchRosterBoard({
         />
       </div>
     </section>
-  );
-}
-
-function lockedRosterGenderCounts(
-  official: OfficialMatchRoster,
-  genders: ReadonlyMap<string, LaunchPlayer['gender']>,
-) {
-  return official.players.reduce(
-    (counts, player) => {
-      const gender = genders.get(player.playerId);
-      if (gender === 'Male') counts.maleCount += 1;
-      if (gender === 'Female') counts.femaleCount += 1;
-      return counts;
-    },
-    {maleCount: 0, femaleCount: 0},
   );
 }
 
