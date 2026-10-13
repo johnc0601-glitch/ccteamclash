@@ -1,0 +1,22 @@
+.navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 20px;
+}
+.navigation > a {
+  padding: 10px 14px;
+  border: 1px solid var(--cc-panel-border);
+  border-radius: 6px;
+  color: var(--cc-text);
+  background: var(--cc-surface);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.navigation > a[aria-current="page"] {
+  color: var(--cc-header-text);
+  background: var(--cc-header-bg);
+  border-color: var(--cc-header-bg);
+}
+.navigation > a:focus-visible { outline: 2px solid var(--cc-text); outline-offset: 3px; }

@@ -1,3 +1,4 @@
+import {getPublishedMatchScores} from '@/services/matches/PublishedMatchScores';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchdayLink} from '@/components/matchday-intro/MatchdayLink';
 import {createPublicScheduleService} from '@/core/createPublicScheduleService';
@@ -20,6 +21,8 @@ export default async function SchedulePage() {
     createPublicScheduleService().getPublishedEvents(),
     createPublicStandingsService().getActiveSeasonStandings(),
   ]);
+  const scores = await getPublishedMatchScores(publicMatches.map((match) => match.id));
+  const seasonLabel = [...new Set(publicMatches.map((match) => match.seasonName))].join(' · ');
   const standingsByTeam = new Map(
     (standings?.entries ?? []).map((entry) => [entry.team.id, entry]),
   );
@@ -31,9 +34,10 @@ export default async function SchedulePage() {
     groupedRounds.set(match.roundId, round);
   }
 
-  const rounds = Array.from(groupedRounds.entries()).map(([roundId, matches], index) => ({
+  const rounds = Array.from(groupedRounds.entries()).map(([roundId, matches]) => ({
     roundId,
-    roundNumber: index + 1,
+    roundNumber: matches[0].roundNumber,
+    seasonName: matches[0].seasonName,
     month: new Intl.DateTimeFormat('en-US', {month: 'long'}).format(matches[0].dateTime),
     matches,
   }));
@@ -50,7 +54,7 @@ export default async function SchedulePage() {
         {rounds.length ? (
           <>
             <div className={styles.seasonBanner}>
-              <strong>2026–27 Regular Season</strong>
+              <strong>{seasonLabel}</strong>
               <span>{publicMatches.length} matchups · {rounds.length} rounds</span>
             </div>
 
@@ -58,23 +62,30 @@ export default async function SchedulePage() {
               {rounds.map((round) => (
                 <section className={styles.roundCard} key={round.roundId}>
                   <header className={styles.roundRail}>
-                    <span className={styles.roundKicker}>Round {round.roundNumber}</span>
+                    <span className={styles.roundKicker}>{round.roundNumber === null ? 'Round' : `Round ${round.roundNumber}`}</span>
+                    {new Set(publicMatches.map((match) => match.seasonName)).size > 1 ? <small>{round.seasonName}</small> : null}
                     <h2>{round.month}</h2>
                     <small>{round.matches.length} matchups</small>
                   </header>
 
                   <div className={styles.matches}>
                     {round.matches.map((match) => {
+                      const score = scores.get(match.id);
+                      const status = score ? 'Final' : match.lifecycle === 'Completed' ? 'Results pending' : match.lifecycle;
                       const awayStanding = standingsByTeam.get(match.awayTeamId);
                       const homeStanding = standingsByTeam.get(match.homeTeamId);
                       return (
                         <article className={styles.match} key={match.id}>
-                          <a className={styles.matchLink} href={match.href}>
+                          <MatchdayLink className={styles.matchLink} href={match.href} matchDate={match.scheduledDate} prefetch={false}>
                             <div className={styles.matchMeta}>
                               <span>{match.date}</span>
                               <span>{match.time}</span>
                             </div>
 
+                            <div className={styles.matchStatus}>
+                              <strong>{status}</strong>
+                              {score ? <span aria-label={`${match.away} ${score.awayScore}, ${match.home} ${score.homeScore}`}>{score.awayScore}–{score.homeScore}</span> : null}
+                            </div>
                             <div className={styles.teams}>
                               <span className={styles.team}>
                                 {awayStanding?.team.logo ? (
@@ -108,7 +119,7 @@ export default async function SchedulePage() {
                                 ) : null}
                               </span>
                             </div>
-                          </a>
+                          </MatchdayLink>
 
                           <div className={styles.matchFooter}>
                             {match.directionsUrl ? (

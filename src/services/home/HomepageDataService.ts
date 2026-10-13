@@ -9,7 +9,6 @@ import type {HomepageStory, HomepageStoryData} from '@/services/stories/Homepage
 import {easternDate} from '@/services/weather/MatchWeather';
 
 const MATCH_DISPLAY_WINDOW_DAYS = 14;
-const RECENT_ROUND_HOLD_DAYS = 3;
 const HOME_STORY_COLUMNS = 'id,slug,title,published_at,image,body,featured';
 const LATEST_STORY_COUNT = 3;
 const HOMEPAGE_CACHE_SECONDS = 86_400;
@@ -175,28 +174,11 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
     .filter((event: HomepageScheduleEvent | null): event is HomepageScheduleEvent => Boolean(event))
     .sort((left, right) => left.dateTime.getTime() - right.dateTime.getTime());
 
-  // Matchday takes priority; keep the completed round visible briefly so
-  // official scores do not disappear as soon as the next round becomes upcoming.
-  const today = easternDate(referenceDate);
-  const todayMatch = events.find((event) => event.scheduledDate === today);
-  const upcoming = events.filter((event) => event.bucket === 'upcoming');
-  const recent = events
-    .filter((event) => event.bucket === 'recent')
-    .sort((left, right) => right.dateTime.getTime() - left.dateTime.getTime());
-  const latestRecent = recent[0];
-  const recentAge = latestRecent?.scheduledDate
-    ? daysBetweenDates(latestRecent.scheduledDate, today)
-    : Infinity;
-  const displayedRoundId = todayMatch?.roundId
-    ?? (latestRecent && recentAge >= 0 && recentAge <= RECENT_ROUND_HOLD_DAYS ? latestRecent.roundId : undefined)
-    ?? upcoming[0]?.roundId
-    ?? latestRecent?.roundId;
-  const homeEvents = displayedRoundId
-    ? events
-      .filter((event) => event.roundId === displayedRoundId)
-      .sort((left, right) => left.dateTime.getTime() - right.dateTime.getTime())
-      .slice(0, 4)
-    : [];
+  // Keep the next matches and recent results available independently.
+  const upcoming = events.filter((event) => event.bucket === 'upcoming').slice(0, 4);
+  const recent = events.filter((event) => event.bucket === 'recent')
+    .sort((left, right) => right.dateTime.getTime() - left.dateTime.getTime()).slice(0, 4);
+  const homeEvents = [...upcoming, ...recent];
 
   const homeMatchIds = new Set(homeEvents.map((event) => event.id));
   const feedPreviews = new Map<string, HomepageMatchFeedPreview>();
@@ -217,7 +199,7 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
   }
 
   // Use the same published result that powers Matchday; never expose draft
-  // scores. Only read the four displayed matches, and only on page regeneration.
+  // scores. Only read the displayed matches, and only on page regeneration.
   const publishedScores = new Map<string, HomepagePublishedScore>();
   if (homeEvents.length) {
     const {data: results, error: resultsError} = await (publicSupabase as any)
@@ -304,12 +286,6 @@ function dateKeyDaysBefore(dateKey: string, days: number): string {
   const date = new Date(`${dateKey}T12:00:00.000Z`);
   date.setUTCDate(date.getUTCDate() - days);
   return date.toISOString().slice(0, 10);
-}
-
-function daysBetweenDates(from: string, to: string): number {
-  return Math.round(
-    (Date.parse(`${to}T12:00:00.000Z`) - Date.parse(`${from}T12:00:00.000Z`)) / 86_400_000,
-  );
 }
 
 function formatEventDate(value: string): string {
