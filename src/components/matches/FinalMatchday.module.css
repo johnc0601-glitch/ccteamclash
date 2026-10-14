@@ -773,6 +773,9 @@
   min-width: 0;
   gap: 3px;
 }
+.mobileResultsCard .doublesPair .playerName + .playerName::before {
+  content: none;
+}
 .mobileResultsCard .doublesPair .playerName {
   display: block;
   min-width: 0;
