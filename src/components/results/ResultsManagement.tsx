@@ -157,7 +157,7 @@ export function ResultsManagement({
       setMessage('Official scores cannot be less than played contest points.');
       return;
     }
-    if (!adjustmentAudit.valid) {
+    if (!adjustmentAudit.entriesValid || (action === 'publish' && !adjustmentAudit.valid)) {
       setSaving(false);
       setMessage(adjustmentAudit.message);
       return;
@@ -226,6 +226,7 @@ export function ResultsManagement({
     const reconciled = Math.abs(home - audit.homeResidual) < .001
       && Math.abs(away - audit.awayResidual) < .001;
     return {
+      entriesValid: valid,
       valid: valid && reconciled,
       home,
       away,
@@ -407,7 +408,7 @@ export function ResultsManagement({
               <span>Recorded matchups: {formatPoints(audit.homeContestPoints)}–{formatPoints(audit.awayContestPoints)}</span>
               {audit.automaticHomePoints || audit.automaticAwayPoints ? (
                 <span>
-                  Automatic matchup slots: {editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'Home'} +{formatPoints(audit.automaticHomePoints)}
+                  Unfilled player positions (review only): {editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'Home'} +{formatPoints(audit.automaticHomePoints)}
                   {' · '}
                   {editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'Away'} +{formatPoints(audit.automaticAwayPoints)}
                 </span>
