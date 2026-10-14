@@ -44,6 +44,7 @@ export function ScoreboardPreviewClient() {
   const [notes, setNotes] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [structure, setStructure] = useState('');
 
   async function loadLocalFile(file: File | undefined) {
     if (!file) return;
@@ -52,9 +53,11 @@ export function ScoreboardPreviewClient() {
     setNotes([]);
     setSnapshot(null);
     setSourceLabel('');
+    setStructure('');
     try {
       if (file.size > MAX_FILE_BYTES) throw new Error('Select a JSON file smaller than 2 MB.');
       const parsed: unknown = JSON.parse(await file.text());
+      setStructure(summarizeJsonStructure(parsed));
       const preview = parseScoreboardPreviewJson(parsed);
       setSnapshot(preview.snapshot);
       setNotes(preview.notes);
@@ -116,6 +119,14 @@ export function ScoreboardPreviewClient() {
           </p>
         ) : null}
         {loading ? <p role="status">Reading file locally…</p> : null}
+        {structure ? (
+          <details style={{marginTop:12,border:'1px solid #405065',borderRadius:9,padding:12}}>
+            <summary style={{cursor:'pointer',fontSize:13,fontWeight:700}}>File format diagnostic (no file upload)</summary>
+            <p style={{fontSize:12,color:'#c5cdd5'}}>Copy the structure below into this chat so the uploader can be adapted to your file. It lists field names and data types, not player names or scores.</p>
+            <pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere',fontSize:11,maxHeight:350,overflow:'auto'}}>{structure}</pre>
+            <button type="button" onClick={() => void navigator.clipboard.writeText(structure)} style={{background:'#304157',border:'1px solid #708198',borderRadius:8,padding:'8px 12px',color:'#fff',fontSize:12}}>Copy structure</button>
+          </details>
+        ) : null}
         {sourceLabel ? (
           <div style={{marginTop:14,padding:'11px 13px',borderLeft:'3px solid #c8ad75',background:'#1a2229',fontSize:13}}>
             <strong>Preview source:</strong> {sourceLabel}
@@ -139,4 +150,30 @@ export function ScoreboardPreviewClient() {
       </footer>
     </div>
   );
+}
+
+
+/** Limits diagnostics to field names, counts and types; no player-identifying values. */
+function summarizeJsonStructure(input: unknown) {
+  const lines: string[] = [];
+  function walk(value: unknown, path: string, depth: number) {
+    if (lines.length >= 80 || depth > 3) return;
+    if (Array.isArray(value)) {
+      lines.push(`${path}: array (${value.length} entries)`);
+      if (value.length && depth < 3) walk(value[0], path + '[0]', depth + 1);
+      return;
+    }
+    if (value === null || typeof value !== 'object') {
+      lines.push(`${path}: ${value === null ? 'null' : typeof value}`);
+      return;
+    }
+    const entries = Object.entries(value as Record<string, unknown>);
+    lines.push(`${path}: object (${entries.length} keys)`);
+    for (const [key, child] of entries.slice(0, 28)) {
+      if (lines.length >= 80) break;
+      walk(child, `${path}.${key}`, depth + 1);
+    }
+  }
+  walk(input, 'root', 0);
+  return lines.join('\n');
 }
