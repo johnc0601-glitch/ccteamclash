@@ -266,6 +266,16 @@ export async function saveOfficeResult(
     if (action === 'reopen') {
       result = await resultsService.reopen(normalizedMatchId);
     } else {
+      if (action === 'publish' && input.contests?.some((contest) =>
+        contest.format === 'Singles'
+        && (contest.players.filter((player) => player.side === 'Home' && player.playerId.trim()).length !== 1
+          || contest.players.filter((player) => player.side === 'Away' && player.playerId.trim()).length !== 1)
+      )) {
+        return {
+          ok: false,
+          message: 'An unplayed singles slot cannot be published as a player contest. Remove that contest and record the allocated point under Unplayed singles slot.',
+        };
+      }
       // Persist the editable payload first. Finalization operates only on the
       // persisted Draft so a CI failure can never leave a public partial result.
       result = await resultsService.saveDraft(normalizedMatchId, input);
