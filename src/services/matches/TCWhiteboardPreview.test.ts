@@ -13,7 +13,7 @@ function fixture(matchId = 's7h85xt2g5chghk4zb60egge') {
     const homePoints = tie ? .5 : awayWin ? 0 : 1;
     const awayPoints = tie ? .5 : awayWin ? 1 : 0;
     return {
-      card: Math.floor(i / 2) + 1, startingHole:String(i+1),
+      card: i === 3 ? 3 : Math.floor(i / 2) + 1, startingHole:String(i+1),
       away:{teamId:'ogs',players:[{id:noShow ? noShowId : `away-${i}`,name:noShow ? 'Conner Garrett' : `Away ${i}`}],points:awayPoints},
       home:{teamId:'ninjas',players:[{id:noShow ? wilsonId : `home-${i}`,name:noShow ? 'Andrew Wilson' : `Home ${i}`}],points:homePoints},
       result:{text:noShow ? '10&8' : tie ? 'PUSH' : '2UP',
