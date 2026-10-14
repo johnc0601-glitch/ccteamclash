@@ -764,6 +764,49 @@
   }
 }
 
+/* Mobile doubles: keep two player lines inside their own grid columns.
+   Full legal/display names must wrap rather than spill over the result badge. */
+.mobileResultsCard .playerList.doublesPair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  min-width: 0;
+  gap: 3px;
+}
+.mobileResultsCard .doublesPair .playerName {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  text-wrap: pretty;
+}
+.mobileResultsCard .playerSide:has(.doublesPair) {
+  min-width: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  border-radius: 14px;
+}
+.mobileResultsCard .playerSide:last-child .doublesPair .playerName {
+  text-align: right;
+}
+.mobileResultsCard .playerSide:first-of-type .doublesPair .playerName {
+  text-align: left;
+}
+@media (max-width: 700px) {
+  .mobileResultsCard .resultRow:has(.doublesPair) {
+    min-height: 62px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  .mobileResultsCard .resultRow:has(.doublesPair) .playerSide {
+    padding: 7px 6px;
+    line-height: 1.24;
+  }
+}
+
 /* Explicit administrative ledger under the two existing contest boards. */
 .adjustmentsSection {
   border: 1px solid rgba(255,255,255,.13);
