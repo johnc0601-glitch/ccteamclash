@@ -359,7 +359,7 @@ function FinalAdjustmentSummary({
     teamId === snapshot.homeTeam.id ? snapshot.homeTeam.name
       : teamId === snapshot.awayTeam.id ? snapshot.awayTeam.name : 'Unknown team';
   const descriptions: Record<string, string> = {
-    UnplayedSlot: 'Unplayed singles slot',
+    UnplayedSlot: 'Unplayed singles slot (included in Singles)',
     NoShow: 'No-show penalties',
     WomenBonus: 'Women bonus',
     Penalty: 'Other penalties',
