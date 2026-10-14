@@ -29,6 +29,12 @@ export type FinalMatchContest = {
   awayPlayers: FinalMatchPlayer[];
   homePlayers: FinalMatchPlayer[];
   unplayed?: boolean;
+  /** Optional source detail for nonstandard TCWhiteboard scorecards. */
+  resultText?: string;
+  card?: number;
+  startingHole?: string;
+  homeStrokes?: number;
+  awayStrokes?: number;
 };
 
 export type FinalScoreAdjustment = {
