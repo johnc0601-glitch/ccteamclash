@@ -45,7 +45,7 @@ export type ResultRosterPlayer = {
   teamId: string;
 };
 
-export type ResultStructuralCategory = 'NoShow' | 'WomenBonus' | 'Penalty' | 'Other';
+export type ResultStructuralCategory = 'NoShow' | 'WomenBonus' | 'Penalty' | 'Other' | 'UnplayedSlot';
 
 export type ResultStructuralPointInput = {
   awardedTeamId: string;
@@ -327,11 +327,15 @@ async function replaceResultStructuralPoints(
     && Number.isFinite(point.points)
     && point.points > 0
     && Number.isInteger(point.points * 2)
-    && ['NoShow', 'WomenBonus', 'Penalty', 'Other'].includes(point.category),
+    && ['NoShow', 'WomenBonus', 'Penalty', 'Other', 'UnplayedSlot'].includes(point.category),
   );
 
   if (normalized.length !== points.length) {
     return {ok: false, message: 'Review the additional scoring adjustments before finalizing.'};
+  }
+  const categories = new Set(normalized.map((point) => `${point.awardedTeamId}:${point.category}`));
+  if (categories.size !== normalized.length) {
+    return {ok: false, message: 'Combine adjustments that have the same team and reason before saving.'};
   }
 
   const {error: deleteError} = await (supabase as any)
