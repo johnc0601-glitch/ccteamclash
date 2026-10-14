@@ -46,10 +46,15 @@ test('unplayed singles allocation and no-show penalties reconcile without adding
   assert.deepEqual(scores.doubles, {away:4,home:14});
   assert.deepEqual(scores.otherAdjustments,{away:0,home:1.5});
   assert.equal(scores.balanced,true);
-  const rows = displaySinglesRows(match.contests,true);
+  const rows = displaySinglesRows(match.contests,1);
   assert.equal(rows.find((row)=>row.position===6)?.unplayed,true);
   assert.deepEqual(rows.find((row)=>row.position===6)?.awayPlayers,[]);
   assert.equal(rows.filter((row)=>!row.unplayed).length,17);
+});
+
+test('does not infer unplayed slots from an unmatched point count', () => {
+  const match = sample([],30);
+  assert.equal(displaySinglesRows(match.contests,2).filter((row)=>row.unplayed).length,0);
 });
 
 test('legacy snapshot reports unexplained scores instead of guessing they are penalties', () => {
