@@ -31,6 +31,10 @@ import type {Schedule} from '@/domain/schedule/Schedule';
 import type {Team} from '@/models/Team';
 import styles from './ResultsManagement.module.css';
 
+type DraftAdjustment = Omit<ResultStructuralPointInput, 'category'> & {
+  category: ResultStructuralCategory | '';
+};
+
 type EditorState = {
   match: Match;
   result?: MatchResult;
@@ -72,8 +76,7 @@ export function ResultsManagement({
   const [saving, setSaving] = useState(false);
   const [contests, setContests] = useState<ResultContestInput[]>([]);
   const [officialRosterPlayers, setOfficialRosterPlayers] = useState<ResultRosterPlayer[]>([]);
-  const [homeAdjustment, setHomeAdjustment] = useState<{category: ResultStructuralCategory | ''; note: string}>({category: '', note: ''});
-  const [awayAdjustment, setAwayAdjustment] = useState<{category: ResultStructuralCategory | ''; note: string}>({category: '', note: ''});
+  const [adjustmentRows, setAdjustmentRows] = useState<DraftAdjustment[]>([]);
   const [processingStatus, setProcessingStatus] = useState<ResultProcessingStatus | null>(null);
 
   async function load(preferredRoundId?: string) {
@@ -132,19 +135,10 @@ export function ResultsManagement({
       setMessage(rosterResult.message);
     }
     if (structuralResult.ok) {
-      const homePoint = structuralResult.data.find((point) => point.awardedTeamId === match.homeTeamId);
-      const awayPoint = structuralResult.data.find((point) => point.awardedTeamId === match.awayTeamId);
-      setHomeAdjustment({
-        category: homePoint?.category ?? '',
-        note: homePoint?.note ?? '',
-      });
-      setAwayAdjustment({
-        category: awayPoint?.category ?? '',
-        note: awayPoint?.note ?? '',
-      });
+      setAdjustmentRows(structuralResult.data);
     } else {
-      setHomeAdjustment({category: '', note: ''});
-      setAwayAdjustment({category: '', note: ''});
+      setAdjustmentRows([]);
+      setMessage(structuralResult.message);
     }
     setProcessingStatus(processingResult.ok ? processingResult.data : null);
   }
@@ -158,36 +152,23 @@ export function ResultsManagement({
     const parsedAwayScore = parseScore(awayScore);
     const audit = resultAudit(contests, parsedHomeScore, parsedAwayScore);
 
-    if (action === 'publish') {
-      if (audit.homeResidual < 0 || audit.awayResidual < 0) {
-        setSaving(false);
-        setMessage('The official score is lower than the entered matchup points. Review the result rows before finalizing.');
-        return;
-      }
-      if ((audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)) {
-        setSaving(false);
-        setMessage('Choose a reason for every additional scoring adjustment before finalizing.');
-        return;
-      }
+    if (action === 'publish' && (audit.homeResidual < 0 || audit.awayResidual < 0)) {
+      setSaving(false);
+      setMessage('Official scores cannot be less than played contest points.');
+      return;
+    }
+    if (!adjustmentAudit.valid) {
+      setSaving(false);
+      setMessage(adjustmentAudit.message);
+      return;
     }
 
-    const structuralPoints: ResultStructuralPointInput[] = [];
-    if (editor.match.homeTeamId && audit.homeResidual > 0 && homeAdjustment.category) {
-      structuralPoints.push({
-        awardedTeamId: editor.match.homeTeamId,
-        category: homeAdjustment.category,
-        points: audit.homeResidual,
-        note: homeAdjustment.note,
-      });
-    }
-    if (editor.match.awayTeamId && audit.awayResidual > 0 && awayAdjustment.category) {
-      structuralPoints.push({
-        awardedTeamId: editor.match.awayTeamId,
-        category: awayAdjustment.category,
-        points: audit.awayResidual,
-        note: awayAdjustment.note,
-      });
-    }
+    const structuralPoints: ResultStructuralPointInput[] = adjustmentRows.map((point) => ({
+      awardedTeamId: point.awardedTeamId,
+      category: point.category as ResultStructuralCategory,
+      points: point.points,
+      note: point.note,
+    }));
 
     const input = {
       homeScore: parsedHomeScore,
@@ -226,6 +207,33 @@ export function ResultsManagement({
     () => resultAudit(contests, parseScore(homeScore), parseScore(awayScore)),
     [contests, homeScore, awayScore],
   );
+
+  const adjustmentAudit = useMemo(() => {
+    const assigned = (teamId: string | null) => adjustmentRows
+      .filter((row) => row.awardedTeamId === teamId)
+      .reduce((sum, row) => sum + row.points, 0);
+    const duplicates = new Set<string>();
+    let valid = true;
+    for (const row of adjustmentRows) {
+      const key = `${row.awardedTeamId}:${row.category}`;
+      if (!row.category || duplicates.has(key) || !Number.isFinite(row.points)
+        || row.points <= 0 || !Number.isInteger(row.points * 2)
+        || ![editor?.match.homeTeamId, editor?.match.awayTeamId].includes(row.awardedTeamId)) valid = false;
+      duplicates.add(key);
+    }
+    const home = assigned(editor?.match.homeTeamId ?? null);
+    const away = assigned(editor?.match.awayTeamId ?? null);
+    const reconciled = Math.abs(home - audit.homeResidual) < .001
+      && Math.abs(away - audit.awayResidual) < .001;
+    return {
+      valid: valid && reconciled,
+      home,
+      away,
+      message: !valid
+        ? 'Each adjustment needs a unique reason per team and a positive amount in 0.5-point steps. Combine no-show penalties into one item.'
+        : 'Itemized scoring adjustments must add up exactly to the difference between played contests and the official score.',
+    };
+  }, [adjustmentRows, audit, editor]);
 
   const teamNames = useMemo(() => new Map(teams.map((team) => [team.id, team.name])), [teams]);
   const courseNames = useMemo(() => new Map(courses.map((course) => [course.id, course.name])), [courses]);
@@ -404,52 +412,59 @@ export function ResultsManagement({
                   {editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'Away'} +{formatPoints(audit.automaticAwayPoints)}
                 </span>
               ) : null}
-              {audit.homeResidual > 0 ? (
-                <label>
-                  <span>{editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'Home'} additional +{formatPoints(audit.homeResidual)}</span>
-                  <select
-                    disabled={editor.result?.status === 'Published'}
-                    value={homeAdjustment.category}
-                    onChange={(event) => setHomeAdjustment((current) => ({...current, category: event.target.value as ResultStructuralCategory | ''}))}
-                  >
-                    <option value="">Choose reason</option>
-                    <option value="NoShow">No-show</option>
-                    <option value="WomenBonus">Women bonus</option>
-                    <option value="Penalty">Penalty</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  <input
-                    type="text"
-                    placeholder="Optional note"
-                    disabled={editor.result?.status === 'Published'}
-                    value={homeAdjustment.note}
-                    onChange={(event) => setHomeAdjustment((current) => ({...current, note: event.target.value}))}
-                  />
-                </label>
-              ) : null}
-              {audit.awayResidual > 0 ? (
-                <label>
-                  <span>{editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'Away'} additional +{formatPoints(audit.awayResidual)}</span>
-                  <select
-                    disabled={editor.result?.status === 'Published'}
-                    value={awayAdjustment.category}
-                    onChange={(event) => setAwayAdjustment((current) => ({...current, category: event.target.value as ResultStructuralCategory | ''}))}
-                  >
-                    <option value="">Choose reason</option>
-                    <option value="NoShow">No-show</option>
-                    <option value="WomenBonus">Women bonus</option>
-                    <option value="Penalty">Penalty</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  <input
-                    type="text"
-                    placeholder="Optional note"
-                    disabled={editor.result?.status === 'Published'}
-                    value={awayAdjustment.note}
-                    onChange={(event) => setAwayAdjustment((current) => ({...current, note: event.target.value}))}
-                  />
-                </label>
-              ) : null}
+              {([
+                {teamId: editor.match.homeTeamId, side: 'Home', residual: audit.homeResidual, allocated: adjustmentAudit.home},
+                {teamId: editor.match.awayTeamId, side: 'Away', residual: audit.awayResidual, allocated: adjustmentAudit.away},
+              ] as const).map(({teamId, side, residual, allocated}) => teamId ? (
+                <div key={teamId} style={{display:'grid',gap:8, padding:'10px 0'}}>
+                  <strong>{teamNames.get(teamId) ?? side} adjustments: {formatPoints(allocated)} / {formatPoints(residual)} required</strong>
+                  {adjustmentRows.map((row, index) => row.awardedTeamId === teamId ? (
+                    <div key={index} style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) 84px auto',gap:8}}>
+                      <select
+                        aria-label={`${side} adjustment reason`}
+                        disabled={editor.result?.status === 'Published'}
+                        value={row.category}
+                        onChange={(event) => setAdjustmentRows((current) => current.map((value, i) =>
+                          i === index ? {...value, category: event.target.value as ResultStructuralCategory | ''} : value))}
+                      >
+                        <option value="">Choose reason</option>
+                        <option value="UnplayedSlot">Unplayed singles slot</option>
+                        <option value="NoShow">No-show penalties</option>
+                        <option value="WomenBonus">Women bonus</option>
+                        <option value="Penalty">Other penalty</option>
+                        <option value="Other">Other points</option>
+                      </select>
+                      <input
+                        aria-label={`${side} adjustment points`}
+                        type="number" min="0.5" step="0.5"
+                        disabled={editor.result?.status === 'Published'}
+                        value={row.points || ''}
+                        onChange={(event) => setAdjustmentRows((current) => current.map((value, i) =>
+                          i === index ? {...value, points: Number(event.target.value)} : value))}
+                      />
+                      {editor.result?.status !== 'Published' ? (
+                        <button type="button" onClick={() => setAdjustmentRows((current) => current.filter((_, i) => i !== index))}>Remove</button>
+                      ) : null}
+                      <input
+                        style={{gridColumn:'1 / -1'}}
+                        aria-label={`${side} adjustment note`}
+                        placeholder="Explanation (e.g. rostered no-shows + match assignment)"
+                        disabled={editor.result?.status === 'Published'}
+                        value={row.note ?? ''}
+                        onChange={(event) => setAdjustmentRows((current) => current.map((value, i) =>
+                          i === index ? {...value, note: event.target.value} : value))}
+                      />
+                    </div>
+                  ) : null)}
+                  {editor.result?.status !== 'Published' ? (
+                    <button type="button" className={styles.secondary} onClick={() => setAdjustmentRows((current) => [
+                      ...current,
+                      {awardedTeamId: teamId, category:'', points:Math.max(.5, residual - allocated), note:''},
+                    ])}>Add adjustment</button>
+                  ) : null}
+                </div>
+              ) : null)}
+              {!adjustmentAudit.valid ? <span role="status">{adjustmentAudit.message}</span> : null}
               {audit.homeResidual < 0 || audit.awayResidual < 0 ? (
                 <span>Score audit mismatch — the official score is below the entered matchup points.</span>
               ) : null}
@@ -477,7 +492,7 @@ export function ResultsManagement({
                 <button
                   type="button"
                   className={styles.primary}
-                  disabled={saving || audit.homeResidual < 0 || audit.awayResidual < 0 || (audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)}
+                  disabled={saving || audit.homeResidual < 0 || audit.awayResidual < 0 || !adjustmentAudit.valid}
                   onClick={() => void save('publish')}
                 >
                   Finalize match
