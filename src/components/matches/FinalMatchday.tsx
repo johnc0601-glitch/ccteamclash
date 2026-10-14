@@ -172,7 +172,6 @@ function DesktopResultBoard({
         <span>({contests.filter((contest) => !contest.unplayed).length} played{contests.some((contest) => contest.unplayed) ? ' · unplayed slot' : ''})</span>
       </header>
       <div className={styles.desktopColumnHeader} aria-hidden="true">
-        <span>#</span>
         <span>{awayTeam.name}</span>
         <span>Result</span>
         <span>{homeTeam.name}</span>
@@ -203,7 +202,6 @@ function DesktopResultRow({contest}: {contest: FinalMatchContest}) {
   const tie = contest.awayOutcome === 'T' && contest.homeOutcome === 'T';
   const singlesTie = tie && contest.format === 'Singles';
   const pairClass = contest.format === 'Doubles' ? styles.desktopDoublesPair : '';
-  const rowLabel = contest.format === 'Doubles' ? `D${contest.position}` : String(contest.position);
   const awayClass = awayWon
     ? `${styles.desktopPlayerSide} ${styles.awayWinner}`
     : singlesTie
@@ -216,8 +214,8 @@ function DesktopResultRow({contest}: {contest: FinalMatchContest}) {
       : styles.desktopPlayerSide;
 
   return (
-    <div className={styles.desktopResultRow}>
-      <span className={styles.desktopPosition} title={contest.card ? `Card ${contest.card}${contest.startingHole ? ` · Start hole ${contest.startingHole}` : ''}` : undefined}>{rowLabel}</span>
+    <div className={styles.desktopResultRow} role="group" aria-label={`${contest.format} matchup ${contest.position}`}
+      title={contest.card ? `Card ${contest.card}${contest.startingHole ? ` · Start hole ${contest.startingHole}` : ''}` : undefined}>
       <div className={awayClass}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
@@ -257,7 +255,6 @@ function ResultDetails({
         </span>
       </summary>
       <div className={styles.mobileColumnHeader} aria-hidden="true">
-        <span>#</span>
         <span>{shortTeam(awayTeam)}</span>
         <span>Result</span>
         <span>{shortTeam(homeTeam)}</span>
@@ -282,7 +279,6 @@ function ResultRow({contest}: {contest: FinalMatchContest}) {
   const tie = contest.awayOutcome === 'T' && contest.homeOutcome === 'T';
   const singlesTie = tie && contest.format === 'Singles';
   const pairClass = contest.format === 'Doubles' ? styles.doublesPair : '';
-  const rowLabel = contest.format === 'Doubles' ? `D${contest.position}` : String(contest.position);
   const awayClass = awayWon
     ? `${styles.playerSide} ${styles.awayWinner}`
     : singlesTie
@@ -294,8 +290,8 @@ function ResultRow({contest}: {contest: FinalMatchContest}) {
       ? `${styles.playerSide} ${styles.tiePlayer}`
       : styles.playerSide;
   return (
-    <div className={styles.resultRow}>
-      <span className={styles.resultPosition} title={contest.card ? `Card ${contest.card}${contest.startingHole ? ` · Start hole ${contest.startingHole}` : ''}` : undefined}>{rowLabel}</span>
+    <div className={styles.resultRow} role="group" aria-label={`${contest.format} matchup ${contest.position}`}
+      title={contest.card ? `Card ${contest.card}${contest.startingHole ? ` · Start hole ${contest.startingHole}` : ''}` : undefined}>
       <div className={awayClass}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
