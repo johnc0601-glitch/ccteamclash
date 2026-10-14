@@ -21,8 +21,10 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
     '--match-home': snapshot.homeTeam.primaryColor || '#a31621',
   };
   const breakdown = buildFinalScoreBreakdown(snapshot);
-  const hasUnplayedSlot = snapshot.adjustments.some((point) => point.category === 'UnplayedSlot');
-  const singles = displaySinglesRows(snapshot.contests, hasUnplayedSlot);
+  const unplayedSlotPoints = snapshot.adjustments
+    .filter((point) => point.category === 'UnplayedSlot')
+    .reduce((total, point) => total + point.points, 0);
+  const singles = displaySinglesRows(snapshot.contests, unplayedSlotPoints);
   const doubles = snapshot.contests.filter((contest) => contest.format === 'Doubles');
   const doublesTotals = breakdown.doubles;
   const singlesTotals = breakdown.singles;
