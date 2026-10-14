@@ -1,3 +1,4 @@
+import {PlayerNavigation} from '@/components/players/PlayerNavigation';
 import {unstable_cache} from 'next/cache';
 import {LazyPublicPlayerDirectory} from '@/components/players/LazyPublicPlayerDirectory';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
@@ -79,6 +80,7 @@ export default async function PlayersPage({searchParams}: PlayersPageProps) {
       <main className={`shell page-shell ${styles.page}`}>
         <span className="eyebrow">Player lookup</span>
         <h1>Player Search</h1>
+        <PlayerNavigation current="search" />
         <p className="intro">Search for a player, then open their row for season stats, career totals, and match history.</p>
         {notice ? <p className={styles.notice}>{notice}</p> : null}
         {error ? <p className={styles.error} role="alert">{error}</p> : null}

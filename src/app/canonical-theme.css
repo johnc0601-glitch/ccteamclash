@@ -131,3 +131,11 @@ footer {
 
 footer p,
 footer small { color: var(--cc-header-muted) !important; }
+
+footer .brand strong,
+footer .footer-links a { color: var(--cc-header-text); }
+
+footer .footer-links a:hover,
+footer .footer-links a:focus-visible { color: var(--cc-gold); }
+
+footer a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }

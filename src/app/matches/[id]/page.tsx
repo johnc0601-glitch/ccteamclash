@@ -142,6 +142,10 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     }
   }
 
+  const officialPlayers = officialSnapshot?.status === 'complete'
+    ? await getPlayersByIds(supabase, [...new Set(officialSnapshot.rosters.flatMap((roster) => roster.players.map((player) => player.playerId)))])
+    : [];
+
   const lockedAvailability = locked && officialSnapshot?.status === 'complete'
     ? await getLockedAvailability(supabase, matchId, teamIds, officialSnapshot.rosters, effectiveRosterIds)
     : undefined;
@@ -167,7 +171,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
       if (homeRoster && awayRoster) {
         const homeIds = homeRoster.players.map((player) => player.playerId);
         const awayIds = awayRoster.players.map((player) => player.playerId);
-        const lineupPlayers = await getPlayersByIds(supabase, [...new Set([...homeIds, ...awayIds])]);
+        const lineupPlayers = officialPlayers;
         const playersById = new Map(lineupPlayers.map((player) => [player.id, player]));
         homePredictionPlayers = homeIds
           .map((playerId) => playersById.get(playerId))
@@ -265,6 +269,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             availability={availability ?? undefined}
             availabilityUnavailable={availabilityUnavailable}
             lockedAvailability={lockedAvailability}
+            officialPlayers={officialPlayers}
           />
 
           <Suspense fallback={null}>
