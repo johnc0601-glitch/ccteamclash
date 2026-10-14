@@ -68,10 +68,10 @@ function contestPoints(contests: FinalMatchContest[]): TeamPoints {
  * Never manufactures a contest participant, outcome or CI result. */
 export function displaySinglesRows(
   contests: FinalMatchContest[],
-  hasUnplayedSlotAward: boolean,
+  unplayedSlotPoints: number,
 ): FinalMatchContest[] {
   const played = contests.filter((contest) => contest.format === 'Singles');
-  if (!hasUnplayedSlotAward || played.length === 0) return played;
+  if (!Number.isInteger(unplayedSlotPoints) || unplayedSlotPoints < 1 || played.length === 0) return played;
   const positions = new Set(played.map((contest) => contest.position));
   const finalPosition = Math.max(...played.map((contest) => contest.position));
   const gaps: FinalMatchContest[] = [];
@@ -89,5 +89,7 @@ export function displaySinglesRows(
       });
     }
   }
+  // Numbering gaps alone do not prove a forfeit. Never invent extra unplayed rows.
+  if (gaps.length !== unplayedSlotPoints) return played;
   return [...played, ...gaps].sort((a, b) => a.position - b.position);
 }
