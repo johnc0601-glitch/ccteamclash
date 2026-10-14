@@ -217,11 +217,11 @@ function DesktopResultRow({contest}: {contest: FinalMatchContest}) {
 
   return (
     <div className={styles.desktopResultRow}>
-      <span className={styles.desktopPosition}>{rowLabel}</span>
+      <span className={styles.desktopPosition} title={contest.card ? `Card ${contest.card}${contest.startingHole ? ` · Start hole ${contest.startingHole}` : ''}` : undefined}>{rowLabel}</span>
       <div className={awayClass}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
-      <div className={styles.desktopVs}>{contest.unplayed ? 'UNPLAYED' : tie ? 'TIE' : 'VS'}</div>
+      <div className={styles.desktopVs} title={contest.resultText || undefined}>{contest.unplayed ? '—' : contest.resultText || (tie ? 'TIE' : 'VS')}</div>
       <div className={homeClass}>
         <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
       </div>
@@ -295,11 +295,11 @@ function ResultRow({contest}: {contest: FinalMatchContest}) {
       : styles.playerSide;
   return (
     <div className={styles.resultRow}>
-      <span className={styles.resultPosition}>{rowLabel}</span>
+      <span className={styles.resultPosition} title={contest.card ? `Card ${contest.card}${contest.startingHole ? ` · Start hole ${contest.startingHole}` : ''}` : undefined}>{rowLabel}</span>
       <div className={awayClass}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
-      <div className={styles.outcome}>{contest.unplayed ? <span>UNPLAYED</span> : tie ? <span>TIE</span> : null}</div>
+      <div className={styles.outcome} title={contest.resultText || undefined}>{contest.unplayed ? <span>—</span> : contest.resultText ? <span>{contest.resultText}</span> : tie ? <span>TIE</span> : null}</div>
       <div className={homeClass}>
         <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
       </div>
