@@ -221,7 +221,7 @@ function DesktopResultRow({contest}: {contest: FinalMatchContest}) {
       <div className={awayClass}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
-      <div className={styles.desktopVs} title={contest.resultText || undefined}>{contest.unplayed ? '—' : contest.resultText || (tie ? 'TIE' : 'VS')}</div>
+      <div className={styles.desktopVs} title={contest.resultText || undefined}>{contest.unplayed ? 'N/S' : contest.resultText || (tie ? 'TIE' : 'VS')}</div>
       <div className={homeClass}>
         <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
       </div>
@@ -299,7 +299,7 @@ function ResultRow({contest}: {contest: FinalMatchContest}) {
       <div className={awayClass}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
-      <div className={styles.outcome} title={contest.resultText || undefined}>{contest.unplayed ? <span>—</span> : contest.resultText ? <span>{contest.resultText}</span> : tie ? <span>TIE</span> : null}</div>
+      <div className={styles.outcome} title={contest.resultText || undefined}>{contest.unplayed ? <span>N/S</span> : contest.resultText ? <span>{contest.resultText}</span> : tie ? <span>TIE</span> : null}</div>
       <div className={homeClass}>
         <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
       </div>
