@@ -763,3 +763,39 @@
     justify-items: end;
   }
 }
+
+/* Explicit administrative ledger under the two existing contest boards. */
+.adjustmentsSection {
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 12px;
+  background: rgba(13,19,24,.92);
+  color: #e6e9ed;
+  overflow: hidden;
+}
+.adjustmentsSection > header {
+  padding: 11px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  font-size: 13px;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+.adjustmentRows {display: grid;}
+.adjustmentRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  font-size: 12px;
+}
+.adjustmentRow b {font-variant-numeric: tabular-nums; color: #fff;}
+.adjustmentRow small {grid-column: 1 / -1; line-height: 1.5; color: rgba(255,255,255,.67);}
+.auditWarning {
+  margin: 12px 16px;
+  padding: 10px 12px;
+  border: 1px solid rgba(249,197,110,.4);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #f4d39d;
+}
