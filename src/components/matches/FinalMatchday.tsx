@@ -9,20 +9,27 @@ import type {
 import pageStyles from '@/app/matches/[id]/Matchday.module.css';
 import heroStyles from './MatchHeroV1.module.css';
 import styles from './FinalMatchday.module.css';
+import {
+  buildFinalScoreBreakdown,
+  displaySinglesRows,
+  type FinalScoreBreakdown,
+} from '@/services/matches/FinalScoreBreakdown';
 
 export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
   const pageStyle: CSSProperties & {'--match-away': string; '--match-home': string} = {
     '--match-away': snapshot.awayTeam.primaryColor || '#0b7285',
     '--match-home': snapshot.homeTeam.primaryColor || '#a31621',
   };
-  const singles = snapshot.contests.filter((contest) => contest.format === 'Singles');
+  const breakdown = buildFinalScoreBreakdown(snapshot);
+  const hasUnplayedSlot = snapshot.adjustments.some((point) => point.category === 'UnplayedSlot');
+  const singles = displaySinglesRows(snapshot.contests, hasUnplayedSlot);
   const doubles = snapshot.contests.filter((contest) => contest.format === 'Doubles');
-  const doublesTotals = contestPoints(doubles, 2);
-  const singlesTotals = contestPoints(singles, 1);
+  const doublesTotals = breakdown.doubles;
+  const singlesTotals = breakdown.singles;
 
   return (
     <main className={`${pageStyles.page} ${snapshot.awayTeam.id === 'kb' ? styles.kbAwayMuted : ''}`} style={pageStyle}>
-      <FinalHero snapshot={snapshot} singlesTotals={singlesTotals} doublesTotals={doublesTotals} />
+      <FinalHero snapshot={snapshot} breakdown={breakdown} />
       <div className={`shell ${pageStyles.content} ${styles.finalContent}`}>
         <section className={styles.desktopScoreboard} aria-label="Final result scoreboard">
           <DesktopResultBoard
@@ -57,6 +64,7 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
             homeTeam={snapshot.homeTeam}
           />
         </section>
+        <FinalAdjustmentSummary snapshot={snapshot} breakdown={breakdown} />
       </div>
     </main>
   );
@@ -64,15 +72,14 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
 
 function FinalHero({
   snapshot,
-  singlesTotals,
-  doublesTotals,
+  breakdown,
 }: {
   snapshot: FinalMatchdaySnapshot;
-  singlesTotals: {away: number; home: number};
-  doublesTotals: {away: number; home: number};
+  breakdown: FinalScoreBreakdown;
 }) {
-  const awayAdjustments = Math.max(0, snapshot.awayScore - singlesTotals.away - doublesTotals.away);
-  const homeAdjustments = Math.max(0, snapshot.homeScore - singlesTotals.home - doublesTotals.home);
+  const {singles: singlesTotals, doubles: doublesTotals} = breakdown;
+  const awayAdjustments = breakdown.otherAdjustments.away;
+  const homeAdjustments = breakdown.otherAdjustments.home;
 
   return (
     <section className={heroStyles.matchHero} data-matchday-hero>
@@ -93,7 +100,8 @@ function FinalHero({
                 <span>S {formatPoint(singlesTotals.away)}</span>
                 <span>D {formatPoint(doublesTotals.away)}</span>
               </div>
-              {awayAdjustments > 0 ? <small aria-label={`${formatPoint(awayAdjustments)} additional team points`}>{snapshot.awayAdjustmentLabel || 'Adj'} +{formatPoint(awayAdjustments)}</small> : null}
+              {awayAdjustments > 0 ? <small aria-label={`${formatPoint(awayAdjustments)} administrative points`}>Adj +{formatPoint(awayAdjustments)}</small> : null}
+              {breakdown.unitemized.away !== 0 ? <small>Review {formatSigned(breakdown.unitemized.away)}</small> : null}
             </div>
             <span className={styles.scoreDivider} aria-hidden="true" />
             <div className={styles.scoreCell}>
@@ -103,7 +111,8 @@ function FinalHero({
                 <span>S {formatPoint(singlesTotals.home)}</span>
                 <span>D {formatPoint(doublesTotals.home)}</span>
               </div>
-              {homeAdjustments > 0 ? <small aria-label={`${formatPoint(homeAdjustments)} additional team points`}>{snapshot.homeAdjustmentLabel || 'Adj'} +{formatPoint(homeAdjustments)}</small> : null}
+              {homeAdjustments > 0 ? <small aria-label={`${formatPoint(homeAdjustments)} administrative points`}>Adj +{formatPoint(homeAdjustments)}</small> : null}
+              {breakdown.unitemized.home !== 0 ? <small>Review {formatSigned(breakdown.unitemized.home)}</small> : null}
             </div>
           </div>
         </div>
@@ -158,7 +167,7 @@ function DesktopResultBoard({
     <section className={styles.desktopBoard}>
       <header className={styles.desktopBoardHeader}>
         <strong>{title}</strong>
-        <span>({contests.length})</span>
+        <span>({contests.filter((contest) => !contest.unplayed).length} played{contests.some((contest) => contest.unplayed) ? ' · unplayed slot' : ''})</span>
       </header>
       <div className={styles.desktopColumnHeader} aria-hidden="true">
         <span>#</span>
@@ -210,7 +219,7 @@ function DesktopResultRow({contest}: {contest: FinalMatchContest}) {
       <div className={awayClass}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
-      <div className={styles.desktopVs}>{contest.unplayed ? 'NO SHOW' : tie ? 'TIE' : 'VS'}</div>
+      <div className={styles.desktopVs}>{contest.unplayed ? 'UNPLAYED' : tie ? 'TIE' : 'VS'}</div>
       <div className={homeClass}>
         <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
       </div>
@@ -288,7 +297,7 @@ function ResultRow({contest}: {contest: FinalMatchContest}) {
       <div className={awayClass}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
-      <div className={styles.outcome}>{contest.unplayed ? <span>NO SHOW</span> : tie ? <span>TIE</span> : null}</div>
+      <div className={styles.outcome}>{contest.unplayed ? <span>UNPLAYED</span> : tie ? <span>TIE</span> : null}</div>
       <div className={homeClass}>
         <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
       </div>
@@ -336,16 +345,49 @@ function FinalConditions({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
   );
 }
 
-function contestPoints(contests: FinalMatchContest[], winPoints: number) {
-  return contests.reduce((total, contest) => {
-    if (contest.awayOutcome === 'W') total.away += winPoints;
-    else if (contest.homeOutcome === 'W') total.home += winPoints;
-    else if (contest.awayOutcome === 'T' && contest.homeOutcome === 'T') {
-      total.away += winPoints / 2;
-      total.home += winPoints / 2;
-    }
-    return total;
-  }, {away: 0, home: 0});
+function FinalAdjustmentSummary({
+  snapshot,
+  breakdown,
+}: {
+  snapshot: FinalMatchdaySnapshot;
+  breakdown: FinalScoreBreakdown;
+}) {
+  if (!snapshot.adjustments.length && breakdown.balanced) return null;
+  const teamName = (teamId: string) =>
+    teamId === snapshot.homeTeam.id ? snapshot.homeTeam.name
+      : teamId === snapshot.awayTeam.id ? snapshot.awayTeam.name : 'Unknown team';
+  const descriptions: Record<string, string> = {
+    UnplayedSlot: 'Unplayed singles slot',
+    NoShow: 'No-show penalties',
+    WomenBonus: 'Women bonus',
+    Penalty: 'Other penalties',
+    Other: 'Other points',
+  };
+  return (
+    <section className={styles.adjustmentsSection} aria-label="Final scoring adjustments">
+      <header><strong>Scoring adjustments</strong></header>
+      <div className={styles.adjustmentRows}>
+        {snapshot.adjustments.map((adjustment, index) => (
+          <div className={styles.adjustmentRow} key={`${adjustment.awardedTeamId}-${adjustment.category}-${index}`}>
+            <span><strong>{teamName(adjustment.awardedTeamId)}</strong> · {descriptions[adjustment.category]}</span>
+            <b>+{formatPoint(adjustment.points)}</b>
+            {adjustment.note ? <small>{adjustment.note}</small> : null}
+          </div>
+        ))}
+        {!breakdown.balanced ? (
+          <div className={styles.auditWarning} role="status">
+            Unitemized score difference: {snapshot.awayTeam.name} {formatSigned(breakdown.unitemized.away)}
+            {' · '}{snapshot.homeTeam.name} {formatSigned(breakdown.unitemized.home)}.
+            Review the official adjustment ledger; published totals are not modified.
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function formatSigned(value: number) {
+  return `${value > 0 ? '+' : ''}${formatPoint(value)}`;
 }
 
 function formatDate(value: string) {
