@@ -61,10 +61,29 @@ test('legacy snapshot reports unexplained scores instead of guessing they are pe
 test('display-only unplayed rows never accumulate CI or score points', () => {
   const match = sample([],28.5);
   match.contests.push({
-    id:'unplayed-6', format:'Singles', position:6, awayOutcome:'T', homeOutcome:'T',
+    id:'unplayed-6', format:'Singles', position:6, awayOutcome:'L', homeOutcome:'W',
     awayPlayers:[],homePlayers:[],unplayed:true,
   });
   const scores = buildFinalScoreBreakdown(match);
   assert.equal(scores.playedSingles.home,13.5);
   assert.equal(scores.unitemized.home,1);
+});
+
+
+test('women bonuses are itemized separately from singles, doubles and no-shows', () => {
+  const match = sample([
+    {awardedTeamId:'ninjas', category:'UnplayedSlot', points:1, note:null},
+    {awardedTeamId:'ninjas', category:'WomenBonus', points:1, note:'Verified bonus'},
+    {awardedTeamId:'ninjas', category:'NoShow', points:.5, note:'Rostered absence'},
+  ]);
+  const totals = buildFinalScoreBreakdown(match);
+  assert.equal(totals.singles.home,14.5);
+  assert.equal(totals.otherAdjustments.home,1.5);
+  assert.equal(totals.balanced,true);
+});
+
+test('unexplained or negative difference blocks a balanced audit', () => {
+  const totals = buildFinalScoreBreakdown(sample([{awardedTeamId:'ninjas',category:'NoShow',points:3,note:null}],30));
+  assert.equal(totals.unitemized.home,-.5);
+  assert.equal(totals.balanced,false);
 });
