@@ -49,6 +49,7 @@
 }
 
 .scoreCell {
+  container-type: inline-size;
   min-width: 0;
   padding: 5px 4px 4px;
   display: grid;
@@ -62,7 +63,7 @@
 .scoreCell strong {
   color: #fff;
   font-family: var(--cc-font-display);
-  font-size: 49px;
+  font-size: min(49px, 42cqi);
   font-style: italic;
   font-weight: 950;
   letter-spacing: -.045em;
@@ -711,7 +712,7 @@
   }
 
   .scoreCell strong {
-    font-size: clamp(29px, 9.7vw, 38px);
+    font-size: min(38px, 42cqi);
   }
 
   .scoreCell small {
@@ -784,4 +785,27 @@
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+@media (max-width: 430px) {
+  .finalHeroTeams {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    row-gap: 14px;
+  }
+
+  .finalHeroTeams .finalHeroTeam {
+    grid-row: 1;
+    padding: 52px 14px 0;
+  }
+
+  .finalHeroTeams .finalHeroTeam[data-side='home'] {
+    grid-column: 2;
+  }
+
+  .heroScoreboard {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 200px;
+    margin-bottom: 16px;
+  }
 }
