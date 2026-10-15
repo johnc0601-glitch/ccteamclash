@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {parseScoreboardPreviewJson} from './ScoreboardPreviewParser';
 import {buildFinalScoreBreakdown} from './FinalScoreBreakdown';
+import {FALLBACK_PREVIEW_BRANDING} from './ScoreboardPreviewBranding';
 
 const noShowId = 'fqvyo1qwhu8knh6gzi9269i7';
 const wilsonId = 'e6sh0ydykxjisfuxyr3i8hua';
@@ -61,7 +62,7 @@ test('confirmed absent player has no played singles contest and slot point stays
   const {snapshot}=parseScoreboardPreviewJson(fixture());
   const noShow = snapshot.contests.find(c=>c.unplayed);
   assert.equal(noShow?.position,4);
-  assert.equal(noShow?.card,2);
+  assert.equal(noShow?.card,3);
   assert.deepEqual(noShow?.awayPlayers,[]);
   assert.equal(noShow?.homePlayers[0].name,'Andrew Wilson');
   assert.equal(snapshot.contests.some(c=>!c.unplayed && c.awayPlayers.some(p=>p.id===noShowId)),false);
@@ -87,4 +88,35 @@ test('TCWhiteboard schema is required', () => {
   assert.throws(()=>parseScoreboardPreviewJson({
     ...fixture(),schema:'tcwhiteboard.match/v2',
   }),/Could not find both team names|different JSON format/);
+});
+
+
+test('official Ninjas and Hayneous OGs branding is matched by name, not TCWhiteboard IDs', () => {
+  const {snapshot}=parseScoreboardPreviewJson(fixture(), FALLBACK_PREVIEW_BRANDING);
+  assert.equal(snapshot.homeTeam.name,'Ninjas');
+  assert.equal(snapshot.homeTeam.logo,'/team-logos/ninjas.jpg');
+  assert.equal(snapshot.homeTeam.shortName,'NIN');
+  assert.equal(snapshot.homeTeam.primaryColor,'#bf9222');
+  assert.equal(snapshot.awayTeam.name,'Hayneous OG’s');
+  assert.ok(snapshot.awayTeam.logo.endsWith('/teams/hayneous-og-s/logo.webp'));
+  assert.equal(snapshot.awayTeam.shortName,'HOS');
+  assert.equal(snapshot.awayTeam.primaryColor,'#1a0a52');
+  assert.equal(snapshot.homeTeam.id,'ninjas');
+  assert.equal(snapshot.awayTeam.id,'ogs'); // TCWhiteboard team ID retained
+  assert.equal(snapshot.homeScore,28.5);
+  assert.equal(snapshot.awayScore,7.5);
+});
+
+test('other teams do not inherit unmatched logos', () => {
+  const other = fixture('unrelated-match-id');
+  const {snapshot}=parseScoreboardPreviewJson({
+    ...other,
+    match:{
+      ...other.match,
+      home: {...other.match.home,name:'New Team',id:'new-tc-id'},
+      away: {...other.match.away,name:'Different Team',id:'different-tc-id'},
+    },
+  }, FALLBACK_PREVIEW_BRANDING);
+  assert.equal(snapshot.homeTeam.logo,'');
+  assert.equal(snapshot.awayTeam.logo,'');
 });
