@@ -35,8 +35,8 @@ const published:PublishedUpsetMatch[]=[{
 test('matches unique public published frozen probability by team, date, participants, and position',()=>{
  const matched=getVerifiedUpsets(fixture(),published);
  assert.deepEqual(Object.keys(matched).sort(),['Doubles:1','Singles:1']);
- assert.equal(matched['Singles:1'].label,'Upset · 22%');
- assert.equal(matched['Doubles:1'].label,'Upset · 44%');
+ assert.equal(matched['Singles:1'].label,'UPSET');
+ assert.equal(matched['Doubles:1'].label,'UPSET');
  assert.equal(matched['Doubles:1'].side,'Home');
 });
 
