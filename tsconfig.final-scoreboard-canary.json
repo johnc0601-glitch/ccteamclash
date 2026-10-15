@@ -4,6 +4,7 @@
     "incremental": false
   },
   "include": [
+    "types.final-scoreboard-canary.d.ts",
     "next-env.d.ts",
     "src/app/matches/[id]/page.tsx",
     "src/components/matches/FinalMatchdayV2.tsx",
