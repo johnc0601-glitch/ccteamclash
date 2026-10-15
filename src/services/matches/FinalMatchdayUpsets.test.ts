@@ -26,7 +26,7 @@ const published:PublishedUpsetMatch[]=[{
  matchId:'canonical-league-match',date:'2026-10-10',
  homeTeamName:'Ninjas',awayTeamName:"Hayneous OG's",
  contests:[
-  {format:'Singles',position:1,homePlayers:['Steven McCarty'],awayPlayers:['Jake Lehmann'],winner:'Home',winningProbability:.2199},
+  {format:'Singles',position:15,homePlayers:['Steven McCarty'],awayPlayers:['Jake Lehmann'],winner:'Home',winningProbability:.2199},
   {format:'Doubles',position:1,homePlayers:['Marcus Kinsman','J Baus'],awayPlayers:['Jake Lehmann','Austin Gratton'],winner:'Home',winningProbability:.44},
   {format:'Singles',position:4,homePlayers:['Andrew Wilson'],awayPlayers:['Conner Garrett'],winner:'Home',winningProbability:.1},
   {format:'Singles',position:5,homePlayers:['Nick'],awayPlayers:['Joe'],winner:'Home',winningProbability:.04},
@@ -59,4 +59,12 @@ test('do not attach an upset to the wrong date, team or ambiguous canonical matc
  assert.deepEqual(getVerifiedUpsets({...data,date:'2026-10-11'},published),{});
  assert.deepEqual(getVerifiedUpsets({...data,awayTeam:{...data.awayTeam,name:'KB'}},published),{});
  assert.deepEqual(getVerifiedUpsets(data,[...published,...published]),{});
+});
+
+test('duplicate evidence for the same two sides does not produce a badge',()=>{
+ const [match]=published;
+ const contested={...match,contests:[...match.contests, {...match.contests[0],position:55}]};
+ const upset=getVerifiedUpsets(fixture(),[contested]);
+ assert.equal(upset['Singles:1'],undefined);
+ assert.ok(upset['Doubles:1']);
 });
