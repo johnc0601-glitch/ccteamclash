@@ -1,6 +1,7 @@
 import {notFound} from 'next/navigation';
 import {ScoreboardPreviewClient} from '@/components/matches/ScoreboardPreviewClient';
 import {getPublicDirectoryData} from '@/services/public/PublicDirectoryDataService';
+import {loadPublishedUpsetEvidence} from '@/services/matches/PublicUpsetEvidence';
 import {
   FALLBACK_PREVIEW_BRANDING,
   type PublicTeamBranding,
@@ -34,6 +35,9 @@ export default async function ScoreboardPreviewPage() {
   // local JSON viewer and does not exist on production deployments.
   if (process.env.VERCEL_ENV === 'production') notFound();
 
-  const branding = await getPreviewTeamBranding();
-  return <ScoreboardPreviewClient branding={branding} />;
+  const [branding, publishedUpsets] = await Promise.all([
+    getPreviewTeamBranding(),
+    loadPublishedUpsetEvidence(),
+  ]);
+  return <ScoreboardPreviewClient branding={branding} publishedUpsets={publishedUpsets} />;
 }
