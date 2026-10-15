@@ -1,4 +1,5 @@
 import type {CSSProperties} from 'react';
+import {getVerifiedUpsets, matchupKey, type PublishedUpsetMatch, type ScoreboardUpset, type ScoreboardUpsets} from '@/services/matches/FinalMatchdayUpsets';
 import {WeatherIcon} from '@/components/matches/WeatherIcon';
 import infoStyles from './MatchdayInfoStrip.module.css';
 import type {
@@ -15,7 +16,10 @@ import {
   type FinalScoreBreakdown,
 } from '@/services/matches/FinalScoreBreakdown';
 
-export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
+export function FinalMatchday({
+  snapshot,
+  publishedUpsets = [],
+}: {snapshot: FinalMatchdaySnapshot; publishedUpsets?: PublishedUpsetMatch[]}) {
   const pageStyle: CSSProperties & {'--match-away': string; '--match-home': string} = {
     '--match-away': snapshot.awayTeam.primaryColor || '#0b7285',
     '--match-home': snapshot.homeTeam.primaryColor || '#a31621',
@@ -26,6 +30,8 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
     .reduce((total, point) => total + point.points, 0);
   const singles = displaySinglesRows(snapshot.contests, unplayedSlotPoints);
   const doubles = snapshot.contests.filter((contest) => contest.format === 'Doubles');
+  const upsets = getVerifiedUpsets(snapshot, publishedUpsets);
+  const upsetCount = Object.keys(upsets).length;
   const doublesTotals = breakdown.doubles;
   const singlesTotals = breakdown.singles;
 
@@ -33,10 +39,20 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
     <main className={`${pageStyles.page} ${snapshot.awayTeam.id === 'kb' ? styles.kbAwayMuted : ''}`} style={pageStyle}>
       <FinalHero snapshot={snapshot} breakdown={breakdown} />
       <div className={`shell ${pageStyles.content} ${styles.finalContent}`}>
+        <div className={styles.upsetToggleBar}>
+          <label className={styles.upsetToggle}>
+            <input type="checkbox" aria-label="Show verified upsets" />
+            <span>Show upsets</span>
+          </label>
+          <small>{upsetCount
+            ? `${upsetCount} verified · pre-match CI odds`
+            : 'No verified upsets for this match'}</small>
+        </div>
         <section className={styles.desktopScoreboard} aria-label="Final result scoreboard">
           <DesktopResultBoard
             title="Singles results"
             contests={singles}
+            upsets={upsets}
             totals={singlesTotals}
             awayTeam={snapshot.awayTeam}
             homeTeam={snapshot.homeTeam}
@@ -44,6 +60,7 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
           <DesktopResultBoard
             title="Doubles results"
             contests={doubles}
+            upsets={upsets}
             totals={doublesTotals}
             awayTeam={snapshot.awayTeam}
             homeTeam={snapshot.homeTeam}
@@ -53,6 +70,7 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
           <ResultDetails
             title="Singles results"
             contests={singles}
+            upsets={upsets}
             totals={singlesTotals}
             awayTeam={snapshot.awayTeam}
             homeTeam={snapshot.homeTeam}
@@ -61,6 +79,7 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
           <ResultDetails
             title="Doubles results"
             contests={doubles}
+            upsets={upsets}
             totals={doublesTotals}
             awayTeam={snapshot.awayTeam}
             homeTeam={snapshot.homeTeam}
@@ -155,12 +174,14 @@ function TeamSide({team, side}: {team: FinalMatchTeam; side: 'away' | 'home'}) {
 function DesktopResultBoard({
   title,
   contests,
+  upsets,
   totals,
   awayTeam,
   homeTeam,
 }: {
   title: string;
   contests: FinalMatchContest[];
+  upsets: ScoreboardUpsets;
   totals: {away: number; home: number};
   awayTeam: FinalMatchTeam;
   homeTeam: FinalMatchTeam;
@@ -178,7 +199,7 @@ function DesktopResultBoard({
       </div>
       <div className={styles.desktopBoardRows}>
         {contests.length
-          ? contests.map((contest) => <DesktopResultRow contest={contest} key={contest.id} />)
+          ? contests.map((contest) => <DesktopResultRow contest={contest} upset={upsets[matchupKey(contest)]} key={contest.id} />)
           : <p className={styles.empty}>No individual results were posted.</p>}
       </div>
       <div className={styles.desktopBoardTotals} aria-label={`${title} totals: ${awayTeam.name} ${formatPoint(totals.away)}, ${homeTeam.name} ${formatPoint(totals.home)}`}>
@@ -196,7 +217,7 @@ function DesktopResultBoard({
   );
 }
 
-function DesktopResultRow({contest}: {contest: FinalMatchContest}) {
+function DesktopResultRow({contest, upset}: {contest: FinalMatchContest; upset?: ScoreboardUpset}) {
   const awayWon = contest.awayOutcome === 'W';
   const homeWon = contest.homeOutcome === 'W';
   const tie = contest.awayOutcome === 'T' && contest.homeOutcome === 'T';
@@ -216,12 +237,14 @@ function DesktopResultRow({contest}: {contest: FinalMatchContest}) {
   return (
     <div className={styles.desktopResultRow} role="group" aria-label={`${contest.format} matchup ${contest.position}`}
       title={contest.card ? `Card ${contest.card}${contest.startingHole ? ` · Start hole ${contest.startingHole}` : ''}` : undefined}>
-      <div className={awayClass}>
+      <div className={`${awayClass} ${upset?.side === 'Away' ? styles.upsetWinnerSide : ''}`}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
+        {upset?.side === 'Away' ? <UpsetTag upset={upset} /> : null}
       </div>
       <div className={styles.desktopVs} title={contest.resultText || undefined}>{contest.unplayed ? 'N/S' : contest.resultText || (tie ? 'TIE' : 'VS')}</div>
-      <div className={homeClass}>
+      <div className={`${homeClass} ${upset?.side === 'Home' ? styles.upsetWinnerSide : ''}`}>
         <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
+        {upset?.side === 'Home' ? <UpsetTag upset={upset} /> : null}
       </div>
     </div>
   );
@@ -230,6 +253,7 @@ function DesktopResultRow({contest}: {contest: FinalMatchContest}) {
 function ResultDetails({
   title,
   contests,
+  upsets,
   totals,
   awayTeam,
   homeTeam,
@@ -237,6 +261,7 @@ function ResultDetails({
 }: {
   title: string;
   contests: FinalMatchContest[];
+  upsets: ScoreboardUpsets;
   totals: {away: number; home: number};
   awayTeam: FinalMatchTeam;
   homeTeam: FinalMatchTeam;
@@ -261,7 +286,7 @@ function ResultDetails({
       </div>
       <div className={styles.resultRows}>
         {contests.length
-          ? contests.map((contest) => <ResultRow contest={contest} key={contest.id} />)
+          ? contests.map((contest) => <ResultRow contest={contest} upset={upsets[matchupKey(contest)]} key={contest.id} />)
           : <p className={styles.empty}>No individual results were posted.</p>}
       </div>
       <div className={styles.mobileSectionTotals} aria-label={`${title} totals: ${awayTeam.name} ${formatPoint(totals.away)}, ${homeTeam.name} ${formatPoint(totals.home)}`}>
@@ -273,7 +298,7 @@ function ResultDetails({
   );
 }
 
-function ResultRow({contest}: {contest: FinalMatchContest}) {
+function ResultRow({contest, upset}: {contest: FinalMatchContest; upset?: ScoreboardUpset}) {
   const awayWon = contest.awayOutcome === 'W';
   const homeWon = contest.homeOutcome === 'W';
   const tie = contest.awayOutcome === 'T' && contest.homeOutcome === 'T';
@@ -292,15 +317,23 @@ function ResultRow({contest}: {contest: FinalMatchContest}) {
   return (
     <div className={styles.resultRow} role="group" aria-label={`${contest.format} matchup ${contest.position}`}
       title={contest.card ? `Card ${contest.card}${contest.startingHole ? ` · Start hole ${contest.startingHole}` : ''}` : undefined}>
-      <div className={awayClass}>
+      <div className={`${awayClass} ${upset?.side === 'Away' ? styles.upsetWinnerSide : ''}`}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
+        {upset?.side === 'Away' ? <UpsetTag upset={upset} /> : null}
       </div>
       <div className={styles.outcome} title={contest.resultText || undefined}>{contest.unplayed ? <span>N/S</span> : contest.resultText ? <span>{contest.resultText}</span> : tie ? <span>TIE</span> : null}</div>
-      <div className={homeClass}>
+      <div className={`${homeClass} ${upset?.side === 'Home' ? styles.upsetWinnerSide : ''}`}>
         <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
+        {upset?.side === 'Home' ? <UpsetTag upset={upset} /> : null}
       </div>
     </div>
   );
+}
+
+function UpsetTag({upset}: {upset: ScoreboardUpset}) {
+  return <span className={styles.upsetBadge}
+    aria-label={`Upset: winner had ${Math.round(upset.probability * 100)} percent chance before the match`}
+    title="Underdog win based on frozen pre-match CI">{upset.label}</span>;
 }
 
 function PlayerNames({
