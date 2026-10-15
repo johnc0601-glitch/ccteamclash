@@ -68,7 +68,7 @@ export function getVerifiedUpsets(
     results[matchupKey(contest)] = {
       side: winner,
       probability,
-      label: `Upset · ${Math.round(probability * 100)}%`,
+      label: 'UPSET',
     };
   }
   return results;
