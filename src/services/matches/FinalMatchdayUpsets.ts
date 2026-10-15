@@ -33,7 +33,7 @@ const sameNames = (left: readonly string[], right: readonly string[]) =>
   && left.map(normalize).sort().join('|') === right.map(normalize).sort().join('|');
 
 /** Strict post-result verification. Only published, frozen, underdog victories
- * with exactly matching players, format, position, sides and date get labels.
+ * with exactly matching players, format, sides and date get labels.
  * Never use current CI; never label an unplayed/forfeit position. */
 export function getVerifiedUpsets(
   snapshot: Pick<FinalMatchdaySnapshot,
@@ -54,8 +54,10 @@ export function getVerifiedUpsets(
     const winner = contest.homeOutcome === 'W' && contest.awayOutcome === 'L' ? 'Home'
       : contest.awayOutcome === 'W' && contest.homeOutcome === 'L' ? 'Away' : null;
     if (!winner) continue;
+    // TCWhiteboard order may differ from the league's published lineup order.
+    // Require the full player set on BOTH sides instead of matching row numbers.
     const candidates = source.contests.filter((item) =>
-      item.format === contest.format && item.position === contest.position
+      item.format === contest.format
       && item.winner === winner
       && sameNames(item.homePlayers, contest.homePlayers.map((p) => p.name))
       && sameNames(item.awayPlayers, contest.awayPlayers.map((p) => p.name))
