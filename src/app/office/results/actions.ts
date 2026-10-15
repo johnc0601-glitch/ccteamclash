@@ -45,7 +45,7 @@ export type ResultRosterPlayer = {
   teamId: string;
 };
 
-export type ResultStructuralCategory = 'NoShow' | 'WomenBonus' | 'Penalty' | 'Other';
+export type ResultStructuralCategory = 'NoShow' | 'WomenBonus' | 'Penalty' | 'Other' | 'UnplayedSlot';
 
 export type ResultStructuralPointInput = {
   awardedTeamId: string;
@@ -266,6 +266,16 @@ export async function saveOfficeResult(
     if (action === 'reopen') {
       result = await resultsService.reopen(normalizedMatchId);
     } else {
+      if (action === 'publish' && input.contests?.some((contest) =>
+        contest.format === 'Singles'
+        && (contest.players.filter((player) => player.side === 'Home' && player.playerId.trim()).length !== 1
+          || contest.players.filter((player) => player.side === 'Away' && player.playerId.trim()).length !== 1)
+      )) {
+        return {
+          ok: false,
+          message: 'An unplayed singles slot cannot be published as a player contest. Remove that contest and record the allocated point under Unplayed singles slot.',
+        };
+      }
       // Persist the editable payload first. Finalization operates only on the
       // persisted Draft so a CI failure can never leave a public partial result.
       result = await resultsService.saveDraft(normalizedMatchId, input);
@@ -327,11 +337,15 @@ async function replaceResultStructuralPoints(
     && Number.isFinite(point.points)
     && point.points > 0
     && Number.isInteger(point.points * 2)
-    && ['NoShow', 'WomenBonus', 'Penalty', 'Other'].includes(point.category),
+    && ['NoShow', 'WomenBonus', 'Penalty', 'Other', 'UnplayedSlot'].includes(point.category),
   );
 
   if (normalized.length !== points.length) {
     return {ok: false, message: 'Review the additional scoring adjustments before finalizing.'};
+  }
+  const categories = new Set(normalized.map((point) => `${point.awardedTeamId}:${point.category}`));
+  if (categories.size !== normalized.length) {
+    return {ok: false, message: 'Combine adjustments that have the same team and reason before saving.'};
   }
 
   const {error: deleteError} = await (supabase as any)

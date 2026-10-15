@@ -176,7 +176,7 @@
   min-height: 26px;
   padding: 0 10px;
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 38px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 50px minmax(0, 1fr);
   align-items: center;
   gap: 7px;
   border-bottom: 1px solid rgba(255, 255, 255, .13);
@@ -188,8 +188,7 @@
   text-transform: uppercase;
 }
 
-.desktopColumnHeader span:first-child,
-.desktopColumnHeader span:nth-child(3) {
+.desktopColumnHeader span:nth-child(2) {
   text-align: center;
 }
 
@@ -205,7 +204,7 @@
   min-height: 46px;
   padding: 0 10px;
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 38px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 50px minmax(0, 1fr);
   align-items: center;
   gap: 7px;
   border-top: 1px solid var(--cc-card-border);
@@ -227,17 +226,6 @@
 
 .desktopBoard:last-child .desktopResultRow {
   min-height: 72px;
-}
-
-.desktopPosition {
-  height: 100%;
-  display: grid;
-  place-items: center;
-  border-right: 1px solid rgba(255,255,255,.06);
-  color: rgba(255,255,255,.72);
-  font-size: 10px;
-  font-weight: 950;
-  text-align: center;
 }
 
 .desktopPlayerSide {
@@ -446,7 +434,7 @@
   min-height: 27px;
   padding: 0 10px;
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) 40px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 46px minmax(0, 1fr);
   align-items: center;
   gap: 6px;
   border-top: 1px solid var(--cc-card-border);
@@ -459,8 +447,7 @@
   text-transform: uppercase;
 }
 
-.mobileColumnHeader span:first-child,
-.mobileColumnHeader span:nth-child(3) {
+.mobileColumnHeader span:nth-child(2) {
   text-align: center;
 }
 
@@ -481,7 +468,7 @@
   min-height: 50px;
   padding: 8px 14px;
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) 40px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 46px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   border-top: 1px solid var(--cc-card-border);
@@ -495,13 +482,6 @@
 
 .resultRow:first-child {
   border-top: 0;
-}
-
-.resultPosition {
-  color: rgba(255,255,255,.62);
-  font-size: 9px;
-  font-weight: 950;
-  text-align: center;
 }
 
 .playerSide {
@@ -734,12 +714,12 @@
   .resultRow {
     min-height: 46px;
     padding: 7px 9px;
-    grid-template-columns: 24px minmax(0, 1fr) 32px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
     gap: 5px;
   }
 
   .mobileColumnHeader {
-    grid-template-columns: 24px minmax(0, 1fr) 32px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
     gap: 5px;
     padding: 0 9px;
   }
@@ -762,4 +742,169 @@
   .playerSide:last-child .doublesPair {
     justify-items: end;
   }
+}
+
+/* Mobile doubles: keep two player lines inside their own grid columns.
+   Full legal/display names must wrap rather than spill over the result badge. */
+.mobileResultsCard .playerList.doublesPair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  min-width: 0;
+  gap: 3px;
+}
+.mobileResultsCard .doublesPair .playerName + .playerName::before {
+  content: none;
+}
+.mobileResultsCard .doublesPair .playerName {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  text-wrap: pretty;
+}
+.mobileResultsCard .playerSide:has(.doublesPair) {
+  min-width: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  border-radius: 14px;
+}
+.mobileResultsCard .playerSide:last-child .doublesPair .playerName {
+  text-align: right;
+}
+.mobileResultsCard .playerSide:first-of-type .doublesPair .playerName {
+  text-align: left;
+}
+@media (max-width: 700px) {
+  .mobileResultsCard .resultRow:has(.doublesPair) {
+    min-height: 62px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  .mobileResultsCard .resultRow:has(.doublesPair) .playerSide {
+    padding: 7px 6px;
+    line-height: 1.24;
+  }
+}
+
+/* Explicit administrative ledger under the two existing contest boards. */
+.adjustmentsSection {
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 12px;
+  background: rgba(13,19,24,.92);
+  color: #e6e9ed;
+  overflow: hidden;
+}
+.adjustmentsSection > header {
+  padding: 11px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  font-size: 13px;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+.adjustmentRows {display: grid;}
+.adjustmentRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  font-size: 12px;
+}
+.adjustmentRow b {font-variant-numeric: tabular-nums; color: #fff;}
+.adjustmentRow small {grid-column: 1 / -1; line-height: 1.5; color: rgba(255,255,255,.67);}
+.auditWarning {
+  margin: 12px 16px;
+  padding: 10px 12px;
+  border: 1px solid rgba(249,197,110,.4);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #f4d39d;
+}
+
+/* Reviewer-controlled overlay: no scoreboard rows or stored scores change. */
+.upsetToggleBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 16px;
+  padding: 9px 12px;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  color: var(--cc-heading);
+  background: rgba(11,16,22,.9);
+}
+.upsetToggleBar small {
+  color: var(--cc-muted);
+  font-size: 11px;
+}
+.upsetToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  user-select: none;
+}
+.upsetToggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #d3a33b;
+}
+.upsetBadge {
+  display: none;
+  width: fit-content;
+  max-width: 100%;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(19,16,10,.8);
+  border: 1px solid rgba(240,195,95,.7);
+  color: #ffdf9b;
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1.3;
+  letter-spacing: .02em;
+  text-align: inherit;
+  white-space: normal;
+}
+.finalContent:has(.upsetToggle input:checked) .upsetBadge {
+  display: inline-flex;
+}
+.finalContent:has(.upsetToggle input:checked) .upsetWinnerSide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+}
+.finalContent:has(.upsetToggle input:checked) .upsetWinnerSide:last-child {
+  align-items: flex-end;
+  text-align: right;
+}
+.finalContent:has(.upsetToggle input:checked) .desktopResultRow:has(.upsetBadge) {
+  min-height: 67px;
+}
+.finalContent:has(.upsetToggle input:checked) .resultRow:has(.upsetBadge) {
+  min-height: 72px;
+}
+@media (max-width:700px) {
+  .upsetToggleBar { padding: 9px 12px; }
+  .upsetBadge { font-size: 9px; }
+}
+
+/* Doubles pairs keep their two-line format when an upset is displayed. */
+.finalContent:has(.upsetToggle input:checked) .desktopPlayerSide.upsetWinnerSide .desktopDoublesPair {
+  height: auto;
+  grid-template-rows: auto auto;
+}
+.finalContent:has(.upsetToggle input:checked) .desktopBoard:last-child .desktopResultRow:has(.upsetBadge) {
+  min-height: 88px;
 }

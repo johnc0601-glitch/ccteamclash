@@ -29,6 +29,19 @@ export type FinalMatchContest = {
   awayPlayers: FinalMatchPlayer[];
   homePlayers: FinalMatchPlayer[];
   unplayed?: boolean;
+  /** Optional source detail for nonstandard TCWhiteboard scorecards. */
+  resultText?: string;
+  card?: number;
+  startingHole?: string;
+  homeStrokes?: number;
+  awayStrokes?: number;
+};
+
+export type FinalScoreAdjustment = {
+  awardedTeamId: string;
+  category: 'NoShow' | 'WomenBonus' | 'Penalty' | 'Other' | 'UnplayedSlot';
+  points: number;
+  note: string | null;
 };
 
 export type FinalMatchWeather = {
@@ -49,6 +62,7 @@ export type FinalMatchdaySnapshot = {
   awayScore: number;
   homeScore: number;
   contests: FinalMatchContest[];
+  adjustments: FinalScoreAdjustment[];
   homeAdjustmentLabel?: string;
   awayAdjustmentLabel?: string;
   weather: FinalMatchWeather | null;
@@ -120,6 +134,7 @@ function parseSnapshot(row: SnapshotRow): FinalMatchdaySnapshot | undefined {
     awayScore,
     homeScore,
     contests: parseContests(payload.contests),
+    adjustments: parseAdjustments(payload.adjustments),
     homeAdjustmentLabel: readString(payload.homeAdjustmentLabel) ?? undefined,
     awayAdjustmentLabel: readString(payload.awayAdjustmentLabel) ?? undefined,
     weather: parseWeather(row.weather),
@@ -172,6 +187,25 @@ function parseContests(value: unknown): FinalMatchContest[] {
       awayPlayers: parsePlayers(contest.awayPlayers),
       homePlayers: parsePlayers(contest.homePlayers),
       unplayed: contest.unplayed === true,
+    }];
+  });
+}
+
+function parseAdjustments(value: unknown): FinalScoreAdjustment[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item): FinalScoreAdjustment[] => {
+    if (!item || typeof item !== 'object') return [];
+    const entry = item as Record<string, unknown>;
+    const awardedTeamId = readString(entry.awardedTeamId);
+    const category = entry.category;
+    const points = Number(entry.points);
+    if (!awardedTeamId || !['NoShow', 'WomenBonus', 'Penalty', 'Other', 'UnplayedSlot'].includes(String(category))
+      || !Number.isFinite(points) || points <= 0 || !Number.isInteger(points * 2)) return [];
+    return [{
+      awardedTeamId,
+      category: category as FinalScoreAdjustment['category'],
+      points,
+      note: readString(entry.note),
     }];
   });
 }

@@ -33,6 +33,7 @@ import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 import {resolveMatchday, type PublicMatchday} from '@/services/matches/MatchdayService';
 import {getFinalMatchdaySnapshot} from '@/services/matches/FinalMatchdaySnapshot';
+import {loadPublishedUpsetEvidence} from '@/services/matches/PublicUpsetEvidence';
 import {canViewMatchPrediction} from '@/services/settings/MatchPredictionVisibility';
 import {buildPublicMatchPrediction} from '@/services/teamStrength/PublicMatchPrediction';
 import styles from './Matchday.module.css';
@@ -68,10 +69,11 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const finalSnapshot = await getFinalMatchdaySnapshot(supabase, matchId);
 
   if (finalSnapshot) {
+    const publishedUpsets = await loadPublishedUpsetEvidence();
     return (
       <>
         <SiteHeader />
-        <FinalMatchday snapshot={finalSnapshot} />
+        <FinalMatchday snapshot={finalSnapshot} publishedUpsets={publishedUpsets} />
         <Footer />
       </>
     );
