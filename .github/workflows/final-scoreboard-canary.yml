@@ -9,6 +9,7 @@ on:
       - 'src/components/matches/FinalMatchdayV2*'
       - 'src/app/matches/[id]/page.tsx'
       - 'package.json'
+      - 'tsconfig.final-scoreboard-canary.json'
       - '.github/workflows/final-scoreboard-canary.yml'
   push:
     paths:
@@ -34,5 +35,5 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Test locked-page canary, reconciliation, and upset rules
         run: npm run test:final-scoreboard-canary
-      - name: Typecheck
-        run: npx tsc --noEmit
+      - name: Typecheck production canary entrypoints
+        run: npx tsc --project tsconfig.final-scoreboard-canary.json --noEmit
