@@ -1,3 +1,4 @@
+import {findPublicTeamBranding, type PublicTeamBranding} from './ScoreboardPreviewBranding';
 import type {
   FinalMatchContest,
   FinalMatchdaySnapshot,
@@ -42,7 +43,10 @@ const CONFIRMED_UNPLAYED: ReadonlyArray<{
   presentPlayerId: 'e6sh0ydykxjisfuxyr3i8hua',
 }];
 
-export function parseTCWhiteboardV1(value: unknown): ParsedMatch {
+export function parseTCWhiteboardV1(
+  value: unknown,
+  branding: readonly PublicTeamBranding[] = [],
+): ParsedMatch {
   const source = object(value);
   if (source.schema !== 'tcwhiteboard.match/v1') {
     throw new Error('Unsupported TCWhiteboard format: expected tcwhiteboard.match/v1.');
@@ -55,6 +59,12 @@ export function parseTCWhiteboardV1(value: unknown): ParsedMatch {
   const awayId = name(away.id);
   const homeName = name(home.name);
   const awayName = name(away.name);
+  const homeBrand = findPublicTeamBranding({
+    id: homeId, slug: name(home.slug), name: homeName,
+  }, branding);
+  const awayBrand = findPublicTeamBranding({
+    id: awayId, slug: name(away.slug), name: awayName,
+  }, branding);
   const homeScore = points(home.points);
   const awayScore = points(away.points);
   const date = name(match.date);
@@ -177,12 +187,18 @@ export function parseTCWhiteboardV1(value: unknown): ParsedMatch {
         mapUrl:null,
       },
       awayTeam: {
-        id: awayId, name:awayName, shortName:awayName, logo:'',
-        primaryColor:null, secondaryColor:null,
+        id: awayId, name:awayName,
+        shortName:awayBrand?.shortName || awayName,
+        logo:awayBrand?.logo || '',
+        primaryColor:awayBrand?.primaryColor || null,
+        secondaryColor:awayBrand?.secondaryColor || null,
       },
       homeTeam: {
-        id: homeId, name:homeName, shortName:homeName, logo:'',
-        primaryColor:null, secondaryColor:null,
+        id: homeId, name:homeName,
+        shortName:homeBrand?.shortName || homeName,
+        logo:homeBrand?.logo || '',
+        primaryColor:homeBrand?.primaryColor || null,
+        secondaryColor:homeBrand?.secondaryColor || null,
       },
       awayScore, homeScore, contests, adjustments,
       weather:null, publishedAt:name(match.finalizedAt) || null,
