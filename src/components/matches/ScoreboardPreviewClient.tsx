@@ -2,6 +2,7 @@
 
 import {useState} from 'react';
 import type {FinalMatchdaySnapshot} from '@/services/matches/FinalMatchdaySnapshot';
+import type {PublishedUpsetMatch} from '@/services/matches/FinalMatchdayUpsets';
 import type {PublicTeamBranding} from '@/services/matches/ScoreboardPreviewBranding';
 import {parseScoreboardPreviewJson} from '@/services/matches/ScoreboardPreviewParser';
 import {FinalMatchday} from './FinalMatchday';
@@ -41,7 +42,8 @@ function samplePreview(): FinalMatchdaySnapshot {
 
 export function ScoreboardPreviewClient({
   branding,
-}: {branding: PublicTeamBranding[]}) {
+  publishedUpsets = [],
+}: {branding: PublicTeamBranding[]; publishedUpsets?: PublishedUpsetMatch[]}) {
   const [snapshot, setSnapshot] = useState<FinalMatchdaySnapshot | null>(null);
   const [sourceLabel, setSourceLabel] = useState('');
   const [notes, setNotes] = useState<string[]>([]);
@@ -141,7 +143,7 @@ export function ScoreboardPreviewClient({
         {notes.map((note,i) => <p key={i} style={{fontSize:12,color:'#f1c881'}}>{note}</p>)}
       </div>
       {snapshot ? (
-        <FinalMatchday snapshot={snapshot}/>
+        <FinalMatchday snapshot={snapshot} publishedUpsets={publishedUpsets}/>
       ) : (
         <div style={{maxWidth:1100,margin:'0 auto',padding:'20px 16px 60px',color:'#b9c1cb',fontSize:14}}>
           Select the full match-results JSON above to view its final-scoreboard layout, or
