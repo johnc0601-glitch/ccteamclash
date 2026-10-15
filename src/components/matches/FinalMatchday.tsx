@@ -45,7 +45,7 @@ export function FinalMatchday({
             <span>Show upsets</span>
           </label>
           <small>{upsetCount
-            ? `${upsetCount} verified · pre-match CI odds`
+            ? `${upsetCount} verified upset${upsetCount === 1 ? '' : 's'}`
             : 'No verified upsets for this match'}</small>
         </div>
         <section className={styles.desktopScoreboard} aria-label="Final result scoreboard">
@@ -332,8 +332,8 @@ function ResultRow({contest, upset}: {contest: FinalMatchContest; upset?: Scoreb
 
 function UpsetTag({upset}: {upset: ScoreboardUpset}) {
   return <span className={styles.upsetBadge}
-    aria-label={`Upset: winner had ${Math.round(upset.probability * 100)} percent chance before the match`}
-    title="Underdog win based on frozen pre-match CI">{upset.label}</span>;
+    aria-label="Upset win"
+    title="Upset win">{upset.label}</span>;
 }
 
 function PlayerNames({
