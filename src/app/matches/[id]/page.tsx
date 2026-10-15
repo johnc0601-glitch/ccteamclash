@@ -3,6 +3,7 @@ import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
 import {FinalMatchday} from '@/components/matches/FinalMatchday';
+import {FinalMatchdayV2} from '@/components/matches/FinalMatchdayV2';
 import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
@@ -33,6 +34,8 @@ import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 import {resolveMatchday, type PublicMatchday} from '@/services/matches/MatchdayService';
 import {getFinalMatchdaySnapshot} from '@/services/matches/FinalMatchdaySnapshot';
+import {adaptCanarySnapshot, shouldUseFinalScoreboardCanary} from '@/services/matches/FinalMatchdayCanary';
+import {loadPublishedUpsetEvidence} from '@/services/matches/PublicUpsetEvidence';
 import {canViewMatchPrediction} from '@/services/settings/MatchPredictionVisibility';
 import {buildPublicMatchPrediction} from '@/services/teamStrength/PublicMatchPrediction';
 import styles from './Matchday.module.css';
@@ -68,6 +71,18 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const finalSnapshot = await getFinalMatchdaySnapshot(supabase, matchId);
 
   if (finalSnapshot) {
+    // Keep ALL previously locked Matchday pages on their original renderer.
+    // Only the published Riptide–Beast Mode Oct 17 snapshot uses the new UI.
+    if (shouldUseFinalScoreboardCanary(finalSnapshot)) {
+      const publishedUpsets = await loadPublishedUpsetEvidence();
+      return (
+        <>
+          <SiteHeader />
+          <FinalMatchdayV2 snapshot={adaptCanarySnapshot(finalSnapshot)} publishedUpsets={publishedUpsets} />
+          <Footer />
+        </>
+      );
+    }
     return (
       <>
         <SiteHeader />

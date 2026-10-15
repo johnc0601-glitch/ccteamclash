@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": [
+    "types.final-scoreboard-canary.d.ts",
+    "next-env.d.ts",
+    "src/app/matches/[id]/page.tsx",
+    "src/components/matches/FinalMatchdayV2.tsx",
+    "src/services/matches/FinalMatchdayCanary.ts",
+    "src/services/matches/FinalMatchdayUpsets.ts",
+    "src/services/matches/FinalScoreBreakdown.ts",
+    "src/services/matches/PublicUpsetEvidence.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    ".next"
+  ]
+}

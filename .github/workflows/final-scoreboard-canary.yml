@@ -1,0 +1,39 @@
+name: Final Scoreboard Canary Safety
+on:
+  pull_request:
+    paths:
+      - 'src/services/matches/FinalMatchdayCanary*'
+      - 'src/services/matches/FinalScoreBreakdown*'
+      - 'src/services/matches/FinalMatchdayUpsets*'
+      - 'src/services/matches/PublicUpsetEvidence.ts'
+      - 'src/components/matches/FinalMatchdayV2*'
+      - 'src/app/matches/[id]/page.tsx'
+      - 'package.json'
+      - 'tsconfig.final-scoreboard-canary.json'
+      - '.github/workflows/final-scoreboard-canary.yml'
+  push:
+    paths:
+      - 'src/services/matches/FinalMatchdayCanary*'
+      - 'src/services/matches/FinalScoreBreakdown*'
+      - 'src/services/matches/FinalMatchdayUpsets*'
+      - 'src/services/matches/PublicUpsetEvidence.ts'
+      - 'src/components/matches/FinalMatchdayV2*'
+      - 'src/app/matches/[id]/page.tsx'
+      - 'package.json'
+      - '.github/workflows/final-scoreboard-canary.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Test locked-page canary, reconciliation, and upset rules
+        run: npm run test:final-scoreboard-canary
+      - name: Typecheck production canary entrypoints
+        run: npx tsc --project tsconfig.final-scoreboard-canary.json --noEmit
