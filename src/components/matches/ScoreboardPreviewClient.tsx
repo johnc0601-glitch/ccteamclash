@@ -2,6 +2,7 @@
 
 import {useState} from 'react';
 import type {FinalMatchdaySnapshot} from '@/services/matches/FinalMatchdaySnapshot';
+import type {PublicTeamBranding} from '@/services/matches/ScoreboardPreviewBranding';
 import {parseScoreboardPreviewJson} from '@/services/matches/ScoreboardPreviewParser';
 import {FinalMatchday} from './FinalMatchday';
 
@@ -38,7 +39,9 @@ function samplePreview(): FinalMatchdaySnapshot {
   };
 }
 
-export function ScoreboardPreviewClient() {
+export function ScoreboardPreviewClient({
+  branding,
+}: {branding: PublicTeamBranding[]}) {
   const [snapshot, setSnapshot] = useState<FinalMatchdaySnapshot | null>(null);
   const [sourceLabel, setSourceLabel] = useState('');
   const [notes, setNotes] = useState<string[]>([]);
@@ -58,7 +61,7 @@ export function ScoreboardPreviewClient() {
       if (file.size > MAX_FILE_BYTES) throw new Error('Select a JSON file smaller than 2 MB.');
       const parsed: unknown = JSON.parse(await file.text());
       setStructure(summarizeJsonStructure(parsed));
-      const preview = parseScoreboardPreviewJson(parsed);
+      const preview = parseScoreboardPreviewJson(parsed, branding);
       setSnapshot(preview.snapshot);
       setNotes(preview.notes);
       setSourceLabel(file.name);
