@@ -1,4 +1,5 @@
 import {parseTCWhiteboardV1} from './TCWhiteboardPreview';
+import type {PublicTeamBranding} from './ScoreboardPreviewBranding';
 import type {
   FinalMatchContest,
   FinalMatchPlayer,
@@ -94,9 +95,12 @@ function adjustment(value: unknown): FinalScoreAdjustment | null {
 }
 
 /** Reads a local browser File only; never calls an API or writes match results. */
-export function parseScoreboardPreviewJson(value: unknown): PreviewResult {
+export function parseScoreboardPreviewJson(
+  value: unknown,
+  branding: readonly PublicTeamBranding[] = [],
+): PreviewResult {
   const source = record(value);
-  if (source.schema === 'tcwhiteboard.match/v1') return parseTCWhiteboardV1(value);
+  if (source.schema === 'tcwhiteboard.match/v1') return parseTCWhiteboardV1(value, branding);
   if (!Object.keys(source).length) throw new Error('The file must contain a JSON object.');
   if (source.document_type === 'commissioner_review_note') {
     throw new Error('This is an audit note, not the full match-results JSON. Select the full match file.');
