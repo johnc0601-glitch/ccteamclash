@@ -24,7 +24,7 @@ import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository
 import type {AttendanceActor, TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import type {OfficialRosterExport} from '@/domain/match-roster/MatchRosterExport';
 import {MatchRosterService} from '@/domain/match-roster/MatchRosterService';
-import {isMatchAttendanceOpen, isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
+import {getPlayerAttendanceLockAt, isMatchAttendanceOpen, isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
 import type {OfficialMatchRoster, OfficialSnapshotState} from '@/domain/match-roster/MatchRosterSnapshot';
 import {parseMatchRosterSnapshotStartAt, snapshotErrorClass} from '@/domain/match-roster/MatchRosterSnapshotAutomation';
 import {SeasonAwareMatchRosterRepository} from '@/domain/match-roster/SeasonAwareMatchRosterRepository';
@@ -114,6 +114,8 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const now = new Date();
   const locked = isMatchRosterLocked(match, now);
   const availabilityOpen = !locked && isMatchAttendanceOpen(match, now);
+  const attendanceLockAt = match.date ? getPlayerAttendanceLockAt(match.date) : undefined;
+  const showAvailabilityRoster = Boolean(availabilityOpen && attendanceLockAt && now.getTime() >= attendanceLockAt.getTime());
   const teamIds = [match.homeTeamId, match.awayTeamId];
   const [rosterPlayerIdsByTeam, teamResults, course] = await Promise.all([
     getSeasonRosterPlayerIdsByTeam(supabase, match.seasonId, teamIds, matchId),
@@ -277,8 +279,8 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             matchday={matchday}
             official={officialSnapshot}
             rosterUnavailable={rosterUnavailable}
-            availability={availability ?? undefined}
-            availabilityUnavailable={availabilityUnavailable}
+            availability={showAvailabilityRoster ? availability ?? undefined : undefined}
+            availabilityUnavailable={showAvailabilityRoster && availabilityUnavailable}
             lockedAvailability={lockedAvailability}
           />
 
