@@ -179,6 +179,14 @@
   gap: 8px;
 }
 
+/* Group the logos and FINAL label more tightly around the card center.
+   Only published-score cards use this tighter matchup layout. */
+.card:global(.home-match-card).finalCard :global(.story-matchup) {
+  width: 84%;
+  margin-inline: auto;
+  grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr);
+}
+
 .card:global(.home-match-card).finalCard .scoreCenter {
   padding-top: 18px;
 }
@@ -194,8 +202,8 @@
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 8px;
-  min-height: 66px;
-  padding: 7px 10px;
+  min-height: 60px;
+  padding: 6px 10px;
   border: 1px solid color-mix(in srgb, var(--cc-gold) 30%, var(--cc-panel-border));
   border-radius: 9px;
   background: color-mix(in srgb, var(--cc-gold) 7%, var(--cc-surface));
@@ -206,7 +214,7 @@
   min-width: 0;
   color: var(--cc-text);
   font-family: var(--cc-font-display);
-  font-size: clamp(35px, 3.4vw, 45px);
+  font-size: clamp(30px, 2.89vw, 38px);
   font-weight: 950;
   letter-spacing: -.055em;
   line-height: 1;
@@ -224,7 +232,7 @@
 
 .finalScoreDivider {
   color: var(--cc-text-muted);
-  font-size: 27px;
+  font-size: 23px;
   font-weight: 700;
   line-height: 1;
 }
