@@ -234,7 +234,24 @@
   padding-top: 0;
 }
 
-.card:global(.home-match-card).finalCard :global(.match-details) p {
+
+/* One centered details line on completed-match cards; wrap naturally when
+   longer course names do not fit in a narrow carousel card. */
+.finalMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 3px 6px;
+  min-width: 0;
+  color: var(--cc-text-muted);
   font-size: 11px;
-  margin-bottom: 4px;
+  font-weight: 750;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.finalCourse {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
