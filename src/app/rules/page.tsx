@@ -36,7 +36,7 @@ export default function RulesPage() {
             <div><span>STANDARD LINEUP</span><strong>16 + 2</strong><small>men + women</small></div>
             <div><span>STANDARD CLASH</span><strong>36</strong><small>points before adjustments</small></div>
             <div><span>ROSTER SUBMISSION</span><strong>FRI · 12 PM</strong><small>Eastern</small></div>
-            <div><span>WEBSITE LOCK</span><strong>FRI · 3 PM</strong><small>Eastern</small></div>
+            <div><span>SCORING</span><strong>1 / 2</strong><small>singles / doubles win</small></div>
           </section>
           <RulesContent />
         </div>
