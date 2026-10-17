@@ -523,3 +523,102 @@
   .sectionHeading h2 { font-size: 29px; }
   .rankList li { grid-template-columns: 1fr; gap: 3px; }
 }
+
+
+/* Full Charter content: source markers distinguish older charter provisions
+   from new league amendments and unresolved season-specific rules. */
+.sourceLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 18px;
+  align-items: center;
+  padding: 12px 0 20px;
+  border-bottom: 1px solid #ddd4c2;
+}
+
+.sourceLegend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #5a605f;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.sourceLegend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.legendCharter { background: #8b8e8b; }
+.legendUpdated { background: #b68b12; }
+.legendReview { background: #bc6e39; }
+
+.ruleTopline { margin-bottom: 7px; }
+
+.ruleSource {
+  color: #707777;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .12em;
+  line-height: 1.2;
+}
+
+.ruleItem ul {
+  margin: 8px 0 0;
+  padding: 0 0 0 18px;
+  color: #606668;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.ruleItem li + li { margin-top: 7px; }
+
+.ruleItem.updatedRule {
+  background: #fff9e8;
+  border-color: #d9bb62;
+  border-left: 4px solid #a98009;
+  padding-left: 15px;
+}
+
+.updatedRule .ruleSource { color: #876300; }
+
+.ruleItem.reviewRule {
+  background: #fff6ee;
+  border-color: #dfb99a;
+  border-left: 4px solid #bd793d;
+  padding-left: 15px;
+}
+
+.reviewRule .ruleSource { color: #96602f; }
+
+.reviewSection h2 {
+  margin: 0 0 9px;
+  color: #292e2f;
+  font-family: var(--cc-font-display), sans-serif;
+  font-size: 28px;
+  font-style: italic;
+  text-transform: uppercase;
+}
+
+.reviewSection > p {
+  color: #625e53;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.sideNav {
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+@media (max-width: 850px) {
+  .sourceLegend { padding-top: 0; }
+}
+
+@media (max-width: 640px) {
+  .ruleItem ul { font-size: 13px; }
+  .ruleItem p { font-size: 13px; }
+}
