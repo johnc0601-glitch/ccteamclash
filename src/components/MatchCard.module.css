@@ -153,13 +153,21 @@
   box-shadow: none;
 }
 
-/* Red fill already communicates live status; omit the dot in compact cards. */
-.card:global(.home-match-card) .liveFooter > :global(a) > :global(span) {
-  display: none;
+/* Compact broadcast waves restore the live indicator without crowding
+   either button or forcing the labels onto a second line. */
+.card:global(.home-match-card) .liveFooter :global(svg) {
+  width: 14px;
+  height: 14px;
 }
 
 @media (max-width: 600px) {
   .card:global(.home-match-card) .liveFooter > :global(a) {
-    font-size: 9px;
+    gap: 3px;
+    font-size: clamp(9px, 2.65vw, 10px);
+  }
+
+  .card:global(.home-match-card) .liveFooter :global(svg) {
+    width: 13px;
+    height: 13px;
   }
 }
