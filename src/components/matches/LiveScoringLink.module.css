@@ -29,20 +29,12 @@
   outline-offset: 3px;
 }
 
-.dot {
+.signal {
   flex: none;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #fff;
+  display: block;
+  width: 16px;
+  height: 16px;
+  color: #fff;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .dot {
-    animation: live-pulse 1.8s ease-in-out infinite;
-  }
-}
 
-@keyframes live-pulse {
-  50% {opacity: .45;}
-}
