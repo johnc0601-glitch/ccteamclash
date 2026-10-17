@@ -33,6 +33,8 @@ import type {Match} from '@/domain/schedule/Match';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 import {resolveMatchday, type PublicMatchday} from '@/services/matches/MatchdayService';
+import {getLiveScoringHref} from '@/services/matches/LiveScoringLink';
+import {easternDate} from '@/services/weather/MatchWeather';
 import {getFinalMatchdaySnapshot} from '@/services/matches/FinalMatchdaySnapshot';
 import {adaptCanarySnapshot, shouldUseFinalScoreboardCanary} from '@/services/matches/FinalMatchdayCanary';
 import {loadPublishedUpsetEvidence} from '@/services/matches/PublicUpsetEvidence';
@@ -244,7 +246,11 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     <>
       <SiteHeader />
       <main className={styles.page} style={pageBackground}>
-        <MatchHero matchday={matchday} roundLabel={round ? `Round ${round.number}` : undefined} />
+        <MatchHero
+          matchday={matchday}
+          roundLabel={round ? `Round ${round.number}` : undefined}
+          liveScoringHref={getLiveScoringHref(matchday, {today: easternDate(now), hasPublishedResult: Boolean(publishedResult)})}
+        />
         <div className={`shell ${styles.content}`}>
           <MatchdayInfoStrip matchday={matchday} attendance={attendanceTotals} />
           <Suspense fallback={null}>
