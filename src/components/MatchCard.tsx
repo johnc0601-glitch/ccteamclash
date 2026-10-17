@@ -131,7 +131,7 @@ function findTeam(teams: Team[], teamId: string, name: string): Team | undefined
 }
 
 function shortMatchDate(isoDate: string | undefined, fallback: string): string {
-  const match = isoDate?.match(/^\\d{4}-(\\d{2})-(\\d{2})$/);
+  const match = isoDate?.match(/^\d{4}-(\d{2})-(\d{2})$/);
   if (!match) return fallback;
   const month = Number(match[1]);
   const day = Number(match[2]);
@@ -144,7 +144,7 @@ function shortMatchDate(isoDate: string | undefined, fallback: string): string {
 }
 
 function shortMatchTime(time: string): string {
-  return time.replace(/^(\\d{1,2}):00\\s*(AM|PM)$/i, (_whole, hour: string, period: string) =>
+  return time.replace(/^(\d{1,2}):00\s*(AM|PM)$/i, (_whole, hour: string, period: string) =>
     `${Number(hour)} ${period.toUpperCase()}`);
 }
 
