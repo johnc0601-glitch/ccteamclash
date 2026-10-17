@@ -7,12 +7,11 @@ export function LiveScoringLink({href, matchup}: {href: string; matchup: string}
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`LIVE! Follow live scoring for ${matchup} on TC Whiteboard (opens in a new tab)`}
+      aria-label={`LIVE SCORES: Follow live scoring for ${matchup} on TC Whiteboard (opens in a new tab)`}
       title="Follow live scoring on TC Whiteboard"
     >
       <span className={styles.dot} aria-hidden="true" />
-      <strong>LIVE!</strong>
-      <span className={styles.external} aria-hidden="true">↗</span>
+      <strong>LIVE SCORES</strong>
     </a>
   );
 }
