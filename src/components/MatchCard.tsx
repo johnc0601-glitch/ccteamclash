@@ -35,19 +35,21 @@ export function MatchCard({match, teams, today, result}: MatchCardProps) {
   const isPast = Boolean(match.scheduledDate && match.scheduledDate < today);
   const showScore = Boolean(result) || isMatchday;
   const scoreLabel = result ? 'FINAL' : 'MATCHDAY';
+  const awayWins = Boolean(result && result.awayScore > result.homeScore);
+  const homeWins = Boolean(result && result.homeScore > result.awayScore);
   const liveScoringHref = getLiveScoringHref(match, {today, hasPublishedResult: Boolean(result)});
 
   return (
-    <article className={`dark-panel story-home-card home-match-card ${styles.card}`}>
+    <article className={`dark-panel story-home-card home-match-card ${styles.card}${result ? ` ${styles.finalCard}` : ''}`}>
       <div className="story-matchup">
         <Link className="match-team-link" href={`/teams/${encodeURIComponent(match.awayTeamId)}`}>
           <TeamMatchLogo name={match.away} logo={awayTeam?.logo} />
           <strong>{match.away}</strong>
         </Link>
         {showScore ? (
-          <div className={styles.scoreCenter} aria-label={`${match.away} ${result?.awayScore ?? 0}, ${match.home} ${result?.homeScore ?? 0}; ${scoreLabel.toLowerCase()}`}>
+          <div className={styles.scoreCenter} aria-label={result ? 'Final result posted' : 'Matchday'}>
             <span className={styles.scoreLabel}>{scoreLabel}</span>
-            <strong className={styles.scoreValue}>{result?.awayScore ?? 0}–{result?.homeScore ?? 0}</strong>
+            {!result ? <strong className={styles.scoreValue}>0–0</strong> : null}
           </div>
         ) : isPast ? (
           <span className={styles.pending}>PENDING</span>
@@ -59,6 +61,20 @@ export function MatchCard({match, teams, today, result}: MatchCardProps) {
           <strong>{match.home}</strong>
         </Link>
       </div>
+      {result ? (
+        <div
+          className={styles.finalScoreBoard}
+          aria-label={`Final score: ${match.away} ${result.awayScore}, ${match.home} ${result.homeScore}`}
+        >
+          <strong className={`${styles.finalScoreNumber} ${awayWins ? styles.finalScoreWinner : homeWins ? styles.finalScoreLoser : ''}`}>
+            {result.awayScore}
+          </strong>
+          <span className={styles.finalScoreDivider} aria-hidden="true">–</span>
+          <strong className={`${styles.finalScoreNumber} ${homeWins ? styles.finalScoreWinner : awayWins ? styles.finalScoreLoser : ''}`}>
+            {result.homeScore}
+          </strong>
+        </div>
+      ) : null}
       <div className="match-details">
         <p><span>DATE</span>{match.date}</p>
         <p><span>TIME</span>{match.time}</p>
