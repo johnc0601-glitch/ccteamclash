@@ -171,3 +171,95 @@
     height: 13px;
   }
 }
+
+
+/* Once official results have been published, use a full-width score row.
+   Keep the live 0–0 state and all other match cards unchanged. */
+.card:global(.home-match-card).finalCard {
+  gap: 8px;
+}
+
+/* Group the logos and FINAL label more tightly around the card center.
+   Only published-score cards use this tighter matchup layout. */
+.card:global(.home-match-card).finalCard :global(.story-matchup) {
+  width: 84%;
+  margin-inline: auto;
+  grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr);
+}
+
+.card:global(.home-match-card).finalCard .scoreCenter {
+  padding-top: 18px;
+}
+
+.card:global(.home-match-card).finalCard .scoreLabel {
+  font-size: 11px;
+  letter-spacing: .13em;
+  font-weight: 950;
+}
+
+.finalScoreBoard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 60px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--cc-gold) 30%, var(--cc-panel-border));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--cc-gold) 7%, var(--cc-surface));
+  font-variant-numeric: tabular-nums;
+}
+
+.finalScoreNumber {
+  min-width: 0;
+  color: var(--cc-text);
+  font-family: var(--cc-font-display);
+  font-size: clamp(30px, 2.89vw, 38px);
+  font-weight: 950;
+  letter-spacing: -.055em;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.finalScoreWinner {
+  color: var(--cc-gold);
+}
+
+.finalScoreLoser {
+  color: var(--cc-text-muted);
+}
+
+.finalScoreDivider {
+  color: var(--cc-text-muted);
+  font-size: 23px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.card:global(.home-match-card).finalCard :global(.match-details) {
+  border-top: 0;
+  padding-top: 0;
+}
+
+
+/* One centered details line on completed-match cards; wrap naturally when
+   longer course names do not fit in a narrow carousel card. */
+.finalMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 3px 6px;
+  min-width: 0;
+  color: var(--cc-text-muted);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.finalCourse {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
