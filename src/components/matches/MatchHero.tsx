@@ -1,12 +1,15 @@
 import type {PublicMatchday} from '@/services/matches/MatchdayService';
+import {LiveScoringLink} from './LiveScoringLink';
 import styles from './MatchHeroV1.module.css';
 
 export function MatchHero({
   matchday,
   roundLabel,
+  liveScoringHref,
 }: {
   matchday: PublicMatchday;
   roundLabel?: string;
+  liveScoringHref?: string;
 }) {
   const courseName = matchday.courseDetails?.name ?? 'Course details pending';
 
@@ -31,6 +34,7 @@ export function MatchHero({
         {matchday.courseDetails?.mapUrl
           ? <a href={matchday.courseDetails.mapUrl} target="_blank" rel="noreferrer">{courseName}</a>
           : <span>{courseName}</span>}
+        {liveScoringHref ? <LiveScoringLink href={liveScoringHref} matchup={`${matchday.awayTeam.name} at ${matchday.homeTeam.name}`} /> : null}
       </div>
     </section>
   );
