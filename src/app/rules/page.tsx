@@ -1,4 +1,5 @@
 import type {Metadata} from 'next';
+import type {ReactNode} from 'react';
 import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import styles from './Rules.module.css';
@@ -165,6 +166,6 @@ function SectionHeading({number, eyebrow, title}: {number: string; eyebrow: stri
   );
 }
 
-function RuleItem({title, children}: {title: string; children: React.ReactNode}) {
+function RuleItem({title, children}: {title: string; children: ReactNode}) {
   return <div className={styles.ruleItem}><h3>{title}</h3><p>{children}</p></div>;
 }
