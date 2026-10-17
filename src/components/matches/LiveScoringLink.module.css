@@ -1,0 +1,54 @@
+.link.link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid #fc5860;
+  border-radius: 6px;
+  background: #c81826;
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(196, 15, 37, .3);
+  font-size: 12px;
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: .05em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.link.link:hover {
+  border-color: #ff8187;
+  background: #e01a2b;
+  color: #fff;
+}
+
+.link.link:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.external {
+  margin-left: 1px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dot {
+    animation: live-pulse 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes live-pulse {
+  50% {opacity: .45;}
+}
