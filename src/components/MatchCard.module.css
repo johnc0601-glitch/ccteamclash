@@ -108,3 +108,58 @@
   font-weight: 800;
   letter-spacing: .08em;
 }
+
+
+/* Only active live-scoring cards receive paired, evenly sized action buttons.
+   At narrow carousel widths, the short labels stay on a single line. */
+.card:global(.home-match-card) .liveFooter {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-content: stretch;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.card:global(.home-match-card) .liveFooter > :global(a) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 3px;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.card:global(.home-match-card) .liveFooter .matchdayAction {
+  border: 1px solid var(--cc-gold);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--cc-gold) 7%, transparent);
+  color: var(--cc-gold);
+}
+
+.card:global(.home-match-card) .liveFooter .matchdayAction:hover {
+  background: color-mix(in srgb, var(--cc-gold) 15%, transparent);
+}
+
+.card:global(.home-match-card) .liveFooter > :global(a):last-child {
+  box-shadow: none;
+}
+
+/* Red fill already communicates live status; omit the dot in compact cards. */
+.card:global(.home-match-card) .liveFooter > :global(a) > :global(span) {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .card:global(.home-match-card) .liveFooter > :global(a) {
+    font-size: 9px;
+  }
+}
