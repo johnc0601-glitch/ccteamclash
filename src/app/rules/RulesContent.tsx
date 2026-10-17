@@ -113,16 +113,15 @@ const sections: readonly Section[] = [
   },
   {
     id: 'deadlines',
-    title: 'Submission, lock & no-shows',
+    title: 'Roster submission & no-shows',
     eyebrow: '06 / NEW RULES',
-    lead: 'The current website uses separate submission and lock times. The new no-show policy is distinct from the older charter’s general short-roster penalties.',
+    lead: 'Captains must submit the official match roster by noon Friday. New no-show penalties are separate from the older charter’s general short-roster penalties.',
     rules: [
       {title: 'Friday roster submission — noon', source: 'updated', points: [
         'Captains must submit their match roster on ccteamclash.com by 12:00 noon Friday, Eastern Time.',
         'The submitted match roster is available to players to view.',
         'Captains must verify that everyone listed intends to play and that the roster is accurate.',
       ]},
-      {title: 'Website roster lock — 3 PM', source: 'updated', text: 'The website locks match rosters at 3:00 PM Eastern on Friday of match week. This is a technical lock, not an extension of the noon captain-submission deadline. A commissioner can authorize an exception or correction.'},
       {title: 'Rostered player does not arrive', source: 'updated', points: [
         'If a player listed on the submitted website match roster does not appear, the opposing team receives an additional ½-point team penalty.',
         'If that absent player was also placed into a singles or doubles matchup and never arrives, the opposing team receives another ½ point.',
