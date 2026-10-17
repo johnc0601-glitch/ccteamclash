@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import {MatchdayLink} from '@/components/matchday-intro/MatchdayLink';
+import {LiveScoringLink} from '@/components/matches/LiveScoringLink';
+import {getLiveScoringHref} from '@/services/matches/LiveScoringLink';
 import {useState} from 'react';
 import type {Team} from '@/models/Team';
 import {createSlug} from '@/shared/utils';
@@ -33,6 +35,7 @@ export function MatchCard({match, teams, today, result}: MatchCardProps) {
   const isPast = Boolean(match.scheduledDate && match.scheduledDate < today);
   const showScore = Boolean(result) || isMatchday;
   const scoreLabel = result ? 'FINAL' : 'MATCHDAY';
+  const liveScoringHref = getLiveScoringHref(match, {today, hasPublishedResult: Boolean(result)});
 
   return (
     <article className={`dark-panel story-home-card home-match-card ${styles.card}`}>
@@ -63,6 +66,7 @@ export function MatchCard({match, teams, today, result}: MatchCardProps) {
       </div>
       <div className="match-card-footer">
         <MatchdayLink href={match.href} matchDate={match.scheduledDate} className="gold-link">View match -&gt;</MatchdayLink>
+        {liveScoringHref ? <LiveScoringLink href={liveScoringHref} matchup={`${match.away} at ${match.home}`} /> : null}
       </div>
     </article>
   );
