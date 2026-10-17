@@ -37,12 +37,6 @@
   background: #fff;
 }
 
-.external {
-  margin-left: 1px;
-  font-size: 14px;
-  font-weight: 700;
-}
-
 @media (prefers-reduced-motion: no-preference) {
   .dot {
     animation: live-pulse 1.8s ease-in-out infinite;
