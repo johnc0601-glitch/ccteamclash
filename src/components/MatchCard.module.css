@@ -171,3 +171,70 @@
     height: 13px;
   }
 }
+
+
+/* Once official results have been published, use a full-width score row.
+   Keep the live 0–0 state and all other match cards unchanged. */
+.card:global(.home-match-card).finalCard {
+  gap: 8px;
+}
+
+.card:global(.home-match-card).finalCard .scoreCenter {
+  padding-top: 18px;
+}
+
+.card:global(.home-match-card).finalCard .scoreLabel {
+  font-size: 11px;
+  letter-spacing: .13em;
+  font-weight: 950;
+}
+
+.finalScoreBoard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 66px;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--cc-gold) 30%, var(--cc-panel-border));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--cc-gold) 7%, var(--cc-surface));
+  font-variant-numeric: tabular-nums;
+}
+
+.finalScoreNumber {
+  min-width: 0;
+  color: var(--cc-text);
+  font-family: var(--cc-font-display);
+  font-size: clamp(35px, 3.4vw, 45px);
+  font-weight: 950;
+  letter-spacing: -.055em;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.finalScoreWinner {
+  color: var(--cc-gold);
+}
+
+.finalScoreLoser {
+  color: var(--cc-text-muted);
+}
+
+.finalScoreDivider {
+  color: var(--cc-text-muted);
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.card:global(.home-match-card).finalCard :global(.match-details) {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.card:global(.home-match-card).finalCard :global(.match-details) p {
+  font-size: 11px;
+  margin-bottom: 4px;
+}
