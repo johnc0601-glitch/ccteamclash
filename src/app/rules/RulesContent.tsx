@@ -278,6 +278,7 @@ export function RulesContent() {
           <span><i className={styles.legendUpdated}/> New league rule</span>
           <span><i className={styles.legendReview}/> Needs confirmation</span>
         </div>
+        <Link className={styles.textLink} href="/rules/original">Read the full original 2025–26 Charter →</Link>
 
         {sections.map((section, index) => (
           <section key={section.id} id={section.id} className={styles.section}>
