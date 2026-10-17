@@ -75,11 +75,21 @@ export function MatchCard({match, teams, today, result}: MatchCardProps) {
           </strong>
         </div>
       ) : null}
-      <div className="match-details">
-        <p><span>DATE</span>{match.date}</p>
-        <p><span>TIME</span>{match.time}</p>
-        <p><span>COURSE</span>{match.course}</p>
-      </div>
+      {result ? (
+        <div className={styles.finalMeta} aria-label={`Played ${match.date}, ${match.time}, ${match.course}`}>
+          <span>{shortMatchDate(match.scheduledDate, match.date)}</span>
+          <span aria-hidden="true">•</span>
+          <span>{shortMatchTime(match.time)}</span>
+          <span aria-hidden="true">•</span>
+          <span className={styles.finalCourse}>{match.course}</span>
+        </div>
+      ) : (
+        <div className="match-details">
+          <p><span>DATE</span>{match.date}</p>
+          <p><span>TIME</span>{match.time}</p>
+          <p><span>COURSE</span>{match.course}</p>
+        </div>
+      )}
       <div className={`match-card-footer${liveScoringHref ? ` ${styles.liveFooter}` : ''}`}>
         <MatchdayLink
           href={match.href}
@@ -118,6 +128,24 @@ function findTeam(teams: Team[], teamId: string, name: string): Team | undefined
   if (byId) return byId;
   const slug = createSlug(name);
   return teams.find((team) => createSlug(team.name) === slug);
+}
+
+function shortMatchDate(isoDate: string | undefined, fallback: string): string {
+  const match = isoDate?.match(/^\\d{4}-(\\d{2})-(\\d{2})$/);
+  if (!match) return fallback;
+  const month = Number(match[1]);
+  const day = Number(match[2]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return fallback;
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const suffix = day % 100 >= 11 && day % 100 <= 13
+    ? 'th'
+    : day % 10 === 1 ? 'st' : day % 10 === 2 ? 'nd' : day % 10 === 3 ? 'rd' : 'th';
+  return `${monthNames[month - 1]} ${day}${suffix}`;
+}
+
+function shortMatchTime(time: string): string {
+  return time.replace(/^(\\d{1,2}):00\\s*(AM|PM)$/i, (_whole, hour: string, period: string) =>
+    `${Number(hour)} ${period.toUpperCase()}`);
 }
 
 function initials(name: string): string {
