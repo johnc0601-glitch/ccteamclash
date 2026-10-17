@@ -64,8 +64,14 @@ export function MatchCard({match, teams, today, result}: MatchCardProps) {
         <p><span>TIME</span>{match.time}</p>
         <p><span>COURSE</span>{match.course}</p>
       </div>
-      <div className="match-card-footer">
-        <MatchdayLink href={match.href} matchDate={match.scheduledDate} className="gold-link">View match -&gt;</MatchdayLink>
+      <div className={`match-card-footer${liveScoringHref ? ` ${styles.liveFooter}` : ''}`}>
+        <MatchdayLink
+          href={match.href}
+          matchDate={match.scheduledDate}
+          className={liveScoringHref ? `gold-link ${styles.matchdayAction}` : 'gold-link'}
+        >
+          {liveScoringHref ? 'View match' : 'View match ->'}
+        </MatchdayLink>
         {liveScoringHref ? <LiveScoringLink href={liveScoringHref} matchup={`${match.away} at ${match.home}`} /> : null}
       </div>
     </article>
