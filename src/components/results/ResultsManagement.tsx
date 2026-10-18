@@ -1,6 +1,7 @@
 'use client';
 
 import {useMemo, useState} from 'react';
+import {prepareWhiteboardImport, type WhiteboardReview} from '@/services/matches/TCWhiteboardImport';
 import {
   loadResultContests,
   loadResultProcessingStatus,
@@ -75,6 +76,10 @@ export function ResultsManagement({
   const [homeAdjustment, setHomeAdjustment] = useState<{category: ResultStructuralCategory | ''; note: string}>({category: '', note: ''});
   const [awayAdjustment, setAwayAdjustment] = useState<{category: ResultStructuralCategory | ''; note: string}>({category: '', note: ''});
   const [processingStatus, setProcessingStatus] = useState<ResultProcessingStatus | null>(null);
+  const [whiteboardPreview, setWhiteboardPreview] = useState<WhiteboardReview | null>(null);
+  const [importAliasesReviewed, setImportAliasesReviewed] = useState(false);
+  const [importAdjustmentsReviewed, setImportAdjustmentsReviewed] = useState(false);
+  const [importApplied, setImportApplied] = useState(false);
 
   async function load(preferredRoundId?: string) {
     const workspace = await loadResultsWorkspace(preferredRoundId || roundId);
@@ -101,12 +106,18 @@ export function ResultsManagement({
     }
     setMatches(round.data);
     setEditor(null);
+    setWhiteboardPreview(null);
+    setImportApplied(false);
     setMessage('');
   }
 
   async function openEditor(match: Match) {
     const result = results.find((candidate) => candidate.matchId === match.id);
     setEditor({match, result});
+    setWhiteboardPreview(null);
+    setImportApplied(false);
+    setImportAliasesReviewed(false);
+    setImportAdjustmentsReviewed(false);
     setHomeScore(result?.homeScore === null || result?.homeScore === undefined ? '' : String(result.homeScore));
     setAwayScore(result?.awayScore === null || result?.awayScore === undefined ? '' : String(result.awayScore));
     setFieldErrors({});
@@ -220,6 +231,52 @@ export function ResultsManagement({
       const status = await loadResultProcessingStatus(editor.match.id);
       setProcessingStatus(status.ok ? status.data : null);
     }
+  }
+
+
+  async function reviewWhiteboardFile(file: File) {
+    if (!editor || editor.result?.status === 'Published') return;
+    setWhiteboardPreview(null);
+    setImportApplied(false);
+    setImportAliasesReviewed(false);
+    setImportAdjustmentsReviewed(false);
+    if (file.size > 3_000_000) {
+      setMessage('TC Whiteboard export exceeds 3 MB; check the file.');
+      return;
+    }
+    try {
+      const json: unknown = JSON.parse(await file.text());
+      const candidates = officialRosterPlayers.map(row => {
+        const profile = initialPlayers.find(p => p.id === row.id);
+        return {...row, pdgaNumber: profile?.pdgaNumber || ''};
+      });
+      const preview = prepareWhiteboardImport(json, {
+        id: editor.match.id,
+        date: editor.match.date,
+        homeTeamId: editor.match.homeTeamId,
+        awayTeamId: editor.match.awayTeamId,
+        homeTeamName: editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) || '' : '',
+        awayTeamName: editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) || '' : '',
+      }, candidates);
+      setWhiteboardPreview(preview);
+      setMessage(preview.errors.length ? 'JSON review has blocking issues. No contest rows were loaded.'
+        : 'Export validated against the selected fixture and locked roster. Review aliases and non-contest team points before loading.');
+    } catch {
+      setMessage('Unable to read this TC Whiteboard JSON file. No data was changed.');
+    }
+  }
+
+  function applyWhiteboardPreview() {
+    if (!editor || !whiteboardPreview || whiteboardPreview.errors.length
+      || (whiteboardPreview.aliasMatches.length > 0 && !importAliasesReviewed)
+      || (whiteboardPreview.roundAdjustments.some(x => x.away > 0 || x.home > 0) && !importAdjustmentsReviewed)) return;
+    setHomeScore(String(whiteboardPreview.homeScore));
+    setAwayScore(String(whiteboardPreview.awayScore));
+    setContests(whiteboardPreview.contests);
+    setHomeAdjustment({category: '', note: ''});
+    setAwayAdjustment({category: '', note: ''});
+    setImportApplied(true);
+    setMessage('TC Whiteboard rows loaded into the editor only. No server save or CI updates occurred. Choose and document residual point categories, then save the draft.');
   }
 
   const audit = useMemo(
@@ -336,6 +393,49 @@ export function ResultsManagement({
             <div><span>Result entry</span><h2>{editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'TBD'} vs {editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'TBD'}</h2></div>
             <button type="button" onClick={() => setEditor(null)}>Close</button>
           </header>
+
+          {editor.result?.status !== 'Published' ? (
+            <section className={styles.whiteboardImport}>
+              <h3>TC Whiteboard · JSON review</h3>
+              <p>Upload the final results export for this selected match. No file is sent to the server; the review happens in your browser.</p>
+              <input type="file" accept=".json,application/json"
+                aria-label="Select TC Whiteboard results JSON"
+                onChange={event => {const file=event.target.files?.[0]; if (file) void reviewWhiteboardFile(file);}} />
+              {whiteboardPreview ? (
+                <div className={styles.whiteboardReview} aria-live="polite">
+                  <strong>Source ID: {whiteboardPreview.sourceMatchId}</strong>
+                  <span>Official final: {whiteboardPreview.awayScore}–{whiteboardPreview.homeScore} · {whiteboardPreview.contests.length} playable contests ({whiteboardPreview.contests.filter(x=>x.format==='Singles').length} singles, {whiteboardPreview.contests.filter(x=>x.format==='Doubles').length} doubles)</span>
+                  {whiteboardPreview.roundAdjustments.map(x=>(
+                    <span key={x.round}>Round {x.round}: source team points outside matchups — Away +{x.away}, Home +{x.home}</span>
+                  ))}
+                  {whiteboardPreview.errors.length ? <div role="alert">
+                    <b>Blocking errors</b>
+                    <ul>{whiteboardPreview.errors.map((x,i)=><li key={i}>{x}</li>)}</ul>
+                  </div> : null}
+                  {whiteboardPreview.warnings.length ? <div>
+                    <b>Review notes</b>
+                    <ul>{whiteboardPreview.warnings.map((x,i)=><li key={i}>{x}</li>)}</ul>
+                  </div> : null}
+                  {whiteboardPreview.aliasMatches.length ? <label>
+                    <input type="checkbox" checked={importAliasesReviewed} onChange={e=>setImportAliasesReviewed(e.target.checked)} />
+                    I verified the player name aliases against the locked roster.
+                  </label> : null}
+                  {whiteboardPreview.roundAdjustments.some(x=>x.away>0||x.home>0) ? <label>
+                    <input type="checkbox" checked={importAdjustmentsReviewed} onChange={e=>setImportAdjustmentsReviewed(e.target.checked)} />
+                    I reviewed the unexplained points; I will enter their confirmed award category and explanation before publishing.
+                  </label> : null}
+                  <button type="button" className={styles.secondary}
+                    disabled={!!whiteboardPreview.errors.length
+                      || (whiteboardPreview.aliasMatches.length>0&&!importAliasesReviewed)
+                      || (whiteboardPreview.roundAdjustments.some(x=>x.away>0||x.home>0)&&!importAdjustmentsReviewed)}
+                    onClick={applyWhiteboardPreview}>
+                    Load verified rows into editor
+                  </button>
+                  {importApplied ? <strong>Loaded locally — not saved or published.</strong> : null}
+                </div>
+              ) : null}
+            </section>
+          ) : null}
           <div className={styles.scores}>
             <label>
               <span>{editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'TBD'} score</span>
@@ -468,6 +568,9 @@ export function ResultsManagement({
             </p>
           </div>
           {message ? <p className={styles.message} role="status">{message}</p> : null}
+          {importApplied && (audit.awayResidual>0||audit.homeResidual>0) ? <p className={styles.importReminder}>
+            TC Whiteboard import: before finalizing, document the source of every non-contest point. An unplayed slot must not create a player win or CI result.
+          </p> : null}
           <div className={styles.actions}>
             {editor.result?.status === 'Published' ? (
               <button type="button" className={styles.secondary} disabled={saving} onClick={() => void save('reopen')}>Reopen result</button>
@@ -477,7 +580,8 @@ export function ResultsManagement({
                 <button
                   type="button"
                   className={styles.primary}
-                  disabled={saving || audit.homeResidual < 0 || audit.awayResidual < 0 || (audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)}
+                  disabled={saving || audit.homeResidual < 0 || audit.awayResidual < 0 || (audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)
+                    || (importApplied && ((audit.awayResidual>0 && awayAdjustment.note.trim().length<12) || (audit.homeResidual>0 && homeAdjustment.note.trim().length<12)))}
                   onClick={() => void save('publish')}
                 >
                   Finalize match
