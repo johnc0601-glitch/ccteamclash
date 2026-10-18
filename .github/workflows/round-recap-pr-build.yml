@@ -1,0 +1,26 @@
+name: Round Recap PR Build
+
+on:
+  push:
+    branches:
+      - fix/round-recap-mobile-readability-20261018
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Next.js build and TypeScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Verify production build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
