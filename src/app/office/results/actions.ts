@@ -364,6 +364,16 @@ async function replaceResultStructuralPoints(
   // no adjustment rows to remove.
   if (unchanged) return {ok: true};
 
+  // An empty adjustment list on a new match is a no-op, not a deletion.
+  // Retain deletion only when earlier draft adjustments actually exist.
+  const {data: existing, error: readError} = await (supabase as any)
+    .from('launch_match_structural_points')
+    .select('id')
+    .eq('match_id', matchId)
+    .limit(1);
+  if (readError) return {ok: false, message: 'Scoring adjustments could not be checked. Please contact a commissioner.'};
+  if (!existing?.length && !normalized.length) return {ok: true};
+
   const {error: deleteError} = await (supabase as any)
     .from('launch_match_structural_points')
     .delete()
