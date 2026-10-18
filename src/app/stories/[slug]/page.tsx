@@ -79,6 +79,7 @@ export default async function Page({params, searchParams}: StoryPageProps) {
               : <StoryBodyBlock
                   key={`${index}-${paragraph.slice(0, 40)}`}
                   paragraph={paragraph}
+                  recap={isRecap}
                 />
           ))}
           {story.links?.map((link) => (
@@ -98,7 +99,7 @@ export default async function Page({params, searchParams}: StoryPageProps) {
 }
 
 
-function StoryBodyBlock({paragraph}: {paragraph: string}) {
+function StoryBodyBlock({paragraph, recap = false}: {paragraph: string; recap?: boolean}) {
   const trimmed = paragraph.trim();
   if (!trimmed) return null;
 
@@ -118,7 +119,7 @@ function StoryBodyBlock({paragraph}: {paragraph: string}) {
   }
 
   return (
-    <p className="article-paragraph">
+    <p className={recap && trimmed.startsWith("**The takeaway:**") ? "article-paragraph round-recap-takeaway" : "article-paragraph"}>
       {lines.map((line, index) => (
         <span className="article-line" key={index}>{renderInline(line)}</span>
       ))}
