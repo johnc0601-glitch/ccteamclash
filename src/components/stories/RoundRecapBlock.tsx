@@ -1,4 +1,4 @@
-import type {ReactNode} from 'react';
+import type {CSSProperties, ReactNode} from 'react';
 
 type RecapBlockKind = 'match' | 'pulse' | 'discovery' | 'mover' | 'upcoming';
 
@@ -22,15 +22,24 @@ function score(value: string): ReactNode {
  * All blocks are ordinary editable paragraph text in the existing Story Manager.
  * Non-recap stories and ordinary paragraphs keep their existing rendering.
  */
-export function RoundRecapBlock({paragraph}: {paragraph: string}) {
+export function RoundRecapBlock({
+  paragraph,
+  teamColors = {},
+}: {
+  paragraph: string;
+  teamColors?: Record<string, string>;
+}) {
   if (!paragraph.startsWith(':::')) return null;
   const [tag, ...parts] = cleanParts(paragraph.slice(3));
   const kind = tag as RecapBlockKind;
 
   if (kind === 'match' && parts.length >= 6) {
     const [home, homeScore, away, awayScore, date, course] = parts;
+    const homeColor = safeTeamColor(teamColors[home.toLowerCase()], '#8c939a');
+    const awayColor = safeTeamColor(teamColors[away.toLowerCase()], '#8c939a');
+    const colors = {'--round-home-color': homeColor, '--round-away-color': awayColor} as CSSProperties;
     return (
-      <section className="round-recap-match" aria-label={`${home} vs ${away}`}>
+      <section className="round-recap-match" aria-label={`${home} vs ${away}`} style={colors}>
         <div className="round-recap-match-head">
           <div className="round-recap-match-date">{date} · {course}</div>
           <span className="round-recap-final">FINAL</span>
@@ -96,6 +105,10 @@ export function RoundRecapBlock({paragraph}: {paragraph: string}) {
 
   // Malformed custom blocks are shown as plain text rather than silently lost.
   return <p className="article-paragraph">{paragraph}</p>;
+}
+
+function safeTeamColor(color: string | undefined, fallback: string): string {
+  return color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : fallback;
 }
 
 export function isRoundRecapBlock(paragraph: string): boolean {
