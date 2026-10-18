@@ -44,7 +44,10 @@ function identity(whiteboardName: string, pdgaNumber: number | null, side: 'Home
     const first=parts[0]||'', surname=parts[parts.length-1]||'';
     matches=teamPlayers.filter(p=>{
       const candidate=coreName(p.name).split(' ');
-      return candidate[candidate.length-1]===surname && first.length>0
+      const candidateSurname=candidate[candidate.length-1] || '';
+      const surnameMatches=surname.length===1
+        ? candidateSurname.startsWith(surname) : candidateSurname===surname;
+      return surnameMatches && first.length>0
         && candidate[0]?.[0]===first[0];
     });
   }
@@ -152,7 +155,9 @@ export function prepareWhiteboardImport(
           const resolvedId=identity(name,pdga,side,teamId||'',candidates,warnings,errors);
           if(warnings.length>previousCount) aliasMatches.push(warnings[warnings.length-1]);
           if(!resolvedId)continue;
-          const encounterKey=side+'|'+format+'|'+resolvedId;
+          // A player may legitimately take singles in both rounds when a
+          // special 1v1 is used during the doubles round.
+          const encounterKey=side+'|round-'+roundIndex+'|'+resolvedId;
           if(knownPlayers.has(encounterKey)){
             errors.push('Player repeated in '+format+': '+name);
           }
