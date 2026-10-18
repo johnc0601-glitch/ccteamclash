@@ -258,6 +258,10 @@ export async function saveOfficeResult(
   const access = await getCommissionerAccess();
   if (!access.ok) return access;
 
+  if (process.env.VERCEL_ENV === 'preview') {
+    return {ok: false, message: 'Read-only preview: save and finalization are disabled.'};
+  }
+
   const resultsService = await createServerResultsService();
 
   try {
@@ -333,6 +337,42 @@ async function replaceResultStructuralPoints(
   if (normalized.length !== points.length) {
     return {ok: false, message: 'Review the additional scoring adjustments before finalizing.'};
   }
+
+  const {data: currentAdjustments, error: currentError} = await (supabase as any)
+    .from('launch_match_structural_points')
+    .select('awarded_team_id,category,points,note')
+    .eq('match_id', matchId);
+  if (currentError) {
+    return {ok: false, message: 'Could not read existing scoring adjustments.'};
+  }
+
+  const current = (currentAdjustments ?? []) as Array<{
+    awarded_team_id: string;
+    category: string;
+    points: number | string;
+    note: string | null;
+  }>;
+  const unchanged = current.length === normalized.length
+    && normalized.every((point) => current.some((row) =>
+      row.awarded_team_id === point.awardedTeamId
+      && row.category === point.category
+      && Number(row.points) === point.points
+      && (row.note ?? '') === (point.note?.trim() ?? '')
+    ));
+
+  // Avoid a DELETE when nothing changed. In particular, an empty draft has
+  // no adjustment rows to remove.
+  if (unchanged) return {ok: true};
+
+  // An empty adjustment list on a new match is a no-op, not a deletion.
+  // Retain deletion only when earlier draft adjustments actually exist.
+  const {data: existing, error: readError} = await (supabase as any)
+    .from('launch_match_structural_points')
+    .select('id')
+    .eq('match_id', matchId)
+    .limit(1);
+  if (readError) return {ok: false, message: 'Scoring adjustments could not be checked. Please contact a commissioner.'};
+  if (!existing?.length && !normalized.length) return {ok: true};
 
   const {error: deleteError} = await (supabase as any)
     .from('launch_match_structural_points')

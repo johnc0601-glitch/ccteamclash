@@ -5,7 +5,15 @@ import {createServerScheduleService} from '@/core/createServerScheduleService';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {createClient} from '@/lib/supabase/server';
 
-export default async function OfficeResultsPage() {
+type ResultsPageProps = {
+  searchParams: Promise<{matchId?: string | string[]}>;
+};
+
+export default async function OfficeResultsPage({searchParams}: ResultsPageProps) {
+  const params = await searchParams;
+  const rawMatchId = params.matchId;
+  const requestedId = typeof rawMatchId === 'string' && rawMatchId.length <= 200
+    ? rawMatchId.trim() : '';
   const scheduleService = await createServerScheduleService();
   const resultsService = await createServerResultsService();
   const launchRepository = new SupabaseLaunchRepository(await createClient());
@@ -21,7 +29,11 @@ export default async function OfficeResultsPage() {
   )).flat().sort((left, right) =>
     (left.date ?? '').localeCompare(right.date ?? '') || left.number - right.number,
   );
-  const initialRoundId = rounds[0]?.id ?? '';
+  // Commissioner test/review links can open the exact official match.
+  // Never guess a fixture from a TC Whiteboard team name or date.
+  const requestedMatch = requestedId ? await scheduleService.getMatch(requestedId) : undefined;
+  const requestedRoundValid = Boolean(requestedMatch && rounds.some((round) => round.id === requestedMatch.roundId));
+  const initialRoundId = requestedRoundValid ? requestedMatch!.roundId : rounds[0]?.id ?? '';
   const matches = initialRoundId ? await scheduleService.getMatches(initialRoundId) : [];
 
   return (
@@ -35,6 +47,9 @@ export default async function OfficeResultsPage() {
         initialCourses={courses}
         initialRoundId={initialRoundId}
         initialPlayers={players}
+        previewReadOnly={process.env.VERCEL_ENV === 'preview'}
+        initialMatchId={requestedRoundValid ? requestedMatch!.id : ''}
+        requestedMatchNotFound={Boolean(requestedId && !requestedRoundValid)}
       />
     </OfficePage>
   );

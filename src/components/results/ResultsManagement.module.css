@@ -56,3 +56,71 @@
   .contests > header, .contestButtons { align-items: stretch; flex-direction: column; }
   .playerSides, .contestScores { grid-template-columns: 1fr; }
 }
+
+
+.whiteboardImport { margin: 0 24px 20px; padding: 18px; border: 1px solid #cbb36c; border-radius: 7px; background: #fffaf0; display: grid; gap: 10px; }
+.whiteboardImport h3 { margin: 0; color: #242620; font-size: 15px; font-weight: 950; text-transform: uppercase; }
+.whiteboardImport > p { margin: 0; color: #555e58; font-size: 12px; line-height: 1.5; }
+.whiteboardImport > input[type="file"] {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: 44px;
+  min-width: 0;
+  color: #555e58;
+  font-size: 13px;
+  cursor: pointer;
+}
+.whiteboardImport > input[type="file"]::file-selector-button,
+.whiteboardImport > input[type="file"]::-webkit-file-upload-button {
+  min-height: 44px;
+  margin-right: 12px;
+  padding: 9px 18px;
+  border: 1px solid #58723a;
+  border-radius: 999px;
+  background: #58723a;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.whiteboardImport > input[type="file"]:hover::file-selector-button {
+  background: #40582a;
+  border-color: #40582a;
+}
+.whiteboardImport > input[type="file"]:focus-visible {
+  outline: 2px solid #567338;
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+.whiteboardReview { display: grid; gap: 9px; padding: 13px; border: 1px solid #dfd9ca; border-radius: 5px; background: #fff; font-size: 12px; color: #434b46; line-height: 1.5; }
+.whiteboardReview b, .whiteboardReview strong { color: #2d3430; }
+.whiteboardReview ul { margin: 6px 0 0; padding-left: 20px; }
+.whiteboardReview label { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; font-weight: 750; }
+.whiteboardReview label input { margin-top: 3px; }
+.whiteboardReview button { justify-self: start; min-height: 36px; padding: 8px 12px; border: 1px solid #aaa; border-radius: 5px; background: #f9f8f5; color: #333; font-weight: 850; cursor: pointer; }
+.whiteboardReview button:disabled { cursor: not-allowed; opacity: .5; }
+.importReminder { margin: 0 24px 10px; padding: 10px 12px; border-left: 3px solid #b18d26; background: #fff8e4; font-size: 12px; line-height: 1.5; }
+
+
+/* In deep-linked commissioner reviews the selected importer opens above
+   unrelated round matches; the regular Results page keeps its existing order. */
+.directMatch > .toolbar { order: 0; }
+.directMatch > .editor { order: 1; }
+.directMatch > .list { order: 2; }
+.directMatchWarning { padding: 14px 18px; margin: 0; background: #fff4e2; color: #644018; border: 1px solid #d2b689; }
+@media (max-width: 720px) {
+  .directMatch > .editor { margin: 0; }
+}
+
+
+.importBlocker { margin: 0; color: #8e2f23; font-size: 12px; font-weight: 800; line-height: 1.5; }
+.importReady { margin: 0; color: #32613b; font-size: 12px; font-weight: 800; }
+.previewNotice { margin: 0 24px 12px; padding: 12px 14px; color: #51401f; background: #fbf2d7; border: 1px solid #dfc983; border-radius: 5px; font-size: 12px; font-weight: 750; line-height: 1.5; }
+.whiteboardReview, .whiteboardReview > div, .whiteboardReview span { min-width: 0; overflow-wrap: anywhere; }
+
+.sourcePenalties { display: grid; gap: 8px; padding: 11px 12px; border: 1px solid #d8c49e; background: #fcf9f0; border-radius: 5px; }
+.sourcePenalties b { font-weight: 900; color: #292d28; }
+.sourcePenalties p { margin: 0; font-size: 12px; line-height: 1.45; color: #3e423f; overflow-wrap: anywhere; }
