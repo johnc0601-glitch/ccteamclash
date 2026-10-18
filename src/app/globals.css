@@ -1631,3 +1631,6 @@ td,
  .round-recap-mover{grid-template-columns:24px minmax(0,1fr) 93px;padding:10px;gap:8px}
  .round-recap-mover-change strong{font-size:17px}
 }
+
+/* Round recap cover, full image on mobile without poster cropping. */
+.article-image.round-recap-cover{width:100%;height:auto;aspect-ratio:16/9;background-size:cover;background-position:center;margin:24px 0 30px;overflow:hidden}
