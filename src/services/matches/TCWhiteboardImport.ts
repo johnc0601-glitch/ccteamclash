@@ -9,6 +9,19 @@ export type WhiteboardImportMatch = {
   homeTeamName: string;
   awayTeamName: string;
 };
+export type WhiteboardPenalty = {
+  round: number;
+  against: 'Home' | 'Away';
+  credited: 'Home' | 'Away';
+  points: number;
+  note: string;
+};
+export type WhiteboardAward = {
+  side: 'Home' | 'Away';
+  category: 'WomenBonus' | 'NoShow' | 'Penalty' | 'Other';
+  points: number;
+  note: string;
+};
 export type WhiteboardReview = {
   sourceMatchId: string;
   homeScore: number;
@@ -17,6 +30,8 @@ export type WhiteboardReview = {
   errors: string[];
   warnings: string[];
   aliasMatches: string[];
+  penalties: WhiteboardPenalty[];
+  awards: WhiteboardAward[];
   roundAdjustments: Array<{round: number; away: number; home: number}>;
 };
 
@@ -95,6 +110,8 @@ export function prepareWhiteboardImport(
   const rounds=list(source.rounds);
   if (rounds.length!==2) errors.push('Expected both completed singles and doubles rounds.');
   const contests: ResultContestInput[]=[];
+  const penalties: WhiteboardPenalty[]=[];
+  const awards: WhiteboardAward[]=[];
   const roundAdjustments: WhiteboardReview['roundAdjustments']=[];
   let nextSingles=1, nextDoubles=1, summedHome=0, summedAway=0;
   const knownPlayers=new Map<string,{side:'Home'|'Away';format:string}>();
@@ -174,16 +191,58 @@ export function prepareWhiteboardImport(
     }
     summedHome+=reportedHome;summedAway+=reportedAway;
     const diffAway=reportedAway-playedAway,diffHome=reportedHome-playedHome;
+    // TC Whiteboard v1 exports now include round.penalties. For new
+    // exports, these entries MUST reconcile exactly with team-only points.
+    // Earlier files without the field remain in manual-review mode.
+    const penaltyFieldPresent = Object.prototype.hasOwnProperty.call(round,'penalties');
+    if(penaltyFieldPresent && !Array.isArray(round.penalties)){
+      errors.push('Round '+(roundIndex+1)+' penalties must be an array.');
+    }
+    let documentedAway=0,documentedHome=0;
+    for(const [penaltyIndex, raw] of (Array.isArray(round.penalties) ? round.penalties : []).entries()){
+      const penalty=object(raw),against=string(penalty.against).toLowerCase();
+      const amount=score(penalty.points), note=string(penalty.note);
+      const expectedTeam=against==='home'?string(home.id):against==='away'?string(away.id):'';
+      if(!expectedTeam || string(penalty.teamId)!==expectedTeam || amount===null || amount<=0 || !note){
+        errors.push('Round '+(roundIndex+1)+' penalty '+(penaltyIndex+1)+' has invalid team, amount or explanation.');
+        continue;
+      }
+      const credited: 'Home'|'Away' = against==='home'?'Away':'Home';
+      const penaltyRecord: WhiteboardPenalty = {
+        round:roundIndex+1, against:against==='home'?'Home':'Away', credited,
+        points:amount, note,
+      };
+      penalties.push(penaltyRecord);
+      if(credited==='Away')documentedAway+=amount;else documentedHome+=amount;
+      // Categorization here is intentionally limited to known, exact 2026-27
+      // rule descriptions. Preserve the full original note for review.
+      // If an exporter changes its language, default to Other rather than
+      // silently manufacturing a women's or no-show penalty.
+      const n=note.toLowerCase().replace(/\s+/g,' ').trim();
+      if(n==='short female' && approx(amount,1)){
+        awards.push({side:credited, category:'WomenBonus',points:1,note:'Round '+(roundIndex+1)+': '+note});
+      } else if(n==='missing female and rostered player' && approx(amount,1.5)){
+        awards.push({side:credited, category:'WomenBonus',points:1,note:'Round '+(roundIndex+1)+': '+note+' (missing female portion)'});
+        awards.push({side:credited, category:'NoShow',points:0.5,note:'Round '+(roundIndex+1)+': '+note+' (rostered-player no-show portion; commissioner confirmation required)'});
+        warnings.push('Round '+(roundIndex+1)+' 1.5 points split by current league rules as missing female +1 and rostered no-show +0.5. Confirm before saving.');
+      } else {
+        awards.push({side:credited,category:'Other',points:amount,note:'Round '+(roundIndex+1)+': '+note});
+        warnings.push('Round '+(roundIndex+1)+' penalty '+JSON.stringify(note)+' is unclassified; commissioner must verify its category.');
+      }
+    }
+    if(penaltyFieldPresent && (!approx(documentedAway,diffAway) || !approx(documentedHome,diffHome))){
+      errors.push('Round '+(roundIndex+1)+' penalty ledger does not match team points outside matchups.');
+    }
     if(diffAway<-.001||diffHome<-.001) errors.push('Round '+(roundIndex+1)+' reported fewer points than its matchups.');
     if(!Number.isInteger(diffAway*2)||!Number.isInteger(diffHome*2))
       errors.push('Round '+(roundIndex+1)+' adjustment is not a half-point increment.');
-    if(diffAway>0||diffHome>0)
-      warnings.push('Round '+(roundIndex+1)+' contains unattributed team points: Away +'+diffAway+', Home +'+diffHome+'. Commissioner must supply the reason.');
+    if(!penaltyFieldPresent && (diffAway>0||diffHome>0))
+      warnings.push('Round '+(roundIndex+1)+' contains unattributed team points: Away +'+diffAway+', Home +'+diffHome+'. Older export has no penalty ledger; commissioner must supply the reason.');
     roundAdjustments.push({round:roundIndex+1,away:diffAway,home:diffHome});
   }
   if(officialHome!==null&&!approx(summedHome,officialHome)) errors.push('Rounds do not sum to official home final.');
   if(officialAway!==null&&!approx(summedAway,officialAway)) errors.push('Rounds do not sum to official away final.');
   if(contests.length===0)errors.push('No supported played matchups.');
   return {sourceMatchId,homeScore:officialHome??0,awayScore:officialAway??0,
-    contests,errors,warnings,aliasMatches,roundAdjustments};
+    contests,errors,warnings,aliasMatches,penalties,awards,roundAdjustments};
 }
