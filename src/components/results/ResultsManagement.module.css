@@ -61,7 +61,40 @@
 .whiteboardImport { margin: 0 24px 20px; padding: 18px; border: 1px solid #cbb36c; border-radius: 7px; background: #fffaf0; display: grid; gap: 10px; }
 .whiteboardImport h3 { margin: 0; color: #242620; font-size: 15px; font-weight: 950; text-transform: uppercase; }
 .whiteboardImport > p { margin: 0; color: #555e58; font-size: 12px; line-height: 1.5; }
-.whiteboardImport > input[type="file"] { max-width: 100%; color: #292d2a; font-size: 12px; }
+.whiteboardImport > input[type="file"] {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: 44px;
+  min-width: 0;
+  color: #555e58;
+  font-size: 13px;
+  cursor: pointer;
+}
+.whiteboardImport > input[type="file"]::file-selector-button,
+.whiteboardImport > input[type="file"]::-webkit-file-upload-button {
+  min-height: 44px;
+  margin-right: 12px;
+  padding: 9px 18px;
+  border: 1px solid #58723a;
+  border-radius: 999px;
+  background: #58723a;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.whiteboardImport > input[type="file"]:hover::file-selector-button {
+  background: #40582a;
+  border-color: #40582a;
+}
+.whiteboardImport > input[type="file"]:focus-visible {
+  outline: 2px solid #567338;
+  outline-offset: 3px;
+  border-radius: 8px;
+}
 .whiteboardReview { display: grid; gap: 9px; padding: 13px; border: 1px solid #dfd9ca; border-radius: 5px; background: #fff; font-size: 12px; color: #434b46; line-height: 1.5; }
 .whiteboardReview b, .whiteboardReview strong { color: #2d3430; }
 .whiteboardReview ul { margin: 6px 0 0; padding-left: 20px; }
