@@ -36,11 +36,50 @@ const blankDraft: StoryDraft = {
 const storyCategories = [
   'Match Preview',
   'Match Recap',
+  'Round Recap',
   'Team News',
   'Course Report',
   'Announcement',
   'Photo Story',
 ];
+
+
+const roundRecapTemplate = [
+  '## Opening',
+  'Write a short introduction summarizing the overall round.',
+  ':::match|Home Team|0|Away Team|0|October 3|Course Name',
+  'Write two short paragraphs about the match.',
+  ':::pulse|Singles upset|Player over opponent|25%|Pre-match win chance',
+  '**The takeaway:** One sentence explaining the result.',
+  ':::match|Home Team|0|Away Team|0|October 3|Course Name',
+  'Write two short paragraphs about the match.',
+  ':::pulse|Doubles upset|Pair over opponents|25%|Pre-match win chance',
+  '**The takeaway:** One sentence explaining the result.',
+  ':::match|Home Team|0|Away Team|0|October 3|Course Name',
+  'Write two short paragraphs about the match.',
+  ':::pulse|Singles upset|Player over opponent|25%|Pre-match win chance',
+  '**The takeaway:** One sentence explaining the result.',
+  ':::match|Home Team|0|Away Team|0|October 3|Course Name',
+  'Write two short paragraphs about the match.',
+  ':::pulse|Doubles upset|Pair over opponents|25%|Pre-match win chance',
+  '**The takeaway:** One sentence explaining the result.',
+  '## Around the Clash',
+  ':::discovery|Headline|Key statistic|Explain the new insight without repeating the match summary.',
+  ':::discovery|Headline|Key statistic|Explain the new insight.',
+  ':::discovery|Headline|Key statistic|Explain the new insight.',
+  '## Top Clash Index (CI) Movers',
+  ':::mover|1|Player Name|Team|+0|Start to End',
+  ':::mover|2|Player Name|Team|+0|Start to End',
+  ':::mover|3|Player Name|Team|+0|Start to End',
+  ':::mover|4|Player Name|Team|+0|Start to End',
+  ':::mover|5|Player Name|Team|+0|Start to End',
+  '## Looking Ahead',
+  ':::upcoming|Away Team|Home Team|A short preview.',
+  ':::upcoming|Away Team|Home Team|A short preview.',
+  ':::upcoming|Away Team|Home Team|A short preview.',
+  ':::upcoming|Away Team|Home Team|A short preview.',
+  '**Fun. Fellowship. Disc Golf. The Clash continues.**',
+].join('\\n\\n');
 
 export function StoryManager() {
   const [stories, setStories] = useState<Story[]>([]);
@@ -160,6 +199,17 @@ export function StoryManager() {
       field.focus();
       field.setSelectionRange(cursorStart, cursorEnd);
     });
+  }
+
+  function startNewRoundRecap() {
+    if (loadError) {
+      setStatus('Stories are unavailable. Reload the page before creating or saving content.');
+      return;
+    }
+    setSelectedId('');
+    setSelectedRevision(null);
+    setDraft({...blankDraft, category: 'Round Recap', title: 'Round Recap', body: roundRecapTemplate});
+    setStatus('Round Recap template ready. Replace all examples with verified facts before publishing.');
   }
 
   function startNewStory() {
@@ -339,7 +389,10 @@ export function StoryManager() {
           <strong>Story manager</strong>
           <small>{status}</small>
         </div>
-        <button className="publish-action" type="button" disabled={loadError || saving} onClick={startNewStory}>New story</button>
+        <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
+          <button className="publish-action" type="button" disabled={loadError || saving} onClick={startNewRoundRecap}>New round recap</button>
+          <button className="publish-action" type="button" disabled={loadError || saving} onClick={startNewStory}>New story</button>
+        </div>
       </div>
 
       <div className="story-manager-grid">
@@ -463,6 +516,9 @@ export function StoryManager() {
               onChange={(event) => updateDraft('body', event.target.value)}
               placeholder="Write your story. Select text and use the formatting toolbar. Separate paragraphs with a blank line." />
             <small>Highlight text to format it. Headings and lists apply to selected lines. Formatting is visible when published.</small>
+            {draft.category === 'Round Recap' ? (
+              <small>Recap cards use editable lines beginning with :::match, :::pulse, :::discovery, :::mover, and :::upcoming. Separate each block with a blank line. Upload the cover image above, then save as draft for review.</small>
+            ) : null}
           </div>
 
           {sourceFacts.length > 0 ? <VerifiedSourceFacts facts={sourceFacts} /> : null}
