@@ -113,7 +113,7 @@ function FinalHero({
         <TeamSide team={snapshot.awayTeam} side="away" />
         <div className={styles.heroScoreboard} aria-label={`Final score ${snapshot.awayTeam.name} ${snapshot.awayScore}, ${snapshot.homeTeam.name} ${snapshot.homeScore}`}>
           <span className={styles.finalTag}>Final</span>
-          <div className={styles.scoreLine}>
+          <div className={`${styles.scoreLine} ${!Number.isInteger(snapshot.awayScore) ? styles.awayFractionScore : !Number.isInteger(snapshot.homeScore) ? styles.homeFractionScore : ''}`}>
             <div className={styles.scoreCell}>
               <strong className={Number.isInteger(snapshot.awayScore) ? undefined : styles.fractionScore}>{snapshot.awayScore}</strong>
               <small>{shortTeam(snapshot.awayTeam)}</small>
