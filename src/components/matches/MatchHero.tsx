@@ -34,7 +34,7 @@ export function MatchHero({
         {matchday.courseDetails?.mapUrl
           ? <a href={matchday.courseDetails.mapUrl} target="_blank" rel="noreferrer">{courseName}</a>
           : <span>{courseName}</span>}
-        {liveScoringHref ? <LiveScoringLink href={liveScoringHref} matchup={`${matchday.awayTeam.name} at ${matchday.homeTeam.name}`} /> : null}
+        {liveScoringHref ? <LiveScoringLink href={liveScoringHref} matchup={`${matchday.awayTeam.name} at ${matchday.homeTeam.name}`} matchDate={matchday.scheduledDate ?? ''} /> : null}
       </div>
     </section>
   );
