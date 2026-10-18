@@ -1,7 +1,7 @@
 'use client';
 
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {prepareWhiteboardImport, type WhiteboardReview} from '@/services/matches/TCWhiteboardImport';
+import {prepareWhiteboardImport, type WhiteboardReview, type WhiteboardAward} from '@/services/matches/TCWhiteboardImport';
 import {MATCH_PREVIEW_LOCKED_ROSTER, PREVIEW_MATCH_ID} from '@/services/matches/TCWhiteboardImportRosterFixture';
 import {
   loadResultContests,
@@ -84,6 +84,7 @@ export function ResultsManagement({
   const [awayAdjustment, setAwayAdjustment] = useState<{category: ResultStructuralCategory | ''; note: string}>({category: '', note: ''});
   const [processingStatus, setProcessingStatus] = useState<ResultProcessingStatus | null>(null);
   const [whiteboardPreview, setWhiteboardPreview] = useState<WhiteboardReview | null>(null);
+  const [importedAwards, setImportedAwards] = useState<WhiteboardAward[]>([]);
   const [importAliasesReviewed, setImportAliasesReviewed] = useState(false);
   const [importAdjustmentsReviewed, setImportAdjustmentsReviewed] = useState(false);
   const [importApplied, setImportApplied] = useState(false);
@@ -115,6 +116,7 @@ export function ResultsManagement({
     setMatches(round.data);
     setEditor(null);
     setWhiteboardPreview(null);
+    setImportedAwards([]);
     setImportApplied(false);
     setMessage('');
   }
@@ -123,6 +125,7 @@ export function ResultsManagement({
     const result = results.find((candidate) => candidate.matchId === match.id);
     setEditor({match, result});
     setWhiteboardPreview(null);
+    setImportedAwards([]);
     setImportApplied(false);
     setImportAliasesReviewed(false);
     setImportAdjustmentsReviewed(false);
@@ -198,7 +201,7 @@ export function ResultsManagement({
         setMessage('The official score is lower than the entered matchup points. Review the result rows before finalizing.');
         return;
       }
-      if ((audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)) {
+      if (((audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)) && !importedAwards.length) {
         setSaving(false);
         setMessage('Choose a reason for every additional scoring adjustment before finalizing.');
         return;
@@ -221,6 +224,29 @@ export function ResultsManagement({
         points: audit.awayResidual,
         note: awayAdjustment.note,
       });
+    }
+
+    if (importedAwards.length && editor.match.homeTeamId && editor.match.awayTeamId) {
+      // TC Whiteboard may report multiple penalties against the same team.
+      // Combine equal categories for the unique(match,team,category) DB key,
+      // retaining source round labels in the audit notes.
+      const grouped = new Map<string, ResultStructuralPointInput>();
+      for (const award of importedAwards) {
+        const awardedTeamId = award.side === 'Home' ? editor.match.homeTeamId : editor.match.awayTeamId;
+        const key = awardedTeamId + '|' + award.category;
+        const previous = grouped.get(key);
+        grouped.set(key, previous
+          ? {...previous, points:previous.points+award.points, note:(previous.note ?? '')+'; '+award.note}
+          : {awardedTeamId, category:award.category, points:award.points, note:award.note});
+      }
+      structuralPoints.splice(0, structuralPoints.length, ...grouped.values());
+      const allocatedHome = structuralPoints.filter(p => p.awardedTeamId === editor.match.homeTeamId).reduce((n,p)=>n+p.points,0);
+      const allocatedAway = structuralPoints.filter(p => p.awardedTeamId === editor.match.awayTeamId).reduce((n,p)=>n+p.points,0);
+      if (Math.abs(allocatedHome-audit.homeResidual)>0.001 || Math.abs(allocatedAway-audit.awayResidual)>0.001) {
+        setSaving(false);
+        setMessage('Source penalty amounts no longer match the entered team scores. Re-import the JSON before saving.');
+        return;
+      }
     }
 
     const input = {
@@ -259,6 +285,7 @@ export function ResultsManagement({
 
   async function reviewWhiteboardFile(file: File) {
     if (!editor || editor.result?.status === 'Published') return;
+    setImportedAwards([]);
     setWhiteboardPreview(null);
     setImportApplied(false);
     setImportAliasesReviewed(false);
@@ -302,6 +329,7 @@ export function ResultsManagement({
     setHomeScore(String(whiteboardPreview.homeScore));
     setAwayScore(String(whiteboardPreview.awayScore));
     setContests(whiteboardPreview.contests);
+    setImportedAwards(whiteboardPreview.awards);
     setHomeAdjustment({category: '', note: ''});
     setAwayAdjustment({category: '', note: ''});
     setImportApplied(true);
@@ -448,6 +476,18 @@ export function ResultsManagement({
                   {whiteboardPreview.roundAdjustments.map(x=>(
                     <span key={x.round}>Round {x.round}: source team points outside matchups — Away +{x.away}, Home +{x.home}</span>
                   ))}
+                  {whiteboardPreview.penalties.length ? (
+                    <div className={styles.sourcePenalties}>
+                      <b>Official source penalties</b>
+                      {whiteboardPreview.penalties.map((p,i)=>(
+                        <p key={i}>Round {p.round} · Against {p.against==='Home'?editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'Home':editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'Away'} · Awarded +{p.points} to {p.credited==='Home' ? editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'Home' : editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'Away'} · <strong>{p.note}</strong></p>
+                      ))}
+                      <b>Proposed accounting (review required)</b>
+                      {whiteboardPreview.awards.map((a,i)=>(
+                        <p key={i}>+{a.points} {a.category==='WomenBonus'?'Missing female position':a.category==='NoShow'?'Rostered no-show':a.category} — {a.note}</p>
+                      ))}
+                    </div>
+                  ) : null}
                   {whiteboardPreview.errors.length ? <div role="alert">
                     <b>Blocking errors</b>
                     <ul>{whiteboardPreview.errors.map((x,i)=><li key={i}>{x}</li>)}</ul>
@@ -462,7 +502,7 @@ export function ResultsManagement({
                   </label> : null}
                   {whiteboardPreview.roundAdjustments.some(x=>x.away>0||x.home>0) ? <label>
                     <input type="checkbox" checked={importAdjustmentsReviewed} onChange={e=>setImportAdjustmentsReviewed(e.target.checked)} />
-                    I reviewed the unexplained points; I will enter their confirmed award category and explanation before publishing.
+                    I reviewed the source penalties and the proposed category breakdown. Any inferred split has been verified against league rules.
                   </label> : null}
                   {whiteboardPreview.errors.length ? <span role="status">Fix the blocking JSON issues listed above before loading rows.</span> : null}
                   {whiteboardPreview.aliasMatches.length > 0 && !importAliasesReviewed ? <span role="status">To enable loading: verify and check the player-alias confirmation above.</span> : null}
@@ -625,7 +665,8 @@ export function ResultsManagement({
           </div>
           {message ? <p className={styles.message} role="status">{message}</p> : null}
           {importApplied && (audit.awayResidual>0||audit.homeResidual>0) ? <p className={styles.importReminder}>
-            TC Whiteboard import: before finalizing, document the source of every non-contest point. An unplayed slot must not create a player win or CI result.
+            TC Whiteboard import: administrative penalties are separate from contests. No extra player wins or CI results are created.
+            {importedAwards.length ? ' Source categories are prepared for commissioner verification.' : ' Document each additional point before finalization.'}
           </p> : null}
           {previewReadOnly ? (
             <p className={styles.previewNotice} role="status">
