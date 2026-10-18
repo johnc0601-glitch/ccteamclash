@@ -635,7 +635,7 @@ export function ResultsManagement({
                   {breakdown.map((point, index) => (
                     <span key={index}>
                       {point.awardedTeamId === editor.match.homeTeamId
-                        ? teamNames.get(editor.match.homeTeamId) : teamNames.get(editor.match.awayTeamId)}
+                        ? teamNames.get(editor.match.homeTeamId ?? '') : teamNames.get(editor.match.awayTeamId ?? '')}
                       {' '}+{formatPoints(point.points)} · {point.category === 'WomenBonus' ? 'Missing female position' : point.category === 'NoShow' ? 'Rostered no-show' : point.category}
                       {point.note ? <small>{point.note}</small> : null}
                     </span>
