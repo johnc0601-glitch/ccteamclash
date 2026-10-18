@@ -79,7 +79,7 @@ const roundRecapTemplate = [
   ':::upcoming|Away Team|Home Team|A short preview.',
   ':::upcoming|Away Team|Home Team|A short preview.',
   '**Fun. Fellowship. Disc Golf. The Clash continues.**',
-].join('\\n\\n');
+].join('\n\n');
 
 export function StoryManager() {
   const [stories, setStories] = useState<Story[]>([]);
