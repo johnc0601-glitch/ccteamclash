@@ -1,6 +1,6 @@
 'use client';
 
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {prepareWhiteboardImport, type WhiteboardReview} from '@/services/matches/TCWhiteboardImport';
 import {
   loadResultContests,
@@ -46,6 +46,8 @@ type ResultsManagementProps = {
   initialCourses: Course[];
   initialRoundId: string;
   initialPlayers: LaunchPlayer[];
+  initialMatchId?: string;
+  requestedMatchNotFound?: boolean;
 };
 
 export function ResultsManagement({
@@ -57,6 +59,8 @@ export function ResultsManagement({
   initialCourses,
   initialRoundId,
   initialPlayers,
+  initialMatchId = '',
+  requestedMatchNotFound = false,
 }: ResultsManagementProps) {
   const [schedules, setSchedules] = useState(initialSchedules);
   const [rounds, setRounds] = useState(initialRounds);
@@ -80,6 +84,7 @@ export function ResultsManagement({
   const [importAliasesReviewed, setImportAliasesReviewed] = useState(false);
   const [importAdjustmentsReviewed, setImportAdjustmentsReviewed] = useState(false);
   const [importApplied, setImportApplied] = useState(false);
+  const openedDirectMatch = useRef(false);
 
   async function load(preferredRoundId?: string) {
     const workspace = await loadResultsWorkspace(preferredRoundId || roundId);
@@ -159,6 +164,17 @@ export function ResultsManagement({
     }
     setProcessingStatus(processingResult.ok ? processingResult.data : null);
   }
+
+  // Direct commissioner review links open the exact match instead of a round list.
+  useEffect(() => {
+    if (!initialMatchId || openedDirectMatch.current) return;
+    const selected = initialMatches.find((match) => match.id === initialMatchId);
+    if (!selected) return;
+    openedDirectMatch.current = true;
+    void openEditor(selected);
+    // Match is selected only once during initial hydration.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMatchId]);
 
   async function save(action: 'draft' | 'publish' | 'reopen') {
     if (!editor) return;
@@ -355,7 +371,7 @@ export function ResultsManagement({
   }
 
   return (
-    <div className={styles.workspace}>
+    <div className={`${styles.workspace} ${initialMatchId ? styles.directMatch : ""}`}>
       <div className={styles.toolbar}>
         <label>
           <span>Round</span>
@@ -369,9 +385,10 @@ export function ResultsManagement({
         </label>
       </div>
 
+      {requestedMatchNotFound ? <p className={styles.directMatchWarning} role="alert">The requested match is not available in this commissioner workspace. No data was loaded.</p> : null}
       <section className={styles.list}>
         <header>
-          <div><span>Today&apos;s matches</span><h2>Record official outcomes</h2></div>
+          <div><span>Selected round</span><h2>Record official outcomes</h2></div>
           <strong>{matches.length} matches</strong>
         </header>
         {matches.length ? matches.map((match) => {
