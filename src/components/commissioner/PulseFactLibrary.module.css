@@ -1,0 +1,17 @@
+.library { display: grid; gap: 16px; padding: 20px; border: 1px solid var(--border-color, #536070); border-radius: 12px; }
+.toolbar { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+.field { display: grid; gap: 6px; min-width: 160px; }
+.library select, .library textarea, .library button { font: inherit; padding: 9px 12px; border: 1px solid currentColor; border-radius: 6px; background: transparent; color: inherit; }
+.library select option { background: #17202d; color: #fff; }
+.library button { cursor: pointer; }
+.library button:disabled { opacity: .5; cursor: default; }
+.primary { font-weight: 800 !important; background: #164c72 !important; color: #fff !important; }
+.fact { border-top: 1px solid #536070; padding: 14px 0; overflow-wrap: anywhere; }
+.fact p { margin: 8px 0; }
+.meta { font-size: 12px; opacity: .8; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.details { margin-top: 10px; font-size: 13px; }
+.details ul { max-height: 180px; overflow: auto; }
+.notice { padding: 10px; border-left: 3px solid #d9ad52; }
+.editorial { display: grid; gap: 10px; }
+.editorial textarea { width: 100%; min-height: 88px; box-sizing: border-box; }

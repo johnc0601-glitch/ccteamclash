@@ -23,6 +23,7 @@ import type {Team} from '@/models/Team';
 import {easternDate} from '@/services/weather/MatchWeather';
 import {getDailyMatchWeather} from '@/services/weather/MatchWeatherServer';
 import {saveFinalMatchdayWeather, type FinalMatchWeather} from '@/services/matches/FinalMatchdaySnapshot';
+import {regeneratePulseRound} from '@/services/pulse/PulseLibraryService';
 
 type ResultsWorkspace = {
   schedules: Schedule[];
@@ -308,6 +309,18 @@ export async function saveOfficeResult(
       await captureFinalMatchdayWeather(access.supabase, normalizedMatchId);
     }
 
+    if (action === 'publish' || action === 'reopen') {
+      // Supplemental facts never participate in the canonical result/CI transaction.
+      // The library's Generate button safely retries a failed supplemental build.
+      try {
+        const {data: match} = await (access.supabase as any).from('launch_schedule_matches')
+          .select('season_id,round_id').eq('id', normalizedMatchId).single();
+        if (match) await regeneratePulseRound(access.supabase, match.season_id, match.round_id);
+      } catch (pulseError) {
+        console.error('Clash Pulse generation needs retry from the fact library.', pulseError);
+      }
+    }
+
     if (action !== 'draft' && seasonId.trim()) {
       await (await createServerPlayoffService()).getBracket(seasonId.trim());
     }
@@ -425,6 +438,7 @@ async function getCommissionerAccess() {
 }
 
 function revalidateResultSurfaces(matchId: string) {
+  revalidateTag('public:clash-pulse', 'max');
   revalidateTag('public:homepage', 'max');
   revalidateTag('public:schedule', 'max');
   revalidateTag('public:stats', 'max');
