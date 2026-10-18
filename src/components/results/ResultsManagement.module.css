@@ -70,3 +70,14 @@
 .whiteboardReview button { justify-self: start; min-height: 36px; padding: 8px 12px; border: 1px solid #aaa; border-radius: 5px; background: #f9f8f5; color: #333; font-weight: 850; cursor: pointer; }
 .whiteboardReview button:disabled { cursor: not-allowed; opacity: .5; }
 .importReminder { margin: 0 24px 10px; padding: 10px 12px; border-left: 3px solid #b18d26; background: #fff8e4; font-size: 12px; line-height: 1.5; }
+
+
+/* In deep-linked commissioner reviews the selected importer opens above
+   unrelated round matches; the regular Results page keeps its existing order. */
+.directMatch > .toolbar { order: 0; }
+.directMatch > .editor { order: 1; }
+.directMatch > .list { order: 2; }
+.directMatchWarning { padding: 14px 18px; margin: 0; background: #fff4e2; color: #644018; border: 1px solid #d2b689; }
+@media (max-width: 720px) {
+  .directMatch > .editor { margin: 0; }
+}
