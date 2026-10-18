@@ -115,7 +115,7 @@ function FinalHero({
           <span className={styles.finalTag}>Final</span>
           <div className={styles.scoreLine}>
             <div className={styles.scoreCell}>
-              <strong>{snapshot.awayScore}</strong>
+              <strong className={Number.isInteger(snapshot.awayScore) ? undefined : styles.fractionScore}>{snapshot.awayScore}</strong>
               <small>{shortTeam(snapshot.awayTeam)}</small>
               <div className={styles.scoreBreakdown}>
                 <span>S {formatPoint(singlesTotals.away)}</span>
@@ -126,7 +126,7 @@ function FinalHero({
             </div>
             <span className={styles.scoreDivider} aria-hidden="true" />
             <div className={styles.scoreCell}>
-              <strong>{snapshot.homeScore}</strong>
+              <strong className={Number.isInteger(snapshot.homeScore) ? undefined : styles.fractionScore}>{snapshot.homeScore}</strong>
               <small>{shortTeam(snapshot.homeTeam)}</small>
               <div className={styles.scoreBreakdown}>
                 <span>S {formatPoint(singlesTotals.home)}</span>

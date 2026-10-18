@@ -43,9 +43,10 @@
 .scoreLine {
   width: 100%;
   display: grid;
-  grid-template-columns: 1fr 1px 1fr;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+  min-width: 0;
   align-items: stretch;
-  gap: 9px;
+  gap: 6px;
 }
 
 .scoreCell {
@@ -60,6 +61,8 @@
 }
 
 .scoreCell strong {
+  max-width: 100%;
+  white-space: nowrap;
   color: #fff;
   font-family: var(--cc-font-display);
   font-size: 49px;
@@ -72,6 +75,9 @@
 }
 
 .scoreCell small {
+  max-width: 100%;
+  text-align: center;
+  white-space: nowrap;
   color: rgba(255,255,255,.66);
   font-size: 9px;
   font-weight: 950;
@@ -85,7 +91,8 @@
   padding-top: 5px;
   display: flex;
   justify-content: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 4px 6px;
   border-top: 1px solid rgba(255,255,255,.08);
   color: rgba(255,255,255,.72);
   font-size: 9px;
@@ -684,6 +691,10 @@
     font-size: clamp(29px, 9.7vw, 38px);
   }
 
+  .scoreCell strong.fractionScore {
+    font-size: clamp(20px, 5.8vw, 25px);
+  }
+
   .scoreCell small {
     font-size: clamp(6px, 2vw, 8px);
   }
@@ -907,4 +918,18 @@
 }
 .finalContent:has(.upsetToggle input:checked) .desktopBoard:last-child .desktopResultRow:has(.upsetBadge) {
   min-height: 88px;
+}
+
+/* Decimal scores must fit inside each half of the compact final tile. */
+.scoreCell strong.fractionScore {
+  font-size: 31px;
+  letter-spacing: -.07em;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 700px) {
+  .scoreCell strong.fractionScore {
+    font-size: clamp(20px, 5.8vw, 25px);
+  }
+  .scoreLine { gap: 4px; }
+  .scoreBreakdown { flex-wrap: wrap; gap: 3px 5px; }
 }

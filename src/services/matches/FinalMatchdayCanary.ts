@@ -46,12 +46,77 @@ export function shouldUseFinalScoreboardCanary(snapshot: FinalMatchdaySnapshot):
     && Boolean(snapshot.publishedAt);
 }
 
-export function adaptCanarySnapshot(snapshot: FinalMatchdaySnapshot): FinalMatchdayV2Snapshot {
+/**
+ * Published scoring adjustments live in the separate locked results ledger.
+ * They are not embedded in the historic frozen Matchday snapshot. Read them
+ * server-side ONLY for the existing V2 canary match; never mutate either table.
+ */
+export async function loadPublishedCanaryAdjustments(
+  client: {from: (table: string) => any},
+  snapshot: FinalMatchdaySnapshot,
+): Promise<FinalScoreAdjustment[]> {
+  if (!shouldUseFinalScoreboardCanary(snapshot)) return [];
+
+  try {
+    const {data, error} = await client.from('launch_match_structural_points')
+      .select('awarded_team_id,category,points,note')
+      .eq('match_id', snapshot.matchId)
+      .order('category');
+    if (error) {
+      console.error('Published Matchday adjustment ledger is unavailable.', {
+        matchId: snapshot.matchId,
+        code: error.code,
+      });
+      return [];
+    }
+    return parsePublishedCanaryAdjustments(data, snapshot.awayTeam.id, snapshot.homeTeam.id);
+  } catch (error) {
+    console.error('Could not read final Matchday scoring adjustments.', {
+      matchId: snapshot.matchId,
+      error: error instanceof Error ? error.message : 'Unknown read error',
+    });
+    return [];
+  }
+}
+
+export function parsePublishedCanaryAdjustments(
+  input: unknown,
+  awayTeamId: string,
+  homeTeamId: string,
+): FinalScoreAdjustment[] {
+  if (!Array.isArray(input)) return [];
+  const categories = new Set<FinalScoreAdjustment['category']>([
+    'NoShow','WomenBonus','Penalty','Other','UnplayedSlot',
+  ]);
+  return input.flatMap((raw): FinalScoreAdjustment[] => {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return [];
+    const row = raw as Record<string, unknown>;
+    const awardedTeamId = row.awarded_team_id;
+    const category = row.category;
+    const points = typeof row.points === 'number' || typeof row.points === 'string'
+      ? Number(row.points) : NaN;
+    if (
+      typeof awardedTeamId !== 'string'
+      || (awardedTeamId !== awayTeamId && awardedTeamId !== homeTeamId)
+      || !categories.has(category as FinalScoreAdjustment['category'])
+      || !Number.isFinite(points) || points <= 0 || !Number.isInteger(points * 2)
+    ) return [];
+    return [{
+      awardedTeamId,
+      category: category as FinalScoreAdjustment['category'],
+      points,
+      note: typeof row.note === 'string' ? row.note : null,
+    }];
+  });
+}
+
+export function adaptCanarySnapshot(
+  snapshot: FinalMatchdaySnapshot,
+  adjustments: FinalScoreAdjustment[] = [],
+): FinalMatchdayV2Snapshot {
   return {
     ...snapshot,
-    // Current published snapshots have no itemized adjustment ledger.
-    // Reconcile any non-contest score differences visibly but never recalculate
-    // or write the published total.
-    adjustments: [],
+    // Copy only: the locked snapshot and published total remain immutable.
+    adjustments: [...adjustments],
   };
 }
