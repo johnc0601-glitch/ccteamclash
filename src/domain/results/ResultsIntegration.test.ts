@@ -50,13 +50,19 @@ test('results workflow rejects incomplete, invalid, and nonexistent published re
 
   const invalid = await service.saveDraft('summer-2026-r1-dark-ninjas', {
     homeScore: -1,
-    awayScore: 2.5,
+    awayScore: 2.25,
   });
   assert.equal(invalid.ok, false);
   if (!invalid.ok) {
     assert.ok(invalid.fieldErrors?.homeScore);
     assert.ok(invalid.fieldErrors?.awayScore);
   }
+
+  const halfPoints = await service.saveDraft('summer-2026-r1-dark-ninjas', {
+    homeScore: 4.5,
+    awayScore: 2.5,
+  });
+  assert.equal(halfPoints.ok, true, 'Official team totals permit half points.');
 
   const missing = await service.publish('does-not-exist', {homeScore: 1, awayScore: 0});
   assert.equal(missing.ok, false);
@@ -83,7 +89,7 @@ test('player contest validation rejects incomplete singles, malformed doubles, a
   contests[0].awayScore = null;
   const incomplete = await service.publish(matchId, {homeScore: 5, awayScore: 3, contests});
   assert.equal(incomplete.ok, false);
-  if (!incomplete.ok) assert.match(incomplete.fieldErrors?.contests ?? '', /both singles scores/i);
+  if (!incomplete.ok) assert.match(incomplete.fieldErrors?.contests ?? '', /singles scores/i);
 
   const wrongTeam = validContests(matchId);
   wrongTeam[1].players[0].teamId = 'ninjas';

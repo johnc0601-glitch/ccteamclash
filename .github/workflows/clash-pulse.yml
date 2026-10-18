@@ -1,0 +1,33 @@
+name: Clash Pulse Fact Library
+on:
+  pull_request:
+    paths:
+      - 'src/services/pulse/**'
+      - 'src/components/commissioner/PulseFactLibrary*'
+      - 'src/app/api/clash-pulse/**'
+      - 'src/app/office/clash-pulse/**'
+      - 'src/app/office/results/actions.ts'
+      - 'src/domain/results/**'
+      - 'supabase/migrations/*clash_pulse*'
+      - 'package.json'
+      - '.github/workflows/clash-pulse.yml'
+  push:
+    branches: ['codex/clash-pulse-fact-library']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify captured Round 1 facts and export
+        run: npm run test:pulse
+      - name: Verify results locks and scoring validation
+        run: npm run test:results
+      - name: Verify final scoreboards and frozen upset rules
+        run: npm run test:final-scoreboard-canary

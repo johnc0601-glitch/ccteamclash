@@ -25,6 +25,7 @@ export function PulseFactLibrary() {
   const [editorial, setEditorial] = useState('');
   const [filter, setFilter] = useState('All');
   const [exportText, setExportText] = useState('');
+  const [copyFallback, setCopyFallback] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     api('', {signal: controller.signal}).then((data: Options) => {
@@ -62,8 +63,10 @@ export function PulseFactLibrary() {
   async function copy() {
     const text = exportRoundFacts(`${options.seasons.find(s => s.id === seasonId)?.name} — Round ${round?.number}`,
       library.facts, [...(library.generation?.warnings ?? []), ...(!library.generation?.complete ? ['Round analysis is incomplete.'] : [])]);
+    setExportText(text);
+    setCopyFallback(false);
     try {await navigator.clipboard.writeText(text); setNotice('Round facts copied.');}
-    catch {setExportText(text); setNotice('Select and copy the report below.');}
+    catch {setCopyFallback(true); setNotice('Select and copy the report below.');}
   }
   return <section className={styles.library} aria-labelledby="pulse-library-title">
     <div><h2 id="pulse-library-title">Round fact library</h2><p>Prepare the numbers for your recap. Review facts here and feature selected short highlights on the homepage.</p></div>
@@ -109,6 +112,6 @@ export function PulseFactLibrary() {
       <textarea id="pulse-editorial" value={editorial} maxLength={4000} onChange={e => setEditorial(e.target.value)} placeholder="Commissioner supplied context, clearly separated from calculated facts." />
       <div><button disabled={busy || loading || !roundId || !editorial.trim()}>Save for review</button></div>
     </form>
-    {exportText && <label className={styles.editorial}>Round report<textarea readOnly rows={18} value={exportText} onFocus={e => e.target.select()} /></label>}
+    {exportText && <details open={copyFallback}><summary>Round report preview</summary><label className={styles.editorial}>Round report<textarea readOnly rows={18} value={exportText} onFocus={e => e.target.select()} /></label></details>}
   </section>;
 }
