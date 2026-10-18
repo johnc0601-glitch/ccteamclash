@@ -31,7 +31,10 @@ export function RoundRecapBlock({paragraph}: {paragraph: string}) {
     const [home, homeScore, away, awayScore, date, course] = parts;
     return (
       <section className="round-recap-match" aria-label={`${home} vs ${away}`}>
-        <div className="round-recap-match-date">{date} · {course}</div>
+        <div className="round-recap-match-head">
+          <div className="round-recap-match-date">{date} · {course}</div>
+          <span className="round-recap-final">FINAL</span>
+        </div>
         <div className="round-recap-match-scoreline">
           <span className="round-recap-side">{home}{score(homeScore)}</span>
           <span className="round-recap-dash">–</span>
