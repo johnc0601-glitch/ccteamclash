@@ -258,6 +258,10 @@ export async function saveOfficeResult(
   const access = await getCommissionerAccess();
   if (!access.ok) return access;
 
+  if (process.env.VERCEL_ENV === 'preview') {
+    return {ok: false, message: 'Read-only preview: save and finalization are disabled.'};
+  }
+
   const resultsService = await createServerResultsService();
 
   try {
