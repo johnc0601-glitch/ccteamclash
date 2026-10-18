@@ -1,7 +1,7 @@
 'use client';
 
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {prepareWhiteboardImport, type WhiteboardReview, type WhiteboardAward} from '@/services/matches/TCWhiteboardImport';
+import {prepareWhiteboardImport, structuralAwardsCoverResiduals, type WhiteboardReview, type WhiteboardAward} from '@/services/matches/TCWhiteboardImport';
 import {
   loadResultContests,
   loadResultProcessingStatus,
@@ -84,6 +84,7 @@ export function ResultsManagement({
   const [processingStatus, setProcessingStatus] = useState<ResultProcessingStatus | null>(null);
   const [whiteboardPreview, setWhiteboardPreview] = useState<WhiteboardReview | null>(null);
   const [importedAwards, setImportedAwards] = useState<WhiteboardAward[]>([]);
+  const [savedStructuralPoints, setSavedStructuralPoints] = useState<ResultStructuralPointInput[]>([]);
   const [importAliasesReviewed, setImportAliasesReviewed] = useState(false);
   const [importAdjustmentsReviewed, setImportAdjustmentsReviewed] = useState(false);
   const [importApplied, setImportApplied] = useState(false);
@@ -114,6 +115,7 @@ export function ResultsManagement({
     }
     setMatches(round.data);
     setEditor(null);
+    setSavedStructuralPoints([]);
     setWhiteboardPreview(null);
     setImportedAwards([]);
     setImportApplied(false);
@@ -123,6 +125,7 @@ export function ResultsManagement({
   async function openEditor(match: Match) {
     const result = results.find((candidate) => candidate.matchId === match.id);
     setEditor({match, result});
+    setSavedStructuralPoints([]);
     setWhiteboardPreview(null);
     setImportedAwards([]);
     setImportApplied(false);
@@ -153,6 +156,7 @@ export function ResultsManagement({
       setMessage(rosterResult.message);
     }
     if (structuralResult.ok) {
+      setSavedStructuralPoints(structuralResult.data);
       const homePoint = structuralResult.data.find((point) => point.awardedTeamId === match.homeTeamId);
       const awayPoint = structuralResult.data.find((point) => point.awardedTeamId === match.awayTeamId);
       setHomeAdjustment({
@@ -164,8 +168,10 @@ export function ResultsManagement({
         note: awayPoint?.note ?? '',
       });
     } else {
+      setSavedStructuralPoints([]);
       setHomeAdjustment({category: '', note: ''});
       setAwayAdjustment({category: '', note: ''});
+      setMessage(structuralResult.message);
     }
     setProcessingStatus(processingResult.ok ? processingResult.data : null);
   }
@@ -194,13 +200,24 @@ export function ResultsManagement({
     const parsedAwayScore = parseScore(awayScore);
     const audit = resultAudit(contests, parsedHomeScore, parsedAwayScore);
 
+    const importedLedger = importedAwards.map(award => ({
+      awardedTeamId: award.side === 'Home' ? editor.match.homeTeamId ?? '' : editor.match.awayTeamId ?? '',
+      points: award.points,
+    }));
+    const importedLedgerValid = importedAwards.length > 0 && structuralAwardsCoverResiduals(
+      importedLedger, editor.match.homeTeamId, editor.match.awayTeamId, audit.homeResidual, audit.awayResidual,
+    );
+    const savedLedgerValid = !importedAwards.length && savedStructuralPoints.length > 0 && structuralAwardsCoverResiduals(
+      savedStructuralPoints, editor.match.homeTeamId, editor.match.awayTeamId, audit.homeResidual, audit.awayResidual,
+    );
+    const hasAuditedLedger = importedLedgerValid || savedLedgerValid;
     if (action === 'publish') {
       if (audit.homeResidual < 0 || audit.awayResidual < 0) {
         setSaving(false);
         setMessage('The official score is lower than the entered matchup points. Review the result rows before finalizing.');
         return;
       }
-      if (((audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)) && !importedAwards.length) {
+      if (!hasAuditedLedger && ((audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category))) {
         setSaving(false);
         setMessage('Choose a reason for every additional scoring adjustment before finalizing.');
         return;
@@ -225,7 +242,9 @@ export function ResultsManagement({
       });
     }
 
-    if (importedAwards.length && editor.match.homeTeamId && editor.match.awayTeamId) {
+    if (savedLedgerValid) {
+      structuralPoints.splice(0, structuralPoints.length, ...savedStructuralPoints);
+    } else if (importedAwards.length && editor.match.homeTeamId && editor.match.awayTeamId) {
       // TC Whiteboard may report multiple penalties against the same team.
       // Combine equal categories for the unique(match,team,category) DB key,
       // retaining source round labels in the audit notes.
@@ -266,6 +285,7 @@ export function ResultsManagement({
       setMessage(result.message);
       return;
     }
+    setSavedStructuralPoints(structuralPoints);
     setMessage(
       action === 'draft'
         ? 'Draft saved.'
@@ -323,6 +343,7 @@ export function ResultsManagement({
     setHomeScore(String(whiteboardPreview.homeScore));
     setAwayScore(String(whiteboardPreview.awayScore));
     setContests(whiteboardPreview.contests);
+    setSavedStructuralPoints([]);
     setImportedAwards(whiteboardPreview.awards);
     setHomeAdjustment({category: '', note: ''});
     setAwayAdjustment({category: '', note: ''});
@@ -333,6 +354,26 @@ export function ResultsManagement({
   const audit = useMemo(
     () => resultAudit(contests, parseScore(homeScore), parseScore(awayScore)),
     [contests, homeScore, awayScore],
+  );
+  const sourceLedgerValid = importedAwards.length > 0 && structuralAwardsCoverResiduals(
+    importedAwards.map(award => ({
+      awardedTeamId: award.side === 'Home' ? editor?.match.homeTeamId ?? '' : editor?.match.awayTeamId ?? '',
+      points: award.points,
+    })),
+    editor?.match.homeTeamId ?? null, editor?.match.awayTeamId ?? null, audit.homeResidual, audit.awayResidual,
+  );
+  const savedLedgerValid = importedAwards.length === 0 && savedStructuralPoints.length > 0
+    && structuralAwardsCoverResiduals(
+      savedStructuralPoints, editor?.match.homeTeamId ?? null, editor?.match.awayTeamId ?? null,
+      audit.homeResidual, audit.awayResidual,
+    );
+  const hasAuditedLedger = sourceLedgerValid || savedLedgerValid;
+  const missingManualCategory = !hasAuditedLedger && (
+    (audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)
+  );
+  const missingManualNote = importApplied && !hasAuditedLedger && (
+    (audit.homeResidual > 0 && homeAdjustment.note.trim().length < 12)
+    || (audit.awayResidual > 0 && awayAdjustment.note.trim().length < 12)
   );
 
   const teamNames = useMemo(() => new Map(teams.map((team) => [team.id, team.name])), [teams]);
@@ -649,6 +690,17 @@ export function ResultsManagement({
             </p>
           </div>
           {message ? <p className={styles.message} role="status">{message}</p> : null}
+          {savedLedgerValid ? (
+            <div className={styles.importReminder} role="status">
+              <strong>Previously saved penalties verified:</strong>{' '}
+              {savedStructuralPoints.map((point,i)=><span key={i}>
+                {i ? ' · ' : ''}{point.category} +{formatPoints(point.points)} ({point.awardedTeamId === editor.match.homeTeamId ? 'Home' : 'Away'})
+              </span>)}. These categories will be preserved when finalizing.
+            </div>
+          ) : null}
+          {importedAwards.length > 0 && !sourceLedgerValid ? (
+            <p className={styles.importReminder} role="alert">Imported penalty points do not reconcile with the current scores. Re-upload the JSON before finalizing.</p>
+          ) : null}
           {importApplied && (audit.awayResidual>0||audit.homeResidual>0) ? <p className={styles.importReminder}>
             TC Whiteboard import: administrative penalties are separate from contests. No extra player wins or CI results are created.
             {importedAwards.length ? ' Source categories are prepared for commissioner verification.' : ' Document each additional point before finalization.'}
@@ -657,6 +709,9 @@ export function ResultsManagement({
             <p className={styles.previewNotice} role="status">
               Test preview: JSON review and local editing only. Database saves, result publication, and Clash Index updates are disabled.
             </p>
+          ) : null}
+          {missingManualCategory && !previewReadOnly ? (
+            <p className={styles.importBlocker} role="status">Finalization is blocked: select a category for each unexplained point award. Previously saved or imported multiple-category penalties are accepted automatically when their totals reconcile.</p>
           ) : null}
           <div className={styles.actions}>
             {editor.result?.status === 'Published' ? (
@@ -667,8 +722,9 @@ export function ResultsManagement({
                 <button
                   type="button"
                   className={styles.primary}
-                  disabled={saving || previewReadOnly || audit.homeResidual < 0 || audit.awayResidual < 0 || (audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)
-                    || (importApplied && ((audit.awayResidual>0 && awayAdjustment.note.trim().length<12) || (audit.homeResidual>0 && homeAdjustment.note.trim().length<12)))}
+                  disabled={saving || previewReadOnly || audit.homeResidual < 0 || audit.awayResidual < 0
+                    || (importedAwards.length > 0 && !sourceLedgerValid)
+                    || missingManualCategory || missingManualNote}
                   onClick={() => void save('publish')}
                 >
                   Finalize match
