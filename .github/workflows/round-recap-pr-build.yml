@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - fix/round-recap-mobile-readability-20261018
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/components/stories/**'
+      - 'src/app/stories/**'
+      - 'src/app/globals.css'
+      - '.github/workflows/round-recap-pr-build.yml'
 
 permissions:
   contents: read
