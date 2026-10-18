@@ -7,6 +7,7 @@ import {StoryComments} from '@/components/stories/StoryComments';
 import {isRoundRecapBlock, RoundRecapBlock} from '@/components/stories/RoundRecapBlock';
 import {getMediaAssetById} from '@/services/media/MediaLibraryService';
 import {getStoryBySlug} from '@/services/stories/StoryService';
+import {getPublicDirectoryData} from '@/services/public/PublicDirectoryDataService';
 import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
 
 export const dynamic = 'force-dynamic';
@@ -54,6 +55,14 @@ export default async function Page({params, searchParams}: StoryPageProps) {
   const asset = story.heroAssetId ? await getCachedMediaAssetById(story.heroAssetId) : null;
   const heroAlt = asset?.altText || story.title;
   const isRecap = story.category === 'Round Recap' || story.body.some(isRoundRecapBlock);
+  const directory = isRecap ? await getPublicDirectoryData().catch(() => null) : null;
+  const teamColors: Record<string, string> = Object.fromEntries(
+    (directory?.teams ?? []).flatMap((team) => [
+      [team.name.toLowerCase(), team.primaryColor],
+      [team.shortName.toLowerCase(), team.primaryColor],
+      ...(team.id === 'kb' ? [['kure beach', team.primaryColor]] : []),
+    ]),
+  );
 
   return (
     <>
@@ -66,7 +75,7 @@ export default async function Page({params, searchParams}: StoryPageProps) {
         <div className={isRecap ? 'article-copy round-recap-article' : 'article-copy'}>
           {story.body.map((paragraph, index) => (
             isRecap && isRoundRecapBlock(paragraph)
-              ? <RoundRecapBlock key={`${index}-${paragraph.slice(0, 40)}`} paragraph={paragraph} />
+              ? <RoundRecapBlock key={`${index}-${paragraph.slice(0, 40)}`} paragraph={paragraph} teamColors={teamColors} />
               : <StoryBodyBlock
                   key={`${index}-${paragraph.slice(0, 40)}`}
                   paragraph={paragraph}
