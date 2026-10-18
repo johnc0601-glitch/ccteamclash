@@ -34,13 +34,24 @@ test('every configured welcome and matchup asset exists, with mobile art for all
   for (const path of Object.values(MATCHDAY_WELCOME_ART)) assert.ok(existsSync(`public${path}`), path);
 });
 
-test('intro runs only on the scheduled Eastern calendar day', () => {
+test('Matchday intro opens exactly at 9 AM and stops at 6 PM Eastern', () => {
+  // Oct 3 is EDT: league open window 13:00–22:00 UTC.
   for (const [instant, expected] of [
-    ['2026-10-03T03:59:59Z', false], ['2026-10-03T04:00:00Z', true],
-    ['2026-10-04T03:59:59Z', true], ['2026-10-04T04:00:00Z', false],
-  ] as const) assert.equal(isMatchdayToday('2026-10-03', new Date(instant)), expected);
-  assert.equal(isMatchdayToday('2027-01-02', new Date('2027-01-02T04:59:59Z')), false);
-  assert.equal(isMatchdayToday('2027-01-02', new Date('2027-01-02T05:00:00Z')), true);
+    ['2026-10-03T12:59:59Z', false],
+    ['2026-10-03T13:00:00Z', true],
+    ['2026-10-03T21:59:59Z', true],
+    ['2026-10-03T22:00:00Z', false],
+    ['2026-10-04T01:00:00Z', false],
+  ] as const) assert.equal(isMatchdayToday('2026-10-03', new Date(instant)), expected, instant);
+
+  // Jan 2 is EST: 9 AM = 14:00 UTC, 6 PM = 23:00 UTC.
+  for (const [instant, expected] of [
+    ['2027-01-02T13:59:59Z', false],
+    ['2027-01-02T14:00:00Z', true],
+    ['2027-01-02T22:59:59Z', true],
+    ['2027-01-02T23:00:00Z', false],
+  ] as const) assert.equal(isMatchdayToday('2027-01-02', new Date(instant)), expected, instant);
+
   for (const date of [undefined, null, '', 'TBD', '2026-10-04'])
     assert.equal(isMatchdayToday(date, new Date('2026-10-03T16:00:00Z')), false);
 });
