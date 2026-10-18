@@ -53,6 +53,7 @@ export default async function Page({params, searchParams}: StoryPageProps) {
 
   const asset = story.heroAssetId ? await getCachedMediaAssetById(story.heroAssetId) : null;
   const heroAlt = asset?.altText || story.title;
+  const isRecap = story.category === 'Round Recap' || story.body.some(isRoundRecapBlock);
 
   return (
     <>
@@ -61,10 +62,10 @@ export default async function Page({params, searchParams}: StoryPageProps) {
         <Link href="/stories" className="back">&lt;- All stories</Link>
         <span className="eyebrow">{story.category} | {formatStoryDate(story.publishedAt)}</span>
         <h1>{story.title}</h1>
-        <StoryPhoto className="article-image" image={story.image} alt={heroAlt} />
-        <div className={story.category === 'Round Recap' ? 'article-copy round-recap-article' : 'article-copy'}>
+        <StoryPhoto className={isRecap ? "article-image round-recap-cover" : "article-image"} image={story.image} alt={heroAlt} />
+        <div className={isRecap ? 'article-copy round-recap-article' : 'article-copy'}>
           {story.body.map((paragraph, index) => (
-            story.category === 'Round Recap' && isRoundRecapBlock(paragraph)
+            isRecap && isRoundRecapBlock(paragraph)
               ? <RoundRecapBlock key={`${index}-${paragraph.slice(0, 40)}`} paragraph={paragraph} />
               : <StoryBodyBlock
                   key={`${index}-${paragraph.slice(0, 40)}`}
