@@ -2,7 +2,6 @@
 
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {prepareWhiteboardImport, type WhiteboardReview, type WhiteboardAward} from '@/services/matches/TCWhiteboardImport';
-import {MATCH_PREVIEW_LOCKED_ROSTER, PREVIEW_MATCH_ID} from '@/services/matches/TCWhiteboardImportRosterFixture';
 import {
   loadResultContests,
   loadResultProcessingStatus,
@@ -296,11 +295,8 @@ export function ResultsManagement({
     }
     try {
       const json: unknown = JSON.parse(await file.text());
-      // This one read-only preview uses the verified October 17 roster.
-      // Staging does not contain that locked snapshot; never use fixture data
-      // on other matches or for production saves.
-      const usePinnedPreviewRoster = previewReadOnly && editor.match.id === PREVIEW_MATCH_ID;
-      const candidates = usePinnedPreviewRoster ? MATCH_PREVIEW_LOCKED_ROSTER : officialRosterPlayers.map(row => {
+      // Only use the official locked roster loaded for this match.
+      const candidates = officialRosterPlayers.map(row => {
         const profile = initialPlayers.find(p => p.id === row.id);
         return {...row, pdgaNumber: profile?.pdgaNumber || ''};
       });
@@ -314,9 +310,7 @@ export function ResultsManagement({
       }, candidates);
       setWhiteboardPreview(preview);
       setMessage(preview.errors.length ? 'JSON review has blocking issues. No contest rows were loaded.'
-        : usePinnedPreviewRoster
-          ? 'Read-only test: validated against the pinned October 17 official roster snapshot. Review aliases and additional points before loading.'
-          : 'Export validated against the selected fixture and locked roster. Review aliases and non-contest team points before loading.');
+        : 'Export validated against the selected fixture and locked roster. Review aliases and non-contest team points before loading.');
     } catch {
       setMessage('Unable to read this TC Whiteboard JSON file. No data was changed.');
     }
@@ -366,10 +360,6 @@ export function ResultsManagement({
 
   function resultPlayersForTeam(teamId: string | null): Array<{id: string; name: string}> {
     if (!teamId) return [];
-    if (previewReadOnly && editor?.match.id === PREVIEW_MATCH_ID) {
-      return MATCH_PREVIEW_LOCKED_ROSTER.filter(player => player.teamId === teamId)
-        .map(player => ({id: player.id, name: player.name}));
-    }
     const official = officialPlayersByTeam.get(teamId);
     return official?.length ? official : playersByTeam.get(teamId) ?? [];
   }
@@ -466,11 +456,6 @@ export function ResultsManagement({
                 onChange={event => {const file=event.target.files?.[0]; if (file) void reviewWhiteboardFile(file);}} />
               {whiteboardPreview ? (
                 <div className={styles.whiteboardReview} aria-live="polite">
-                  {previewReadOnly && editor.match.id === PREVIEW_MATCH_ID ? (
-                    <p className={styles.previewNotice}>
-                      TEST FIXTURE: player identities use the verified October 17 locked roster because staging has no roster snapshot for this match. No data is saved.
-                    </p>
-                  ) : null}
                   <strong>Source ID: {whiteboardPreview.sourceMatchId}</strong>
                   <span>Official final: {whiteboardPreview.awayScore}–{whiteboardPreview.homeScore} · {whiteboardPreview.contests.length} playable contests ({whiteboardPreview.contests.filter(x=>x.format==='Singles').length} singles, {whiteboardPreview.contests.filter(x=>x.format==='Doubles').length} doubles)</span>
                   {whiteboardPreview.roundAdjustments.map(x=>(
