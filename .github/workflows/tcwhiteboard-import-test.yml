@@ -1,0 +1,28 @@
+name: TC Whiteboard Import Safety
+on:
+  pull_request:
+    paths:
+      - 'src/services/matches/TCWhiteboardImport*'
+      - 'src/components/results/ResultsManagement*'
+      - '.github/workflows/tcwhiteboard-import-test.yml'
+  push:
+    branches:
+      - 'feature/tcwhiteboard-commissioner-json-import-20261017'
+    paths:
+      - 'src/services/matches/TCWhiteboardImport*'
+      - 'src/components/results/ResultsManagement*'
+      - '.github/workflows/tcwhiteboard-import-test.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Verify TC Whiteboard JSON aliases, singles and reconciliation
+        run: node --loader ./scripts/ts-paths-loader.mjs --test src/services/matches/TCWhiteboardImport.test.ts
