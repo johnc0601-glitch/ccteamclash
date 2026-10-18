@@ -81,3 +81,9 @@
 @media (max-width: 720px) {
   .directMatch > .editor { margin: 0; }
 }
+
+
+.importBlocker { margin: 0; color: #8e2f23; font-size: 12px; font-weight: 800; line-height: 1.5; }
+.importReady { margin: 0; color: #32613b; font-size: 12px; font-weight: 800; }
+.previewNotice { margin: 0 24px 12px; padding: 12px 14px; color: #51401f; background: #fbf2d7; border: 1px solid #dfc983; border-radius: 5px; font-size: 12px; font-weight: 750; line-height: 1.5; }
+.whiteboardReview, .whiteboardReview > div, .whiteboardReview span { min-width: 0; overflow-wrap: anywhere; }
