@@ -338,6 +338,32 @@ async function replaceResultStructuralPoints(
     return {ok: false, message: 'Review the additional scoring adjustments before finalizing.'};
   }
 
+  const {data: currentAdjustments, error: currentError} = await (supabase as any)
+    .from('launch_match_structural_points')
+    .select('awarded_team_id,category,points,note')
+    .eq('match_id', matchId);
+  if (currentError) {
+    return {ok: false, message: 'Could not read existing scoring adjustments.'};
+  }
+
+  const current = (currentAdjustments ?? []) as Array<{
+    awarded_team_id: string;
+    category: string;
+    points: number | string;
+    note: string | null;
+  }>;
+  const unchanged = current.length === normalized.length
+    && normalized.every((point) => current.some((row) =>
+      row.awarded_team_id === point.awardedTeamId
+      && row.category === point.category
+      && Number(row.points) === point.points
+      && (row.note ?? '') === (point.note?.trim() ?? '')
+    ));
+
+  // Avoid a DELETE when nothing changed. In particular, an empty draft has
+  // no adjustment rows to remove.
+  if (unchanged) return {ok: true};
+
   const {error: deleteError} = await (supabase as any)
     .from('launch_match_structural_points')
     .delete()
