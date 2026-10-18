@@ -448,6 +448,9 @@ export function ResultsManagement({
                     <input type="checkbox" checked={importAdjustmentsReviewed} onChange={e=>setImportAdjustmentsReviewed(e.target.checked)} />
                     I reviewed the unexplained points; I will enter their confirmed award category and explanation before publishing.
                   </label> : null}
+                  {whiteboardPreview.errors.length ? <span role="status">Fix the blocking JSON issues listed above before loading rows.</span> : null}
+                  {whiteboardPreview.aliasMatches.length > 0 && !importAliasesReviewed ? <span role="status">To enable loading: verify and check the player-alias confirmation above.</span> : null}
+                  {whiteboardPreview.roundAdjustments.some(x=>x.away>0||x.home>0) && !importAdjustmentsReviewed ? <span role="status">To enable loading: check the unexplained-points confirmation above.</span> : null}
                   <button type="button" className={styles.secondary}
                     disabled={!!whiteboardPreview.errors.length
                       || (whiteboardPreview.aliasMatches.length>0&&!importAliasesReviewed)
