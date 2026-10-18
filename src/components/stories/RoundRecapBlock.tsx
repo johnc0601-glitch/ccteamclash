@@ -1,13 +1,9 @@
-import type {CSSProperties, ReactNode} from 'react';
+import {RecapMatchdayHeader, type RecapTeam} from './RecapMatchdayHeader';
 
 type RecapBlockKind = 'match' | 'pulse' | 'discovery' | 'mover' | 'upcoming';
 
 function cleanParts(paragraph: string): string[] {
   return paragraph.split('|').map((item) => item.trim());
-}
-
-function score(value: string): ReactNode {
-  return <strong className="round-recap-score">{value}</strong>;
 }
 
 /**
@@ -24,10 +20,10 @@ function score(value: string): ReactNode {
  */
 export function RoundRecapBlock({
   paragraph,
-  teamColors = {},
+  teams = {},
 }: {
   paragraph: string;
-  teamColors?: Record<string, string>;
+  teams?: Record<string, RecapTeam>;
 }) {
   if (!paragraph.startsWith(':::')) return null;
   const [tag, ...parts] = cleanParts(paragraph.slice(3));
@@ -35,21 +31,16 @@ export function RoundRecapBlock({
 
   if (kind === 'match' && parts.length >= 6) {
     const [home, homeScore, away, awayScore, date, course] = parts;
-    const homeColor = safeTeamColor(teamColors[home.toLowerCase()], '#8c939a');
-    const awayColor = safeTeamColor(teamColors[away.toLowerCase()], '#8c939a');
-    const colors = {'--round-home-color': homeColor, '--round-away-color': awayColor} as CSSProperties;
     return (
-      <section className="round-recap-match" aria-label={`${home} vs ${away}`} style={colors}>
-        <div className="round-recap-match-head">
-          <div className="round-recap-match-date">{date} · {course}</div>
-          <span className="round-recap-final">FINAL</span>
-        </div>
-        <div className="round-recap-match-scoreline">
-          <span className="round-recap-side">{home}{score(homeScore)}</span>
-          <span className="round-recap-dash">–</span>
-          <span className="round-recap-side">{away}{score(awayScore)}</span>
-        </div>
-      </section>
+      <RecapMatchdayHeader
+        homeName={home}
+        homeScore={homeScore}
+        awayName={away}
+        awayScore={awayScore}
+        date={date}
+        course={course}
+        teams={teams}
+      />
     );
   }
 
@@ -105,10 +96,6 @@ export function RoundRecapBlock({
 
   // Malformed custom blocks are shown as plain text rather than silently lost.
   return <p className="article-paragraph">{paragraph}</p>;
-}
-
-function safeTeamColor(color: string | undefined, fallback: string): string {
-  return color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : fallback;
 }
 
 export function isRoundRecapBlock(paragraph: string): boolean {
