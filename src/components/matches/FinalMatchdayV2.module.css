@@ -65,10 +65,11 @@
   white-space: nowrap;
   color: #fff;
   font-family: var(--cc-font-display);
-  font-size: 49px;
+  font-size: 37px;
   font-style: italic;
   font-weight: 950;
-  letter-spacing: -.045em;
+  letter-spacing: -.055em;
+  font-variant-numeric: tabular-nums;
   line-height: .9;
   text-align: center;
   text-shadow: 0 2px 12px rgba(0, 0, 0, .48);
@@ -688,11 +689,7 @@
   }
 
   .scoreCell strong {
-    font-size: clamp(29px, 9.7vw, 38px);
-  }
-
-  .scoreCell strong.fractionScore {
-    font-size: clamp(20px, 5.8vw, 25px);
+    font-size: clamp(24px, 6.6vw, 30px);
   }
 
   .scoreCell small {
@@ -921,15 +918,21 @@
 }
 
 /* Decimal scores must fit inside each half of the compact final tile. */
-.scoreCell strong.fractionScore {
-  font-size: 31px;
-  letter-spacing: -.07em;
-  font-variant-numeric: tabular-nums;
+/* The two totals always use the same type scale. Fractional scores
+   receive extra COLUMN width rather than smaller type. */
+.scoreLine.homeFractionScore {
+  grid-template-columns: minmax(0, .78fr) 1px minmax(0, 1.22fr);
+}
+.scoreLine.awayFractionScore {
+  grid-template-columns: minmax(0, 1.22fr) 1px minmax(0, .78fr);
 }
 @media (max-width: 700px) {
-  .scoreCell strong.fractionScore {
-    font-size: clamp(20px, 5.8vw, 25px);
-  }
   .scoreLine { gap: 4px; }
+  .scoreLine.homeFractionScore {
+    grid-template-columns: minmax(0, .70fr) 1px minmax(0, 1.30fr);
+  }
+  .scoreLine.awayFractionScore {
+    grid-template-columns: minmax(0, 1.30fr) 1px minmax(0, .70fr);
+  }
   .scoreBreakdown { flex-wrap: wrap; gap: 3px 5px; }
 }
