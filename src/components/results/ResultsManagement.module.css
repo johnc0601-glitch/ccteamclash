@@ -87,3 +87,7 @@
 .importReady { margin: 0; color: #32613b; font-size: 12px; font-weight: 800; }
 .previewNotice { margin: 0 24px 12px; padding: 12px 14px; color: #51401f; background: #fbf2d7; border: 1px solid #dfc983; border-radius: 5px; font-size: 12px; font-weight: 750; line-height: 1.5; }
 .whiteboardReview, .whiteboardReview > div, .whiteboardReview span { min-width: 0; overflow-wrap: anywhere; }
+
+.sourcePenalties { display: grid; gap: 8px; padding: 11px 12px; border: 1px solid #d8c49e; background: #fcf9f0; border-radius: 5px; }
+.sourcePenalties b { font-weight: 900; color: #292d28; }
+.sourcePenalties p { margin: 0; font-size: 12px; line-height: 1.45; color: #3e423f; overflow-wrap: anywhere; }
