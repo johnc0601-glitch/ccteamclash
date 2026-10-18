@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {adaptCanarySnapshot, shouldUseFinalScoreboardCanary} from './FinalMatchdayCanary';
+import {adaptCanarySnapshot, loadPublishedCanaryAdjustments, parsePublishedCanaryAdjustments, shouldUseFinalScoreboardCanary} from './FinalMatchdayCanary';
+import {buildFinalScoreBreakdown} from './FinalScoreBreakdown';
 import type {FinalMatchdaySnapshot} from './FinalMatchdaySnapshot';
 
 const TARGET='beast-mode-vs-riptide-3ed22cf9-623e-4c11-96a2-b0e6c42b7e0d';
@@ -54,4 +55,90 @@ test('environment kill switch retains the original final Matchday renderer',()=>
     if(prior===undefined) delete process.env.RIPTIDE_BEAST_SCOREBOARD_V2;
     else process.env.RIPTIDE_BEAST_SCOREBOARD_V2=prior;
   }
+});
+
+test('official Riptide–Beast penalty records reconcile the published final without touching the locked snapshot',()=>{
+  const locked=fixture({
+    awayScore:17,homeScore:19.5,
+    contests: [
+      {id:'s-away',format:'Singles',position:1,homeOutcome:'L',awayOutcome:'W',awayPlayers:[],homePlayers:[]},
+      {id:'d-away',format:'Doubles',position:1,homeOutcome:'L',awayOutcome:'W',awayPlayers:[],homePlayers:[]},
+    ],
+  });
+  const before=JSON.stringify(locked);
+  const adjustments=parsePublishedCanaryAdjustments([
+    {awarded_team_id:'beast-mode',category:'WomenBonus',points:'2',note:'Two missing female positions'},
+    {awarded_team_id:'beast-mode',category:'NoShow',points:'0.5',note:'Rostered no-show'},
+    {awarded_team_id:'other-team',category:'Penalty',points:99,note:'Invalid'},
+  ],'beast-mode','riptide');
+  assert.equal(adjustments.length,2);
+  assert.equal(adjustments.reduce((sum,row)=>sum+row.points,0),2.5);
+  const board=adaptCanarySnapshot(locked,adjustments);
+  assert.equal(board.awayScore,17);
+  assert.equal(board.homeScore,19.5);
+  assert.equal(JSON.stringify(locked),before);
+  assert.notEqual(board.adjustments,adjustments);
+});
+
+test('public canary adjustment fetch reads the exact match ID and safely refuses other matches',async()=>{
+  let requested='';
+  const client={
+    from:(table:string)=>{
+      assert.equal(table,'launch_match_structural_points');
+      return {
+        select:(_columns:string)=>({
+          eq:(col:string,matchId:string)=>{
+            assert.equal(col,'match_id');
+            requested=matchId;
+            return {order:async()=>({data:[
+              {awarded_team_id:'beast-mode',category:'WomenBonus',points:'2',note:'Short female'},
+              {awarded_team_id:'beast-mode',category:'NoShow',points:'0.5',note:'Rostered no-show'},
+            ],error:null})};
+          },
+        }),
+      };
+    },
+  };
+  const correct=await loadPublishedCanaryAdjustments(client,fixture({awayScore:17,homeScore:19.5}));
+  assert.equal(requested,TARGET);
+  assert.equal(correct.length,2);
+  requested='';
+  const ignored=await loadPublishedCanaryAdjustments(client,fixture({matchId:'other'}));
+  assert.deepEqual(ignored,[]);
+  assert.equal(requested,'');
+});
+
+test('production-like full final score is balanced after loading the itemized adjustments',()=>{
+  const snap=fixture({
+    awayScore:17, homeScore:19.5,
+    contests:[
+      ...Array.from({length:10},(_,i)=>({
+        id:'bs'+i,format:'Singles' as const,position:i+1,
+        awayOutcome:'W' as const, homeOutcome:'L' as const, awayPlayers:[], homePlayers:[],
+      })),
+      {id:'stie',format:'Singles',position:11,awayOutcome:'T',homeOutcome:'T',awayPlayers:[],homePlayers:[]},
+      ...Array.from({length:7},(_,i)=>({
+        id:'rs'+i,format:'Singles' as const,position:12+i,
+        awayOutcome:'L' as const,homeOutcome:'W' as const,awayPlayers:[],homePlayers:[],
+      })),
+      ...Array.from({length:2},(_,i)=>({
+        id:'bd'+i,format:'Doubles' as const,position:i+1,
+        awayOutcome:'W' as const,homeOutcome:'L' as const,awayPlayers:[],homePlayers:[],
+      })),
+      ...Array.from({length:6},(_,i)=>({
+        id:'rd'+i,format:'Doubles' as const,position:i+3,
+        awayOutcome:'L' as const,homeOutcome:'W' as const,awayPlayers:[],homePlayers:[],
+      })),
+    ],
+  });
+  const board=adaptCanarySnapshot(snap,parsePublishedCanaryAdjustments([
+    {awarded_team_id:'beast-mode',category:'WomenBonus',points:'2',note:'Missing female'},
+    {awarded_team_id:'beast-mode',category:'NoShow',points:'0.5',note:'No show'},
+  ],'beast-mode','riptide'));
+  const totals=buildFinalScoreBreakdown(board);
+  assert.equal(totals.balanced,true);
+  assert.deepEqual(totals.singles,{away:10.5,home:7.5});
+  assert.deepEqual(totals.doubles,{away:4,home:12});
+  assert.deepEqual(totals.otherAdjustments,{away:2.5,home:0});
+  assert.deepEqual(totals.unitemized,{away:0,home:0});
 });
