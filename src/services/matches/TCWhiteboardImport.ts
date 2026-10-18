@@ -246,3 +246,27 @@ export function prepareWhiteboardImport(
   return {sourceMatchId,homeScore:officialHome??0,awayScore:officialAway??0,
     contests,errors,warnings,aliasMatches,penalties,awards,roundAdjustments};
 }
+
+// Both imported and previously-saved administrative points are authoritative
+// only when they reconcile exactly to the unplayed-contest difference.
+// Never discard a category from a multi-row ledger on editor reload.
+export function structuralAwardsCoverResiduals(
+  rows: readonly {awardedTeamId: string; points: number}[],
+  homeTeamId: string | null,
+  awayTeamId: string | null,
+  homeResidual: number,
+  awayResidual: number,
+): boolean {
+  if (!homeTeamId || !awayTeamId || homeTeamId === awayTeamId) return false;
+  if (![homeResidual, awayResidual].every(Number.isFinite)) return false;
+  if (homeResidual < -0.001 || awayResidual < -0.001) return false;
+  let home = 0, away = 0;
+  for (const row of rows) {
+    if (!Number.isFinite(row.points) || row.points <= 0 || !Number.isInteger(row.points * 2)) return false;
+    if (row.awardedTeamId === homeTeamId) home += row.points;
+    else if (row.awardedTeamId === awayTeamId) away += row.points;
+    else return false;
+  }
+  return Math.abs(home - homeResidual) < 0.001
+    && Math.abs(away - awayResidual) < 0.001;
+}
