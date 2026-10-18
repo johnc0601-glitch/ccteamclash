@@ -3,6 +3,7 @@ import {AroundTheClashDesk} from '@/components/commissioner/AroundTheClashDesk';
 import {ClashPulseLiveManager} from '@/components/commissioner/ClashPulseLiveManager';
 import {OfficePage} from '@/components/commissioner/OfficePage';
 import {getClashPulseFactData} from '@/services/stories/ClashPulseFactCandidateService';
+import {PulseFactLibrary} from '@/components/commissioner/PulseFactLibrary';
 
 export default async function CommissionerClashPulsePage() {
   const factData = await getClashPulseFactData();
@@ -20,6 +21,7 @@ export default async function CommissionerClashPulsePage() {
           </div>
           <Link href="/office">Office dashboard</Link>
         </header>
+        <PulseFactLibrary />
         <AroundTheClashDesk factData={factData} />
         <ClashPulseLiveManager />
       </section>
