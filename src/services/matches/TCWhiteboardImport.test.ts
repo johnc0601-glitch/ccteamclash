@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {prepareWhiteboardImport, type WhiteboardImportMatch, type WhiteboardImportPlayer} from './TCWhiteboardImport';
+import {prepareWhiteboardImport, structuralAwardsCoverResiduals, type WhiteboardImportMatch, type WhiteboardImportPlayer} from './TCWhiteboardImport';
 
 const match: WhiteboardImportMatch = {
   id:'beast-at-riptide',date:'2026-10-17',
@@ -139,4 +139,29 @@ test('unknown penalty language stays unclassified until commissioner review',()=
   assert.deepEqual(result.errors,[]);
   assert.equal(result.awards.length,2);
   assert.ok(result.awards.every(a=>a.category==='Other'));
+});
+
+test('finalization preserves two saved award categories (2 women, 0.5 no-show)',()=>{
+  const saved = [
+    {awardedTeamId:'beast-mode',points:2,category:'WomenBonus'},
+    {awardedTeamId:'beast-mode',points:0.5,category:'NoShow'},
+  ];
+  assert.equal(structuralAwardsCoverResiduals(saved,'riptide','beast-mode',0,2.5),true);
+  assert.equal(structuralAwardsCoverResiduals(saved,'riptide','beast-mode',0,3),false);
+  assert.equal(structuralAwardsCoverResiduals(saved,'riptide','beast-mode',0,2),false);
+  assert.equal(structuralAwardsCoverResiduals([...saved,{awardedTeamId:'unknown',points:.5}], 'riptide','beast-mode',0,3),false);
+});
+
+test('imported multi-category penalty ledger covers the real residual without a manual one-category selection',()=>{
+  const source: any=fixture();
+  source.match.home.id='wb-riptide';
+  source.match.away.id='wb-beast';
+  source.rounds[0].penalties=[{against:'home',teamId:'wb-riptide',points:1,note:'Short Female'}];
+  source.rounds[1].points.away=2.5;
+  source.match.away.points=4.5;
+  source.rounds[1].penalties=[{against:'home',teamId:'wb-riptide',points:1.5,note:'Missing Female and Rostered player'}];
+  const review=prepareWhiteboardImport(source,match,players);
+  assert.deepEqual(review.errors,[]);
+  const awards=review.awards.map(a=>({awardedTeamId:a.side==='Away'?'beast-mode':'riptide',points:a.points}));
+  assert.equal(structuralAwardsCoverResiduals(awards,'riptide','beast-mode',0,2.5),true);
 });
