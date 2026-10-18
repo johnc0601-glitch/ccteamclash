@@ -65,10 +65,11 @@
   white-space: nowrap;
   color: #fff;
   font-family: var(--cc-font-display);
-  font-size: 49px;
+  font-size: 31px;
   font-style: italic;
   font-weight: 950;
-  letter-spacing: -.045em;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.06em;
   line-height: .9;
   text-align: center;
   text-shadow: 0 2px 12px rgba(0, 0, 0, .48);
@@ -688,10 +689,6 @@
   }
 
   .scoreCell strong {
-    font-size: clamp(29px, 9.7vw, 38px);
-  }
-
-  .scoreCell strong.fractionScore {
     font-size: clamp(20px, 5.8vw, 25px);
   }
 
@@ -920,16 +917,8 @@
   min-height: 88px;
 }
 
-/* Decimal scores must fit inside each half of the compact final tile. */
-.scoreCell strong.fractionScore {
-  font-size: 31px;
-  letter-spacing: -.07em;
-  font-variant-numeric: tabular-nums;
-}
+/* Shared typography keeps integer and fractional final scores aligned. */
 @media (max-width: 700px) {
-  .scoreCell strong.fractionScore {
-    font-size: clamp(20px, 5.8vw, 25px);
-  }
   .scoreLine { gap: 4px; }
   .scoreBreakdown { flex-wrap: wrap; gap: 3px 5px; }
 }
