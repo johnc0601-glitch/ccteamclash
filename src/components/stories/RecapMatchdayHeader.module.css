@@ -119,6 +119,8 @@
   letter-spacing: -.045em;
 }
 .scores span {color:rgba(255,255,255,.45);font-size:15px;}
+/* Reduce both numbers together when either final score contains a half point. */
+.fractionalScores strong {font-size: clamp(26px, 3.2vw, 34px);}
 .meta {
   min-height: 38px;
   display: flex;
@@ -146,6 +148,7 @@
   .final {font-size:9px;padding-bottom:7px;}
   .scores {gap:2px;}
   .scores strong {font-size:clamp(24px,6vw,28px);}
+  .fractionalScores strong {font-size:clamp(20px,5.25vw,24px);}
   .scores span {font-size:11px;}
   .meta {min-height:37px;gap:7px;padding:9px 8px;font-size:10px;}
 }
@@ -154,5 +157,6 @@
   .logo,.logoFallback {width:48px;height:48px;}
   .team strong {font-size:13px;}
   .scores strong {font-size:22px;}
+  .fractionalScores strong {font-size:20px;}
   .scoreboard {padding-left:4px;padding-right:4px;}
 }
