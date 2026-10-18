@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {cache} from 'react';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {StoryComments} from '@/components/stories/StoryComments';
+import {isRoundRecapBlock, RoundRecapBlock} from '@/components/stories/RoundRecapBlock';
 import {getMediaAssetById} from '@/services/media/MediaLibraryService';
 import {getStoryBySlug} from '@/services/stories/StoryService';
 import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
@@ -61,12 +62,14 @@ export default async function Page({params, searchParams}: StoryPageProps) {
         <span className="eyebrow">{story.category} | {formatStoryDate(story.publishedAt)}</span>
         <h1>{story.title}</h1>
         <StoryPhoto className="article-image" image={story.image} alt={heroAlt} />
-        <div className="article-copy">
+        <div className={story.category === 'Round Recap' ? 'article-copy round-recap-article' : 'article-copy'}>
           {story.body.map((paragraph, index) => (
-            <StoryBodyBlock
-              key={`${index}-${paragraph.slice(0, 40)}`}
-              paragraph={paragraph}
-            />
+            story.category === 'Round Recap' && isRoundRecapBlock(paragraph)
+              ? <RoundRecapBlock key={`${index}-${paragraph.slice(0, 40)}`} paragraph={paragraph} />
+              : <StoryBodyBlock
+                  key={`${index}-${paragraph.slice(0, 40)}`}
+                  paragraph={paragraph}
+                />
           ))}
           {story.links?.map((link) => (
             <Link className="button" href={link.url} key={`${link.label}-${link.url}`}>{link.label}</Link>
