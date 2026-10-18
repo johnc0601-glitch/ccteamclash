@@ -65,10 +65,12 @@
   white-space: nowrap;
   color: #fff;
   font-family: var(--cc-font-display);
-  font-size: 49px;
+  /* Identical type size for whole and half-point team scores. */
+  font-size: 31px;
   font-style: italic;
   font-weight: 950;
-  letter-spacing: -.045em;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.065em;
   line-height: .9;
   text-align: center;
   text-shadow: 0 2px 12px rgba(0, 0, 0, .48);
@@ -688,11 +690,8 @@
   }
 
   .scoreCell strong {
-    font-size: clamp(29px, 9.7vw, 38px);
-  }
-
-  .scoreCell strong.fractionScore {
-    font-size: clamp(20px, 5.8vw, 25px);
+    /* Fits both "17" and "19.5" within equal-width columns. */
+    font-size: clamp(22px, 6.5vw, 27px);
   }
 
   .scoreCell small {
@@ -920,16 +919,8 @@
   min-height: 88px;
 }
 
-/* Decimal scores must fit inside each half of the compact final tile. */
-.scoreCell strong.fractionScore {
-  font-size: 31px;
-  letter-spacing: -.07em;
-  font-variant-numeric: tabular-nums;
-}
+/* Narrow screens retain equal-size scores and compact supporting rows. */
 @media (max-width: 700px) {
-  .scoreCell strong.fractionScore {
-    font-size: clamp(20px, 5.8vw, 25px);
-  }
   .scoreLine { gap: 4px; }
   .scoreBreakdown { flex-wrap: wrap; gap: 3px 5px; }
 }
