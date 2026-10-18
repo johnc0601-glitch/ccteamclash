@@ -398,3 +398,14 @@ a.courseLink:hover {
     font-size: 9px;
   }
 }
+
+.matchStatus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--cc-body-text);
+  font-size: 11px;
+}
+.matchStatus span { font-size: 16px; font-weight: 900; }

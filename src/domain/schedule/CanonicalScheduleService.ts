@@ -16,6 +16,8 @@ type ScheduleServiceArgs = ConstructorParameters<typeof ScheduleService>;
 export type CanonicalPublicScheduleEvent = PublicScheduleEvent & {
   lifecycle: MatchStatus;
   roundId: string;
+  roundNumber: number | null;
+  seasonName: string;
 };
 
 export type CanonicalTeamScheduleEvent = TeamScheduleEvent & {
@@ -40,25 +42,27 @@ export class CanonicalScheduleService extends ScheduleService {
   }
 
   override async getPublishedEvents(referenceDate = new Date()): Promise<CanonicalPublicScheduleEvent[]> {
-    const [datedEvents, schedulesResult, roundsResult, tbdMatchesResult] = await Promise.all([
+    const [datedEvents, schedulesResult, roundsResult, tbdMatchesResult, seasonsResult] = await Promise.all([
       super.getPublishedEvents(referenceDate),
       this.identityClient
         .from('launch_schedules')
-        .select('id,published')
+        .select('id,season_id,name,published')
         .eq('published', true),
       this.identityClient
         .from('launch_rounds')
-        .select('id,schedule_id,date,published')
+        .select('id,schedule_id,number,date,published')
         .eq('published', true),
       this.identityClient
         .from('launch_schedule_matches')
         .select('id,round_id,home_team_id,away_team_id,course_id,date,time,status')
         .is('date', null),
+      this.identityClient.from('launch_seasons').select('id,name'),
     ]);
 
     if (schedulesResult.error) throw schedulesResult.error;
     if (roundsResult.error) throw roundsResult.error;
     if (tbdMatchesResult.error) throw tbdMatchesResult.error;
+    if (seasonsResult.error) throw seasonsResult.error;
 
     const publishedScheduleIds = new Set<string>(
       (schedulesResult.data ?? [])
@@ -70,6 +74,12 @@ export class CanonicalScheduleService extends ScheduleService {
         row.published === true && publishedScheduleIds.has(clean(row.schedule_id))
       ),
     );
+    const seasonNames = new Map<string, string>((seasonsResult.data ?? []).map((row: {id: string; name: string}) => [row.id, row.name]));
+    const scheduleSeasons = new Map<string, string>((schedulesResult.data ?? []).map((row: {id: string; season_id: string; name: string}) => [row.id, seasonNames.get(row.season_id) || row.name]));
+    const roundMetadata = new Map<string, {number: number | null; seasonName: string}>(publishedRounds.map((row: {id: string; schedule_id: string; number: number}) => [row.id, {
+      number: Number.isInteger(row.number) ? row.number : null,
+      seasonName: scheduleSeasons.get(row.schedule_id) || 'Published schedule',
+    }]));
     const roundDates = new Map<string, string>(
       publishedRounds
         .map((row: {id: string; date: string | null}) => [clean(row.id), clean(row.date)] as const)
@@ -154,6 +164,8 @@ export class CanonicalScheduleService extends ScheduleService {
       return {
         ...event,
         roundId,
+        roundNumber: roundMetadata.get(roundId)?.number ?? null,
+        seasonName: roundMetadata.get(roundId)?.seasonName ?? 'Published schedule',
         href: publicMatchHref(identities.get(event.id) ?? {matchId: event.id, publicSlug: null}),
         lifecycle,
         bucket,

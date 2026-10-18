@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {StatsTable} from '@/components/stats/StatsTable';
-import {PlayerPortalLink} from '@/components/stats/PlayerPortalLink';
+import {PlayerNavigation} from '@/components/players/PlayerNavigation';
 import {loadServerStatsPageData} from '@/core/loadServerStatsPageData';
 import {redirect} from 'next/navigation';
 import type {StatsGroup, StatsRow} from '@/services/stats/StatsPageModel';
@@ -64,10 +64,10 @@ export default async function StatsPage({searchParams}: StatsPageProps) {
           <span className="eyebrow">League players</span>
           <div className={styles.pageTitleRow}>
             <h1>Players</h1>
-            <PlayerPortalLink />
           </div>
           <p>Player rankings and performance by season or across the full recorded Coastal Clash history.</p>
         </header>
+        <PlayerNavigation current="rankings" />
         <div className={helpStyles.explainer}>
           <span><strong>CI — Clash Index</strong> is Coastal Clash&apos;s match-play player rating.</span>
           <Link href="/clash-index">How CI works →</Link>

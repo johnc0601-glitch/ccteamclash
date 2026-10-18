@@ -22,6 +22,7 @@ export function FinalMatchday({snapshot}: {snapshot: FinalMatchdaySnapshot}) {
 
   return (
     <main className={`${pageStyles.page} ${snapshot.awayTeam.id === 'kb' ? styles.kbAwayMuted : ''}`} style={pageStyle}>
+      <h1 className={styles.pageTitle}>{snapshot.awayTeam.name} at {snapshot.homeTeam.name} — Final result</h1>
       <FinalHero snapshot={snapshot} singlesTotals={singlesTotals} doublesTotals={doublesTotals} />
       <div className={`shell ${pageStyles.content} ${styles.finalContent}`}>
         <section className={styles.desktopScoreboard} aria-label="Final result scoreboard">
@@ -157,7 +158,7 @@ function DesktopResultBoard({
   return (
     <section className={styles.desktopBoard}>
       <header className={styles.desktopBoardHeader}>
-        <strong>{title}</strong>
+        <h2>{title}</h2>
         <span>({contests.length})</span>
       </header>
       <div className={styles.desktopColumnHeader} aria-hidden="true">
@@ -210,7 +211,7 @@ function DesktopResultRow({contest}: {contest: FinalMatchContest}) {
       <div className={awayClass}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
-      <div className={styles.desktopVs}>{contest.unplayed ? 'NO SHOW' : tie ? 'TIE' : 'VS'}</div>
+      <div className={styles.desktopVs}><ContestOutcome contest={contest} /></div>
       <div className={homeClass}>
         <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
       </div>
@@ -236,7 +237,7 @@ function ResultDetails({
   return (
     <details className={styles.resultDetails} open={initiallyOpen}>
       <summary>
-        <span className={styles.resultSummaryTitle}>{title}</span>
+        <h2 className={styles.resultSummaryTitle}>{title}</h2>
         <span className={styles.resultSummaryScore} aria-label={`${awayTeam.name} ${formatPoint(totals.away)} to ${homeTeam.name} ${formatPoint(totals.home)}`}>
           <small className={styles.resultSummaryTeam}>{shortTeam(awayTeam)}</small>
           <strong>{formatPoint(totals.away)}</strong>
@@ -288,12 +289,19 @@ function ResultRow({contest}: {contest: FinalMatchContest}) {
       <div className={awayClass}>
         <PlayerNames players={contest.awayPlayers} pairClass={pairClass} />
       </div>
-      <div className={styles.outcome}>{contest.unplayed ? <span>NO SHOW</span> : tie ? <span>TIE</span> : null}</div>
+      <div className={styles.outcome}><ContestOutcome contest={contest} /></div>
       <div className={homeClass}>
         <PlayerNames players={contest.homePlayers} pairClass={pairClass} />
       </div>
     </div>
   );
+}
+
+function ContestOutcome({contest}: {contest: FinalMatchContest}) {
+  if (contest.unplayed) return <span>NO SHOW</span>;
+  if (contest.awayOutcome === 'T' && contest.homeOutcome === 'T') return <span>TIE</span>;
+  const label = (outcome: string) => outcome === 'W' ? 'win' : outcome === 'L' ? 'loss' : 'tie';
+  return <span aria-label={`Away ${label(contest.awayOutcome)}, home ${label(contest.homeOutcome)}`}>{contest.awayOutcome}–{contest.homeOutcome}</span>;
 }
 
 function PlayerNames({
