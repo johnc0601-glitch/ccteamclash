@@ -626,7 +626,7 @@ export function ResultsManagement({
                   {editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'Away'} +{formatPoints(audit.automaticAwayPoints)}
                 </span>
               ) : null}
-              {audit.homeResidual > 0 ? (
+              {audit.homeResidual > 0 && !hasAuditedLedger ? (
                 <label>
                   <span>{editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'Home'} additional +{formatPoints(audit.homeResidual)}</span>
                   <select
@@ -649,7 +649,7 @@ export function ResultsManagement({
                   />
                 </label>
               ) : null}
-              {audit.awayResidual > 0 ? (
+              {audit.awayResidual > 0 && !hasAuditedLedger ? (
                 <label>
                   <span>{editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'Away'} additional +{formatPoints(audit.awayResidual)}</span>
                   <select
