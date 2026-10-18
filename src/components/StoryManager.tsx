@@ -45,14 +45,10 @@ const storyCategories = [
 
 
 const roundRecapTemplate = [
-  '## Opening',
-  'Write a short introduction summarizing the overall round.',
+  'Write a brief opening covering the biggest storyline of the round.',
   ':::match|Home Team|0|Away Team|0|October 3|Course Name',
   'Write two short paragraphs about the match.',
   ':::pulse|Singles upset|Player over opponent|25%|Pre-match win chance',
-  '**The takeaway:** One sentence explaining the result.',
-  ':::match|Home Team|0|Away Team|0|October 3|Course Name',
-  'Write two short paragraphs about the match.',
   ':::pulse|Doubles upset|Pair over opponents|25%|Pre-match win chance',
   '**The takeaway:** One sentence explaining the result.',
   ':::match|Home Team|0|Away Team|0|October 3|Course Name',
@@ -61,12 +57,17 @@ const roundRecapTemplate = [
   '**The takeaway:** One sentence explaining the result.',
   ':::match|Home Team|0|Away Team|0|October 3|Course Name',
   'Write two short paragraphs about the match.',
+  ':::pulse|Singles upset|Player over opponent|25%|Pre-match win chance',
+  '**The takeaway:** One sentence explaining the result.',
+  ':::match|Home Team|0|Away Team|0|October 3|Course Name',
+  'Write two short paragraphs about the match.',
+  ':::pulse|Singles upset|Player over opponent|25%|Pre-match win chance',
   ':::pulse|Doubles upset|Pair over opponents|25%|Pre-match win chance',
   '**The takeaway:** One sentence explaining the result.',
   '## Around the Clash',
-  ':::discovery|Headline|Key statistic|Explain the new insight without repeating the match summary.',
-  ':::discovery|Headline|Key statistic|Explain the new insight.',
-  ':::discovery|Headline|Key statistic|Explain the new insight.',
+  ':::discovery|Headline|Key statistic|Explain a new insight, not a fact already in a match summary.',
+  ':::discovery|Headline|Key statistic|Explain another interesting statistical trend.',
+  ':::discovery|Headline|Key statistic|Highlight an overlooked individual achievement.',
   '## Top Clash Index (CI) Movers',
   ':::mover|1|Player Name|Team|+0|Start to End',
   ':::mover|2|Player Name|Team|+0|Start to End',
@@ -517,7 +518,7 @@ export function StoryManager() {
               placeholder="Write your story. Select text and use the formatting toolbar. Separate paragraphs with a blank line." />
             <small>Highlight text to format it. Headings and lists apply to selected lines. Formatting is visible when published.</small>
             {draft.category === 'Round Recap' ? (
-              <small>Recap cards use editable lines beginning with :::match, :::pulse, :::discovery, :::mover, and :::upcoming. Separate each block with a blank line. Upload the cover image above, then save as draft for review.</small>
+              <small>Recap cards use editable :::match, :::pulse, :::discovery, :::mover, and :::upcoming lines. Include at most one singles upset per matchup (lowest pre-match win chance); doubles upsets are optional. Separate blocks with blank lines and review before publishing.</small>
             ) : null}
           </div>
 

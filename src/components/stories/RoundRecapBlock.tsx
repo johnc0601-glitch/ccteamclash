@@ -1,13 +1,9 @@
-import type {ReactNode} from 'react';
+import {RecapMatchdayHeader, type RecapTeam} from './RecapMatchdayHeader';
 
 type RecapBlockKind = 'match' | 'pulse' | 'discovery' | 'mover' | 'upcoming';
 
 function cleanParts(paragraph: string): string[] {
   return paragraph.split('|').map((item) => item.trim());
-}
-
-function score(value: string): ReactNode {
-  return <strong className="round-recap-score">{value}</strong>;
 }
 
 /**
@@ -22,7 +18,13 @@ function score(value: string): ReactNode {
  * All blocks are ordinary editable paragraph text in the existing Story Manager.
  * Non-recap stories and ordinary paragraphs keep their existing rendering.
  */
-export function RoundRecapBlock({paragraph}: {paragraph: string}) {
+export function RoundRecapBlock({
+  paragraph,
+  teams = {},
+}: {
+  paragraph: string;
+  teams?: Record<string, RecapTeam>;
+}) {
   if (!paragraph.startsWith(':::')) return null;
   const [tag, ...parts] = cleanParts(paragraph.slice(3));
   const kind = tag as RecapBlockKind;
@@ -30,14 +32,15 @@ export function RoundRecapBlock({paragraph}: {paragraph: string}) {
   if (kind === 'match' && parts.length >= 6) {
     const [home, homeScore, away, awayScore, date, course] = parts;
     return (
-      <section className="round-recap-match" aria-label={`${home} vs ${away}`}>
-        <div className="round-recap-match-date">{date} · {course}</div>
-        <div className="round-recap-match-scoreline">
-          <span className="round-recap-side">{home}{score(homeScore)}</span>
-          <span className="round-recap-dash">–</span>
-          <span className="round-recap-side">{away}{score(awayScore)}</span>
-        </div>
-      </section>
+      <RecapMatchdayHeader
+        homeName={home}
+        homeScore={homeScore}
+        awayName={away}
+        awayScore={awayScore}
+        date={date}
+        course={course}
+        teams={teams}
+      />
     );
   }
 

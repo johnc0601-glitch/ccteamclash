@@ -7,6 +7,7 @@ import {StoryComments} from '@/components/stories/StoryComments';
 import {isRoundRecapBlock, RoundRecapBlock} from '@/components/stories/RoundRecapBlock';
 import {getMediaAssetById} from '@/services/media/MediaLibraryService';
 import {getStoryBySlug} from '@/services/stories/StoryService';
+import {getPublicDirectoryData} from '@/services/public/PublicDirectoryDataService';
 import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
 
 export const dynamic = 'force-dynamic';
@@ -54,6 +55,23 @@ export default async function Page({params, searchParams}: StoryPageProps) {
   const asset = story.heroAssetId ? await getCachedMediaAssetById(story.heroAssetId) : null;
   const heroAlt = asset?.altText || story.title;
   const isRecap = story.category === 'Round Recap' || story.body.some(isRoundRecapBlock);
+  const directory = isRecap ? await getPublicDirectoryData().catch(() => null) : null;
+  const recapTeams = Object.fromEntries(
+    (directory?.teams ?? []).flatMap((team) => {
+      const info = {
+        id: team.id,
+        name: team.name,
+        logo: team.logo,
+        primaryColor: team.primaryColor,
+        shortName: team.shortName,
+      };
+      return [
+        [team.name.toLowerCase(), info],
+        [team.shortName.toLowerCase(), info],
+        ...(team.id === 'kb' ? [['kure beach', info] as const] : []),
+      ];
+    }),
+  );
 
   return (
     <>
@@ -66,10 +84,11 @@ export default async function Page({params, searchParams}: StoryPageProps) {
         <div className={isRecap ? 'article-copy round-recap-article' : 'article-copy'}>
           {story.body.map((paragraph, index) => (
             isRecap && isRoundRecapBlock(paragraph)
-              ? <RoundRecapBlock key={`${index}-${paragraph.slice(0, 40)}`} paragraph={paragraph} />
+              ? <RoundRecapBlock key={`${index}-${paragraph.slice(0, 40)}`} paragraph={paragraph} teams={recapTeams} />
               : <StoryBodyBlock
                   key={`${index}-${paragraph.slice(0, 40)}`}
                   paragraph={paragraph}
+                  recap={isRecap}
                 />
           ))}
           {story.links?.map((link) => (
@@ -89,7 +108,7 @@ export default async function Page({params, searchParams}: StoryPageProps) {
 }
 
 
-function StoryBodyBlock({paragraph}: {paragraph: string}) {
+function StoryBodyBlock({paragraph, recap = false}: {paragraph: string; recap?: boolean}) {
   const trimmed = paragraph.trim();
   if (!trimmed) return null;
 
@@ -109,7 +128,7 @@ function StoryBodyBlock({paragraph}: {paragraph: string}) {
   }
 
   return (
-    <p className="article-paragraph">
+    <p className={recap && trimmed.startsWith("**The takeaway:**") ? "article-paragraph round-recap-takeaway" : "article-paragraph"}>
       {lines.map((line, index) => (
         <span className="article-line" key={index}>{renderInline(line)}</span>
       ))}

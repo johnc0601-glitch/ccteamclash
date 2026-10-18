@@ -1,0 +1,36 @@
+name: Round Recap PR Build
+
+on:
+  push:
+    branches:
+      - fix/round-recap-mobile-readability-20261018
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/components/stories/**'
+      - 'src/app/stories/**'
+      - 'src/app/globals.css'
+      - '.github/workflows/round-recap-pr-build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Next.js build and TypeScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      # Full prerendering needs Supabase credentials configured in Vercel.
+      # Validate all production JS/CSS compilation and TypeScript without secrets.
+      - name: Verify production compilation and TypeScript
+        run: npm run build -- --experimental-build-mode compile
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
