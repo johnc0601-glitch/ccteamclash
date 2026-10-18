@@ -78,3 +78,65 @@ test('refuses to invent played contests for a forfeit',()=>{
   assert.ok(result.errors.some(x=>x.includes('Forfeit requires manual review')));
   assert.equal(result.contests.filter(c=>c.format==='Singles').length,1);
 });
+
+test('updated official penalty ledger: short female + missing female and rostered player',()=>{
+  const source: any=fixture();
+  source.match.home.id='wb-riptide';
+  source.match.away.id='wb-beast';
+  source.rounds[0].penalties=[{
+    against:'home',teamId:'wb-riptide',points:1,note:'Short Female',
+  }];
+  // Source Round 2 reports one additional female point plus half a
+  // point for a rostered no-show, totaling 1.5 outside played contests.
+  source.rounds[1].points.away=2.5;
+  source.match.away.points=4.5;
+  source.rounds[1].penalties=[{
+    against:'home',teamId:'wb-riptide',points:1.5,note:'Missing Female and Rostered player',
+  }];
+  const result=prepareWhiteboardImport(source,match,players);
+  assert.deepEqual(result.errors,[]);
+  assert.equal(result.penalties.length,2);
+  assert.equal(result.penalties.reduce((sum,p)=>sum+p.points,0),2.5);
+  assert.deepEqual(result.awards.map(a=>[a.category,a.points]),[
+    ['WomenBonus',1],['WomenBonus',1],['NoShow',.5],
+  ]);
+  assert.equal(result.awards.filter(a=>a.category==='WomenBonus').reduce((sum,a)=>sum+a.points,0),2);
+  assert.ok(result.warnings.some(w=>w.includes('Confirm before saving')));
+});
+
+test('penalty ledger cannot disagree with matchups or award the wrong team',()=>{
+  const source: any=fixture();
+  source.match.home.id='wb-riptide';
+  source.match.away.id='wb-beast';
+  source.rounds[0].penalties=[{
+    against:'away',teamId:'wb-beast',points:1,note:'Short Female',
+  }];
+  source.rounds[1].penalties=[{
+    against:'home',teamId:'wb-riptide',points:.5,note:'Rostered no-show',
+  }];
+  const result=prepareWhiteboardImport(source,match,players);
+  assert.ok(result.errors.some(e=>e.includes('penalty ledger does not match')));
+});
+
+test('incomplete new penalty ledger blocks import instead of inventing bonus points',()=>{
+  const source: any=fixture();
+  source.match.home.id='wb-riptide';
+  source.match.away.id='wb-beast';
+  source.rounds[0].penalties=[];
+  source.rounds[1].penalties=[];
+  const result=prepareWhiteboardImport(source,match,players);
+  assert.equal(result.penalties.length,0);
+  assert.ok(result.errors.some(e=>e.includes('penalty ledger does not match')));
+});
+
+test('unknown penalty language stays unclassified until commissioner review',()=>{
+  const source: any=fixture();
+  source.match.home.id='wb-riptide';
+  source.match.away.id='wb-beast';
+  source.rounds[0].penalties=[{against:'home',teamId:'wb-riptide',points:1,note:'Administrative adjustment'}];
+  source.rounds[1].penalties=[{against:'home',teamId:'wb-riptide',points:.5,note:'Rostered no-show'}];
+  const result=prepareWhiteboardImport(source,match,players);
+  assert.deepEqual(result.errors,[]);
+  assert.equal(result.awards.length,2);
+  assert.ok(result.awards.every(a=>a.category==='Other'));
+});
