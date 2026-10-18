@@ -36,6 +36,7 @@ export function RecapMatchdayHeader({
   const away = teams[awayName.trim().toLowerCase()];
   const homeColor = safeColor(home?.primaryColor);
   const awayColor = safeColor(away?.primaryColor);
+  const fractionalScores = homeScore.includes('.') || awayScore.includes('.');
 
   const colors = {
     '--match-away': awayColor,
@@ -56,7 +57,7 @@ export function RecapMatchdayHeader({
         </div>
         <div className={styles.scoreboard}>
           <span className={styles.final}>Final</span>
-          <div className={styles.scores}>
+          <div className={`${styles.scores} ${fractionalScores ? styles.fractionalScores : ""}`}>
             <strong>{awayScore}</strong>
             <span aria-hidden="true">–</span>
             <strong>{homeScore}</strong>
