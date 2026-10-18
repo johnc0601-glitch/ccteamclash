@@ -84,6 +84,8 @@ export function ResultsManagement({
   const [processingStatus, setProcessingStatus] = useState<ResultProcessingStatus | null>(null);
   const [whiteboardPreview, setWhiteboardPreview] = useState<WhiteboardReview | null>(null);
   const [importedAwards, setImportedAwards] = useState<WhiteboardAward[]>([]);
+  const [savedAdjustments, setSavedAdjustments] = useState<ResultStructuralPointInput[]>([]);
+  const [editorLoading, setEditorLoading] = useState(false);
   const [importAliasesReviewed, setImportAliasesReviewed] = useState(false);
   const [importAdjustmentsReviewed, setImportAdjustmentsReviewed] = useState(false);
   const [importApplied, setImportApplied] = useState(false);
@@ -116,6 +118,7 @@ export function ResultsManagement({
     setEditor(null);
     setWhiteboardPreview(null);
     setImportedAwards([]);
+    setSavedAdjustments([]);
     setImportApplied(false);
     setMessage('');
   }
@@ -123,8 +126,10 @@ export function ResultsManagement({
   async function openEditor(match: Match) {
     const result = results.find((candidate) => candidate.matchId === match.id);
     setEditor({match, result});
+    setEditorLoading(true);
     setWhiteboardPreview(null);
     setImportedAwards([]);
+    setSavedAdjustments([]);
     setImportApplied(false);
     setImportAliasesReviewed(false);
     setImportAdjustmentsReviewed(false);
@@ -143,6 +148,7 @@ export function ResultsManagement({
       setOfficialRosterPlayers([]);
       setProcessingStatus(null);
       setMessage(contestResult.message);
+      setEditorLoading(false);
       return;
     }
     setContests(contestResult.data.map(toContestInput));
@@ -153,6 +159,14 @@ export function ResultsManagement({
       setMessage(rosterResult.message);
     }
     if (structuralResult.ok) {
+      // Keep ALL saved adjustment categories for this match. Imported results
+      // may contain e.g. WomenBonus +2 and NoShow +0.5 for the same team.
+      setSavedAdjustments(structuralResult.data.map(point => ({
+        awardedTeamId: point.awardedTeamId,
+        category: point.category,
+        points: point.points,
+        note: point.note ?? '',
+      })));
       const homePoint = structuralResult.data.find((point) => point.awardedTeamId === match.homeTeamId);
       const awayPoint = structuralResult.data.find((point) => point.awardedTeamId === match.awayTeamId);
       setHomeAdjustment({
@@ -164,10 +178,13 @@ export function ResultsManagement({
         note: awayPoint?.note ?? '',
       });
     } else {
+      setSavedAdjustments([]);
       setHomeAdjustment({category: '', note: ''});
       setAwayAdjustment({category: '', note: ''});
+      setMessage(structuralResult.message || 'Could not load official scoring adjustments. Saving is disabled.');
     }
     setProcessingStatus(processingResult.ok ? processingResult.data : null);
+    setEditorLoading(false);
   }
 
   // Direct commissioner review links open the exact match instead of a round list.
@@ -194,57 +211,48 @@ export function ResultsManagement({
     const parsedAwayScore = parseScore(awayScore);
     const audit = resultAudit(contests, parsedHomeScore, parsedAwayScore);
 
+    if (editorLoading) {
+      setSaving(false);
+      setMessage('Wait for the official result and penalty entries to load before saving.');
+      return;
+    }
+    if (hasBreakdown && !breakdownMatches) {
+      setSaving(false);
+      setMessage('The imported or saved penalty breakdown no longer matches the final score. Review or re-import the JSON before saving.');
+      return;
+    }
     if (action === 'publish') {
       if (audit.homeResidual < 0 || audit.awayResidual < 0) {
         setSaving(false);
         setMessage('The official score is lower than the entered matchup points. Review the result rows before finalizing.');
         return;
       }
-      if (((audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)) && !importedAwards.length) {
+      if (!adjustmentReasonsComplete) {
         setSaving(false);
         setMessage('Choose a reason for every additional scoring adjustment before finalizing.');
         return;
       }
     }
 
-    const structuralPoints: ResultStructuralPointInput[] = [];
-    if (editor.match.homeTeamId && audit.homeResidual > 0 && homeAdjustment.category) {
-      structuralPoints.push({
-        awardedTeamId: editor.match.homeTeamId,
-        category: homeAdjustment.category,
-        points: audit.homeResidual,
-        note: homeAdjustment.note,
-      });
-    }
-    if (editor.match.awayTeamId && audit.awayResidual > 0 && awayAdjustment.category) {
-      structuralPoints.push({
-        awardedTeamId: editor.match.awayTeamId,
-        category: awayAdjustment.category,
-        points: audit.awayResidual,
-        note: awayAdjustment.note,
-      });
-    }
-
-    if (importedAwards.length && editor.match.homeTeamId && editor.match.awayTeamId) {
-      // TC Whiteboard may report multiple penalties against the same team.
-      // Combine equal categories for the unique(match,team,category) DB key,
-      // retaining source round labels in the audit notes.
-      const grouped = new Map<string, ResultStructuralPointInput>();
-      for (const award of importedAwards) {
-        const awardedTeamId = award.side === 'Home' ? editor.match.homeTeamId : editor.match.awayTeamId;
-        const key = awardedTeamId + '|' + award.category;
-        const previous = grouped.get(key);
-        grouped.set(key, previous
-          ? {...previous, points:previous.points+award.points, note:(previous.note ?? '')+'; '+award.note}
-          : {awardedTeamId, category:award.category, points:award.points, note:award.note});
+    const structuralPoints: ResultStructuralPointInput[] = hasBreakdown
+      ? breakdown.map(point => ({...point}))
+      : [];
+    if (!hasBreakdown) {
+      if (editor.match.homeTeamId && audit.homeResidual > 0 && homeAdjustment.category) {
+        structuralPoints.push({
+          awardedTeamId: editor.match.homeTeamId,
+          category: homeAdjustment.category,
+          points: audit.homeResidual,
+          note: homeAdjustment.note,
+        });
       }
-      structuralPoints.splice(0, structuralPoints.length, ...grouped.values());
-      const allocatedHome = structuralPoints.filter(p => p.awardedTeamId === editor.match.homeTeamId).reduce((n,p)=>n+p.points,0);
-      const allocatedAway = structuralPoints.filter(p => p.awardedTeamId === editor.match.awayTeamId).reduce((n,p)=>n+p.points,0);
-      if (Math.abs(allocatedHome-audit.homeResidual)>0.001 || Math.abs(allocatedAway-audit.awayResidual)>0.001) {
-        setSaving(false);
-        setMessage('Source penalty amounts no longer match the entered team scores. Re-import the JSON before saving.');
-        return;
+      if (editor.match.awayTeamId && audit.awayResidual > 0 && awayAdjustment.category) {
+        structuralPoints.push({
+          awardedTeamId: editor.match.awayTeamId,
+          category: awayAdjustment.category,
+          points: audit.awayResidual,
+          note: awayAdjustment.note,
+        });
       }
     }
 
@@ -265,6 +273,12 @@ export function ResultsManagement({
       setFieldErrors(result.fieldErrors ?? {});
       setMessage(result.message);
       return;
+    }
+    // Preserve every category across a draft save, so a follow-up Finalize
+    // cannot silently replace a two-category official award with one category.
+    if (action !== 'reopen') {
+      setSavedAdjustments(structuralPoints);
+      setImportedAwards([]);
     }
     setMessage(
       action === 'draft'
@@ -323,6 +337,7 @@ export function ResultsManagement({
     setHomeScore(String(whiteboardPreview.homeScore));
     setAwayScore(String(whiteboardPreview.awayScore));
     setContests(whiteboardPreview.contests);
+    setSavedAdjustments([]);
     setImportedAwards(whiteboardPreview.awards);
     setHomeAdjustment({category: '', note: ''});
     setAwayAdjustment({category: '', note: ''});
@@ -334,6 +349,35 @@ export function ResultsManagement({
     () => resultAudit(contests, parseScore(homeScore), parseScore(awayScore)),
     [contests, homeScore, awayScore],
   );
+
+  const breakdown = useMemo((): ResultStructuralPointInput[] => {
+    if (!editor?.match.homeTeamId || !editor?.match.awayTeamId) return [];
+    // Use the new file's verified categories if freshly imported, otherwise
+    // reuse the COMPLETE official draft adjustment ledger from the database.
+    if (!importedAwards.length) return savedAdjustments;
+    const grouped = new Map<string, ResultStructuralPointInput>();
+    for (const award of importedAwards) {
+      const awardedTeamId = award.side === 'Home' ? editor.match.homeTeamId : editor.match.awayTeamId;
+      const key = awardedTeamId + '|' + award.category;
+      const previous = grouped.get(key);
+      grouped.set(key, previous
+        ? {...previous, points: previous.points + award.points, note:(previous.note ?? '')+'; '+award.note}
+        : {awardedTeamId, category:award.category, points:award.points, note:award.note});
+    }
+    return Array.from(grouped.values());
+  }, [editor?.match.homeTeamId,editor?.match.awayTeamId,importedAwards,savedAdjustments]);
+  const hasBreakdown = breakdown.length > 0;
+  const breakdownMatches = Boolean(editor && Math.abs(
+    breakdown.filter(point => point.awardedTeamId === editor.match.homeTeamId)
+      .reduce((total, point) => total + point.points, 0) - audit.homeResidual,
+  ) < 0.001 && Math.abs(
+    breakdown.filter(point => point.awardedTeamId === editor.match.awayTeamId)
+      .reduce((total, point) => total + point.points, 0) - audit.awayResidual,
+  ) < 0.001);
+  const adjustmentReasonsComplete = hasBreakdown
+    ? breakdownMatches
+    : (audit.homeResidual <= 0 || Boolean(homeAdjustment.category))
+      && (audit.awayResidual <= 0 || Boolean(awayAdjustment.category));
 
   const teamNames = useMemo(() => new Map(teams.map((team) => [team.id, team.name])), [teams]);
   const courseNames = useMemo(() => new Map(courses.map((course) => [course.id, course.name])), [courses]);
@@ -585,7 +629,30 @@ export function ResultsManagement({
                   {editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'Away'} +{formatPoints(audit.automaticAwayPoints)}
                 </span>
               ) : null}
-              {audit.homeResidual > 0 ? (
+              {hasBreakdown ? (
+                <div className={styles.savedBreakdown}>
+                  <strong>Verified penalty breakdown</strong>
+                  {breakdown.map((point, index) => (
+                    <span key={index}>
+                      {point.awardedTeamId === editor.match.homeTeamId
+                        ? teamNames.get(editor.match.homeTeamId) : teamNames.get(editor.match.awayTeamId)}
+                      {' '}+{formatPoints(point.points)} · {point.category === 'WomenBonus' ? 'Missing female position' : point.category === 'NoShow' ? 'Rostered no-show' : point.category}
+                      {point.note ? <small>{point.note}</small> : null}
+                    </span>
+                  ))}
+                  {!breakdownMatches ? (
+                    <strong role="alert">Saved penalty totals no longer match the scores. Re-import or correct the result before finalizing.</strong>
+                  ) : null}
+                  <button type="button" className={styles.secondary} onClick={() => {
+                    setImportedAwards([]);
+                    setSavedAdjustments([]);
+                    setHomeAdjustment({category:'',note:''});
+                    setAwayAdjustment({category:'',note:''});
+                    setMessage('Saved penalty categories cleared from this editor only. Enter replacement categories before saving; the database remains unchanged.');
+                  }}>Edit penalty categories manually</button>
+                </div>
+              ) : null}
+              {!hasBreakdown && audit.homeResidual > 0 ? (
                 <label>
                   <span>{editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'Home'} additional +{formatPoints(audit.homeResidual)}</span>
                   <select
@@ -608,7 +675,7 @@ export function ResultsManagement({
                   />
                 </label>
               ) : null}
-              {audit.awayResidual > 0 ? (
+              {!hasBreakdown && audit.awayResidual > 0 ? (
                 <label>
                   <span>{editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'Away'} additional +{formatPoints(audit.awayResidual)}</span>
                   <select
@@ -658,17 +725,22 @@ export function ResultsManagement({
               Test preview: JSON review and local editing only. Database saves, result publication, and Clash Index updates are disabled.
             </p>
           ) : null}
+          {!previewReadOnly && editor.result?.status !== 'Published' && !editorLoading && !adjustmentReasonsComplete ? (
+            <p className={styles.importBlocker} role="status">
+              {hasBreakdown ? 'Finalize is disabled because the recorded penalty categories do not add up to the final score.' : 'Choose and explain the additional team points before finalizing.'}
+            </p>
+          ) : null}
           <div className={styles.actions}>
             {editor.result?.status === 'Published' ? (
               <button type="button" className={styles.secondary} disabled={saving || previewReadOnly} onClick={() => void save('reopen')}>Reopen result</button>
             ) : (
               <>
-                <button type="button" className={styles.secondary} disabled={saving || previewReadOnly} onClick={() => void save('draft')}>Save draft</button>
+                <button type="button" className={styles.secondary} disabled={saving || editorLoading || previewReadOnly || (hasBreakdown && !breakdownMatches)} onClick={() => void save('draft')}>Save draft</button>
                 <button
                   type="button"
                   className={styles.primary}
-                  disabled={saving || previewReadOnly || audit.homeResidual < 0 || audit.awayResidual < 0 || (audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)
-                    || (importApplied && ((audit.awayResidual>0 && awayAdjustment.note.trim().length<12) || (audit.homeResidual>0 && homeAdjustment.note.trim().length<12)))}
+                  disabled={saving || editorLoading || previewReadOnly || audit.homeResidual < 0 || audit.awayResidual < 0 || !adjustmentReasonsComplete
+                    || (importApplied && !hasBreakdown && ((audit.awayResidual>0 && awayAdjustment.note.trim().length<12) || (audit.homeResidual>0 && homeAdjustment.note.trim().length<12)))}
                   onClick={() => void save('publish')}
                 >
                   Finalize match
