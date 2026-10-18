@@ -28,13 +28,13 @@ function fixture(){
     rounds: [
       {name:'Singles',points:{away:2,home:0},matchups:[
         {away:{players:[player('Benjamin Grubbs')],points:1},
-         home:{players:[player('Justin B')],points:0},result:{winner:'away',forfeitedBy:null}},
+         home:{players:[player('Justin B')],points:0},result:{winner:'away',forfeitedBy:null as string|null}},
       ]},
       {name:'Doubles',points:{away:1.5,home:2},matchups:[
         {away:{players:[player('Luke Hahn'),player('Benjamin Grubbs')],points:0},
-         home:{players:[player('Justin B'),player('Dillon Blunier')],points:2},result:{winner:'home',forfeitedBy:null}},
+         home:{players:[player('Justin B'),player('Dillon Blunier')],points:2},result:{winner:'home',forfeitedBy:null as string|null}},
         {away:{players:[player('Misti Lee')],points:1},
-         home:{players:[player('Currie Istre')],points:0},result:{winner:'away',forfeitedBy:null}},
+         home:{players:[player('Currie Istre')],points:0},result:{winner:'away',forfeitedBy:null as string|null}},
       ]},
     ],
   };
