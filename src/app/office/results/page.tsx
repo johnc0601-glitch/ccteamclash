@@ -47,6 +47,7 @@ export default async function OfficeResultsPage({searchParams}: ResultsPageProps
         initialCourses={courses}
         initialRoundId={initialRoundId}
         initialPlayers={players}
+        previewReadOnly={process.env.VERCEL_ENV === 'preview'}
         initialMatchId={requestedRoundValid ? requestedMatch!.id : ''}
         requestedMatchNotFound={Boolean(requestedId && !requestedRoundValid)}
       />
