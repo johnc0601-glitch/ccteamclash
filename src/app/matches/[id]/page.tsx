@@ -36,7 +36,7 @@ import {resolveMatchday, type PublicMatchday} from '@/services/matches/MatchdayS
 import {getLiveScoringHref} from '@/services/matches/LiveScoringLink';
 import {easternDate} from '@/services/weather/MatchWeather';
 import {getFinalMatchdaySnapshot} from '@/services/matches/FinalMatchdaySnapshot';
-import {adaptCanarySnapshot, shouldUseFinalScoreboardCanary} from '@/services/matches/FinalMatchdayCanary';
+import {adaptCanarySnapshot, loadPublishedCanaryAdjustments, shouldUseFinalScoreboardCanary} from '@/services/matches/FinalMatchdayCanary';
 import {loadPublishedUpsetEvidence} from '@/services/matches/PublicUpsetEvidence';
 import {canViewMatchPrediction} from '@/services/settings/MatchPredictionVisibility';
 import {buildPublicMatchPrediction} from '@/services/teamStrength/PublicMatchPrediction';
@@ -76,11 +76,17 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     // Keep ALL previously locked Matchday pages on their original renderer.
     // Only the published Riptide–Beast Mode Oct 17 snapshot uses the new UI.
     if (shouldUseFinalScoreboardCanary(finalSnapshot)) {
-      const publishedUpsets = await loadPublishedUpsetEvidence();
+      const [publishedUpsets, adjustments] = await Promise.all([
+        loadPublishedUpsetEvidence(),
+        loadPublishedCanaryAdjustments(
+          process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase,
+          finalSnapshot,
+        ),
+      ]);
       return (
         <>
           <SiteHeader />
-          <FinalMatchdayV2 snapshot={adaptCanarySnapshot(finalSnapshot)} publishedUpsets={publishedUpsets} />
+          <FinalMatchdayV2 snapshot={adaptCanarySnapshot(finalSnapshot, adjustments)} publishedUpsets={publishedUpsets} />
           <Footer />
         </>
       );
