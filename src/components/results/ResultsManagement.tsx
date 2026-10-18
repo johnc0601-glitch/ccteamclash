@@ -48,6 +48,7 @@ type ResultsManagementProps = {
   initialPlayers: LaunchPlayer[];
   initialMatchId?: string;
   requestedMatchNotFound?: boolean;
+  previewReadOnly?: boolean;
 };
 
 export function ResultsManagement({
@@ -61,6 +62,7 @@ export function ResultsManagement({
   initialPlayers,
   initialMatchId = '',
   requestedMatchNotFound = false,
+  previewReadOnly = false,
 }: ResultsManagementProps) {
   const [schedules, setSchedules] = useState(initialSchedules);
   const [rounds, setRounds] = useState(initialRounds);
@@ -178,6 +180,10 @@ export function ResultsManagement({
 
   async function save(action: 'draft' | 'publish' | 'reopen') {
     if (!editor) return;
+    if (previewReadOnly) {
+      setMessage('Preview only: saving drafts and finalizing matches are disabled. Review the imported JSON locally.');
+      return;
+    }
     setSaving(true);
     setFieldErrors({});
 
@@ -372,6 +378,7 @@ export function ResultsManagement({
 
   return (
     <div className={`${styles.workspace} ${initialMatchId ? styles.directMatch : ""}`}>
+      {previewReadOnly ? <p className={styles.directMatchWarning} role="status"><strong>READ-ONLY PREVIEW</strong> — JSON imports stay in this browser. Save, reopen and finalization are disabled to protect official results and CI.</p> : null}
       <div className={styles.toolbar}>
         <label>
           <span>Round</span>
@@ -590,14 +597,14 @@ export function ResultsManagement({
           </p> : null}
           <div className={styles.actions}>
             {editor.result?.status === 'Published' ? (
-              <button type="button" className={styles.secondary} disabled={saving} onClick={() => void save('reopen')}>Reopen result</button>
+              <button type="button" className={styles.secondary} disabled={saving || previewReadOnly} onClick={() => void save('reopen')}>Reopen result</button>
             ) : (
               <>
-                <button type="button" className={styles.secondary} disabled={saving} onClick={() => void save('draft')}>Save draft</button>
+                <button type="button" className={styles.secondary} disabled={saving || previewReadOnly} onClick={() => void save('draft')}>Save draft</button>
                 <button
                   type="button"
                   className={styles.primary}
-                  disabled={saving || audit.homeResidual < 0 || audit.awayResidual < 0 || (audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)
+                  disabled={saving || previewReadOnly || audit.homeResidual < 0 || audit.awayResidual < 0 || (audit.homeResidual > 0 && !homeAdjustment.category) || (audit.awayResidual > 0 && !awayAdjustment.category)
                     || (importApplied && ((audit.awayResidual>0 && awayAdjustment.note.trim().length<12) || (audit.homeResidual>0 && homeAdjustment.note.trim().length<12)))}
                   onClick={() => void save('publish')}
                 >
