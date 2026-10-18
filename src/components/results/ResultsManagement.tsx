@@ -451,6 +451,19 @@ export function ResultsManagement({
                   {whiteboardPreview.errors.length ? <span role="status">Fix the blocking JSON issues listed above before loading rows.</span> : null}
                   {whiteboardPreview.aliasMatches.length > 0 && !importAliasesReviewed ? <span role="status">To enable loading: verify and check the player-alias confirmation above.</span> : null}
                   {whiteboardPreview.roundAdjustments.some(x=>x.away>0||x.home>0) && !importAdjustmentsReviewed ? <span role="status">To enable loading: check the unexplained-points confirmation above.</span> : null}
+                  {whiteboardPreview.errors.length > 0 ? (
+                    <p role="alert" className={styles.importBlocker}>
+                      Cannot load: {whiteboardPreview.errors.length} blocking validation issue(s). Review the errors above.
+                    </p>
+                  ) : whiteboardPreview.aliasMatches.length > 0 && !importAliasesReviewed ? (
+                    <p role="status" className={styles.importBlocker}>
+                      To enable the button, confirm the player-name aliases using the checkbox above.
+                    </p>
+                  ) : whiteboardPreview.roundAdjustments.some(x=>x.away>0||x.home>0) && !importAdjustmentsReviewed ? (
+                    <p role="status" className={styles.importBlocker}>
+                      To enable the button, confirm the additional-points review using the checkbox above.
+                    </p>
+                  ) : <p className={styles.importReady}>Checks complete. You can load the rows locally for review.</p>}
                   <button type="button" className={styles.secondary}
                     disabled={!!whiteboardPreview.errors.length
                       || (whiteboardPreview.aliasMatches.length>0&&!importAliasesReviewed)
@@ -598,6 +611,11 @@ export function ResultsManagement({
           {importApplied && (audit.awayResidual>0||audit.homeResidual>0) ? <p className={styles.importReminder}>
             TC Whiteboard import: before finalizing, document the source of every non-contest point. An unplayed slot must not create a player win or CI result.
           </p> : null}
+          {previewReadOnly ? (
+            <p className={styles.previewNotice} role="status">
+              Test preview: JSON review and local editing only. Database saves, result publication, and Clash Index updates are disabled.
+            </p>
+          ) : null}
           <div className={styles.actions}>
             {editor.result?.status === 'Published' ? (
               <button type="button" className={styles.secondary} disabled={saving || previewReadOnly} onClick={() => void save('reopen')}>Reopen result</button>
