@@ -189,6 +189,13 @@ export function AroundTheClashDesk({factData, rounds, activeSeasonId}: {
           >
             Top Facts {activeScope.topFactIds.length}
           </button>
+          {(['Streaks', 'Broken streaks'] as const).map(type => (
+            <button className={styles.filterButton} type="button" key={type}
+              aria-pressed={streakType === type}
+              onClick={() => setStreakType(type)}>
+              {type === 'Broken streaks' ? 'Broken Streaks' : type}
+            </button>
+          ))}
           {storyTypes
             .filter((item) => (storyCounts.get(item) ?? 0) > 0)
             .map((item) => (
@@ -202,13 +209,6 @@ export function AroundTheClashDesk({factData, rounds, activeSeasonId}: {
                 {labelStoryType(item)} {storyCounts.get(item)}
               </button>
             ))}
-          {(['Streaks', 'Broken streaks'] as const).map(type => (
-            <button className={styles.filterButton} type="button" key={type}
-              aria-pressed={streakType === type}
-              onClick={() => setStreakType(type)}>
-              {type === 'Broken streaks' ? 'Broken Streaks' : type}
-            </button>
-          ))}
         </nav>
 
         {!streakType && <><span className={styles.filterLabel}>Context</span>
