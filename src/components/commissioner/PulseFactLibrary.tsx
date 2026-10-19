@@ -6,7 +6,7 @@ import styles from './PulseFactLibrary.module.css';
 
 type Options = {seasons: {id: string; name: string; active: boolean}[]; rounds: PulseRound[]};
 type Library = {facts: SavedPulseFact[]; queued?: boolean; generation: {complete: boolean; finalized: number; scheduled: number; warnings: string[]; generated_at: string} | null};
-const categories: PulseCategory[] = ['Match','Upsets','CI movement','Achievements','Round','History','Upcoming','Editorial'];
+const categories: PulseCategory[] = ['Match','Upsets','CI movement','Achievements','Round','Streaks','Broken streaks','History','Upcoming','Editorial'];
 async function api(path = '', init?: RequestInit) {
   const response = await fetch(`/api/clash-pulse/library${path}`, {...init, cache: 'no-store'});
   const body = await response.json();
