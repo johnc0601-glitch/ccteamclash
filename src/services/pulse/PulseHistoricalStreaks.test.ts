@@ -50,6 +50,7 @@ function fixture() {
     rated('q','Player Q','Singles','live1','L'),
     rated('r','Player R','Doubles','live2','W'),
   ];
+  source.ratings = verified;
   return {source,round:r1,archive,verified,player};
 }
 test('ongoing and broken streaks carry over across seasons with separate team and player records',()=>{
