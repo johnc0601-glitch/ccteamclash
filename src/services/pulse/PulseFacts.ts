@@ -244,7 +244,7 @@ function analyzeRound(source: PulseSource, roundId: string): PulseReport & {elig
 }
 
 export function exportRoundFacts(label: string, facts: SavedPulseFact[], warnings: string[] = []): string {
-  const visible = facts.filter(f => f.is_current && f.status !== 'hidden');
+  const visible = facts.filter(f => f.is_current && f.status !== 'hidden' && f.category !== 'Streaks' && f.category !== 'Broken streaks');
   const categories: PulseCategory[] = ['Match', 'Upsets', 'CI movement', 'Achievements', 'Round', 'History', 'Upcoming', 'Editorial'];
   const lines = [`CLASH PULSE — ${label}`, 'Verified statistical briefing for a separately written recap. Do not invent missing records or probabilities.',
     'Review: pending facts are labeled; editorial entries are commissioner supplied. Hidden and superseded facts are excluded. Long source lists are abbreviated; full references remain in the library.',
