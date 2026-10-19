@@ -38,7 +38,9 @@ export async function loadPulseSource(client: SupabaseClient, seasonId: string, 
     paged(db, 'launch_schedule_matches', 'id', 'season_id', [seasonId]),
     paged(db, 'launch_teams', 'id', undefined, undefined, 'id,name'),
   ]);
-  const ids = matches.filter(m => m.round_id === roundId).map(m => m.id);
+  const selected = options.rounds.find(r => r.id === roundId)!;
+  const priorRounds = new Set(options.rounds.filter(r => r.season_id === seasonId && r.number <= selected.number).map(r => r.id));
+  const ids = matches.filter(m => priorRounds.has(m.round_id)).map(m => m.id);
   const [results, ratings, snapshots, adjustments, predictions, history, rosterPlayers, rosterManifests, frozenRatings] = await Promise.all([
     paged(db, 'launch_match_results', 'match_id', 'match_id', ids),
     paged(db, 'clash_contest_rating_facts', 'contest_id', 'match_id', ids),
@@ -83,5 +85,22 @@ export async function loadPulseLibrary(client: SupabaseClient, roundId: string) 
   ]);
   if (generation.error) throw generation.error;
   if (queued.error) throw queued.error;
-  return {facts: facts.filter(f => f.is_current), generation: generation.data, queued: Boolean(queued.data)};
+  let priorChanged = false;
+  if (generation.data) {
+    const {rounds} = await loadPulseOptions(client);
+    const round = rounds.find(r => r.id === roundId);
+    const priorIds = round ? rounds.filter(r => r.season_id === round.season_id && r.number < round.number).map(r => r.id) : [];
+    if (priorIds.length) {
+      const cutoff = generation.data.started_at ?? generation.data.generated_at;
+      // Earlier corrections can change a later round's streaks, even after that earlier round is refreshed.
+      const [requests, refreshed] = await Promise.all([
+        db.from('clash_pulse_generation_queue').select('requested_at').in('round_id', priorIds).gt('requested_at', cutoff),
+        db.from('clash_pulse_generations').select('generated_at').in('round_id', priorIds).gt('generated_at', cutoff),
+      ]);
+      if (requests.error) throw requests.error;
+      if (refreshed.error) throw refreshed.error;
+      priorChanged = Boolean(requests.data?.length || refreshed.data?.length);
+    }
+  }
+  return {facts: facts.filter(f => f.is_current), generation: generation.data, queued: Boolean(queued.data) || priorChanged};
 }

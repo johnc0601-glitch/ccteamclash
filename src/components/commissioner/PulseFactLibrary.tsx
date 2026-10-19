@@ -6,7 +6,7 @@ import styles from './PulseFactLibrary.module.css';
 
 type Options = {seasons: {id: string; name: string; active: boolean}[]; rounds: PulseRound[]};
 type Library = {facts: SavedPulseFact[]; queued?: boolean; generation: {complete: boolean; finalized: number; scheduled: number; warnings: string[]; generated_at: string} | null};
-const categories: PulseCategory[] = ['Match','Upsets','CI movement','Achievements','Round','History','Upcoming','Editorial'];
+const categories: PulseCategory[] = ['Match','Upsets','CI movement','Achievements','Round','Streaks','History','Upcoming','Editorial'];
 async function api(path = '', init?: RequestInit) {
   const response = await fetch(`/api/clash-pulse/library${path}`, {...init, cache: 'no-store'});
   const body = await response.json();
@@ -54,7 +54,7 @@ export function PulseFactLibrary() {
       await api('', {method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({...body, seasonId, roundId})});
       setLibrary(await api(`?round=${encodeURIComponent(roundId)}`));
       if (body.action === 'editorial') setEditorial('');
-      setNotice(body.action === 'generate' ? 'Facts generated for review. Homepage highlights require approval and Feature.' : 'Saved.');
+      setNotice(body.action === 'generate' ? 'Recap facts ready. Copy the round report whenever you need it.' : 'Saved.');
     } catch (e) {setError(e instanceof Error ? e.message : 'Save failed.');}
     finally {setBusy(false);}
   }
@@ -69,7 +69,7 @@ export function PulseFactLibrary() {
     catch {setCopyFallback(true); setNotice('Select and copy the report below.');}
   }
   return <section className={styles.library} aria-labelledby="pulse-library-title">
-    <div><h2 id="pulse-library-title">Round fact library</h2><p>Prepare the numbers for your recap. Review facts here and feature selected short highlights on the homepage.</p></div>
+    <div><h2 id="pulse-library-title">Monthly recap facts</h2><p>Generate the round’s statistics, streaks and historical context, then copy them into your recap notes. No approval needed.</p></div>
     <div className={styles.toolbar}>
       <label className={styles.field}>Season<select value={seasonId} disabled={busy || !options.seasons.length} onChange={e => {
         setSeasonId(e.target.value); selectRound(options.rounds.find(r => r.season_id === e.target.value)?.id ?? '');
@@ -82,7 +82,7 @@ export function PulseFactLibrary() {
     </div>
     <div role="status" aria-live="polite">{loading ? 'Loading fact library…' : notice}</div>
     {error && <p role="alert" className={styles.notice}>{error}</p>}
-    {library.queued && <p className={styles.notice}>Source results changed. Refresh facts before exporting or featuring new highlights.</p>}
+    {library.queued && <p className={styles.notice}>Source results changed. Refresh facts before copying the report.</p>}
     {!loading && library.generation && <div className={styles.notice}>
       <strong>{library.generation.complete ? 'Complete round analysis' : 'Partial round analysis'}</strong> · {library.generation.finalized}/{library.generation.scheduled} finalized · Generated {new Date(library.generation.generated_at).toLocaleString()}
       {library.generation.warnings.map(w => <p key={w}>{w}</p>)}
@@ -91,26 +91,22 @@ export function PulseFactLibrary() {
     <label className={styles.field}>View<select value={filter} onChange={e => setFilter(e.target.value)}>
       {['All',...categories].map(c => <option key={c}>{c}</option>)}</select></label>
     {categories.filter(c => filter === 'All' || filter === c).map(category => {
-      const rows = library.facts.filter(f => f.category === category);
+      const rows = library.facts.filter(f => f.category === category && f.status !== 'hidden');
+      if (!rows.length && category === 'Streaks' && library.generation) return <section key={category} aria-label={category}><h3>Streaks</h3><p>No qualifying streaks or broken streaks of at least two results in this round’s verified season records.</p></section>;
       if (!rows.length) return null;
       return <section key={category} aria-label={category}><h3>{category} ({rows.length})</h3>{rows.map(f => <article className={styles.fact} key={f.id}>
-        <div className={styles.meta}>{f.status.toUpperCase()} · {f.origin === 'editorial' ? 'Commissioner supplied' : 'Calculated from source records'}{f.featured_item_id ? ' · Featured on homepage' : ''}</div>
+        <div className={styles.meta}>{f.origin === 'editorial' ? 'Commissioner supplied' : 'Calculated from source records'}</div>
         <p>{f.fact_text}</p>
         <details className={styles.details}><summary>Source and calculation</summary><p>{f.calculation}</p>
           <ul>{f.sources.map((s,i) => <li key={i}><strong>{s.table}</strong>: {s.ids.join(', ')}</li>)}</ul>
           <p>Generated {new Date(f.generated_at).toLocaleString()}</p>
         </details>
-        <div className={styles.actions}>
-          <button disabled={busy || loading || f.status === 'approved'} onClick={() => mutate('PATCH', {id: f.id, action: 'approve'})}>Approve</button>
-          <button disabled={busy || loading || f.status === 'hidden'} onClick={() => mutate('PATCH', {id: f.id, action: 'hide'})}>Hide</button>
-          <button disabled={busy || loading || library.queued || f.status !== 'approved' || f.fact_text.length > 240} onClick={() => mutate('PATCH', {id: f.id, action: f.featured_item_id ? 'unfeature' : 'feature'})}>{f.featured_item_id ? 'Remove highlight' : 'Feature on homepage'}</button>
-        </div>
       </article>)}</section>;
     })}
     <form className={styles.editorial} onSubmit={e => {e.preventDefault(); void mutate('POST', {action: 'editorial', text: editorial});}}>
       <label htmlFor="pulse-editorial">Add an editorial fact</label>
       <textarea id="pulse-editorial" value={editorial} maxLength={4000} onChange={e => setEditorial(e.target.value)} placeholder="Commissioner supplied context, clearly separated from calculated facts." />
-      <div><button disabled={busy || loading || !roundId || !editorial.trim()}>Save for review</button></div>
+      <div><button disabled={busy || loading || !roundId || !editorial.trim()}>Add to recap notes</button></div>
     </form>
     {exportText && <details open={copyFallback}><summary>Round report preview</summary><label className={styles.editorial}>Round report<textarea readOnly rows={18} value={exportText} onFocus={e => e.target.select()} /></label></details>}
   </section>;

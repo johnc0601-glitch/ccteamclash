@@ -2,6 +2,7 @@ import {buildFinalScoreBreakdown} from '@/services/matches/FinalScoreBreakdown';
 import type {FinalMatchdayV2Snapshot} from '@/services/matches/FinalMatchdayCanary';
 import {calculateLockedRosterPrediction} from '@/services/teamStrength/LockedRosterPrediction';
 import {TEAM_STRENGTH_VERSION} from '@/services/teamStrength/TeamStrength';
+import {generateStreakFacts} from './PulseStreaks';
 
 export type PulseRound = {id: string; season_id: string; number: number; name: string; date: string | null};
 export type PulseMatch = {id: string; season_id: string; round_id: string; date: string | null;
@@ -25,7 +26,7 @@ export type PulseSource = {
   rosterManifests?: {match_id: string; team_id: string}[];
   frozenRatings?: {match_id: string; team_id: string; player_id: string; clash_index_before: number}[];
 };
-export type PulseCategory = 'Match' | 'Upsets' | 'CI movement' | 'Achievements' | 'Round' | 'History' | 'Upcoming' | 'Editorial';
+export type PulseCategory = 'Match' | 'Upsets' | 'CI movement' | 'Achievements' | 'Round' | 'Streaks' | 'History' | 'Upcoming' | 'Editorial';
 export type PulseReference = {table: string; ids: string[]};
 export type PulseFact = {
   fact_key: string; category: PulseCategory; fact_text: string; match_id: string | null;
@@ -41,6 +42,17 @@ const ref = (table: string, ids: string[]): PulseReference => ({table, ids: [...
 
 /** All probabilities come from the persisted pre-result calculation, never current CI. */
 export function generateRoundFacts(source: PulseSource, roundId: string): PulseReport {
+  const report = analyzeRound(source, roundId);
+  const round = source.rounds.find(r => r.id === roundId)!;
+  const verified = source.rounds.filter(r => r.season_id === round.season_id && r.number <= round.number)
+    .flatMap(r => r.id === roundId ? report.eligible : analyzeRound(source, r.id).eligible);
+  const facts = [...report.facts, ...generateStreakFacts(source, round, verified)]
+    .sort((a,b) => a.fact_key.localeCompare(b.fact_key));
+  return {facts, complete: report.complete, finalized: report.finalized, scheduled: report.scheduled,
+    warnings: [...report.warnings, 'Streak coverage: selected season only, through this round. Team runs use published scores; player runs use verified played singles or doubles appearances. Ties end winning/losing runs. Missing results interrupt runs; older archives are not included.']};
+}
+
+function analyzeRound(source: PulseSource, roundId: string): PulseReport & {eligible: PulseRating[]} {
   const round = source.rounds.find(r => r.id === roundId);
   if (!round) throw new Error('Unknown round.');
   const matches = source.matches.filter(m => m.round_id === roundId && m.season_id === round.season_id);
@@ -224,14 +236,14 @@ export function generateRoundFacts(source: PulseSource, roundId: string): PulseR
     `Round ${nextRound.number}: ${match.away_name} at ${match.home_name}${match.date ? ` — ${match.date}` : ' — date TBD'}.`,
     [ref('launch_schedule_matches', [match.id])], 'Scheduled next round matchup; subject to schedule changes.', {match_id: match.id, team_ids: [match.away_team_id, match.home_team_id]});
   if (!complete) warnings.push(`Partial round: ${finalized.length}/${matches.length} finalized. Complete round statistics require four finalized matches.`);
-  return {facts: facts.sort((a,b) => a.fact_key.localeCompare(b.fact_key)), complete: statsComplete, finalized: finalized.length, scheduled: matches.length, warnings};
+  return {facts: facts.sort((a,b) => a.fact_key.localeCompare(b.fact_key)), complete: statsComplete, finalized: finalized.length, scheduled: matches.length, warnings, eligible};
 }
 
 export function exportRoundFacts(label: string, facts: SavedPulseFact[], warnings: string[] = []): string {
   const visible = facts.filter(f => f.is_current && f.status !== 'hidden');
-  const categories: PulseCategory[] = ['Match', 'Upsets', 'CI movement', 'Achievements', 'Round', 'History', 'Upcoming', 'Editorial'];
+  const categories: PulseCategory[] = ['Match', 'Upsets', 'CI movement', 'Achievements', 'Round', 'Streaks', 'History', 'Upcoming', 'Editorial'];
   const lines = [`CLASH PULSE — ${label}`, 'Verified statistical briefing for a separately written recap. Do not invent missing records or probabilities.',
-    'Review: pending facts are labeled; editorial entries are commissioner supplied. Hidden and superseded facts are excluded. Long source lists are abbreviated; full references remain in the library.',
+    'Calculated facts are ready to use without approval; editorial entries are commissioner supplied. Hidden and superseded facts are excluded. Long source lists are abbreviated; full references remain in the library.',
     ...warnings.map(w => `DATA NOTE: ${w}`)];
   for (const category of categories) {
     lines.push('', category === 'CI movement' ? 'TOP FIVE CI GAINS AND LOSSES (INCLUDING TIES)' : category.toUpperCase());
@@ -244,7 +256,7 @@ export function exportRoundFacts(label: string, facts: SavedPulseFact[], warning
     } else if (category === 'Upsets') rows.sort((a,b) => (a.metric ?? 1) - (b.metric ?? 1));
     if (!rows.length) lines.push('No supported facts available.');
     for (const fact of rows) {
-      lines.push(`- ${fact.origin === 'editorial' ? '[Editorial] ' : ''}${fact.status === 'pending' ? '[Pending review] ' : ''}${fact.fact_text}`);
+      lines.push(`- ${fact.origin === 'editorial' ? '[Editorial] ' : ''}${fact.fact_text}`);
       lines.push(`  Calculation: ${fact.calculation}`);
       lines.push(`  Sources: ${fact.sources.map(s => `${s.table} [${s.ids.length > 4 ? `${s.ids.slice(0,2).join(', ')}; ${s.ids.length} records total` : s.ids.join(', ')}]`).join('; ')}`);
     }
