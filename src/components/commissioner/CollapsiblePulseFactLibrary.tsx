@@ -9,7 +9,7 @@ import styles from './CollapsiblePulseFactLibrary.module.css';
  * after opening it so the Office page does not fetch or render hundreds of
  * facts during routine Clash Pulse publishing.
  */
-export function CollapsiblePulseFactLibrary() {
+export function CollapsiblePulseFactLibrary({readOnly = false}: {readOnly?: boolean}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -22,13 +22,13 @@ export function CollapsiblePulseFactLibrary() {
         aria-controls="clash-pulse-advanced-library"
       >
         <span className={styles.description}>
-          <strong>Advanced fact library</strong>
-          <span>Full round research, source details and manual fact review</span>
+          <strong>{readOnly ? 'Advanced source facts (optional)' : 'Advanced fact library'}</strong>
+          <span>{readOnly ? 'Raw supporting facts and calculations, hidden until needed' : 'Full round research, source details and manual fact review'}</span>
         </span>
         <span className={styles.indicator} aria-hidden="true">{open ? '−' : '+'}</span>
       </button>
       <div id="clash-pulse-advanced-library">
-        {open ? <PulseFactLibrary /> : null}
+        {open ? <PulseFactLibrary readOnly={readOnly} /> : null}
       </div>
     </section>
   );

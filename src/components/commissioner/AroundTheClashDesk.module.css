@@ -447,3 +447,8 @@
 .streakCard details { margin-top: 10px; font-size: 12px; color: var(--cc-text-muted); }
 .streakCard details p { overflow-wrap: anywhere; }
 .streakNotes { font-size: 12px; color: var(--cc-text-muted); }
+
+.readerWorkspace { display: grid; gap: 18px; min-width: 0; }
+.readerWorkspace .check { color: var(--cc-text-muted); }
+.readerWorkspace .factPanel { width: 100%; }
+.readerWorkspace .factCard:hover .check { color: var(--cc-gold); }

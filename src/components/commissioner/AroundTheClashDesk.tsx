@@ -21,10 +21,11 @@ type CardView = {
   angle: ClashPulseFactAngle;
 };
 
-export function AroundTheClashDesk({factData, rounds, activeSeasonId}: {
+export function AroundTheClashDesk({factData, rounds, activeSeasonId, readOnly = false}: {
   factData: ClashPulseFactData;
   rounds: PulseRound[];
   activeSeasonId: string | null;
+  readOnly?: boolean;
 }) {
   const [scopeId, setScopeId] = useState(factData.defaultScopeId);
   const [storyType, setStoryType] = useState<ClashPulseStoryType | 'Top Facts'>('Top Facts');
@@ -34,6 +35,7 @@ export function AroundTheClashDesk({factData, rounds, activeSeasonId}: {
   const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState('');
+  const [copied, setCopied] = useState('');
 
   const activeScope = factData.scopes.find((scope) => scope.id === scopeId) ?? factData.scopes[0];
   const latestScope = factData.scopes.find(scope => scope.id.startsWith('latest-round:'));
@@ -107,7 +109,17 @@ export function AroundTheClashDesk({factData, rounds, activeSeasonId}: {
     setMobileQueueOpen(false);
   }
 
+  async function copyReaderFact(angle: ClashPulseFactAngle) {
+    try {
+      await navigator.clipboard.writeText(angle.pulseText || angle.headline);
+      setCopied(`Copied: ${angle.headline}`);
+    } catch {
+      setCopied('Copy unavailable. Select the text of the fact manually.');
+    }
+  }
+
   async function publishSelected() {
+    if (readOnly) return;
     if (!selectedItems.length || publishing) return;
     setPublishing(true);
     setMessage('');
@@ -149,8 +161,10 @@ export function AroundTheClashDesk({factData, rounds, activeSeasonId}: {
     <div className={styles.desk}>
       <div className={styles.previewNote}>
         <div>
-          <strong>One result, multiple fact angles.</strong>{' '}
-          Each filter now shows its own statistic: Upsets shows win probability, CI Movers shows CI movement, and Close Matches shows matchup closeness. Selecting a different angle for the same contest replaces the earlier angle in your Pulse Queue.
+          <strong>{readOnly ? 'Explore verified league stories.' : 'One result, multiple fact angles.'}</strong>{' '}
+          {readOnly
+            ? 'Select a scope and fact category, then tap any fact to copy it for a podcast or recap. Nothing here can edit the league or publish to the homepage.'
+            : 'Each filter shows its own statistic: Upsets shows win probability, CI Movers shows CI movement, and Close Matches shows matchup closeness. Selecting a different angle for the same contest replaces the earlier angle in your Pulse Queue.'}
           {' '}
           {factData.currentSeasonHasResults
             ? 'Latest Round is selected automatically; Season and All-Time remain available for broader history.'
@@ -227,9 +241,10 @@ export function AroundTheClashDesk({factData, rounds, activeSeasonId}: {
         </div></>}
       </div>
 
+      {copied && <p role="status" className={styles.previewNote}>{copied}</p>}
       {streakType ? (
         <ClashPulseStreaksPanel round={streakRound} category={streakType} />
-      ) : <><div className={styles.workspace}>
+      ) : <><div className={readOnly ? styles.readerWorkspace : styles.workspace}>
         <section className={styles.factPanel}>
           <header className={styles.factHeader}>
             <div>
@@ -247,10 +262,11 @@ export function AroundTheClashDesk({factData, rounds, activeSeasonId}: {
                   className={styles.factCard}
                   type="button"
                   key={candidate.id}
-                  onClick={() => toggleSelected(candidate.id, angle.storyType)}
-                  aria-pressed={isSelected}
+                  onClick={() => readOnly ? void copyReaderFact(angle) : toggleSelected(candidate.id, angle.storyType)}
+                  aria-pressed={readOnly ? undefined : isSelected}
+                  title={readOnly ? 'Copy this fact' : undefined}
                 >
-                  <span className={styles.check} aria-hidden="true">{isSelected ? '✓' : '✓'}</span>
+                  <span className={styles.check} aria-hidden="true">{readOnly ? '⧉' : '✓'}</span>
                   <span className={styles.factBody}>
                     <span className={styles.factMeta}>
                       {labelStoryType(angle.storyType)}
@@ -262,7 +278,7 @@ export function AroundTheClashDesk({factData, rounds, activeSeasonId}: {
                       {angle.badges.map((badge) => (
                         <span className={styles.badge} key={badge}>{badge}</span>
                       ))}
-                      {anotherAngleSelected ? (
+                      {!readOnly && anotherAngleSelected ? (
                         <span className={styles.badge}>Tap to replace queued angle</span>
                       ) : null}
                     </span>
@@ -276,7 +292,7 @@ export function AroundTheClashDesk({factData, rounds, activeSeasonId}: {
           </div>
         </section>
 
-        <PulseQueue
+        {!readOnly && <PulseQueue
           className={styles.queue}
           selectedItems={selectedItems}
           onRemove={(id, angleType) => toggleSelected(id, angleType)}
@@ -284,10 +300,10 @@ export function AroundTheClashDesk({factData, rounds, activeSeasonId}: {
           onPublish={publishSelected}
           publishing={publishing}
           message={message}
-        />
+        />}
       </div>
 
-      {selectedItems.length > 0 ? (
+      {!readOnly && selectedItems.length > 0 ? (
         <div className={styles.mobileQueue}>
           <div className={styles.mobileQueueSummary}>
             <strong>Pulse Queue · {selectedItems.length}</strong>
