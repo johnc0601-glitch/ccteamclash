@@ -2,6 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {revalidatePath, revalidateTag} from 'next/cache';
 import {requireStoryCommissioner, StoryAccessError} from '@/services/stories/StoryEditorAccess';
 import {loadPulseLibrary, loadPulseOptions, regeneratePulseRound} from '@/services/pulse/PulseLibraryService';
+import {requireClashPulseReader} from '@/services/pulse/PulseReaderAccess';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,9 +13,35 @@ function failure(error: unknown) {
 }
 export async function GET(request: Request) {
   try {
-    const {supabase} = await requireStoryCommissioner();
+    const {supabase, isCommissioner} = await requireClashPulseReader();
     const roundId = new URL(request.url).searchParams.get('round');
-    return Response.json(roundId ? await loadPulseLibrary(supabase, roundId) : await loadPulseOptions(supabase));
+    if (!roundId) {
+      const options = await loadPulseOptions(supabase);
+      if (isCommissioner) return Response.json(options);
+      const {data: published, error} = await supabase.from('launch_seasons')
+        .select('id').eq('published', true);
+      if (error) throw error;
+      const publishedIds = new Set((published ?? []).map(season => season.id));
+      return Response.json({
+        seasons: options.seasons.filter(season => publishedIds.has(season.id)),
+        rounds: options.rounds.filter(round => publishedIds.has(round.season_id)),
+      });
+    }
+    if (!isCommissioner) {
+      const {data: round, error: roundError} = await supabase.from('launch_rounds')
+        .select('season_id').eq('id', roundId).maybeSingle();
+      if (roundError) throw roundError;
+      if (!round) return Response.json({error: 'Round unavailable.'}, {status: 404});
+      const {data: season, error: seasonError} = await supabase.from('launch_seasons')
+        .select('id').eq('id', round.season_id).eq('published', true).maybeSingle();
+      if (seasonError) throw seasonError;
+      if (!season) return Response.json({error: 'Round unavailable.'}, {status: 403});
+    }
+    const library = await loadPulseLibrary(supabase, roundId);
+    return Response.json(isCommissioner ? library : {
+      ...library,
+      facts: library.facts.filter(fact => fact.status !== 'hidden' && fact.is_current),
+    });
   } catch (error) {return failure(error);}
 }
 export async function POST(request: Request) {

@@ -13,7 +13,7 @@ async function api(path = '', init?: RequestInit) {
   if (!response.ok) throw new Error(body.error ?? 'Fact library request failed.');
   return body;
 }
-export function PulseFactLibrary() {
+export function PulseFactLibrary({readOnly = false}: {readOnly?: boolean}) {
   const [options, setOptions] = useState<Options>({seasons: [], rounds: []});
   const [seasonId, setSeasonId] = useState('');
   const [roundId, setRoundId] = useState('');
@@ -69,7 +69,7 @@ export function PulseFactLibrary() {
     catch {setCopyFallback(true); setNotice('Select and copy the report below.');}
   }
   return <section className={styles.library} aria-labelledby="pulse-library-title">
-    <div><h2 id="pulse-library-title">Round fact library</h2><p>Prepare the numbers for your recap. Review facts here and feature selected short highlights on the homepage.</p></div>
+    <div><h2 id="pulse-library-title">Round fact library</h2><p>{readOnly ? 'Browse league facts and copy a round briefing. Only commissioners can review, edit, or publish facts.' : 'Prepare the numbers for your recap. Review facts here and feature selected short highlights on the homepage.'}</p></div>
     <div className={styles.toolbar}>
       <label className={styles.field}>Season<select value={seasonId} disabled={busy || !options.seasons.length} onChange={e => {
         setSeasonId(e.target.value); selectRound(options.rounds.find(r => r.season_id === e.target.value)?.id ?? '');
@@ -77,7 +77,7 @@ export function PulseFactLibrary() {
       <label className={styles.field}>Round<select value={roundId} disabled={busy || !seasonRounds.length} onChange={e => selectRound(e.target.value)}>
         {!seasonRounds.length && <option value="">No scheduled rounds</option>}
         {seasonRounds.map(r => <option key={r.id} value={r.id}>Round {r.number}{r.date ? ` · ${r.date}` : ''}</option>)}</select></label>
-      <button disabled={busy || !roundId || loading} onClick={() => mutate('POST', {action: 'generate'})}>{busy ? 'Saving…' : 'Generate / refresh facts'}</button>
+      {!readOnly && <button disabled={busy || !roundId || loading} onClick={() => mutate('POST', {action: 'generate'})}>{busy ? 'Saving…' : 'Generate / refresh facts'}</button>}
       <button className={styles.primary} disabled={busy || loading || library.queued || !library.facts.length} onClick={copy}>Copy Round Facts</button>
     </div>
     <div role="status" aria-live="polite">{loading ? 'Loading fact library…' : notice}</div>
@@ -100,18 +100,18 @@ export function PulseFactLibrary() {
           <ul>{f.sources.map((s,i) => <li key={i}><strong>{s.table}</strong>: {s.ids.join(', ')}</li>)}</ul>
           <p>Generated {new Date(f.generated_at).toLocaleString()}</p>
         </details>
-        <div className={styles.actions}>
+        {!readOnly && <div className={styles.actions}>
           <button disabled={busy || loading || f.status === 'approved'} onClick={() => mutate('PATCH', {id: f.id, action: 'approve'})}>Approve</button>
           <button disabled={busy || loading || f.status === 'hidden'} onClick={() => mutate('PATCH', {id: f.id, action: 'hide'})}>Hide</button>
           <button disabled={busy || loading || library.queued || f.status !== 'approved' || f.fact_text.length > 240} onClick={() => mutate('PATCH', {id: f.id, action: f.featured_item_id ? 'unfeature' : 'feature'})}>{f.featured_item_id ? 'Remove highlight' : 'Feature on homepage'}</button>
-        </div>
+        </div>}
       </article>)}</section>;
     })}
-    <form className={styles.editorial} onSubmit={e => {e.preventDefault(); void mutate('POST', {action: 'editorial', text: editorial});}}>
+    {!readOnly && <form className={styles.editorial} onSubmit={e => {e.preventDefault(); void mutate('POST', {action: 'editorial', text: editorial});}}>
       <label htmlFor="pulse-editorial">Add an editorial fact</label>
       <textarea id="pulse-editorial" value={editorial} maxLength={4000} onChange={e => setEditorial(e.target.value)} placeholder="Commissioner supplied context, clearly separated from calculated facts." />
       <div><button disabled={busy || loading || !roundId || !editorial.trim()}>Save for review</button></div>
-    </form>
+    </form>}
     {exportText && <details open={copyFallback}><summary>Round report preview</summary><label className={styles.editorial}>Round report<textarea readOnly rows={18} value={exportText} onFocus={e => e.target.select()} /></label></details>}
   </section>;
 }
