@@ -117,7 +117,7 @@ const PAGE_SIZE = 1000;
 const FILTER_LIMIT = 18;
 const TOP_FACT_LIMIT = 12;
 
-export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
+export async function getClashPulseFactData({publishedOnly = false}: {publishedOnly?: boolean} = {}): Promise<ClashPulseFactData> {
   const supabase = await createClient();
   const db = supabase as any;
 
@@ -139,6 +139,19 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
     ),
     db.from('launch_seasons').select('id,name,year,active,archived').order('year', {ascending: false}),
   ]);
+
+  // Readers should only receive facts for completed, published matches;
+  // the commissioner desk retains its existing preview behavior.
+  let allowedLiveRows = liveRows;
+  if (publishedOnly && liveRows.length) {
+    const results = await selectInBatches<{match_id: string; status: string}>(
+      db, 'launch_match_results', 'match_id,status', 'match_id',
+      [...new Set(liveRows.map(row => row.match_id))],
+    );
+    const publishedIds = new Set(results.filter(result => result.status === 'Published')
+      .map(result => result.match_id));
+    allowedLiveRows = liveRows.filter(row => publishedIds.has(row.match_id));
+  }
 
   const matchupByKey = new Map(
     matchupRows.map((row) => [`${row.deduplication_key}:${row.player_id}`, row]),
@@ -170,12 +183,12 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
     };
   });
 
-  const liveMembers = liveRows.length
-    ? await hydrateLiveMembers(db, liveRows, seasonRows.data ?? [])
+  const liveMembers = allowedLiveRows.length
+    ? await hydrateLiveMembers(db, allowedLiveRows, seasonRows.data ?? [])
     : [];
 
-  const liveTeamStories = liveRows.length
-    ? await buildLiveTeamUpsetStories(db, liveRows, seasonRows.data ?? [])
+  const liveTeamStories = allowedLiveRows.length
+    ? await buildLiveTeamUpsetStories(db, allowedLiveRows, seasonRows.data ?? [])
     : [];
   const allStories = [
     ...groupWinningStories([...historicalMembers, ...liveMembers]),
@@ -190,7 +203,7 @@ export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
   const currentSeasonHasResults = currentSeasonStories.length > 0;
 
   const latestRound = currentSeasonHasResults && activeSeason?.id
-    ? await resolveLatestRoundScope(db, liveRows, activeSeason.id, currentSeasonStories)
+    ? await resolveLatestRoundScope(db, allowedLiveRows, activeSeason.id, currentSeasonStories)
     : null;
 
   const scopes: ClashPulseFactScope[] = [];
