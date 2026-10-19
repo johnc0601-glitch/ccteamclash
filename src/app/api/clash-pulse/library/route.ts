@@ -15,7 +15,28 @@ export async function GET(request: Request) {
   try {
     const {supabase, isCommissioner} = await requireClashPulseReader();
     const roundId = new URL(request.url).searchParams.get('round');
-    if (!roundId) return Response.json(await loadPulseOptions(supabase));
+    if (!roundId) {
+      const options = await loadPulseOptions(supabase);
+      if (isCommissioner) return Response.json(options);
+      const {data: published, error} = await supabase.from('launch_seasons')
+        .select('id').eq('published', true);
+      if (error) throw error;
+      const publishedIds = new Set((published ?? []).map(season => season.id));
+      return Response.json({
+        seasons: options.seasons.filter(season => publishedIds.has(season.id)),
+        rounds: options.rounds.filter(round => publishedIds.has(round.season_id)),
+      });
+    }
+    if (!isCommissioner) {
+      const {data: round, error: roundError} = await supabase.from('launch_rounds')
+        .select('season_id').eq('id', roundId).maybeSingle();
+      if (roundError) throw roundError;
+      if (!round) return Response.json({error: 'Round unavailable.'}, {status: 404});
+      const {data: season, error: seasonError} = await supabase.from('launch_seasons')
+        .select('id').eq('id', round.season_id).eq('published', true).maybeSingle();
+      if (seasonError) throw seasonError;
+      if (!season) return Response.json({error: 'Round unavailable.'}, {status: 403});
+    }
     const library = await loadPulseLibrary(supabase, roundId);
     return Response.json(isCommissioner ? library : {
       ...library,
