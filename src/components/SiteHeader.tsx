@@ -51,7 +51,14 @@ export async function SiteHeader() {
               <Link href="/teams" prefetch={false}>Teams</Link>
               <Link href="/stories" prefetch={false}>Stories</Link>
               <Link href="/courses" prefetch={false}>Courses</Link>
-              <Link href="/history" prefetch={false}>History</Link>
+              <details className="desktop-more">
+                <summary>More</summary>
+                <div className="desktop-more-menu">
+                  <Link href="/history" prefetch={false}>History</Link>
+          <Link href="/rules" prefetch={false}>Rules</Link>
+                  <Link href="/rules" prefetch={false}>Rules</Link>
+                </div>
+              </details>
               <FacebookLink size={20} />
               <DesktopRoleLinks />
               <Link className="desktop-account" href="/account" prefetch={false}>My Profile</Link>
