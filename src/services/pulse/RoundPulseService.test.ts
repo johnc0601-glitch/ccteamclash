@@ -73,7 +73,13 @@ test('clipped automatic slot and bonus team points never create additional playe
   const source=structuredClone(fixture);
   source.adjustments=source.adjustments.map(a=>({...a,points:a.points+100}));
   const pulse=run(source);
-  assert.equal(pulse.singles,70);
-  assert.equal(pulse.doubles,35);
-  assert.equal(pulse.verified,false); // published ledger no longer reconciles
+  // The scoring ledger is no longer trustworthy, so player/contest totals
+  // must be withheld rather than presented as verified round statistics.
+  assert.equal(pulse.singles,null);
+  assert.equal(pulse.doubles,null);
+  assert.equal(pulse.verified,false);
+  assert.equal(pulse.points?.playedSingles,70);
+  assert.equal(pulse.points?.playedDoubles,70);
+  assert.equal(pulse.points?.published,146);
+  assert.ok(pulse.warnings.some(w=>w.includes('does not reconcile')));
 });
