@@ -4,9 +4,15 @@ import {ClashPulseLiveManager} from '@/components/commissioner/ClashPulseLiveMan
 import {OfficePage} from '@/components/commissioner/OfficePage';
 import {getClashPulseFactData} from '@/services/stories/ClashPulseFactCandidateService';
 import {CollapsiblePulseFactLibrary} from '@/components/commissioner/CollapsiblePulseFactLibrary';
+import {loadPulseOptions} from '@/services/pulse/PulseLibraryService';
+import {requireStoryCommissioner} from '@/services/stories/StoryEditorAccess';
 
 export default async function CommissionerClashPulsePage() {
-  const factData = await getClashPulseFactData();
+  const [factData, {supabase}] = await Promise.all([
+    getClashPulseFactData(),
+    requireStoryCommissioner(),
+  ]);
+  const options = await loadPulseOptions(supabase);
 
   return (
     <OfficePage sectionId="clashPulse">
@@ -21,7 +27,8 @@ export default async function CommissionerClashPulsePage() {
           </div>
           <Link href="/office">Office dashboard</Link>
         </header>
-        <AroundTheClashDesk factData={factData} />
+        <AroundTheClashDesk factData={factData} rounds={options.rounds}
+          activeSeasonId={options.seasons.find(season => season.active)?.id ?? null} />
         <ClashPulseLiveManager />
         <CollapsiblePulseFactLibrary />
       </section>
