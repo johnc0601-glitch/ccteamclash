@@ -6,7 +6,7 @@ import styles from './PulseFactLibrary.module.css';
 
 type Options = {seasons: {id: string; name: string; active: boolean}[]; rounds: PulseRound[]};
 type Library = {facts: SavedPulseFact[]; queued?: boolean; generation: {complete: boolean; finalized: number; scheduled: number; warnings: string[]; generated_at: string} | null};
-const categories: PulseCategory[] = ['Match','Upsets','CI movement','Achievements','Round','Streaks','Broken streaks','History','Upcoming','Editorial'];
+const categories: PulseCategory[] = ['Match','Upsets','CI movement','Achievements','Round','History','Upcoming','Editorial'];
 async function api(path = '', init?: RequestInit) {
   const response = await fetch(`/api/clash-pulse/library${path}`, {...init, cache: 'no-store'});
   const body = await response.json();
@@ -58,11 +58,12 @@ export function PulseFactLibrary({readOnly = false}: {readOnly?: boolean}) {
     } catch (e) {setError(e instanceof Error ? e.message : 'Save failed.');}
     finally {setBusy(false);}
   }
+  const availableFacts = library.facts.filter(f => f.category !== 'Streaks' && f.category !== 'Broken streaks');
   const seasonRounds = options.rounds.filter(r => r.season_id === seasonId);
   const round = seasonRounds.find(r => r.id === roundId);
   async function copy() {
     const text = exportRoundFacts(`${options.seasons.find(s => s.id === seasonId)?.name} — Round ${round?.number}`,
-      library.facts, [...(library.generation?.warnings ?? []), ...(!library.generation?.complete ? ['Round analysis is incomplete.'] : [])]);
+      availableFacts, [...(library.generation?.warnings ?? []).filter(w => !w.startsWith('Streaks use only the selected season')), ...(!library.generation?.complete ? ['Round analysis is incomplete.'] : [])]);
     setExportText(text);
     setCopyFallback(false);
     try {await navigator.clipboard.writeText(text); setNotice('Round facts copied.');}
@@ -78,20 +79,20 @@ export function PulseFactLibrary({readOnly = false}: {readOnly?: boolean}) {
         {!seasonRounds.length && <option value="">No scheduled rounds</option>}
         {seasonRounds.map(r => <option key={r.id} value={r.id}>Round {r.number}{r.date ? ` · ${r.date}` : ''}</option>)}</select></label>
       {!readOnly && <button disabled={busy || !roundId || loading} onClick={() => mutate('POST', {action: 'generate'})}>{busy ? 'Saving…' : 'Generate / refresh facts'}</button>}
-      <button className={styles.primary} disabled={busy || loading || library.queued || !library.facts.length} onClick={copy}>Copy Round Facts</button>
+      <button className={styles.primary} disabled={busy || loading || library.queued || !availableFacts.length} onClick={copy}>Copy Round Facts</button>
     </div>
     <div role="status" aria-live="polite">{loading ? 'Loading fact library…' : notice}</div>
     {error && <p role="alert" className={styles.notice}>{error}</p>}
     {library.queued && <p className={styles.notice}>Source results changed. Refresh facts before exporting or featuring new highlights.</p>}
     {!loading && library.generation && <div className={styles.notice}>
       <strong>{library.generation.complete ? 'Complete round analysis' : 'Partial round analysis'}</strong> · {library.generation.finalized}/{library.generation.scheduled} finalized · Generated {new Date(library.generation.generated_at).toLocaleString()}
-      {library.generation.warnings.map(w => <p key={w}>{w}</p>)}
+      {library.generation.warnings.filter(w => !w.startsWith('Streaks use only the selected season')).map(w => <p key={w}>{w}</p>)}
     </div>}
-    {!loading && !library.facts.length && <p>No saved facts for this round. Generate facts when published results are available.</p>}
+    {!loading && !availableFacts.length && <p>No saved facts for this round. Generate facts when published results are available.</p>}
     <label className={styles.field}>View<select value={filter} onChange={e => setFilter(e.target.value)}>
       {['All',...categories].map(c => <option key={c}>{c}</option>)}</select></label>
     {categories.filter(c => filter === 'All' || filter === c).map(category => {
-      const rows = library.facts.filter(f => f.category === category);
+      const rows = availableFacts.filter(f => f.category === category);
       if (!rows.length) return null;
       return <section key={category} aria-label={category}><h3>{category} ({rows.length})</h3>{rows.map(f => <article className={styles.fact} key={f.id}>
         <div className={styles.meta}>{f.status.toUpperCase()} · {f.origin === 'editorial' ? 'Commissioner supplied' : 'Calculated from source records'}{f.featured_item_id ? ' · Featured on homepage' : ''}</div>
