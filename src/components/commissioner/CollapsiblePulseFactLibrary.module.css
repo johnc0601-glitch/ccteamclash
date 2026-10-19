@@ -1,0 +1,26 @@
+.shell {
+  border: 1px solid var(--cc-card-border, #536070);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 66px;
+  padding: 14px 20px;
+  border: 0;
+  background: var(--cc-card-bg, rgba(255, 255, 255, .035));
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.toggle:focus-visible { outline: 3px solid var(--cc-gold, #d9ad52); outline-offset: -3px; }
+.description { display: grid; gap: 4px; min-width: 0; }
+.description strong { font-size: 1rem; }
+.description > span { font-size: .85rem; color: var(--cc-text-muted, #89949c); line-height: 1.4; }
+.indicator { font-size: 24px; font-weight: 700; line-height: 1; flex-shrink: 0; }
+.shell:has(.toggle[aria-expanded="true"]) > div { padding-top: 12px; }
