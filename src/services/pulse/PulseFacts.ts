@@ -2,7 +2,6 @@ import {buildFinalScoreBreakdown} from '@/services/matches/FinalScoreBreakdown';
 import type {FinalMatchdayV2Snapshot} from '@/services/matches/FinalMatchdayCanary';
 import {calculateLockedRosterPrediction} from '@/services/teamStrength/LockedRosterPrediction';
 import {TEAM_STRENGTH_VERSION} from '@/services/teamStrength/TeamStrength';
-import {generateStreakFacts} from './PulseStreaks';
 
 export type PulseRound = {id: string; season_id: string; number: number; name: string; date: string | null};
 export type PulseMatch = {id: string; season_id: string; round_id: string; date: string | null;
@@ -40,21 +39,13 @@ const signed = (n: number) => `${n > 0 ? '+' : ''}${n}`;
 const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
 const ref = (table: string, ids: string[]): PulseReference => ({table, ids: [...new Set(ids)].sort()});
 
-/** All probabilities come from the persisted pre-result calculation, never current CI. */
+/** Pending streak work is excluded until its verification is complete.
+ * Keep verifiedRoundRatings available for future research without publishing
+ * any unfinished streak facts in the normal round report. */
 export function generateRoundFacts(source: PulseSource, roundId: string): PulseReport {
   const report = analyzeRound(source, roundId);
-  const round = source.rounds.find(r => r.id === roundId)!;
-  const verified = source.rounds
-    .filter(r => r.season_id === round.season_id && r.number <= round.number)
-    .flatMap(r => r.id === roundId ? report.eligible : analyzeRound(source, r.id).eligible);
-  const facts = [...report.facts, ...generateStreakFacts(source, round, verified)]
-    .sort((a, b) => a.fact_key.localeCompare(b.fact_key));
-  return {
-    facts, complete: report.complete, finalized: report.finalized,
-    scheduled: report.scheduled,
-    warnings: [...report.warnings,
-      'Streaks use only the selected season through this round. Team runs use official scores; player runs require verified played singles or doubles. Missing or ambiguous results interrupt runs.'],
-  };
+  return {facts: report.facts, complete: report.complete, finalized: report.finalized,
+    scheduled: report.scheduled, warnings: report.warnings};
 }
 
 /** Only appearances reconciled against finalized snapshots and frozen CI.
@@ -253,8 +244,8 @@ function analyzeRound(source: PulseSource, roundId: string): PulseReport & {elig
 }
 
 export function exportRoundFacts(label: string, facts: SavedPulseFact[], warnings: string[] = []): string {
-  const visible = facts.filter(f => f.is_current && f.status !== 'hidden');
-  const categories: PulseCategory[] = ['Match', 'Upsets', 'CI movement', 'Achievements', 'Round', 'Streaks', 'Broken streaks', 'History', 'Upcoming', 'Editorial'];
+  const visible = facts.filter(f => f.is_current && f.status !== 'hidden' && f.category !== 'Streaks' && f.category !== 'Broken streaks');
+  const categories: PulseCategory[] = ['Match', 'Upsets', 'CI movement', 'Achievements', 'Round', 'History', 'Upcoming', 'Editorial'];
   const lines = [`CLASH PULSE — ${label}`, 'Verified statistical briefing for a separately written recap. Do not invent missing records or probabilities.',
     'Review: pending facts are labeled; editorial entries are commissioner supplied. Hidden and superseded facts are excluded. Long source lists are abbreviated; full references remain in the library.',
     ...warnings.map(w => `DATA NOTE: ${w}`)];
