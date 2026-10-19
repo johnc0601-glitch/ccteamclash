@@ -32,6 +32,45 @@ export async function updateMatchPredictionVisibility(formData: FormData) {
   redirect('/office/settings?notice=Matchup%20predictor%20visibility%20saved.');
 }
 
+
+/** A Pulse grant is a separate capability, not a Commissioner or Captain role. */
+export async function grantClashPulseReader(formData: FormData) {
+  const profileId = read(formData, 'profileId');
+  if (!profileId) redirect('/office/settings?error=Choose%20an%20approved%20account.');
+
+  const {supabase} = await requireCommissioner();
+  const {data: target} = await supabase.from('launch_profiles').select('id,role,status')
+    .eq('id', profileId).maybeSingle();
+  if (!target || target.status !== 'Approved' || target.role === 'Commissioner') {
+    redirect('/office/settings?error=Only%20approved%20noncommissioner%20accounts%20can%20be%20granted%20reader%20access.');
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const {error} = await (supabase as any).from('clash_pulse_readers').insert({profile_id: target.id});
+  if (error) {
+    console.error('[pulse reader] Grant failed', {error: error.message});
+    redirect('/office/settings?error=Clash%20Pulse%20access%20could%20not%20be%20granted.');
+  }
+  revalidatePath('/office/settings');
+  redirect('/office/settings?notice=Read-only%20Clash%20Pulse%20access%20granted.');
+}
+
+export async function revokeClashPulseReader(formData: FormData) {
+  const profileId = read(formData, 'profileId');
+  if (!profileId) redirect('/office/settings?error=Choose%20an%20account.');
+  const {supabase} = await requireCommissioner();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const {error} = await (supabase as any).from('clash_pulse_readers')
+    .delete().eq('profile_id', profileId);
+  if (error) {
+    console.error('[pulse reader] Revoke failed', {error: error.message});
+    redirect('/office/settings?error=Clash%20Pulse%20access%20could%20not%20be%20revoked.');
+  }
+  revalidatePath('/office/settings');
+  redirect('/office/settings?notice=Clash%20Pulse%20access%20revoked.');
+}
+
 async function requireCommissioner() {
   const supabase = await createClient();
   const {data: {user}} = await supabase.auth.getUser();
