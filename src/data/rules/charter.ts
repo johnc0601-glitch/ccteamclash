@@ -1,7 +1,7 @@
 // Source: CCTC Charter 2025-26 R3(1).docx, as uploaded October 19, 2026.
 // Except for the two explicitly agreed Friday-noon roster-lock changes,
 // historical charter wording is preserved for review, not newly ratified.
-export type CharterEntry = {text: string; level: number; updated?: boolean};
+export type CharterEntry = {text: string; level: number; updated?: boolean; updatedLabel?: string};
 export type CharterSection = {id: string; title: string; items: CharterEntry[]};
 
 export const charterSections: CharterSection[] = [
@@ -32,8 +32,10 @@ export const charterSections: CharterSection[] = [
         "level": 0
       },
       {
-        "text": "All teams who wish to be considered for the CCTC season must apply during this time period. Team Registration will be completed via Jotform or another comparable platform.",
-        "level": 1
+        "text": "All teams wishing to be considered for the CCTC season must register during the team-registration period through ccteamclash.com.",
+        "level": 1,
+        "updated": true,
+        "updatedLabel": "2026–27 registration update"
       },
       {
         "text": "Teams will be approved by the commissioners based on their legacy and hosting capabilities. If an insufficient number of teams applied to satisfy the number of registered players, the commissioners can choose to either create new teams or increase the roster size for the season. The intent is to maximize playing roster size at 16 & 2 to make the most efficient use of 18- hole courses for finals.",
