@@ -57,6 +57,12 @@ export function generateRoundFacts(source: PulseSource, roundId: string): PulseR
   };
 }
 
+/** Only appearances reconciled against finalized snapshots and frozen CI.
+ * Used by across-season streaks; does not change or save any CI values. */
+export function verifiedRoundRatings(source: PulseSource, roundId: string): PulseRating[] {
+  return analyzeRound(source, roundId).eligible;
+}
+
 /** The original generator is unchanged for individual round facts; the verified
  * played participants also feed streak calculations for prior rounds. */
 function analyzeRound(source: PulseSource, roundId: string): PulseReport & {eligible: PulseRating[]} {
