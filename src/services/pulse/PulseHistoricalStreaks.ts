@@ -1,4 +1,4 @@
-import type {PulseFact, PulseMatch, PulseRating, PulseRound, PulseSource} from './PulseFacts';
+import type {PulseFact, PulseRating, PulseRound, PulseSource} from './PulseFacts';
 
 export type ArchivedTeamMatch = {
   id: number; season_name: string; event_order: number; event_label: string;
@@ -77,10 +77,7 @@ export function generateAcrossSeasonStreakFacts(
     }
   }
 
-  const teamNames = new Map<string, string>();
   for (const match of playedMatches) {
-    teamNames.set(match.home_team_id, match.home_name);
-    teamNames.set(match.away_team_id, match.away_name);
     const result = source.results.find(r => r.match_id === match.id && r.status === 'Published');
     for (const home of [true, false]) {
       const id = home ? match.home_team_id : match.away_team_id;
