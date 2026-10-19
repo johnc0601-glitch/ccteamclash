@@ -68,3 +68,121 @@
  .level1 { margin-left:12px; } .level2 { margin-left:24px; } .level3 { margin-left:36px; }
  .mobileOutline nav { grid-template-columns:1fr; }
 }
+
+
+/* Recap-inspired Rules presentation: rounded paper cards and readable type.
+   Scoped to /rules; no impact on Matchday, stories or league-wide styling. */
+.root { gap:26px; }
+.searchPanel {
+  padding:25px 27px 22px;
+  border-radius:16px;
+  box-shadow:0 5px 20px rgba(28,31,33,.07);
+}
+.searchPanel label { font-size:16px; }
+.searchRow { min-height:56px; border-radius:12px; padding-left:15px; background:#faf9f5; }
+.searchRow input { min-height:48px; font-size:16px; }
+.searchHelp,.matchCount { font-size:13px; line-height:1.55; }
+.contentLayout { grid-template-columns:205px minmax(0,1fr); gap:22px; }
+.desktopOutline {
+  border:1px solid var(--cc-panel-border);
+  border-radius:16px;
+  background:var(--cc-surface);
+  box-shadow:0 5px 20px rgba(28,31,33,.05);
+  padding:18px 12px;
+}
+.outlineEyebrow { margin-bottom:11px; font-size:11px; }
+.desktopOutline a { border-radius:8px; padding:10px 12px; font-size:13px; line-height:1.35; }
+.desktopOutline a:hover,.desktopOutline a:focus-visible { border-left-color:var(--cc-gold); border-radius:8px; }
+.document { gap:22px; }
+.section {
+  border-radius:16px;
+  box-shadow:0 5px 18px rgba(28,31,33,.065);
+}
+.sectionHeader {
+  padding:21px 23px 19px;
+  border-left:0;
+  border-top:4px solid var(--cc-gold);
+  background:var(--cc-surface);
+}
+.sectionHeader h2 { font-size:clamp(22px,2.15vw,27px); line-height:1.25; }
+.sectionCount { font-size:12px; }
+.entries { padding:14px 20px 23px; }
+.entry {
+  align-items:flex-start;
+  gap:12px;
+  margin:11px 0 0;
+  padding:15px 16px;
+  border:1px solid #e5e1d8;
+  border-radius:12px;
+  background:#fbfaf7;
+}
+.entry:last-child { border-bottom:1px solid #e5e1d8; }
+.entry p {
+  color:#30373a;
+  font-size:16px;
+  line-height:1.72;
+  font-weight:450;
+}
+.bullet { margin-top:1px; font-size:16px; }
+.level1 { margin-left:16px; }
+.level2 { margin-left:30px; }
+.level3 { margin-left:40px; }
+.updated { display:block; width:fit-content; margin:8px 0 0; font-size:12px; }
+.draftNotes { padding:8px 0 18px; }
+.draftNotes h3 { font-size:18px; line-height:1.4; margin-bottom:16px; }
+.draftNote {
+  margin:11px 0;
+  padding:17px 18px;
+  border:1px solid #e3d7bc;
+  border-left:4px solid var(--cc-gold);
+  border-radius:13px;
+  background:#faf8f2;
+}
+.draftStatus { margin-bottom:8px; font-size:12px; }
+.draftNote p { font-size:16px; line-height:1.68; color:#353b3d; }
+.sourceHeading { margin:18px 0 11px; font-size:13px; line-height:1.5; }
+.formatTableWrap { margin:22px 0 8px; border-radius:12px; }
+.formatTableWrap h3 { font-size:17px; }
+.formatTable th,.formatTable td { padding:13px 12px; font-size:14px; }
+.noResults { border-radius:15px; }
+.noResults h2 { font-size:21px; }
+.noResults p { font-size:16px; line-height:1.65; }
+
+/* The narrow desktop-site viewport on phones should not squeeze the 205px
+   outline alongside the reading pane. */
+@media(max-width:1100px) {
+  .contentLayout { display:block; }
+  .desktopOutline { display:none; }
+  .mobileOutline {
+    display:block;
+    margin-bottom:20px;
+    border-radius:15px;
+    box-shadow:0 5px 20px rgba(28,31,33,.06);
+  }
+  .mobileOutline summary { min-height:58px; padding:14px 18px; font-size:16px; }
+  .mobileOutline summary small { font-size:12px; }
+  .mobileOutline nav a { font-size:14px; line-height:1.5; padding:13px 1px; }
+}
+@media(max-width:600px) {
+  .root { gap:21px; }
+  .searchPanel { padding:19px 17px 17px; border-radius:15px; }
+  .searchPanel label { font-size:15px; }
+  .searchRow { min-height:52px; }
+  .searchRow input { font-size:16px; }
+  .searchHelp,.matchCount { font-size:13px; }
+  .mobileOutline { border-radius:14px; }
+  .section { border-radius:15px; }
+  .sectionHeader { padding:18px 17px; }
+  .sectionHeader h2 { font-size:22px; }
+  .entries { padding:11px 12px 18px; }
+  .entry { padding:15px 13px; gap:9px; border-radius:12px; }
+  .entry p { font-size:16px; line-height:1.7; }
+  .level1 { margin-left:9px; }
+  .level2 { margin-left:15px; }
+  .level3 { margin-left:20px; }
+  .draftNote { padding:15px 14px; border-radius:12px; }
+  .draftNote p { font-size:15.5px; line-height:1.7; }
+  .draftNotes h3 { font-size:17px; }
+  .sourceHeading { font-size:13px; }
+  .formatTable th,.formatTable td { font-size:13px; padding:12px 8px; }
+}
