@@ -3,6 +3,8 @@ import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import {exportRoundFacts, generateRoundFacts, type PulseSource, type SavedPulseFact} from './PulseFacts';
 import {generateStreakFacts} from './PulseStreaks';
+import {copyRecapText, selectRecapFacts, RECAP_CATEGORIES} from './PulseRecap';
+import {selectDeskFacts, type ClashPulseFactCandidate} from '@/components/commissioner/clashPulseFacts';
 
 // Read-only production capture on 2026-10-18, limited to public match statistics.
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/round-one-2026.json', import.meta.url), 'utf8')) as PulseSource;
@@ -202,4 +204,32 @@ test('full recap generation consumes earlier verified rounds without including t
   assert.equal(report.facts.filter(f => f.fact_key.startsWith('score:')).length,4);
   assert.ok(report.facts.some(f => f.category === 'Streaks' && f.player_ids.length && f.metric === 2));
   assert.ok(report.facts.some(f => f.category === 'Streaks' && !f.player_ids.length && f.metric === 2));
+});
+
+test('recap display and copy enforce ten per category with ranked upsets and both CI directions', () => {
+  const base = generate().facts[0];
+  const facts: SavedPulseFact[] = RECAP_CATEGORIES.flatMap(category => Array.from({length:24},(_,i) => ({...base,
+    category,id:`${category}-${i}`,fact_key:`${category}-${String(i).padStart(2,'0')}`,fact_text:`${category} fact ${i}`,
+    metric: category === 'CI movement' ? i < 12 ? i+1 : -(i-11) : i/100,
+    status:'pending' as const,origin:'generated' as const,is_current:true,generated_at:'2026-10-18',featured_item_id:null})));
+  const selected = selectRecapFacts(facts);
+  for (const category of RECAP_CATEGORIES) assert.equal(selected.filter(f => f.category === category).length,10);
+  assert.deepEqual(selected.filter(f => f.category === 'Upsets').map(f => f.metric),Array.from({length:10},(_,i) => i/100));
+  assert.equal(selected.filter(f => f.category === 'CI movement' && f.metric! > 0).length,5);
+  assert.equal(selected.filter(f => f.category === 'CI movement' && f.metric! < 0).length,5);
+  const copied = copyRecapText('Round 1',facts);
+  assert.equal(copied.split('\n').filter(line => line.startsWith('- ')).length,RECAP_CATEGORIES.length*10);
+  assert.doesNotMatch(copied,/Pending review/);
+  assert.match(copied,/BROKEN STREAKS/);
+  assert.deepEqual(selectRecapFacts([...facts].reverse()),selected);
+});
+
+test('existing pills use category ranking, filter context before limiting and cap top facts at ten', () => {
+  const candidates: ClashPulseFactCandidate[] = Array.from({length:30},(_,i) => ({id:String(i),primaryStoryType:'Upset',topics:['Upset'],detail:'',format:i%2 ? 'Doubles' : 'Singles',venue:'Home',
+    angles:{Upset:{storyType:'Upset',headline:String(i),value:'',badges:[],pulseText:''}}}));
+  const ids = candidates.map(c => c.id).reverse();
+  const scope = {id:'test',label:'Test',description:'',candidates,topFactIds:ids,categoryFactIds:{Upset:ids}};
+  assert.deepEqual(selectDeskFacts(scope,'Upset','All').map(f => f.candidate.id),ids.slice(0,10));
+  assert.deepEqual(selectDeskFacts(scope,'Upset','Singles').map(f => f.candidate.id),['28','26','24','22','20','18','16','14','12','10']);
+  assert.equal(selectDeskFacts(scope,'Top Facts','All').length,10);
 });

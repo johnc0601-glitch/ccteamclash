@@ -4,6 +4,10 @@ on:
     paths:
       - 'src/services/pulse/**'
       - 'src/components/commissioner/PulseFactLibrary*'
+      - 'src/components/commissioner/RoundRecapFacts*'
+      - 'src/components/commissioner/AroundTheClashDesk*'
+      - 'src/components/commissioner/clashPulseFacts*'
+      - 'src/services/stories/ClashPulseFactCandidateService.ts'
       - 'src/app/api/clash-pulse/**'
       - 'src/app/office/clash-pulse/**'
       - 'src/app/office/results/actions.ts'

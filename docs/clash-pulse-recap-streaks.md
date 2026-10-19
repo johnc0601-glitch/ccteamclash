@@ -1,6 +1,8 @@
 # Monthly recap simplification and streaks
 
-The recap library now follows Generate → Copy Round Facts. Approval/status labels and approval, hide, and homepage feature controls have been removed from this library. The existing homepage publishing tools remain separate. Stored legacy review fields are retained for compatibility, without a database migration.
+The separate recap library has been removed. The existing scope pills now include Round 1 Facts (and elapsed rounds for the selected season). That pill opens a compact category briefing with Refresh and Copy Recap Facts. Existing fact-angle pills and the round briefing each show at most ten facts per category. The copied report uses the same capped selection. No approval, status, editorial-entry, or per-fact publishing controls are added to the recap. Existing homepage publishing tools remain separate. Stored legacy review fields are retained for compatibility, without a database migration.
+
+Existing fact-angle pills retain their category-specific ranked candidate IDs, apply context before the ten-fact cap, and preserve the existing queue. Recap upsets sort by lowest frozen win probability, CI movement prioritizes five gains and five losses (fills unused places from the other direction), and streaks prioritize longest runs. Stable fact-key tie breaking enforces the strict ten-fact maximum. Missing categories show an empty state rather than filler. Round 1's briefing contains 60 facts across the supported categories, versus the previous 270-fact list.
 
 The report adds team winning, losing, unbeaten and winless runs and each player's separate singles/doubles appearance runs. It reports both runs continuing through the selected round and runs ended that round, naming the opponent and ending outcome. Runs need at least two qualifying results. Ties interrupt winning/losing runs and continue unbeaten/winless runs.
 
@@ -8,6 +10,6 @@ Coverage is the selected season through the selected round, explicitly stated in
 
 Generation loads earlier rounds in the season. Earlier-round queue requests or regeneration after a later report started require that later report to refresh before copying, preventing stale streaks after corrections.
 
-Validation: 18 Pulse tests, 5 result workflow tests, and 18 final-scoreboard tests pass. Targeted ESLint passes. Production build passes with existing unrelated HEIC, staging podcast-table and UDisc cache warnings. Signed-in local staging preview verified Generate → Copy, the Streaks filter, explicit Round 1 empty state, source coverage note, and export without pending-review labels. No production data changes are part of this follow-up.
+Validation: 20 Pulse tests pass, including strict display/export caps, category ranking, context filtering and deterministic ties. Prior regression checks cover 5 result workflow and 18 final-scoreboard tests. Targeted ESLint and production build pass with existing unrelated HEIC, staging podcast-table and UDisc cache warnings. Signed-in local staging preview verified ten Upset cards in ranked order, Round 1 Facts beside existing scope pills, refresh, category counts, and Copy Recap Facts with exactly 60 report entries and no approval labels. React review checked effect cleanup, serializable props, button semantics, pressed state and mobile overflow. No production data changes are part of this follow-up.
 
-Screenshot: `docs/evidence/clash-pulse-recap-staging.jpg`.
+Screenshot: `docs/evidence/clash-pulse-round-pill-staging.jpg`.

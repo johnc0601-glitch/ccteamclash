@@ -36,7 +36,7 @@ export function generateStreakFacts(source: PulseSource, round: PulseRound, veri
           const length = `${uncertainStart ? 'at least ' : ''}${count}-${unit}`;
           const outcome = event.outcome === 'W' ? 'a win' : event.outcome === 'L' ? 'a loss' : 'a tie';
           const refs = [...run, event].flatMap(e => e.refs);
-          facts.push({fact_key: `streak:${key}:${mode.name}:${event.match.id}`, category: 'Streaks',
+          facts.push({fact_key: `streak:${key}:${mode.name}:${event.match.id}`, category: broken ? 'Broken streaks' : 'Streaks',
             fact_text: broken
               ? `${name}: ${length} ${mode.name} streak ended with ${outcome} against ${event.opponent} in Round ${round.number}.`
               : `${name}: ${length} ${mode.name} streak through Round ${round.number}.`,

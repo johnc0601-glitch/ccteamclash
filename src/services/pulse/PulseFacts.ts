@@ -26,7 +26,7 @@ export type PulseSource = {
   rosterManifests?: {match_id: string; team_id: string}[];
   frozenRatings?: {match_id: string; team_id: string; player_id: string; clash_index_before: number}[];
 };
-export type PulseCategory = 'Match' | 'Upsets' | 'CI movement' | 'Achievements' | 'Round' | 'Streaks' | 'History' | 'Upcoming' | 'Editorial';
+export type PulseCategory = 'Match' | 'Upsets' | 'CI movement' | 'Achievements' | 'Round' | 'Streaks' | 'Broken streaks' | 'History' | 'Upcoming' | 'Editorial';
 export type PulseReference = {table: string; ids: string[]};
 export type PulseFact = {
   fact_key: string; category: PulseCategory; fact_text: string; match_id: string | null;
@@ -241,7 +241,7 @@ function analyzeRound(source: PulseSource, roundId: string): PulseReport & {elig
 
 export function exportRoundFacts(label: string, facts: SavedPulseFact[], warnings: string[] = []): string {
   const visible = facts.filter(f => f.is_current && f.status !== 'hidden');
-  const categories: PulseCategory[] = ['Match', 'Upsets', 'CI movement', 'Achievements', 'Round', 'Streaks', 'History', 'Upcoming', 'Editorial'];
+  const categories: PulseCategory[] = ['Match', 'Upsets', 'CI movement', 'Achievements', 'Round', 'Streaks', 'Broken streaks', 'History', 'Upcoming', 'Editorial'];
   const lines = [`CLASH PULSE — ${label}`, 'Verified statistical briefing for a separately written recap. Do not invent missing records or probabilities.',
     'Calculated facts are ready to use without approval; editorial entries are commissioner supplied. Hidden and superseded facts are excluded. Long source lists are abbreviated; full references remain in the library.',
     ...warnings.map(w => `DATA NOTE: ${w}`)];
