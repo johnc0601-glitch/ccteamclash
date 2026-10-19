@@ -9,6 +9,9 @@ import type {
   ClashPulseStoryType,
 } from './clashPulseFacts';
 import styles from './AroundTheClashDesk.module.css';
+import type {PulseRound} from '@/services/pulse/PulseFacts';
+import {RoundRecapFacts} from './RoundRecapFacts';
+import {selectDeskFacts} from './clashPulseFacts';
 
 const storyTypes: ClashPulseStoryType[] = ['Upset', 'Match Upset', 'Above Expectations', 'CI Mover', 'Close Match', 'Standout'];
 const contexts: ClashPulseContextFilter[] = ['All', 'Team', 'Singles', 'Doubles', 'Home', 'Road'];
@@ -18,7 +21,7 @@ type CardView = {
   angle: ClashPulseFactAngle;
 };
 
-export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
+export function AroundTheClashDesk({factData, recapOptions}: {factData: ClashPulseFactData; recapOptions: {seasons: {id: string; name: string; active: boolean}[]; rounds: PulseRound[]}}) {
   const [scopeId, setScopeId] = useState(factData.defaultScopeId);
   const [storyType, setStoryType] = useState<ClashPulseStoryType | 'Top Facts'>('Top Facts');
   const [context, setContext] = useState<ClashPulseContextFilter>('All');
@@ -26,8 +29,14 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
   const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState('');
+  const [recapRoundId, setRecapRoundId] = useState<string | null>(null);
 
   const activeScope = factData.scopes.find((scope) => scope.id === scopeId) ?? factData.scopes[0];
+  const activeSeason = recapOptions.seasons.find(s => s.active);
+  const recapSeasonId = activeScope?.id.startsWith('latest-round:') || activeScope?.id === 'all-time'
+    ? activeSeason?.id : activeScope?.id;
+  const recapRounds = recapOptions.rounds.filter(r => r.season_id === recapSeasonId && (!r.date || r.date <= new Date().toISOString().slice(0,10)));
+  const recapRound = recapOptions.rounds.find(r => r.id === recapRoundId);
   const allCandidates = useMemo(
     () => factData.scopes.flatMap((scope) => scope.candidates),
     [factData.scopes],
@@ -49,21 +58,7 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
 
   const visible = useMemo<CardView[]>(() => {
     if (!activeScope) return [];
-
-    const candidates = storyType === 'Top Facts'
-      ? activeScope.topFactIds
-          .map((id) => activeScope.candidates.find((item) => item.id === id))
-          .filter((item): item is ClashPulseFactCandidate => Boolean(item))
-      : activeScope.candidates.filter((item) => Boolean(item.angles[storyType]));
-
-    return candidates
-      .filter((item) => matchesContext(item, context))
-      .map((candidate) => {
-        const angleType = storyType === 'Top Facts' ? candidate.primaryStoryType : storyType;
-        const angle = candidate.angles[angleType];
-        return angle ? {candidate, angle} : null;
-      })
-      .filter((item): item is CardView => Boolean(item));
+    return selectDeskFacts(activeScope,storyType,context);
   }, [activeScope, context, storyType]);
 
   const selectedItems = Object.entries(selected)
@@ -133,8 +128,8 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
     <div className={styles.desk}>
       <div className={styles.previewNote}>
         <div>
-          <strong>One result, multiple fact angles.</strong>{' '}
-          Each filter now shows its own statistic: Upsets shows win probability, CI Movers shows CI movement, and Close Matches shows matchup closeness. Selecting a different angle for the same contest replaces the earlier angle in your Pulse Queue.
+          <strong>Top 10 facts per category.</strong>{' '}
+          Choose a fact angle, or open a round’s Facts pill for a copyable monthly recap briefing, including streaks and broken streaks.
           {' '}
           {factData.currentSeasonHasResults
             ? 'Latest Round is selected automatically; Season and All-Time remain available for broader history.'
@@ -152,16 +147,19 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
               type="button"
               onClick={() => {
                 setScopeId(scope.id);
+                setRecapRoundId(null);
                 setStoryType('Top Facts');
                 setContext('All');
               }}
-              aria-pressed={scope.id === activeScope.id}
+              aria-pressed={!recapRound && scope.id === activeScope.id}
             >
               {scope.label}
             </button>
           ))}
+          {recapRounds.map(round => <button key={round.id} className={styles.filterButton} type="button" aria-pressed={recapRoundId === round.id} onClick={() => setRecapRoundId(round.id)}>Round {round.number} Facts</button>)}
         </div>
 
+        {!recapRound && <>
         <span className={styles.filterLabel}>Fact angle</span>
         <nav className={styles.categoryRow} aria-label="Clash Pulse fact angles">
           <button
@@ -170,7 +168,7 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
             onClick={() => setStoryType('Top Facts')}
             aria-pressed={storyType === 'Top Facts'}
           >
-            Top Facts {activeScope.topFactIds.length}
+            Top Facts {Math.min(10,activeScope.topFactIds.length)}
           </button>
           {storyTypes
             .filter((item) => (storyCounts.get(item) ?? 0) > 0)
@@ -182,7 +180,7 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
                 onClick={() => setStoryType(item)}
                 aria-pressed={storyType === item}
               >
-                {labelStoryType(item)} {storyCounts.get(item)}
+                {labelStoryType(item)} {Math.min(10, activeScope.categoryFactIds?.[item]?.length ?? storyCounts.get(item) ?? 0)}
               </button>
             ))}
         </nav>
@@ -201,8 +199,10 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
             </button>
           ))}
         </div>
+        </>}
       </div>
 
+      {recapRound ? <RoundRecapFacts key={recapRound.id} round={recapRound} seasonLabel={recapOptions.seasons.find(s => s.id === recapRound.season_id)?.name ?? ''} /> : <>
       <div className={styles.workspace}>
         <section className={styles.factPanel}>
           <header className={styles.factHeader}>
@@ -289,6 +289,7 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
           ) : null}
         </div>
       ) : null}
+      </>}
     </div>
   );
 }
@@ -353,12 +354,6 @@ function PulseQueue({
       {message ? <span className={styles.queueHint}>{message}</span> : null}
     </aside>
   );
-}
-
-function matchesContext(item: ClashPulseFactCandidate, context: ClashPulseContextFilter): boolean {
-  if (context === 'All') return true;
-  if (context === 'Singles' || context === 'Doubles' || context === 'Team') return item.format === context;
-  return item.venue === context;
 }
 
 function labelStoryType(type: ClashPulseStoryType): string {

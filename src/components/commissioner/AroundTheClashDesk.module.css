@@ -3,6 +3,11 @@
   gap: 18px;
 }
 
+.recapCard { padding: 14px; border: 1px solid var(--cc-card-border); border-radius: 8px; background: var(--cc-card-bg); overflow-wrap: anywhere; }
+.recapCard details { margin-top: 10px; font-size: 12px; color: var(--cc-text-muted); }
+.recapCard details p { max-height: 140px; overflow: auto; }
+.recapReport { width: 100%; box-sizing: border-box; margin-top: 10px; color: var(--cc-body-text); background: var(--cc-card-bg); }
+
 .previewNote {
   display: flex;
   align-items: flex-start;

@@ -62,7 +62,7 @@ export const OFFICE_SECTIONS = {
   },
   clashPulse: {
     title: 'Clash Pulse',
-    description: 'Review league facts, manage the Pulse Queue, and publish Clash Pulse updates.',
+    description: 'Gather round statistics, streaks, and historical context for monthly recaps.',
     href: '/office/clash-pulse',
   },
   media: {

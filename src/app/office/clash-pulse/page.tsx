@@ -3,10 +3,12 @@ import {AroundTheClashDesk} from '@/components/commissioner/AroundTheClashDesk';
 import {ClashPulseLiveManager} from '@/components/commissioner/ClashPulseLiveManager';
 import {OfficePage} from '@/components/commissioner/OfficePage';
 import {getClashPulseFactData} from '@/services/stories/ClashPulseFactCandidateService';
-import {PulseFactLibrary} from '@/components/commissioner/PulseFactLibrary';
+import {loadPulseOptions} from '@/services/pulse/PulseLibraryService';
+import {requireStoryCommissioner} from '@/services/stories/StoryEditorAccess';
 
 export default async function CommissionerClashPulsePage() {
-  const factData = await getClashPulseFactData();
+  const [factData, access] = await Promise.all([getClashPulseFactData(), requireStoryCommissioner()]);
+  const recapOptions = await loadPulseOptions(access.supabase);
 
   return (
     <OfficePage sectionId="clashPulse">
@@ -17,12 +19,11 @@ export default async function CommissionerClashPulsePage() {
               <h2 style={{margin: 0}}>Clash Pulse desk</h2>
               <span style={{fontSize: 12, fontWeight: 800, letterSpacing: '.08em', border: '1px solid currentColor', borderRadius: 999, padding: '3px 8px'}}>VERIFIED DATA</span>
             </div>
-            <p style={{marginBottom: 0}}>Find league facts, manage the Pulse Queue, and publish updates to the homepage.</p>
+            <p style={{marginBottom: 0}}>Prepare monthly recaps with round statistics, streaks, and historical context.</p>
           </div>
           <Link href="/office">Office dashboard</Link>
         </header>
-        <PulseFactLibrary />
-        <AroundTheClashDesk factData={factData} />
+        <AroundTheClashDesk factData={factData} recapOptions={recapOptions} />
         <ClashPulseLiveManager />
       </section>
     </OfficePage>

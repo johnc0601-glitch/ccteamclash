@@ -115,7 +115,7 @@ type LiveFactRow = {
 
 const PAGE_SIZE = 1000;
 const FILTER_LIMIT = 18;
-const TOP_FACT_LIMIT = 12;
+const TOP_FACT_LIMIT = 10;
 
 export async function getClashPulseFactData(): Promise<ClashPulseFactData> {
   const supabase = await createClient();
@@ -483,6 +483,7 @@ function buildScope(
     description,
     candidates,
     topFactIds: topStories.map((story) => story.key),
+    categoryFactIds: Object.fromEntries([...topicStories].map(([type, list]) => [type, list.map(story => story.key)])),
   };
 }
 

@@ -38,6 +38,7 @@ export type ClashPulseFactScope = {
   description: string;
   candidates: ClashPulseFactCandidate[];
   topFactIds: string[];
+  categoryFactIds?: Partial<Record<ClashPulseStoryType, string[]>>;
 };
 
 export type ClashPulseFactData = {
@@ -45,3 +46,13 @@ export type ClashPulseFactData = {
   defaultScopeId: string;
   currentSeasonHasResults: boolean;
 };
+
+export function selectDeskFacts(scope: ClashPulseFactScope, type: ClashPulseStoryType | 'Top Facts', context: ClashPulseContextFilter) {
+  const ids = type === 'Top Facts' ? scope.topFactIds : scope.categoryFactIds?.[type]
+    ?? scope.candidates.filter(item => item.angles[type]).map(item => item.id);
+  return ids.map(id => scope.candidates.find(item => item.id === id))
+    .filter((item): item is ClashPulseFactCandidate => Boolean(item))
+    .filter(item => context === 'All' || (context === 'Home' || context === 'Road' ? item.venue === context : item.format === context))
+    .map(candidate => ({candidate, angle: candidate.angles[type === 'Top Facts' ? candidate.primaryStoryType : type]}))
+    .filter((item): item is {candidate: ClashPulseFactCandidate; angle: ClashPulseFactAngle} => Boolean(item.angle)).slice(0,10);
+}
