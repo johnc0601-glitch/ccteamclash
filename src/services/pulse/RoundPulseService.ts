@@ -49,6 +49,7 @@ export function buildRoundPulse(source: PulseSource, roundId: string): RoundPuls
   const warnings: string[] = [];
   const matches: RoundPulseMatch[] = [];
   const eligibleMatches = new Set<string>();
+  const expectedPlayed = new Set<string>();
   const totalPoints = {published: 0, playedSingles: 0, playedDoubles: 0,
     awarded: 0, automatic: 0, rosterNoShow: 0, womenBonus: 0, other: 0, unitemized: 0};
   let snapshotCount = 0;
@@ -94,6 +95,7 @@ export function buildRoundPulse(source: PulseSource, roundId: string): RoundPuls
       (contest.format === 'Singles' || contest.format === 'Doubles') &&
       contest.homePlayers.length === (contest.format === 'Singles' ? 1 : 2) &&
       contest.awayPlayers.length === (contest.format === 'Singles' ? 1 : 2));
+    for (const c of fullContests) expectedPlayed.add(`${match.id}:${c.id}`);
     const playedSingles = fullContests.filter(c=>c.format==='Singles').length;
     const playedDoubles = fullContests.filter(c=>c.format==='Doubles').length * 2;
     totalPoints.playedSingles += playedSingles;
@@ -120,6 +122,8 @@ export function buildRoundPulse(source: PulseSource, roundId: string): RoundPuls
   const verified = complete && snapshotCount === finalized
     && rawRows.length === eligible.length
     && rawRows.every(p => eligibleRowKeys.has(`${p.match_id}:${p.contest_id}:${p.player_id}`))
+    && new Set(eligible.map(p=>key(p))).size === expectedPlayed.size
+    && [...expectedPlayed].every(contestKey => eligible.some(p=>key(p)===contestKey))
     && !warnings.length;
 
   const sorted = [...matches].sort((a,b) => b.margin - a.margin || a.matchId.localeCompare(b.matchId));
