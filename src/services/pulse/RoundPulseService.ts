@@ -21,7 +21,7 @@ export type RoundPulseData = {
   homeWins: number; awayWins: number; ties: number;
   players: number | null; singles: number | null; doubles: number | null;
   points: {published: number; playedSingles: number; playedDoubles: number;
-    awarded: number; rosterNoShow: number; womenBonus: number; other: number;
+    awarded: number; automatic: number; rosterNoShow: number; womenBonus: number; other: number;
     unitemized: number} | null;
   upsetCount: number | null; upsetRate: number | null; biggestUpset: RoundPulseUpset | null;
   teamUpsets: {team: string; opponent: string; winChance: number}[];
@@ -50,7 +50,7 @@ export function buildRoundPulse(source: PulseSource, roundId: string): RoundPuls
   const matches: RoundPulseMatch[] = [];
   const eligibleMatches = new Set<string>();
   const totalPoints = {published: 0, playedSingles: 0, playedDoubles: 0,
-    awarded: 0, rosterNoShow: 0, womenBonus: 0, other: 0, unitemized: 0};
+    awarded: 0, automatic: 0, rosterNoShow: 0, womenBonus: 0, other: 0, unitemized: 0};
   let snapshotCount = 0;
 
   for (const match of scheduled) {
@@ -87,8 +87,19 @@ export function buildRoundPulse(source: PulseSource, roundId: string): RoundPuls
     eligibleMatches.add(match.id);
     snapshotCount++;
     totalPoints.published += result.home_score + result.away_score;
-    totalPoints.playedSingles += breakdown.playedSingles.home + breakdown.playedSingles.away;
-    totalPoints.playedDoubles += breakdown.doubles.home + breakdown.doubles.away;
+    // An award entered on a one-sided contest must never be counted as a
+    // *played* point merely because the display row has a W/L outcome.
+    const fullContests = snapshot.contests.filter(contest =>
+      !contest.unplayed &&
+      (contest.format === 'Singles' || contest.format === 'Doubles') &&
+      contest.homePlayers.length === (contest.format === 'Singles' ? 1 : 2) &&
+      contest.awayPlayers.length === (contest.format === 'Singles' ? 1 : 2));
+    const playedSingles = fullContests.filter(c=>c.format==='Singles').length;
+    const playedDoubles = fullContests.filter(c=>c.format==='Doubles').length * 2;
+    totalPoints.playedSingles += playedSingles;
+    totalPoints.playedDoubles += playedDoubles;
+    totalPoints.automatic += (breakdown.playedSingles.home + breakdown.playedSingles.away
+      + breakdown.doubles.home + breakdown.doubles.away) - playedSingles - playedDoubles;
     totalPoints.unitemized += breakdown.unitemized.home + breakdown.unitemized.away;
     for (const adjustment of adjustments) {
       totalPoints.awarded += adjustment.points;
@@ -123,7 +134,7 @@ export function buildRoundPulse(source: PulseSource, roundId: string): RoundPuls
     ties: matches.filter(m=>m.winner === null).length,
     players: null, singles: null, doubles: null, points: snapshotCount === finalized && snapshotCount > 0
       ? {...totalPoints, published: rounded(totalPoints.published), playedSingles: rounded(totalPoints.playedSingles),
-        playedDoubles: rounded(totalPoints.playedDoubles), awarded: rounded(totalPoints.awarded),
+        playedDoubles: rounded(totalPoints.playedDoubles), awarded: rounded(totalPoints.awarded), automatic: rounded(totalPoints.automatic),
         rosterNoShow: rounded(totalPoints.rosterNoShow), womenBonus: rounded(totalPoints.womenBonus),
         other: rounded(totalPoints.other), unitemized: rounded(totalPoints.unitemized)}
       : null,
@@ -242,6 +253,7 @@ export function copyRoundPulse(summary: RoundPulseData): string {
     for(const row of summary.formatLeaders)rows.push(`${row.format} leader: ${row.team}, ${row.points}/${row.played} played contests (${row.pct}%).`);
     for(const item of summary.teamUpsets)rows.push(`Verified team upset: ${item.team} over ${item.opponent} (${(100*item.winChance).toFixed(1)}% saved pre-match chance).`);
   } else rows.push('Player totals, CI rankings and upset counts pending full verification.');
+  if(summary.points?.automatic)rows.push(`Automatic or one-sided scoreboard points not counted as played: ${score(summary.points.automatic)}.`);
   if(summary.points && Math.abs(summary.points.unitemized)>.001)rows.push('CAUTION: Some published team points could not be fully itemized from the available ledger.');
   if(summary.warnings.length)rows.push('Limitations: '+summary.warnings.join(' | '));
   return rows.join('\n');
