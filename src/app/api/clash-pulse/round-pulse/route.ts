@@ -1,7 +1,7 @@
 import {requireClashPulseReader} from '@/services/pulse/PulseReaderAccess';
 import {StoryAccessError} from '@/services/stories/StoryEditorAccess';
 import {loadPulseOptions, loadPulseSource} from '@/services/pulse/PulseLibraryService';
-import {buildRoundPulse} from '@/services/pulse/RoundPulseService';
+import {buildRoundPulse, copyRoundPulse} from '@/services/pulse/RoundPulseService';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
       }
       const source = await loadPulseSource(supabase,active.id,roundId);
       const data = buildRoundPulse(source,roundId);
-      return Response.json(data,{headers:{'Cache-Control':'private, no-store'}});
+      return Response.json({...data,briefing:copyRoundPulse(data)},{headers:{'Cache-Control':'private, no-store'}});
     }
 
     const {data: results,error} = await supabase.from('launch_match_results')
