@@ -1,0 +1,53 @@
+.root { display: grid; gap: 24px; padding-bottom: 64px; }
+.searchPanel { padding: 20px 22px 16px; border: 1px solid rgba(221,177,90,.48); border-radius: 12px; background: #151a1d; box-shadow: 0 9px 30px rgba(0,0,0,.16); }
+.searchPanel label { display: block; margin-bottom: 11px; font-size: 13px; font-weight: 850; letter-spacing: .035em; color: #f3f4f1; }
+.searchRow { display:flex; align-items:center; gap: 9px; border: 1px solid #606366; border-radius: 8px; background:#090c0e; padding: 4px 7px 4px 12px; }
+.searchRow:focus-within { outline: 2px solid #cfaa61; outline-offset: 2px; }
+.searchIcon { font-size: 23px; color: #cfaa61; line-height:1; font-weight:bold; }
+.searchRow input { width: 100%; min-width:0; border:0 !important; outline:0 !important; box-shadow:none !important; color:#f8f8f6; background:transparent !important; font: inherit; font-size:15px; min-height:42px; padding:0 3px; }
+.searchRow input::placeholder { color: #9ca4a8; }
+.searchRow button, .noResults button { border:1px solid #585c5f; background:#242b2e; color:#f5f6f3; border-radius:6px; padding:9px 13px; cursor:pointer; font-weight:750; }
+.searchRow button:hover, .noResults button:hover { border-color:#d6b16b; }
+.searchHelp { margin: 10px 0 0; color:#b7bfc1; font-size:12px; }
+.matchCount { color:#e6c589; font-size:12px; font-weight:700; margin:8px 0 0; }
+.sectionsNav { display:flex; flex-wrap:wrap; gap:8px; }
+.sectionsNav a { display:inline-flex; align-items:center; padding:9px 12px; font-size:12px; font-weight:760; color:#d7dedf; border:1px solid #393f42; border-radius:999px; background:#191e20; text-decoration:none; }
+.sectionsNav a:hover,.sectionsNav a:focus-visible { border-color:#ddbc78; color:#fff; }
+.document { display:grid; gap:18px; }
+.section { scroll-margin-top:110px; overflow:hidden; background:#171c1f; border:1px solid #30383b; border-radius:12px; }
+.sectionHeader { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:16px 20px; background:linear-gradient(105deg,#242b2f,#1d2326); border-bottom:1px solid #343c40; border-left:3px solid #d6ad60; }
+.sectionHeader h2 { margin:0; color:#f5f5f3; font-size:clamp(17px,2.2vw,22px); line-height:1.25; }
+.sectionCount { color:#9ea9ae; font-size:11px; flex:none; }
+.entries { padding: 12px 19px 16px; }
+.entry { display:flex; align-items:flex-start; gap:11px; padding:11px 0; border-bottom:1px solid rgba(191,199,203,.10); }
+.entry:last-child { border-bottom:0; }
+.bullet { width:12px; flex:none; color:#ceaa65; font-size:15px; line-height:1.65; }
+.entry p { font-size:14px; line-height:1.7; margin:0; color:#e1e5e5; overflow-wrap:anywhere; }
+.level1 { margin-left:20px; }
+.level2 { margin-left:40px; }
+.level3 { margin-left:60px; }
+.level1 .bullet { color:#adb5b6; }
+.level2 .bullet,.level3 .bullet { color:#849298; }
+.updated { display:inline-block; margin-left:10px; color:#e4bf7b; font-weight:750; font-size:11px; white-space:normal; }
+.highlight { background:#ebd18a; color:#182024; padding:0 1px; border-radius:2px; }
+.formatTableWrap { margin:17px 0 8px; }
+.formatTableWrap h3 { font-size:14px; color:#f0e5d1; margin:0 0 12px; }
+.formatTable { width:100%; border-collapse:collapse; font-size:13px; color:#e3e6e7; }
+.formatTable th, .formatTable td { text-align:left; padding:10px; border-bottom:1px solid #3a4144; }
+.formatTable th { background:#292f32; font-weight:750; color:#f1e4ce; }
+.noResults { padding:30px 20px; background:#171c1f; border:1px solid #343c40; border-radius:12px; }
+.noResults h2 { font-size:18px; margin:0 0 12px; }
+.noResults p { color:#c3cccf; margin:0 0 16px; }
+@media (max-width:600px) {
+ .searchPanel { padding:17px 14px 14px; }
+ .searchRow input { font-size:14px; }
+ .sectionsNav { max-height:180px; overflow-y:auto; gap:7px; }
+ .sectionsNav a { font-size:11px; padding:8px 10px; }
+ .sectionHeader { padding:14px 13px; }
+ .entries { padding:7px 12px 13px; }
+ .entry { gap:8px; padding:9px 0; }
+ .entry p { font-size:13px; }
+ .level1 { margin-left:12px; }
+ .level2 { margin-left:24px; }
+ .level3 { margin-left:36px; }
+}
