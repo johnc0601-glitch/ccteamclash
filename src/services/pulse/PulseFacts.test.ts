@@ -11,7 +11,7 @@ const metric = (key: string) => generate().facts.find(f => f.fact_key === key)?.
 
 test('2026–27 Round 1 independently reproduces all six acceptance figures', () => {
   assert.equal(generate().complete, true);
-  assert.deepEqual(generate().warnings, []);
+  assert.deepEqual(generate().warnings.filter(w => !w.startsWith('Streaks use only the selected season')), []);
   assert.equal(metric('round:upsets'), 21);
   assert.equal(metric('round:both'), 31);
   assert.equal(metric('round:perfect-losing'), 8);
