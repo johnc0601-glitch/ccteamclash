@@ -51,3 +51,10 @@
  .level2 { margin-left:24px; }
  .level3 { margin-left:36px; }
 }
+
+.draftNotes { margin: 2px 0 19px; border-bottom: 1px solid #485054; padding: 7px 3px 17px; }
+.draftNotes h3 { margin:0 0 13px; color:#e4ebeb; font-size:15px; }
+.draftNote { padding:8px 0 10px; }
+.draftStatus { display:block; color:#d8bd8b; font-size:11px; letter-spacing:.02em; margin-bottom:4px; }
+.draftNote p { margin:0; color:#dfe5e5; font-size:13px; line-height:1.65; }
+.sourceHeading { margin:11px 0 8px; color:#aeb8ba; font-size:12px; font-weight:750; }

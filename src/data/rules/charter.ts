@@ -781,3 +781,40 @@ export const finalsMatchFormats = [
   {players: 16, doubles: 4, singles: 8},
   {players: 18, doubles: 5, singles: 8},
 ] as const;
+
+
+// Draft reconciliation notes for the 2026–27 review. Original charter items above
+// remain visible as source text, without silently adopting unresolved alterations.
+export type CharterDraftNote = {
+  status: 'Agreed update' | 'Clarification proposed' | 'Decision required';
+  text: string;
+};
+export const charterDraftNotes: Record<string, CharterDraftNote[]> = {
+  rosters: [
+    {status: 'Agreed update', text: 'The regular match playing roster has 18 designated positions: a maximum of 16 men, including two players age 50 or older, and two positions reserved for women. A team lacking women must not fill those protected positions with additional men.'},
+    {status: 'Clarification proposed', text: 'A season team roster identifies which team a player belongs to; the playing roster is the lineup for an individual match. Being on the season team roster does not by itself establish that a player attended or played a match.'},
+    {status: 'Clarification proposed', text: 'During regular-season matches, a woman may be called up from the league player pool or another team when available, consistent with the original charter. Finals are restricted to eligible rostered players; borrowed women may not be called up for finals.'},
+    {status: 'Decision required', text: 'The 2025–26 charter says the maximum team roster is 28 while also specifying 25 men plus four women (29 players), with an exception for additional women. Commissioners must confirm the 2026–27 overall cap and the treatment of extra women before this wording is replaced.'}
+  ],
+  'roster-moves': [
+    {status: 'Clarification proposed', text: 'Keep separate rules for season-team roster membership and Friday match playing-roster submissions. The first match makes season-team membership official under the prior charter; each match playing roster locks Friday at noon Eastern.'},
+    {status: 'Decision required', text: 'The older charter allows eight counted season roster moves. Confirm whether the 2026–27 limit remains eight and whether there is a season cutoff; do not assume matchday edits count as season roster moves.'}
+  ],
+  'roster-penalties': [
+    {status: 'Agreed update', text: 'Each captain must submit the official playing roster by 12:00 PM (noon) Eastern on the Friday immediately before a scheduled match. The old 24-hour deadline and the website’s 3:00 PM Matchday lock do not set the league deadline.'},
+    {status: 'Agreed update', text: 'A player listed on the official playing roster who does not attend incurs a 0.5-point award to the opposing team. If that player is also placed in a matchup and does not compete, the opponent receives an additional 0.5 point.'},
+    {status: 'Clarification proposed', text: 'Record rostered no-shows, unplayed contest positions, and other penalties as distinct score components. Award each named penalty once; do not treat a team’s roster count alone as proof of a no-show or double-count an unplayed position.'},
+    {status: 'Decision required', text: 'The old charter allows minor corrections during matchups if both captains agree. Clarify how that interacts with the new requirement for commissioner approval of official roster changes after the Friday noon deadline.'}
+  ],
+  penalties: [
+    {status: 'Clarification proposed', text: 'For ordinary matches, assess missing-player and unfilled-position awards from the actual eligible players and recorded round positions, not simply the number of names registered on a team. The source charter awards one point per missing player per round, subject to its exceptions.'},
+    {status: 'Agreed update', text: 'A rostered no-show awards 0.5 point to the opponent; a no-show player already assigned to a matchup incurs an additional 0.5 point. These are separate from ordinary contest results. Commissioners must reconcile the complete score and avoid duplicate adjustments.'},
+    {status: 'Clarification proposed', text: 'The women’s shortage award in the original charter is one point per round for each extra woman the opponent actually plays, up to the applicable playing roster. Match victories remain separately scored. Protect the two women’s positions rather than replacing them with additional men.'},
+    {status: 'Clarification proposed', text: 'For reduced second-round participation, use the original charter’s extra one-point-per-missing-player provision only when supported by the actual first- and second-round lineups. Display it separately from other automatic or administrative awards.'},
+    {status: 'Decision required', text: 'The 2025–26 examples do not consistently explain overlapping missing-player, women’s, and reduced-round adjustments. Validate those examples against recorded matches before replacing them; the inherited examples shown below are historical, not a new ruling.'},
+    {status: 'Decision required', text: 'Confirm whether the 12-men-plus-two-women makeup-match penalty exception and the one-point-per-round penalty for players added beyond the season move limit remain in effect in 2026–27.'}
+  ],
+  'match-scoring': [
+    {status: 'Decision required', text: 'The inherited charter describes a 0–18 forfeiture elsewhere but current normal regular-season match scoring offers 36 ordinary competition points. Confirm official forfeit scoring before changing it in the charter.'}
+  ]
+};
