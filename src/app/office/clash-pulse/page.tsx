@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import {AroundTheClashDesk} from '@/components/commissioner/AroundTheClashDesk';
+import {RoundPulsePanel} from '@/components/commissioner/RoundPulsePanel';
 import {ClashPulseLiveManager} from '@/components/commissioner/ClashPulseLiveManager';
 import {OfficePage} from '@/components/commissioner/OfficePage';
 import {getClashPulseFactData} from '@/services/stories/ClashPulseFactCandidateService';
@@ -25,7 +26,9 @@ export default async function CommissionerClashPulsePage() {
           </div>
           <Link href="/office">Office dashboard</Link>
         </header>
-        <AroundTheClashDesk factData={factData} />
+        <RoundPulsePanel />
+        <RoundPulsePanel />
+      <AroundTheClashDesk factData={factData} />
         <ClashPulseLiveManager />
         <CollapsiblePulseFactLibrary />
       </section>
