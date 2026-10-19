@@ -1,8 +1,8 @@
-.page { max-width:1000px; }
-.hero { padding:29px 0 17px; }
-.hero h1 { margin:10px 0; color:#f5f5f3; font-size:clamp(31px,4vw,48px); letter-spacing:-.025em; }
-.hero p { margin:0; color:#bac4c7; font-size:15px; }
-.reviewNote { background:#222525; border:1px solid #6c5840; border-left:4px solid #c8a46b; border-radius:10px; padding:16px 20px; margin:0 0 22px; }
-.reviewNote strong { color:#f1d29a; }
-.reviewNote p { color:#d2d8d8; font-size:13px; line-height:1.6; margin:8px 0 0; }
-@media(max-width:600px){ .hero { padding-top:21px; } .reviewNote{padding:13px 14px;} }
+.page { max-width:1140px; }
+.hero { padding:22px 0 19px; }
+.hero h1 { margin:8px 0 11px; color:var(--cc-text); font-family:var(--cc-font-display); font-size:clamp(35px,5vw,54px); font-style:italic; line-height:1; text-transform:uppercase; letter-spacing:-.025em; }
+.hero p { margin:0; color:var(--cc-text-muted); font-size:14px; line-height:1.6; }
+.reviewNote { margin:0 0 22px; padding:16px 20px; background:#fbf5e8; border:1px solid #ded0b5; border-left:4px solid var(--cc-gold); border-radius:8px; }
+.reviewNote strong { color:#6a4f10; font-weight:850; }
+.reviewNote p { margin:8px 0 0; color:#4b5152; font-size:13px; line-height:1.65; }
+@media(max-width:600px) { .hero { padding-top:18px; } .reviewNote { padding:13px 14px; } }

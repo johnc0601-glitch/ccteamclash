@@ -1,6 +1,6 @@
 'use client';
 
-import {useMemo, useState, type ReactNode} from 'react';
+import {useMemo, useRef, useState, type ReactNode} from 'react';
 import {charterDraftNotes, charterSections, finalsMatchFormats} from '@/data/rules/charter';
 import styles from './RulesDocument.module.css';
 
@@ -23,6 +23,7 @@ function Highlight({value, query}: {value: string; query: string}) {
 
 export function RulesDocument() {
   const [search, setSearch] = useState('');
+  const outlineRef = useRef<HTMLDetailsElement>(null);
   const query = search.trim().toLocaleLowerCase();
   const results = useMemo(() => charterSections.map((section) => {
     const titleMatch = section.title.toLocaleLowerCase().includes(query);
@@ -62,13 +63,29 @@ export function RulesDocument() {
         </p>
       </div>
 
-      {!query ? (
-        <nav className={styles.sectionsNav} aria-label="Rules sections">
-          {charterSections.map((section) => <a key={section.id} href={`#rule-${section.id}`}>{section.title}</a>)}
-        </nav>
-      ) : null}
-
-      <div className={styles.document}>
+      <div className={styles.contentLayout}>
+        <aside className={styles.desktopOutline} aria-label="Rules table of contents">
+          <span className={styles.outlineEyebrow}>On this page</span>
+          <nav aria-label="Rules sections">
+            {results.map(({section}) => (
+              <a key={section.id} href={`#rule-${section.id}`}>{section.title}</a>
+            ))}
+          </nav>
+        </aside>
+        <details ref={outlineRef} className={styles.mobileOutline}>
+          <summary>
+            <span>Browse {query ? 'matching' : 'all'} sections</span>
+            <small>{results.length} sections</small>
+          </summary>
+          <nav aria-label="Rules section outline">
+            {results.map(({section}) => (
+              <a key={section.id} href={`#rule-${section.id}`} onClick={() => {
+                if (outlineRef.current) outlineRef.current.open = false;
+              }}>{section.title}</a>
+            ))}
+          </nav>
+        </details>
+        <div className={styles.document}>
         {results.length === 0 ? (
           <div className={styles.noResults}>
             <h2>No matching rules found</h2>
@@ -93,12 +110,12 @@ export function RulesDocument() {
                   ))}
                 </div>
               ) : null}
-              {notes.length > 0 && items.length > 0 ? <h3 className={styles.sourceHeading}>2025–26 charter wording (source reference, with agreed roster-lock updates)</h3> : null}
+              {notes.length > 0 && items.length > 0 ? <h3 className={styles.sourceHeading}>Original charter provisions, with agreed 2026–27 updates labeled</h3> : null}
               {items.map((item, index) => (
                 <div key={`${section.id}-${index}`} className={`${styles.entry} ${styles[`level${Math.min(item.level, 3)}`]}`}>
                   <span className={styles.bullet} aria-hidden="true">•</span>
                   <p><Highlight value={item.text} query={query}/>
-                    {item.updated ? <span className={styles.updated}>2026–27 roster-lock revision</span> : null}
+                    {item.updated ? <span className={styles.updated}>{item.updatedLabel ?? '2026–27 roster-lock revision'}</span> : null}
                   </p>
                 </div>
               ))}
@@ -114,6 +131,7 @@ export function RulesDocument() {
             </div>
           </section>
         ))}
+        </div>
       </div>
     </div>
   );
