@@ -186,3 +186,47 @@
   .sourceHeading { font-size:13px; }
   .formatTable th,.formatTable td { font-size:13px; padding:12px 8px; }
 }
+
+
+/* Each Rules topic is one rounded section card, not a stack of individual
+   boxed paragraphs. Nested rules remain indented, like a readable handbook. */
+.entries { padding:14px 23px 28px; }
+.entry,
+.entry:last-child {
+  margin:0;
+  padding:9px 2px;
+  background:transparent;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+}
+.entry.level0:not(:first-child) { margin-top:5px; }
+.entry p { line-height:1.72; }
+.bullet { flex:0 0 12px; }
+.draftNotes {
+  margin:6px 0 22px;
+  padding:17px 20px 20px;
+  background:#faf8f2;
+  border:1px solid #e3d7bc;
+  border-radius:14px;
+}
+.draftNotes h3 { margin:0 0 9px; }
+.draftNote {
+  margin:0;
+  padding:12px 0;
+  background:transparent;
+  border:0;
+  border-radius:0;
+}
+.draftNote + .draftNote { border-top:1px solid #e8dfce; }
+.draftStatus { margin-bottom:5px; }
+.sourceHeading { margin:18px 0 8px; }
+@media(max-width:600px) {
+  .entries { padding:11px 16px 23px; }
+  .entry,
+  .entry:last-child { padding:9px 0; gap:9px; }
+  .entry.level0:not(:first-child) { margin-top:3px; }
+  .entry p { font-size:16px; line-height:1.67; }
+  .draftNotes { padding:15px 16px 17px; border-radius:13px; }
+  .draftNote { padding:12px 0; }
+}
