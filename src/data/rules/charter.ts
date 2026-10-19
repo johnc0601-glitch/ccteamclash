@@ -88,19 +88,35 @@ export const charterSections: CharterSection[] = [
         "level": 2
       },
       {
-        "text": "Castle Hayne 1  Cougar Country",
+        "text": "Castle Hayne 1",
         "level": 0
       },
       {
-        "text": "Joe Eaks Park  Wild Turkey",
+        "text": "Cougar Country",
         "level": 0
       },
       {
-        "text": "The Beast  Jacksonville",
+        "text": "Joe Eaks Park",
         "level": 0
       },
       {
-        "text": "Castle Hayne 2  Myrtle Beach",
+        "text": "Wild Turkey",
+        "level": 0
+      },
+      {
+        "text": "The Beast",
+        "level": 0
+      },
+      {
+        "text": "Jacksonville",
+        "level": 0
+      },
+      {
+        "text": "Castle Hayne 2",
+        "level": 0
+      },
+      {
+        "text": "Myrtle Beach",
         "level": 0
       }
     ]
@@ -684,7 +700,7 @@ export const charterSections: CharterSection[] = [
         "level": 0
       },
       {
-        "text": "Captains can choose singles or doubles in any order up to the max (see breakdown below). # of # of double # of single players matches matches",
+        "text": "Captains can choose singles or doubles in any order up to the max (see breakdown below).",
         "level": 0
       },
       {
