@@ -2,6 +2,7 @@ import {buildFinalScoreBreakdown} from '@/services/matches/FinalScoreBreakdown';
 import type {FinalMatchdayV2Snapshot} from '@/services/matches/FinalMatchdayCanary';
 import {calculateLockedRosterPrediction} from '@/services/teamStrength/LockedRosterPrediction';
 import {TEAM_STRENGTH_VERSION} from '@/services/teamStrength/TeamStrength';
+import {generateStreakFacts} from './PulseStreaks';
 
 export type PulseRound = {id: string; season_id: string; number: number; name: string; date: string | null};
 export type PulseMatch = {id: string; season_id: string; round_id: string; date: string | null;
@@ -25,7 +26,7 @@ export type PulseSource = {
   rosterManifests?: {match_id: string; team_id: string}[];
   frozenRatings?: {match_id: string; team_id: string; player_id: string; clash_index_before: number}[];
 };
-export type PulseCategory = 'Match' | 'Upsets' | 'CI movement' | 'Achievements' | 'Round' | 'History' | 'Upcoming' | 'Editorial';
+export type PulseCategory = 'Match' | 'Upsets' | 'CI movement' | 'Achievements' | 'Round' | 'Streaks' | 'Broken streaks' | 'History' | 'Upcoming' | 'Editorial';
 export type PulseReference = {table: string; ids: string[]};
 export type PulseFact = {
   fact_key: string; category: PulseCategory; fact_text: string; match_id: string | null;
@@ -41,6 +42,24 @@ const ref = (table: string, ids: string[]): PulseReference => ({table, ids: [...
 
 /** All probabilities come from the persisted pre-result calculation, never current CI. */
 export function generateRoundFacts(source: PulseSource, roundId: string): PulseReport {
+  const report = analyzeRound(source, roundId);
+  const round = source.rounds.find(r => r.id === roundId)!;
+  const verified = source.rounds
+    .filter(r => r.season_id === round.season_id && r.number <= round.number)
+    .flatMap(r => r.id === roundId ? report.eligible : analyzeRound(source, r.id).eligible);
+  const facts = [...report.facts, ...generateStreakFacts(source, round, verified)]
+    .sort((a, b) => a.fact_key.localeCompare(b.fact_key));
+  return {
+    facts, complete: report.complete, finalized: report.finalized,
+    scheduled: report.scheduled,
+    warnings: [...report.warnings,
+      'Streaks use only the selected season through this round. Team runs use official scores; player runs require verified played singles or doubles. Missing or ambiguous results interrupt runs.'],
+  };
+}
+
+/** The original generator is unchanged for individual round facts; the verified
+ * played participants also feed streak calculations for prior rounds. */
+function analyzeRound(source: PulseSource, roundId: string): PulseReport & {eligible: PulseRating[]} {
   const round = source.rounds.find(r => r.id === roundId);
   if (!round) throw new Error('Unknown round.');
   const matches = source.matches.filter(m => m.round_id === roundId && m.season_id === round.season_id);
@@ -224,12 +243,12 @@ export function generateRoundFacts(source: PulseSource, roundId: string): PulseR
     `Round ${nextRound.number}: ${match.away_name} at ${match.home_name}${match.date ? ` — ${match.date}` : ' — date TBD'}.`,
     [ref('launch_schedule_matches', [match.id])], 'Scheduled next round matchup; subject to schedule changes.', {match_id: match.id, team_ids: [match.away_team_id, match.home_team_id]});
   if (!complete) warnings.push(`Partial round: ${finalized.length}/${matches.length} finalized. Complete round statistics require four finalized matches.`);
-  return {facts: facts.sort((a,b) => a.fact_key.localeCompare(b.fact_key)), complete: statsComplete, finalized: finalized.length, scheduled: matches.length, warnings};
+  return {facts: facts.sort((a,b) => a.fact_key.localeCompare(b.fact_key)), complete: statsComplete, finalized: finalized.length, scheduled: matches.length, warnings, eligible};
 }
 
 export function exportRoundFacts(label: string, facts: SavedPulseFact[], warnings: string[] = []): string {
   const visible = facts.filter(f => f.is_current && f.status !== 'hidden');
-  const categories: PulseCategory[] = ['Match', 'Upsets', 'CI movement', 'Achievements', 'Round', 'History', 'Upcoming', 'Editorial'];
+  const categories: PulseCategory[] = ['Match', 'Upsets', 'CI movement', 'Achievements', 'Round', 'Streaks', 'Broken streaks', 'History', 'Upcoming', 'Editorial'];
   const lines = [`CLASH PULSE — ${label}`, 'Verified statistical briefing for a separately written recap. Do not invent missing records or probabilities.',
     'Review: pending facts are labeled; editorial entries are commissioner supplied. Hidden and superseded facts are excluded. Long source lists are abbreviated; full references remain in the library.',
     ...warnings.map(w => `DATA NOTE: ${w}`)];
