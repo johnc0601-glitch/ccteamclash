@@ -1,4 +1,5 @@
-import {requireStoryCommissioner, StoryAccessError} from '@/services/stories/StoryEditorAccess';
+import {StoryAccessError} from '@/services/stories/StoryEditorAccess';
+import {requireClashPulseReader} from '@/services/pulse/PulseReaderAccess';
 import {verifiedRoundRatings, generateRoundFacts} from '@/services/pulse/PulseFacts';
 import {generateAcrossSeasonStreakFacts} from '@/services/pulse/PulseHistoricalStreaks';
 import {loadHistoricalStreakSource} from '@/services/pulse/PulseHistoricalStreakLoader';
@@ -11,7 +12,7 @@ export const dynamic = 'force-dynamic';
  * saved fact, published highlight, rating, or finalized match. */
 export async function GET(request: Request) {
   try {
-    const {supabase} = await requireStoryCommissioner();
+    const {supabase, isCommissioner} = await requireClashPulseReader();
     const roundId = new URL(request.url).searchParams.get('round');
     if (!roundId || roundId.length > 200) {
       return Response.json({error: 'Select a valid round.'}, {status: 400});
@@ -19,6 +20,12 @@ export async function GET(request: Request) {
     const {rounds} = await loadPulseOptions(supabase);
     const round = rounds.find(item => item.id === roundId);
     if (!round) return Response.json({error: 'Round not found.'}, {status: 404});
+    if (!isCommissioner) {
+      const {data: season, error} = await supabase.from('launch_seasons')
+        .select('id').eq('id', round.season_id).eq('published', true).maybeSingle();
+      if (error) throw error;
+      if (!season) return Response.json({error: 'Round not available to readers.'}, {status: 403});
+    }
     const [source, archive] = await Promise.all([
       loadPulseSource(supabase, round.season_id, round.id),
       loadHistoricalStreakSource(supabase),
