@@ -116,6 +116,7 @@ export function RoundPulsePanel() {
             {data.points?<>
               <p>Published team points: <strong>{number(data.points.published)}</strong></p>
               <p>Played singles points: <strong>{number(data.points.playedSingles)}</strong> · Played doubles points: <strong>{number(data.points.playedDoubles)}</strong></p>
+              <p>Automatic or one-sided scoreboard points (not played): <strong>{number(data.points.automatic)}</strong></p>
               <p>Extra team awards: <strong>{number(data.points.awarded)}</strong> (no-show/penalty {number(data.points.rosterNoShow)}, women's bonus {number(data.points.womenBonus)}, other {number(data.points.other)})</p>
               {Math.abs(data.points.unitemized)>.001&&<p>Unitemized points requiring review: {number(data.points.unitemized)}</p>}
             </>:<p>Published points breakdown pending locked scoreboards.</p>}
