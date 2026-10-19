@@ -38,7 +38,9 @@ drop policy if exists "pulse readers select current visible facts" on public.cla
 create policy "pulse readers select current visible facts"
   on public.clash_pulse_facts for select to authenticated
   using (
-    is_current and status <> 'hidden' and exists (
+    is_current and status <> 'hidden'
+    and exists (select 1 from public.launch_seasons s where s.id = clash_pulse_facts.season_id and s.published = true)
+    and exists (
       select 1 from public.clash_pulse_readers r
       join public.launch_profiles p on p.id = r.profile_id
       where p.user_id = (select auth.uid()) and p.status = 'Approved'
@@ -48,17 +50,25 @@ create policy "pulse readers select current visible facts"
 drop policy if exists "pulse readers select generation status" on public.clash_pulse_generations;
 create policy "pulse readers select generation status"
   on public.clash_pulse_generations for select to authenticated
-  using (exists (
-    select 1 from public.clash_pulse_readers r
-    join public.launch_profiles p on p.id = r.profile_id
-    where p.user_id = (select auth.uid()) and p.status = 'Approved'
-  ));
+  using (
+    exists (select 1 from public.launch_rounds rd join public.launch_seasons s on s.id = rd.season_id
+      where rd.id = clash_pulse_generations.round_id and s.published = true)
+    and exists (
+      select 1 from public.clash_pulse_readers r
+      join public.launch_profiles p on p.id = r.profile_id
+      where p.user_id = (select auth.uid()) and p.status = 'Approved'
+    )
+  );
 
 drop policy if exists "pulse readers select queue status" on public.clash_pulse_generation_queue;
 create policy "pulse readers select queue status"
   on public.clash_pulse_generation_queue for select to authenticated
-  using (exists (
-    select 1 from public.clash_pulse_readers r
-    join public.launch_profiles p on p.id = r.profile_id
-    where p.user_id = (select auth.uid()) and p.status = 'Approved'
-  ));
+  using (
+    exists (select 1 from public.launch_rounds rd join public.launch_seasons s on s.id = rd.season_id
+      where rd.id = clash_pulse_generation_queue.round_id and s.published = true)
+    and exists (
+      select 1 from public.clash_pulse_readers r
+      join public.launch_profiles p on p.id = r.profile_id
+      where p.user_id = (select auth.uid()) and p.status = 'Approved'
+    )
+  );
