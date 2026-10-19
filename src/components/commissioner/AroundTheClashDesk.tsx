@@ -9,18 +9,26 @@ import type {
   ClashPulseStoryType,
 } from './clashPulseFacts';
 import styles from './AroundTheClashDesk.module.css';
+import type {PulseRound} from '@/services/pulse/PulseFacts';
+import {ClashPulseStreaksPanel} from './ClashPulseStreaksPanel';
 
 const storyTypes: ClashPulseStoryType[] = ['Upset', 'Match Upset', 'Above Expectations', 'CI Mover', 'Close Match', 'Standout'];
 const contexts: ClashPulseContextFilter[] = ['All', 'Team', 'Singles', 'Doubles', 'Home', 'Road'];
+type StreakType = 'Streaks' | 'Broken streaks';
 
 type CardView = {
   candidate: ClashPulseFactCandidate;
   angle: ClashPulseFactAngle;
 };
 
-export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
+export function AroundTheClashDesk({factData, rounds, activeSeasonId}: {
+  factData: ClashPulseFactData;
+  rounds: PulseRound[];
+  activeSeasonId: string | null;
+}) {
   const [scopeId, setScopeId] = useState(factData.defaultScopeId);
   const [storyType, setStoryType] = useState<ClashPulseStoryType | 'Top Facts'>('Top Facts');
+  const [streakType, setStreakType] = useState<StreakType | null>(null);
   const [context, setContext] = useState<ClashPulseContextFilter>('All');
   const [selected, setSelected] = useState<Record<string, ClashPulseStoryType>>({});
   const [mobileQueueOpen, setMobileQueueOpen] = useState(false);
@@ -28,6 +36,14 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
   const [message, setMessage] = useState('');
 
   const activeScope = factData.scopes.find((scope) => scope.id === scopeId) ?? factData.scopes[0];
+  const latestScope = factData.scopes.find(scope => scope.id.startsWith('latest-round:'));
+  const latestRoundId = latestScope?.id.slice('latest-round:'.length);
+  // Only a verified active-season/latest-round scope can claim season streaks.
+  // Archived and All-Time options are deliberately not treated as contiguous runs.
+  const streakRoundId = activeScope?.id.startsWith('latest-round:')
+    ? activeScope.id.slice('latest-round:'.length)
+    : activeScope?.id === activeSeasonId ? latestRoundId : undefined;
+  const streakRound = rounds.find(round => round.id === streakRoundId) ?? null;
   const allCandidates = useMemo(
     () => factData.scopes.flatMap((scope) => scope.candidates),
     [factData.scopes],
@@ -152,6 +168,7 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
               type="button"
               onClick={() => {
                 setScopeId(scope.id);
+                setStreakType(null);
                 setStoryType('Top Facts');
                 setContext('All');
               }}
@@ -167,8 +184,8 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
           <button
             className={styles.filterButton}
             type="button"
-            onClick={() => setStoryType('Top Facts')}
-            aria-pressed={storyType === 'Top Facts'}
+            onClick={() => {setStreakType(null); setStoryType('Top Facts');}}
+            aria-pressed={!streakType && storyType === 'Top Facts'}
           >
             Top Facts {activeScope.topFactIds.length}
           </button>
@@ -179,15 +196,22 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
                 className={styles.filterButton}
                 key={item}
                 type="button"
-                onClick={() => setStoryType(item)}
-                aria-pressed={storyType === item}
+                onClick={() => {setStreakType(null); setStoryType(item);}}
+                aria-pressed={!streakType && storyType === item}
               >
                 {labelStoryType(item)} {storyCounts.get(item)}
               </button>
             ))}
+          {(['Streaks', 'Broken streaks'] as const).map(type => (
+            <button className={styles.filterButton} type="button" key={type}
+              aria-pressed={streakType === type}
+              onClick={() => setStreakType(type)}>
+              {type === 'Broken streaks' ? 'Broken Streaks' : type}
+            </button>
+          ))}
         </nav>
 
-        <span className={styles.filterLabel}>Context</span>
+        {!streakType && <><span className={styles.filterLabel}>Context</span>
         <div className={styles.contextRow} aria-label="Clash Pulse context filters">
           {contexts.map((item) => (
             <button
@@ -200,10 +224,12 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
               {item === 'All' ? 'All Results' : item === 'Team' ? 'Team Matches' : item}
             </button>
           ))}
-        </div>
+        </div></>}
       </div>
 
-      <div className={styles.workspace}>
+      {streakType ? (
+        <ClashPulseStreaksPanel round={streakRound} category={streakType} />
+      ) : <><div className={styles.workspace}>
         <section className={styles.factPanel}>
           <header className={styles.factHeader}>
             <div>
@@ -288,7 +314,7 @@ export function AroundTheClashDesk({factData}: {factData: ClashPulseFactData}) {
             </div>
           ) : null}
         </div>
-      ) : null}
+      ) : null}</>}
     </div>
   );
 }
