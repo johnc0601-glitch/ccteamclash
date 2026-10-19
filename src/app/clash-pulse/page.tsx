@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import {redirect} from 'next/navigation';
 import {AroundTheClashDesk} from '@/components/commissioner/AroundTheClashDesk';
+import {RoundPulsePanel} from '@/components/commissioner/RoundPulsePanel';
 import {CollapsiblePulseFactLibrary} from '@/components/commissioner/CollapsiblePulseFactLibrary';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {requireClashPulseReader} from '@/services/pulse/PulseReaderAccess';
@@ -28,10 +29,11 @@ export default async function ClashPulseReaderPage() {
         <span style={{fontSize: 12, textTransform: 'uppercase', letterSpacing: '.12em', opacity: .7}}>League research</span>
         <h1 style={{margin: '6px 0 10px'}}>Clash Pulse</h1>
         <p style={{maxWidth: 740, opacity: .8}}>
-          Browse Top Facts, Upsets, Match Upsets, CI Movers, and historical stories.
+          Browse league-wide Round Pulse statistics, Top Facts, Upsets, CI Movers, and historical stories.
           Tap a fact to copy it for Clash Cast or a recap. Read-only access: publishing and commissioner tools stay private.
         </p>
       </header>
+      <RoundPulsePanel />
       <AroundTheClashDesk factData={factData} readOnly />
       <CollapsiblePulseFactLibrary readOnly />
     </main>
