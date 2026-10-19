@@ -10,7 +10,11 @@ export const dynamic = 'force-dynamic';
 
 /** Read-only and calculated on demand: looking at a streak never rewrites a
  * saved fact, published highlight, rating, or finalized match. */
+// Streak research has been withdrawn pending verification. Keep the source
+// code for later review but do not serve unfinished streak claims.
 export async function GET(request: Request) {
+  return Response.json({error: 'Streak research is temporarily unavailable.'}, {status: 404});
+  /*
   try {
     const {supabase, isCommissioner} = await requireClashPulseReader();
     const roundId = new URL(request.url).searchParams.get('round');
@@ -53,4 +57,5 @@ export async function GET(request: Request) {
     console.error('[pulse-streaks]', error);
     return Response.json({error: 'Unable to calculate verified streaks for this round.'}, {status: 500});
   }
+  */
 }
