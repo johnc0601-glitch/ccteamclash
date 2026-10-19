@@ -6,3 +6,20 @@
 .reviewNote strong { color:#6a4f10; font-weight:850; }
 .reviewNote p { margin:8px 0 0; color:#4b5152; font-size:13px; line-height:1.65; }
 @media(max-width:600px) { .hero { padding-top:18px; } .reviewNote { padding:13px 14px; } }
+
+
+/* Match the rounded, readable Round Recap layout. */
+.hero p { font-size:16px; line-height:1.65; }
+.reviewNote {
+  padding:21px 24px;
+  border-radius:15px;
+  box-shadow:0 5px 18px rgba(28,31,33,.055);
+}
+.reviewNote > strong { display:block; font-size:17px; }
+.reviewNote p { font-size:15.5px; line-height:1.72; }
+@media(max-width:600px) {
+  .hero p { font-size:15px; }
+  .reviewNote { padding:18px 16px; border-radius:14px; }
+  .reviewNote > strong { font-size:16px; }
+  .reviewNote p { font-size:15px; line-height:1.7; }
+}
