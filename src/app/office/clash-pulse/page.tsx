@@ -27,8 +27,7 @@ export default async function CommissionerClashPulsePage() {
           <Link href="/office">Office dashboard</Link>
         </header>
         <RoundPulsePanel />
-        <RoundPulsePanel />
-      <AroundTheClashDesk factData={factData} />
+        <AroundTheClashDesk factData={factData} />
         <ClashPulseLiveManager />
         <CollapsiblePulseFactLibrary />
       </section>
