@@ -34,7 +34,11 @@ test('real 2026–27 Round 1 league totals reconcile with the published ledger',
   assert.equal(pulse.points?.womenBonus,2);
   assert.equal(pulse.points?.other,1);
   assert.equal(pulse.points?.unitemized,0);
-  assert.equal(pulse.players,new Set(fixture.ratings.map(p=>p.player_id)).size);
+  assert.equal(pulse.players,159);
+  assert.equal(pulse.topGainers[0]?.name,'Hastin McGill');
+  assert.equal(pulse.topGainers[0]?.change,25);
+  assert.equal(pulse.topDecliners[0]?.name,'Derek Hynds');
+  assert.equal(pulse.topDecliners[0]?.change,-23);
   assert.equal(JSON.stringify(fixture),before);
   assert.match(copyRoundPulse(pulse),/21 \(20% of played contests\)|21 \(20% of played contests\)/i);
 });
