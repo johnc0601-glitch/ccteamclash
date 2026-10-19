@@ -1,5 +1,7 @@
 import {requireStoryCommissioner, StoryAccessError} from '@/services/stories/StoryEditorAccess';
-import {generateRoundFacts} from '@/services/pulse/PulseFacts';
+import {verifiedRoundRatings, generateRoundFacts} from '@/services/pulse/PulseFacts';
+import {generateAcrossSeasonStreakFacts} from '@/services/pulse/PulseHistoricalStreaks';
+import {loadHistoricalStreakSource} from '@/services/pulse/PulseHistoricalStreakLoader';
 import {loadPulseOptions, loadPulseSource} from '@/services/pulse/PulseLibraryService';
 
 export const runtime = 'nodejs';
@@ -17,10 +19,17 @@ export async function GET(request: Request) {
     const {rounds} = await loadPulseOptions(supabase);
     const round = rounds.find(item => item.id === roundId);
     if (!round) return Response.json({error: 'Round not found.'}, {status: 404});
-    const source = await loadPulseSource(supabase, round.season_id, round.id);
+    const [source, archive] = await Promise.all([
+      loadPulseSource(supabase, round.season_id, round.id),
+      loadHistoricalStreakSource(supabase),
+    ]);
+    const verified = source.rounds
+      .filter(item => item.season_id === round.season_id && item.number <= round.number)
+      .flatMap(item => verifiedRoundRatings(source, item.id));
+    const facts = generateAcrossSeasonStreakFacts(source, round, verified, archive);
     const report = generateRoundFacts(source, round.id);
     const categorized = (category: 'Streaks' | 'Broken streaks') => {
-      const all = report.facts.filter(fact => fact.category === category)
+      const all = facts.filter(fact => fact.category === category)
         .sort((a, b) => (b.metric ?? 0) - (a.metric ?? 0)
           || a.fact_key.localeCompare(b.fact_key));
       return {count: all.length, facts: all.slice(0, 10)};
@@ -29,7 +38,7 @@ export async function GET(request: Request) {
       round: {id: round.id, number: round.number, date: round.date},
       ongoing: categorized('Streaks'),
       broken: categorized('Broken streaks'),
-      note: 'Season-only confirmed runs through this round. At least two consecutive results required. Missing or inconsistent sources interrupt streaks.',
+      note: 'Across recorded league seasons through this round. Team matches and separate singles/doubles appearances. Unknown team scores and unverifiable player appearances interrupt runs; at least two results required.',
       warnings: report.warnings.filter(w => /snapshot|ratings|result|streak/i.test(w)).slice(0, 8),
     }, {headers: {'Cache-Control': 'private, no-store'}});
   } catch (error) {
