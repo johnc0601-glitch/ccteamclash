@@ -439,3 +439,11 @@
     font-size: 12px;
   }
 }
+
+/* Season-scoped streaks share the same compact mobile-friendly fact card rhythm. */
+.streakToolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.streakCard { border: 1px solid var(--cc-card-border); border-radius: 9px; padding: 14px; background: var(--cc-card-bg); color: var(--cc-text); overflow-wrap: anywhere; }
+.streakCard strong { display: block; font-size: 15px; line-height: 1.5; }
+.streakCard details { margin-top: 10px; font-size: 12px; color: var(--cc-text-muted); }
+.streakCard details p { overflow-wrap: anywhere; }
+.streakNotes { font-size: 12px; color: var(--cc-text-muted); }

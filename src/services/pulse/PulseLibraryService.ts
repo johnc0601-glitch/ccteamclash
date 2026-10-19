@@ -38,7 +38,11 @@ export async function loadPulseSource(client: SupabaseClient, seasonId: string, 
     paged(db, 'launch_schedule_matches', 'id', 'season_id', [seasonId]),
     paged(db, 'launch_teams', 'id', undefined, undefined, 'id,name'),
   ]);
-  const ids = matches.filter(m => m.round_id === roundId).map(m => m.id);
+  const selected = options.rounds.find(r => r.id === roundId)!;
+  const priorRounds = new Set(options.rounds
+    .filter(r => r.season_id === seasonId && r.number <= selected.number)
+    .map(r => r.id));
+  const ids = matches.filter(m => priorRounds.has(m.round_id)).map(m => m.id);
   const [results, ratings, snapshots, adjustments, predictions, history, rosterPlayers, rosterManifests, frozenRatings] = await Promise.all([
     paged(db, 'launch_match_results', 'match_id', 'match_id', ids),
     paged(db, 'clash_contest_rating_facts', 'contest_id', 'match_id', ids),
