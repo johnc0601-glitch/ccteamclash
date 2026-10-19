@@ -2,6 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {revalidatePath, revalidateTag} from 'next/cache';
 import {requireStoryCommissioner, StoryAccessError} from '@/services/stories/StoryEditorAccess';
 import {loadPulseLibrary, loadPulseOptions, regeneratePulseRound} from '@/services/pulse/PulseLibraryService';
+import {requireClashPulseReader} from '@/services/pulse/PulseReaderAccess';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,9 +13,14 @@ function failure(error: unknown) {
 }
 export async function GET(request: Request) {
   try {
-    const {supabase} = await requireStoryCommissioner();
+    const {supabase, isCommissioner} = await requireClashPulseReader();
     const roundId = new URL(request.url).searchParams.get('round');
-    return Response.json(roundId ? await loadPulseLibrary(supabase, roundId) : await loadPulseOptions(supabase));
+    if (!roundId) return Response.json(await loadPulseOptions(supabase));
+    const library = await loadPulseLibrary(supabase, roundId);
+    return Response.json(isCommissioner ? library : {
+      ...library,
+      facts: library.facts.filter(fact => fact.status !== 'hidden' && fact.is_current),
+    });
   } catch (error) {return failure(error);}
 }
 export async function POST(request: Request) {
