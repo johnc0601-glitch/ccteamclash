@@ -230,3 +230,44 @@
   .draftNotes { padding:15px 16px 17px; border-radius:13px; }
   .draftNote { padding:12px 0; }
 }
+
+/* Penalties: one compact decision flow, contained within the subject card. */
+.penaltyDiagram {
+  margin:5px 0 27px;
+  padding:21px 22px 18px;
+  border:1px solid #ddd5c5;
+  border-radius:16px;
+  background:linear-gradient(145deg,#fcfaf5,#f7f4ec);
+  color:#2a3335;
+}
+.diagramTitle { margin:0 0 16px; font-size:20px; font-weight:850; line-height:1.35; }
+.diagramStart { max-width:410px; margin:0 auto; padding:13px 18px; border:1px solid #c6b78e; border-radius:10px; background:#fff; color:#303637; font-size:14px; font-weight:800; line-height:1.45; text-align:center; }
+.diagramStem { height:22px; width:2px; margin:0 auto; background:#bd9c58; position:relative; }
+.diagramStem::after { position:absolute; content:""; left:-4px; bottom:-1px; width:10px; height:10px; border-right:2px solid #bd9c58; border-bottom:2px solid #bd9c58; transform:rotate(45deg); }
+.diagramColumnHeads { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1.7fr); gap:35px; padding:8px 6px; color:#75653e; font-size:11px; font-weight:900; letter-spacing:.06em; text-transform:uppercase; }
+.diagramPaths { border-top:2px solid #c9b78d; }
+.diagramPath {
+  display:grid;
+  grid-template-columns:minmax(0,1.05fr) 26px minmax(0,1.7fr);
+  gap:10px;
+  align-items:center;
+  min-height:70px;
+  padding:11px 6px;
+  border-bottom:1px solid #dfd9cc;
+}
+.diagramPath:last-child { border-bottom:none; }
+.diagramTrigger { font-size:15px; font-weight:800; line-height:1.45; }
+.diagramArrow { font-size:24px; line-height:1; font-weight:800; color:#aa8232; text-align:center; }
+.diagramOutcome { font-size:14px; line-height:1.55; }
+.diagramOutcome strong { font-size:16px; color:#785a17; white-space:nowrap; }
+@media(max-width:600px) {
+  .penaltyDiagram { margin:4px 0 22px; padding:17px 14px; border-radius:14px; }
+  .diagramTitle { font-size:19px; }
+  .diagramStart { padding:12px 10px; font-size:13px; }
+  .diagramColumnHeads { gap:17px; font-size:10px; grid-template-columns:minmax(0,1fr) minmax(0,1.6fr); }
+  .diagramPath { grid-template-columns:minmax(0,1fr) 17px minmax(0,1.6fr); gap:5px; min-height:82px; padding:12px 0; }
+  .diagramTrigger { font-size:13px; line-height:1.4; }
+  .diagramArrow { font-size:18px; }
+  .diagramOutcome { font-size:12.5px; line-height:1.5; }
+  .diagramOutcome strong { display:block; font-size:15px; }
+}

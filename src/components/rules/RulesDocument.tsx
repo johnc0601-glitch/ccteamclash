@@ -97,6 +97,7 @@ export function RulesDocument() {
               <span className={styles.sectionCount}>{items.length} {items.length === 1 ? 'item' : 'items'}</span>
             </div>
             <div className={styles.entries}>
+              {section.id === 'penalties' && (!query || section.title.toLocaleLowerCase().includes(query)) ? <PenaltyFlowDiagram /> : null}
               {items.map((item, index) => (
                 <div key={`${section.id}-${index}`} className={`${styles.entry} ${styles[`level${Math.min(item.level, 3)}`]}`}>
                   <span className={styles.bullet} aria-hidden="true">•</span>
@@ -118,5 +119,36 @@ export function RulesDocument() {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Visual quick reference to the penalties written in the charter. */
+function PenaltyFlowDiagram() {
+  const paths = [
+    {trigger: 'Rostering a no-show', result: '+0.5 point', detail: 'to the opponent; if also assigned to a matchup and does not compete, another +0.5 point'},
+    {trigger: 'Short playing roster', result: '+1 point', detail: 'per missing player in each round, under the charter minimum rule'},
+    {trigger: 'Fewer women played', result: '+1 point', detail: 'per extra woman the opponent actually plays in each round'},
+    {trigger: 'Smaller second-round lineup', result: '+1 point', detail: 'per player lost from round one, in addition to roster penalties'},
+    {trigger: 'Exceeding roster-move limit', result: '−1 point', detail: 'per round, per extra player; those rounds do not count for finals qualification'},
+  ];
+  return (
+    <figure className={styles.penaltyDiagram} aria-label="Penalty points decision diagram">
+      <figcaption className={styles.diagramTitle}>Penalty points at a glance</figcaption>
+      <div className={styles.diagramStart}>Check the official roster and each round’s lineup</div>
+      <div className={styles.diagramStem} aria-hidden="true" />
+      <div className={styles.diagramColumnHeads} aria-hidden="true">
+        <span>When this happens</span>
+        <span>Points assessed</span>
+      </div>
+      <div className={styles.diagramPaths}>
+        {paths.map((path) => (
+          <div className={styles.diagramPath} key={path.trigger}>
+            <span className={styles.diagramTrigger}>{path.trigger}</span>
+            <span className={styles.diagramArrow} aria-hidden="true">→</span>
+            <span className={styles.diagramOutcome}><strong>{path.result}</strong> {path.detail}</span>
+          </div>
+        ))}
+      </div>
+    </figure>
   );
 }
