@@ -2,7 +2,7 @@
 // Agreed revisions include Friday-noon roster submission, online registration,
 // protected women's positions and the 0.5-point no-show rules. Other charter text
 // remains as supplied, pending separate league changes.
-export type CharterEntry = {text: string; level: number; updated?: boolean; updatedLabel?: string};
+export type CharterEntry = {text: string; level: number; updated?: boolean; updatedLabel?: string; example?: boolean};
 export type CharterSection = {id: string; title: string; items: CharterEntry[]};
 
 export const charterSections: CharterSection[] = [
@@ -532,15 +532,18 @@ export const charterSections: CharterSection[] = [
       },
       {
         "text": "Examples:",
-        "level": 1
+        "level": 1,
+        "example": true
       },
       {
         "text": "If Team A plays three woman, and Team B plays one women, team A is awarded 2 penalty points.",
-        "level": 2
+        "level": 2,
+        "example": true
       },
       {
         "text": "This applies to both singles and doubles rounds.",
-        "level": 2
+        "level": 2,
+        "example": true
       },
       {
         "text": "The winner of that guy/girl match(es) still gets a point per match or two in doubles.",
@@ -552,43 +555,53 @@ export const charterSections: CharterSection[] = [
       },
       {
         "text": "Examples:",
-        "level": 1
+        "level": 1,
+        "example": true
       },
       {
         "text": "Team A Brings 13/1, and Team B brings 15/2.",
-        "level": 2
+        "level": 2,
+        "example": true
       },
       {
         "text": "If Team B Plays 12/2 vs 13/1, they will be awarded 1 point for playing an extra woman, and 3 Points for benching 3 roster spots. (A Total of 4 penalty points are assessed).",
-        "level": 2
+        "level": 2,
+        "example": true
       },
       {
         "text": "Team A Brings 14/1, and Team B brings 15/2.",
-        "level": 2
+        "level": 2,
+        "example": true
       },
       {
         "text": "Round 1 Team B plays 14/1 vs 13/2. Team B is awarded 1 point for the extra woman, and 2 points for the 2 benched players. If then Team A loses a plyer, and Round 2 is played 13/1 vs 12/2, Then Team B is awarded 1 point for the women, 3 points for the benched players, and 1 point for the reduced Round 2 Roster (Total of 5 penalty points will be assessed).",
-        "level": 2
+        "level": 2,
+        "example": true
       },
       {
         "text": "Team A brings 12/2, and Team B brings 15/2.",
-        "level": 2
+        "level": 2,
+        "example": true
       },
       {
         "text": "Round 1 plays 12/2 vs 12/2. Team B is awarded 3 points because team A did not meet the full roster. If Team A then loses a player for round 2, and is played 11/2 vs 11/2. Team B is awarded 1 Point for the missing player, and 4 points for the benched players (Total of 5 Penalty points will be assessed).",
-        "level": 2
+        "level": 2,
+        "example": true
       },
       {
         "text": "Team A brings 13/3, and Team B brings 14/2.",
-        "level": 2
+        "level": 2,
+        "example": true
       },
       {
         "text": "Since both teams have 16 players present, no missing roster penalty points are assessed. If Team A plays all 3 women, team B will be assessed 1 point penalty. This is the only penalty awarded/assessed.",
-        "level": 2
+        "level": 2,
+        "example": true
       },
       {
         "text": "If Team A chose to play 13/2, no penalties would be awarded/assessed (one woman would be benched from Team A and one man would be benched from Team B).",
-        "level": 2
+        "level": 2,
+        "example": true
       },
       {
         "text": "If a team exceeds the maximum number of roster moves, any players added beyond the maximum will receive a 1-point deduction per round per player. Penalized rounds will not count towards finals eligibility.",

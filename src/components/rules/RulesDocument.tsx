@@ -28,12 +28,13 @@ export function RulesDocument() {
   const results = useMemo(() => charterSections.map((section) => {
     const titleMatch = section.title.toLocaleLowerCase().includes(query);
     const items = query && !titleMatch
-      ? section.items.filter((item) => item.text.toLocaleLowerCase().includes(query))
+      ? section.items.filter((item) => item.text.toLocaleLowerCase().includes(query) || (section.id === 'penalties' && item.example && 'examples'.includes(query)))
       : section.items;
     const formats = section.id === 'finals-matchups'
       ? finalsMatchFormats.filter((row) => !query || titleMatch || `${row.players} players ${row.doubles} doubles ${row.singles} singles`.includes(query))
       : [];
-    return {section, items, formats, titleMatch};
+    const exampleCount = section.id === 'penalties' ? items.filter(item => item.example && item.text !== 'Examples:').length : 0;
+    return {section, items, formats, titleMatch, exampleCount};
   }).filter(({items, formats, titleMatch}) => !query || items.length > 0 || formats.length > 0 || titleMatch), [query]);
 
   const matches = query ? results.reduce((total, result) => total
@@ -90,20 +91,33 @@ export function RulesDocument() {
             <p>Try another word or a shorter phrase. This search does not include other website pages.</p>
             <button type="button" onClick={() => setSearch('')}>Show all rules</button>
           </div>
-        ) : results.map(({section, items, formats}) => (
+        ) : results.map(({section, items, formats, exampleCount}) => (
           <section className={styles.section} id={`rule-${section.id}`} key={section.id} aria-labelledby={`heading-${section.id}`}>
             <div className={styles.sectionHeader}>
               <h2 id={`heading-${section.id}`}><Highlight value={section.title} query={query}/></h2>
-              <span className={styles.sectionCount}>{items.length} {items.length === 1 ? 'item' : 'items'}</span>
+              <span className={styles.sectionCount}>{section.id === 'penalties' ? items.length - items.filter(x => x.example && x.text === 'Examples:').length : items.length} items</span>
             </div>
             <div className={styles.entries}>
               {section.id === 'penalties' && (!query || section.title.toLocaleLowerCase().includes(query)) ? <PenaltyFlowDiagram /> : null}
-              {items.map((item, index) => (
+              {items.filter(item => section.id !== 'penalties' || !item.example).map((item, index) => (
                 <div key={`${section.id}-${index}`} className={`${styles.entry} ${styles[`level${Math.min(item.level, 3)}`]}`}>
                   <span className={styles.bullet} aria-hidden="true">•</span>
                   <p><Highlight value={item.text} query={query}/></p>
                 </div>
               ))}
+              {section.id === 'penalties' && exampleCount > 0 ? (
+                <details className={styles.penaltyExamples} open={query ? true : undefined} key={query || 'penalty-examples'}>
+                  <summary>Examples from the charter ({exampleCount})</summary>
+                  <div className={styles.penaltyExampleList}>
+                    {items.filter(item => item.example && item.text !== 'Examples:').map((item, index) => (
+                      <div key={index} className={styles.penaltyExampleLine}>
+                        <span aria-hidden="true">•</span>
+                        <p><Highlight value={item.text} query={query} /></p>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              ) : null}
               {section.id === 'finals-matchups' && formats.length > 0 ? (
                 <div className={styles.formatTableWrap}>
                   <h3>Finals matchup formats</h3>
@@ -128,7 +142,6 @@ function PenaltyFlowDiagram() {
     {trigger: 'Rostering a no-show', result: '+0.5 point', detail: 'to the opponent; if also assigned to a matchup and does not compete, another +0.5 point'},
     {trigger: 'Short playing roster', result: '+1 point', detail: 'per missing player in each round, under the charter minimum rule'},
     {trigger: 'Fewer women played', result: '+1 point', detail: 'per extra woman the opponent actually plays in each round'},
-    {trigger: 'Smaller second-round lineup', result: '+1 point', detail: 'per player lost from round one, in addition to roster penalties'},
     {trigger: 'Exceeding roster-move limit', result: '−1 point', detail: 'per round, per extra player; those rounds do not count for finals qualification'},
   ];
   return (
