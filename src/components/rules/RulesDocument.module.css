@@ -271,3 +271,19 @@
   .diagramOutcome { font-size:12.5px; line-height:1.5; }
   .diagramOutcome strong { display:block; font-size:15px; }
 }
+
+/* All original charter wording is retained; examples are a single optional group. */
+.penaltyExamples { margin-top:23px; border-top:1px solid var(--cc-panel-border); padding-top:16px; }
+.penaltyExamples > summary { display:flex; align-items:center; cursor:pointer; gap:10px; padding:13px 14px; border:1px solid var(--cc-panel-border); border-radius:12px; background:#f8f6ef; color:#242b2e; font-size:16px; font-weight:800; list-style:none; }
+.penaltyExamples > summary::after { content:"▾"; margin-left:auto; color:#9b741c; }
+.penaltyExamples[open] > summary::after { transform:rotate(180deg); }
+.penaltyExamples > summary::-webkit-details-marker { display:none; }
+.penaltyExampleList { padding:13px 4px 4px; }
+.penaltyExampleLine { display:flex; align-items:flex-start; gap:12px; padding:10px 4px; }
+.penaltyExampleLine > span { color:var(--cc-gold-ink); }
+.penaltyExampleLine p { margin:0; color:#30373a; font-size:16px; line-height:1.7; }
+@media(max-width:600px) {
+ .penaltyExamples > summary { font-size:15px; padding:13px 12px; }
+ .penaltyExampleLine { gap:9px; padding:9px 3px; }
+ .penaltyExampleLine p { font-size:16px; line-height:1.65; }
+}
