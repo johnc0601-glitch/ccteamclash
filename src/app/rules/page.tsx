@@ -19,11 +19,6 @@ export default function RulesPage() {
           <h1>League Rules</h1>
           <p>Search and browse the complete Coastal Carolina Team Clash charter.</p>
         </header>
-        <aside className={styles.reviewNote} aria-label="Charter review status">
-          <strong>2026–27 working draft</strong>
-          <p>Based on the full 2025–26 charter. The official match roster is now due <strong>Friday at 12:00 PM (noon) Eastern</strong>, immediately before the scheduled match. The former 24-hour deadline is replaced; the 3:00 PM website setting does not define the league rule.</p>
-          <p>The original 2025–26 charter remains visible below for comparison. Agreed updates, clarifications and commissioner decisions still needed are separated and labeled in the affected sections. Historical wording does not automatically become an approved 2026–27 rule.</p>
-        </aside>
         <RulesDocument />
       </main>
       <Footer />
