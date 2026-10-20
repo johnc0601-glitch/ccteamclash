@@ -1,7 +1,7 @@
 'use client';
 
 import {useMemo, useRef, useState, type ReactNode} from 'react';
-import {charterDraftNotes, charterSections, finalsMatchFormats} from '@/data/rules/charter';
+import {charterSections, finalsMatchFormats} from '@/data/rules/charter';
 import styles from './RulesDocument.module.css';
 
 function Highlight({value, query}: {value: string; query: string}) {
@@ -33,12 +33,11 @@ export function RulesDocument() {
     const formats = section.id === 'finals-matchups'
       ? finalsMatchFormats.filter((row) => !query || titleMatch || `${row.players} players ${row.doubles} doubles ${row.singles} singles`.includes(query))
       : [];
-    const notes = (charterDraftNotes[section.id] ?? []).filter((note) => !query || titleMatch || note.text.toLocaleLowerCase().includes(query) || note.status.toLocaleLowerCase().includes(query));
-    return {section, items, formats, notes, titleMatch};
-  }).filter(({items, formats, notes, titleMatch}) => !query || items.length > 0 || formats.length > 0 || notes.length > 0 || titleMatch), [query]);
+    return {section, items, formats, titleMatch};
+  }).filter(({items, formats, titleMatch}) => !query || items.length > 0 || formats.length > 0 || titleMatch), [query]);
 
   const matches = query ? results.reduce((total, result) => total
-    + (result.titleMatch ? 1 : result.items.length + result.formats.length + result.notes.length), 0) : 0;
+    + (result.titleMatch ? 1 : result.items.length + result.formats.length), 0) : 0;
 
   return (
     <div className={styles.root}>
@@ -53,11 +52,10 @@ export function RulesDocument() {
             placeholder="Search penalties, rosters, playoffs…"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            aria-describedby="rules-search-help rules-search-count"
+            aria-describedby="rules-search-count"
           />
           {search ? <button type="button" onClick={() => setSearch('')}>Clear</button> : null}
         </div>
-        <p id="rules-search-help" className={styles.searchHelp}>Searches only this charter. Matching sections and rule passages appear below.</p>
         <p id="rules-search-count" className={styles.matchCount} role="status" aria-live="polite">
           {query ? `${matches} matching ${matches === 1 ? 'passage' : 'passages'} in ${results.length} ${results.length === 1 ? 'section' : 'sections'}` : `${charterSections.length} sections · Full charter`}
         </p>
@@ -92,31 +90,17 @@ export function RulesDocument() {
             <p>Try another word or a shorter phrase. This search does not include other website pages.</p>
             <button type="button" onClick={() => setSearch('')}>Show all rules</button>
           </div>
-        ) : results.map(({section, items, formats, notes}) => (
+        ) : results.map(({section, items, formats}) => (
           <section className={styles.section} id={`rule-${section.id}`} key={section.id} aria-labelledby={`heading-${section.id}`}>
             <div className={styles.sectionHeader}>
               <h2 id={`heading-${section.id}`}><Highlight value={section.title} query={query}/></h2>
               <span className={styles.sectionCount}>{items.length} {items.length === 1 ? 'item' : 'items'}</span>
             </div>
             <div className={styles.entries}>
-              {notes.length > 0 ? (
-                <div className={styles.draftNotes}>
-                  <h3>2026–27 roster and scoring review</h3>
-                  {notes.map((note, noteIndex) => (
-                    <div key={noteIndex} className={styles.draftNote}>
-                      <strong className={styles.draftStatus}><Highlight value={note.status} query={query} /></strong>
-                      <p><Highlight value={note.text} query={query} /></p>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-              {notes.length > 0 && items.length > 0 ? <h3 className={styles.sourceHeading}>Original charter provisions, with agreed 2026–27 updates labeled</h3> : null}
               {items.map((item, index) => (
                 <div key={`${section.id}-${index}`} className={`${styles.entry} ${styles[`level${Math.min(item.level, 3)}`]}`}>
                   <span className={styles.bullet} aria-hidden="true">•</span>
-                  <p><Highlight value={item.text} query={query}/>
-                    {item.updated ? <span className={styles.updated}>{item.updatedLabel ?? '2026–27 roster-lock revision'}</span> : null}
-                  </p>
+                  <p><Highlight value={item.text} query={query}/></p>
                 </div>
               ))}
               {section.id === 'finals-matchups' && formats.length > 0 ? (
