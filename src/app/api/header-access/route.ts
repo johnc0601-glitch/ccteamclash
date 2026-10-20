@@ -7,6 +7,7 @@ const SIGNED_OUT: HeaderAccessState = {
   role: null,
   canCaptainManage: false,
   canReadClashPulse: false,
+  canManageClashCast: false,
   hasClubhouse: false,
   clubhouseHasUnread: false,
 };
@@ -39,6 +40,9 @@ export async function GET() {
   const {data: pulseGrant} = await clubhouseDb.from('clash_pulse_readers').select('profile_id')
     .eq('profile_id', profile.id).maybeSingle();
   const canReadClashPulse = profile.role === 'Commissioner' || Boolean(pulseGrant);
+  const {data: castGrant} = await clubhouseDb.from('clash_cast_editors').select('profile_id')
+    .eq('profile_id', profile.id).maybeSingle();
+  const canManageClashCast = profile.role === 'Commissioner' || Boolean(castGrant);
   const canCaptainManage = (
     profile.role === 'Captain' || profile.role === 'Commissioner'
   ) && Boolean(profile.captain_team_id);
@@ -100,6 +104,7 @@ export async function GET() {
     role,
     canCaptainManage,
     canReadClashPulse,
+    canManageClashCast,
     hasClubhouse,
     clubhouseHasUnread,
   } satisfies HeaderAccessState);

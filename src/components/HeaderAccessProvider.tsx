@@ -12,6 +12,7 @@ export type HeaderAccessState = {
   role: HeaderRole;
   canCaptainManage: boolean;
   canReadClashPulse: boolean;
+  canManageClashCast?: boolean;
   hasClubhouse: boolean;
   clubhouseHasUnread: boolean;
 };
@@ -21,6 +22,7 @@ const EMPTY_ACCESS: HeaderAccessState = {
   role: null,
   canCaptainManage: false,
   canReadClashPulse: false,
+  canManageClashCast: false,
   hasClubhouse: false,
   clubhouseHasUnread: false,
 };
@@ -92,6 +94,9 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
       const {data: pulseGrant} = await db.from('clash_pulse_readers').select('profile_id')
         .eq('profile_id', profile.id).maybeSingle();
       const canReadClashPulse = profile.role === 'Commissioner' || Boolean(pulseGrant);
+      const {data: castGrant} = await db.from('clash_cast_editors').select('profile_id')
+        .eq('profile_id', profile.id).maybeSingle();
+      const canManageClashCast = profile.role === 'Commissioner' || Boolean(castGrant);
       let hasClubhouse = false;
       let clubhouseHasUnread = false;
 
@@ -147,11 +152,11 @@ export function HeaderAccessProvider({children}: {children: ReactNode}) {
 
       if (!mounted) return;
       if (profile.role === 'Commissioner') {
-        setAccess({isSignedIn: true, role: 'commissioner', canCaptainManage, canReadClashPulse, hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: 'commissioner', canCaptainManage, canReadClashPulse, canManageClashCast, hasClubhouse, clubhouseHasUnread});
       } else if (profile.role === 'Captain') {
-        setAccess({isSignedIn: true, role: 'captain', canCaptainManage, canReadClashPulse, hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: 'captain', canCaptainManage, canReadClashPulse, canManageClashCast, hasClubhouse, clubhouseHasUnread});
       } else {
-        setAccess({isSignedIn: true, role: null, canCaptainManage, canReadClashPulse, hasClubhouse, clubhouseHasUnread});
+        setAccess({isSignedIn: true, role: null, canCaptainManage, canReadClashPulse, canManageClashCast, hasClubhouse, clubhouseHasUnread});
       }
     };
 
@@ -203,11 +208,11 @@ export function ClubhouseUnreadDisc() {
 }
 
 export function DesktopRoleLinks() {
-  const {role, canCaptainManage, canReadClashPulse, hasClubhouse, clubhouseHasUnread} = useHeaderAccess();
+  const {role, canCaptainManage, canReadClashPulse, canManageClashCast, hasClubhouse, clubhouseHasUnread} = useHeaderAccess();
   const canOpenOffice = role === 'commissioner';
   const canOpenCaptain = canCaptainManage;
 
-  if (!canOpenOffice && !canOpenCaptain && !hasClubhouse && !canReadClashPulse) return null;
+  if (!canOpenOffice && !canOpenCaptain && !hasClubhouse && !canReadClashPulse && !canManageClashCast) return null;
 
   return (
     <>
@@ -219,6 +224,7 @@ export function DesktopRoleLinks() {
         </Link>
       ) : null}
       {canReadClashPulse ? <Link className="desktop-role-link" href="/clash-pulse">Clash Pulse</Link> : null}
+      {canManageClashCast ? <Link className="desktop-role-link" href="/clash-cast">Clash Cast</Link> : null}
       {canOpenOffice ? <Link className="desktop-role-link" href="/admin">Create post</Link> : null}
       {canOpenOffice ? <Link className="desktop-role-link" href="/office">Office</Link> : null}
       {canOpenCaptain ? <Link className="desktop-role-link" href="/captain">Captain</Link> : null}

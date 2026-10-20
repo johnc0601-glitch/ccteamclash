@@ -10,7 +10,7 @@ const FACEBOOK_GROUP_URL = 'https://facebook.com/groups/780013754161635/';
 export function MobileNav() {
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
-  const {role, canCaptainManage, canReadClashPulse, hasClubhouse, clubhouseHasUnread} = useHeaderAccess();
+  const {role, canCaptainManage, canReadClashPulse, canManageClashCast, hasClubhouse, clubhouseHasUnread} = useHeaderAccess();
   const canOpenOffice = role === 'commissioner';
   const canOpenCaptain = canCaptainManage;
 
@@ -44,7 +44,7 @@ export function MobileNav() {
     <details ref={detailsRef} className="mobile-nav">
       <summary aria-label="Menu"><span aria-hidden="true">☰</span></summary>
       <nav>
-        {(hasClubhouse || canOpenOffice || canOpenCaptain || canReadClashPulse) ? (
+        {(hasClubhouse || canOpenOffice || canOpenCaptain || canReadClashPulse || canManageClashCast) ? (
           <div className="mobile-nav-group mobile-nav-tools">
             <span>Tools</span>
             {hasClubhouse ? (
@@ -54,6 +54,7 @@ export function MobileNav() {
               </Link>
             ) : null}
             {canReadClashPulse ? <Link href="/clash-pulse" onClick={closeMenu}>Clash Pulse</Link> : null}
+            {canManageClashCast ? <Link href="/clash-cast" onClick={closeMenu}>Clash Cast</Link> : null}
             {canOpenOffice ? <Link href="/admin" onClick={closeMenu}>Create post</Link> : null}
             {canOpenOffice ? <Link href="/office" onClick={closeMenu}>Office</Link> : null}
             {canOpenCaptain ? <Link href="/captain" onClick={closeMenu}>Captain</Link> : null}
