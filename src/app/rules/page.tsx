@@ -6,7 +6,7 @@ import styles from './page.module.css';
 export const metadata: Metadata = {
   title: 'League Rules | Coastal Carolina Team Clash',
   description: 'Search and read the Coastal Carolina Team Clash league charter and match rules.',
-  robots: {index: false, follow: false},
+  alternates: {canonical: '/rules'},
 };
 
 export default function RulesPage() {

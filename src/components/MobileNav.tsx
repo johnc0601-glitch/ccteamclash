@@ -72,6 +72,7 @@ export function MobileNav() {
           <Link href="/stories" onClick={closeMenu}>Stories</Link>
           <Link href="/courses" onClick={closeMenu}>Courses</Link>
           <Link href="/history" onClick={closeMenu}>History</Link>
+          <Link href="/rules" onClick={closeMenu}>Rules</Link>
         </div>
         <div className="mobile-nav-group">
           <span>Community</span>
