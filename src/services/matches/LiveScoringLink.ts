@@ -1,4 +1,5 @@
 import type {PublicScheduleEvent} from '@/domain/schedule/ScheduleService';
+import {isWithinMatchdayWindow} from '@/services/matches/MatchdayTimeWindow';
 
 // These are explicitly paired CCTC matches and public TC Whiteboard scoring
 // pages. Match IDs, dates, and team IDs prevent links being reused on another
@@ -24,9 +25,10 @@ const LIVE_SCORING_FEEDS: Record<string, {
  */
 export function getLiveScoringHref(
   match: Pick<PublicScheduleEvent, 'id' | 'scheduledDate' | 'awayTeamId' | 'homeTeamId'>,
-  options: {today: string; hasPublishedResult: boolean},
+  options: {today: string; hasPublishedResult: boolean; now?: Date},
 ): string | undefined {
-  if (options.hasPublishedResult || !match.scheduledDate || match.scheduledDate !== options.today) {
+  if (options.hasPublishedResult || !match.scheduledDate || match.scheduledDate !== options.today
+    || !isWithinMatchdayWindow(match.scheduledDate, options.now ?? new Date())) {
     return undefined;
   }
 

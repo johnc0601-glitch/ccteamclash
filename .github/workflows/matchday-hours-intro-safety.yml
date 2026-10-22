@@ -1,0 +1,32 @@
+name: Matchday Window and Intro Safety
+on:
+  pull_request:
+    paths:
+      - 'src/services/matches/MatchdayTimeWindow.ts'
+      - 'src/services/matches/LiveScoringLink*'
+      - 'src/components/matchday-intro/**'
+      - 'src/components/matches/LiveScoringLink.tsx'
+      - 'src/components/matches/MatchHero.tsx'
+      - 'src/components/MatchCard.tsx'
+      - '.github/workflows/matchday-hours-intro-safety.yml'
+  push:
+    branches:
+      - 'fix/matchday-nine-to-six-intro-fit-20261018'
+permissions:
+  contents: read
+jobs:
+  matchday-window:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Test matchday intro and live scoring window
+        run: node --loader ./scripts/ts-paths-loader.mjs --test src/components/matchday-intro/matchdayIntro.test.ts src/services/matches/LiveScoringLink.test.ts
+      - name: Typecheck application code (exclude unrelated legacy test fixtures)
+        run: |
+          node -e "require('node:fs').writeFileSync('tsconfig.matchday-ci.json', JSON.stringify({extends:'./tsconfig.json',exclude:['node_modules','**/*.test.ts','**/*.test.tsx']}))"
+          npx tsc --noEmit -p tsconfig.matchday-ci.json --incremental false

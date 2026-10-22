@@ -41,7 +41,8 @@
 }
 
 .welcomeArt img {
-  object-fit: cover;
+  /* Contain the entire design: cover was zooming/cropping Matchday art. */
+  object-fit: contain;
   object-position: center;
 }
 
@@ -57,7 +58,8 @@
   height: 100%;
   max-width: none;
   max-height: none;
-  object-fit: cover;
+  /* Show the full scene on every screen instead of enlarging it to crop. */
+  object-fit: contain;
   object-position: center;
 }
 
@@ -89,14 +91,15 @@
 @keyframes exit { from { opacity: 1; } to { opacity: 0; } }
 
 @media (max-width: 767px) {
-  .poster img {
-    object-fit: cover;
-    object-position: center;
+  .welcomeArt,
+  .poster {
+    background: #000;
   }
 
-  .poster[data-has-mobile='false'] img {
+  /* Leave some breathing room for phones with tall/narrow viewports. */
+  .welcomeArt img,
+  .poster img {
     object-fit: contain;
-    background: #000;
   }
 }
 

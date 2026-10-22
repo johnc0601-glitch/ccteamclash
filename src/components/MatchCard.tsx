@@ -98,7 +98,7 @@ export function MatchCard({match, teams, today, result}: MatchCardProps) {
         >
           {liveScoringHref ? 'View match' : 'View match ->'}
         </MatchdayLink>
-        {liveScoringHref ? <LiveScoringLink href={liveScoringHref} matchup={`${match.away} at ${match.home}`} /> : null}
+        {liveScoringHref ? <LiveScoringLink href={liveScoringHref} matchup={`${match.away} at ${match.home}`} matchDate={match.scheduledDate ?? ''} /> : null}
       </div>
     </article>
   );

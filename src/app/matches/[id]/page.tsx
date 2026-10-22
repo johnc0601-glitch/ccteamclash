@@ -255,7 +255,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
         <MatchHero
           matchday={matchday}
           roundLabel={round ? `Round ${round.number}` : undefined}
-          liveScoringHref={getLiveScoringHref(matchday, {today: easternDate(now), hasPublishedResult: Boolean(publishedResult)})}
+          liveScoringHref={getLiveScoringHref(matchday, {today: easternDate(now), hasPublishedResult: Boolean(publishedResult), now})}
         />
         <div className={`shell ${styles.content}`}>
           <MatchdayInfoStrip matchday={matchday} attendance={attendanceTotals} />
