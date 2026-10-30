@@ -1,4 +1,5 @@
 import 'server-only';
+import {selectSwingPlayer} from './selectSwingPlayer';
 
 import {unstable_cache} from 'next/cache';
 import {createHistoricalStatsReadClient} from '@/core/createHistoricalStatsReadClient';
@@ -72,32 +73,15 @@ export function buildMatchPreviewInsights(
     ? provenLeaders.map((leader) => `${lastName(leader.name)} Â· ${leader.wins} wins`).join('  Â·  ')
     : 'History building';
 
-  const rosterById = new Map([...input.awayRoster, ...input.homeRoster].map((player) => [player.id, player]));
-  const versusRows = playerResults.filter((row) => {
-    const team = normalize(row.player_team_name);
-    const opponent = normalize(row.opponent_team_name);
-    return teamNames.has(team) && teamNames.has(opponent) && team !== opponent;
-  });
-  const versusWins = countWins(versusRows);
-  const candidates = [...new Set(versusRows.map((row) => row.player_id))]
-    .map((playerId) => {
-      const row = versusRows.find((result) => result.player_id === playerId)!;
-      const player = rosterById.get(playerId);
-      return {
-        name: player?.name ?? row.player_name,
-        wins: versusWins.get(playerId) ?? 0,
-        ci: player?.clashIndex ?? 1000,
-        onRoster: rosterById.has(playerId),
-      };
-    })
-    .filter((candidate) => candidate.wins > 0)
-    .sort((left, right) => Number(right.onRoster) - Number(left.onRoster)
-      || right.wins - left.wins
-      || left.ci - right.ci
-      || left.name.localeCompare(right.name));
-  const swing = candidates[0]
-    ? `${candidates[0].name} Â· ${candidates[0].wins}â€“0 vs opponent`
-    : 'A new matchup to watch';
+  const swing = [
+    {name: input.awayName, opponent: input.homeName, roster: input.awayRoster},
+    {name: input.homeName, opponent: input.awayName, roster: input.homeRoster},
+  ].map((team) => {
+    const player = selectSwingPlayer(team.roster, team.opponent, playerResults);
+    if (!player) return `${shortTeamName(team.name)}: No lower-CI unbeaten player on record`;
+    const record = `${player.wins}–0${player.ties ? `–${player.ties}` : ''}`;
+    return `${shortTeamName(team.name)}: ${player.name} · CI ${player.clashIndex} · ${record} vs ${shortTeamName(team.opponent)}`;
+  }).join('\n');
 
   return {series, proven, swing};
 }

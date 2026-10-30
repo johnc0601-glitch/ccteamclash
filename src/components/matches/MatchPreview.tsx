@@ -106,7 +106,7 @@ export async function MatchPreview({matchId, matchday}: {matchId: string; matchd
             <div className={styles.synopsis}>
               <Stat label="Series" value={insights.series} />
               <Stat label="Proven" value={approved?.proven ?? insights.proven} />
-              <Stat label="Swing player" value={insights.swing} />
+              <Stat label="Swing players" value={insights.swing} />
               <Stat label="Story" value={approved?.story ?? 'A new chapter'} />
             </div>
             <p className={styles.battleLine}>{approved?.battle ?? `${matchday.awayTeam.name} meets ${matchday.homeTeam.name}.`}</p>
@@ -145,6 +145,17 @@ function PreviewCopy({excerpt}: {excerpt: string}) {
               <strong>{watch[1]}</strong>
             </aside>
           );
+        }
+
+        const lines = paragraph.split(/\r?\n/);
+        const playerHeading = lines[0].match(/^(.+? — CI \d+)$/);
+        if (playerHeading) {
+          return <p className={styles.previewParagraph} key={paragraph}>
+            <strong>{playerHeading[1]}</strong><br />{lines.slice(1).join(' ')}
+          </p>;
+        }
+        if (/^PLAYERS TO WATCH/i.test(paragraph)) {
+          return <p className={styles.previewParagraph} key={paragraph}><strong>{paragraph}</strong></p>;
         }
 
         return (

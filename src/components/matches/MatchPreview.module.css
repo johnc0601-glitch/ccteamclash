@@ -68,6 +68,7 @@
 }
 
 .stat strong {
+  white-space: pre-line;
   color: var(--cc-heading);
   font-size: 14px;
   line-height: 1.25;
@@ -296,6 +297,7 @@
   }
 
   .stat strong {
+  white-space: pre-line;
     font-size: 13px;
   }
 
@@ -333,4 +335,9 @@
   .previewWatch {
     padding: 14px;
   }
+}
+
+.previewParagraph strong {
+  color: var(--cc-heading);
+  font-weight: 850;
 }
