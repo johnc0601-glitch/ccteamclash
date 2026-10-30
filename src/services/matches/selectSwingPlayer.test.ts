@@ -27,14 +27,24 @@ test('prefers lower CI and only uses this opponent and current roster', () => {
   assert.equal(selected?.id, 'low');
 });
 
-test('does not invent an unbeaten player from no wins or unknown CI', () => {
-  assert.equal(selectSwingPlayer(roster, 'Dark Knights', [result('low', 'T')]), undefined);
+test('fallback keeps actual ties and unknown CI without inventing wins', () => {
+  assert.equal(selectSwingPlayer(roster, 'Dark Knights', [result('low', 'T')])?.ties, 1);
   assert.equal(selectSwingPlayer([{id: 'unknown', name: 'Unknown'}], 'Dark Knights',
-    [result('unknown', 'W')]), undefined);
+    [result('unknown', 'W')])?.id, 'unknown');
 });
 
 test('proven selection excludes the swing player and counts history across former teams', () => {
   const rows = [result('low', 'W'), result('low', 'W'), result('middle', 'W', 'KB')];
   assert.equal(selectProvenPlayer(roster, rows, 'low')?.id, 'middle');
   assert.equal(selectProvenPlayer([roster[0]], rows, 'low'), undefined);
+});
+
+test('selects an unbeaten player above roster median instead of leaving a blank', () => {
+  assert.equal(selectSwingPlayer(roster, 'Dark Knights', [result('high', 'W')])?.id, 'high');
+});
+test('selects an actual player and truthful losing record when nobody is unbeaten', () => {
+  const pick = selectSwingPlayer(roster, 'Dark Knights', [result('middle', 'W'), result('middle', 'L')]);
+  assert.equal(pick?.id, 'middle');
+  assert.equal(pick?.losses, 1);
+  assert.equal(selectSwingPlayer(roster, 'Dark Knights', [])?.id, 'low');
 });
