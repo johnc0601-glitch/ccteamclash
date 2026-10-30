@@ -78,7 +78,7 @@ export function buildMatchPreviewInsights(
     {name: input.homeName, opponent: input.awayName, roster: input.homeRoster},
   ].map((team) => {
     const player = selectSwingPlayer(team.roster, team.opponent, playerResults);
-    if (!player) return `${shortTeamName(team.name)}: No lower-CI unbeaten player on record`;
+    if (!player) return `${shortTeamName(team.name)}: No lower-CI unbeaten record vs ${shortTeamName(team.opponent)}`;
     const record = `${player.wins}–0${player.ties ? `–${player.ties}` : ''}`;
     return `${shortTeamName(team.name)}: ${player.name} · CI ${player.clashIndex} · ${record} vs ${shortTeamName(team.opponent)}`;
   }).join('\n');
@@ -102,13 +102,21 @@ const loadHistoricalTeamMatches = unstable_cache(
 const loadHistoricalPlayerResults = unstable_cache(
   async (): Promise<HistoricalPlayerResult[]> => {
     const supabase = await createHistoricalStatsReadClient();
-    const {data, error} = await supabase
-      .from('historical_player_matchups')
-      .select('player_id,player_name,player_team_name,opponent_team_name,outcome');
-    if (error) throw error;
-    return (data ?? []) as HistoricalPlayerResult[];
+    const rows: HistoricalPlayerResult[] = [];
+    const pageSize = 1000;
+    for (let offset = 0; ; offset += pageSize) {
+      const {data, error} = await supabase
+        .from('historical_player_matchups')
+        .select('player_id,player_name,player_team_name,opponent_team_name,outcome')
+        .order('deduplication_key')
+        .range(offset, offset + pageSize - 1);
+      if (error) throw error;
+      const page = (data ?? []) as HistoricalPlayerResult[];
+      rows.push(...page);
+      if (page.length < pageSize) return rows;
+    }
   },
-  ['match-preview-historical-player-results-v1'],
+  ['match-preview-historical-player-results-v2'],
   {revalidate: 3600, tags: [HISTORICAL_STATS_CACHE_TAG]},
 );
 
