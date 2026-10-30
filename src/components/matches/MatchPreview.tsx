@@ -105,7 +105,7 @@ export async function MatchPreview({matchId, matchday}: {matchId: string; matchd
           <>
             <div className={styles.synopsis}>
               <Stat label="Series" value={insights.series} />
-              <Stat label="Proven" value={approved?.proven ?? insights.proven} />
+              <Stat label="Proven" value={insights.proven} />
               <Stat label="Swing players" value={insights.swing} />
               </div>
             <p className={styles.battleLine}>{approved?.battle ?? `${matchday.awayTeam.name} meets ${matchday.homeTeam.name}.`}</p>
