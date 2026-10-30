@@ -79,8 +79,8 @@ export function buildMatchPreviewInsights(
   ].map((team) => {
     const player = selectSwingPlayer(team.roster, team.opponent, playerResults);
     if (!player) return `${shortTeamName(team.name)}: No lower-CI unbeaten player on record`;
-    const record = `${player.wins}–0${player.ties ? `–${player.ties}` : ''}`;
-    return `${shortTeamName(team.name)}: ${player.name} · CI ${player.clashIndex} · ${record} vs ${shortTeamName(team.opponent)}`;
+    const record = `${player.wins}â€“0${player.ties ? `â€“${player.ties}` : ''}`;
+    return `${shortTeamName(team.name)}: ${player.name} Â· CI ${player.clashIndex} Â· ${record} vs ${shortTeamName(team.opponent)}`;
   }).join('\n');
 
   return {series, proven, swing};

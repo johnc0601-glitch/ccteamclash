@@ -148,7 +148,7 @@ function PreviewCopy({excerpt}: {excerpt: string}) {
         }
 
         const lines = paragraph.split(/\r?\n/);
-        const playerHeading = lines[0].match(/^(.+? — CI \d+)$/);
+        const playerHeading = lines[0].match(/^(.+? â€” CI \d+)$/);
         if (playerHeading) {
           return <p className={styles.previewParagraph} key={paragraph}>
             <strong>{playerHeading[1]}</strong><br />{lines.slice(1).join(' ')}
