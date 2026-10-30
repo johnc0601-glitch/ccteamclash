@@ -77,9 +77,11 @@ export function buildMatchPreviewInsights(
   }).join('\n');
   const swing = selections.map((team) => {
     const player = team.swing;
-    if (!player) return `${shortTeamName(team.name)}: No lower-CI unbeaten record vs ${shortTeamName(team.opponent)}`;
-    const record = `${player.wins}–0${player.ties ? `–${player.ties}` : ''}`;
-    return `${shortTeamName(team.name)}: ${player.name} · CI ${player.clashIndex} · ${record} vs ${shortTeamName(team.opponent)}`;
+    if (!player) return `${shortTeamName(team.name)}: Roster unavailable`;
+    const record = player.wins + player.losses + player.ties
+      ? `${player.wins}–${player.losses}${player.ties ? `–${player.ties}` : ''}`
+      : 'First recorded meeting';
+    return `${shortTeamName(team.name)}: ${player.name} · CI ${player.clashIndex ?? 'unavailable'} · ${record} vs ${shortTeamName(team.opponent)}`;
   }).join('\n');
 
   return {series, proven, swing};
