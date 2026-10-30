@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {selectSwingPlayer} from './selectSwingPlayer';
+import {selectSwingPlayer, selectProvenPlayer} from './selectSwingPlayer';
 
 const roster = [
   {id: 'low', name: 'Lower CI', clashIndex: 800},
@@ -31,4 +31,10 @@ test('does not invent an unbeaten player from no wins or unknown CI', () => {
   assert.equal(selectSwingPlayer(roster, 'Dark Knights', [result('low', 'T')]), undefined);
   assert.equal(selectSwingPlayer([{id: 'unknown', name: 'Unknown'}], 'Dark Knights',
     [result('unknown', 'W')]), undefined);
+});
+
+test('proven selection excludes the swing player and counts history across former teams', () => {
+  const rows = [result('low', 'W'), result('low', 'W'), result('middle', 'W', 'KB')];
+  assert.equal(selectProvenPlayer(roster, rows, 'low')?.id, 'middle');
+  assert.equal(selectProvenPlayer([roster[0]], rows, 'low'), undefined);
 });

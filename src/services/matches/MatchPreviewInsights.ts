@@ -1,5 +1,5 @@
 import 'server-only';
-import {selectSwingPlayer} from './selectSwingPlayer';
+import {selectSwingPlayer, selectProvenPlayer} from './selectSwingPlayer';
 
 import {unstable_cache} from 'next/cache';
 import {createHistoricalStatsReadClient} from '@/core/createHistoricalStatsReadClient';
@@ -63,21 +63,20 @@ export function buildMatchPreviewInsights(
     ? `${shortTeamName(seriesLeader[0])} leads ${seriesLeader[1]}–${meetings.length - seriesLeader[1]}`
     : meetings.length ? `Series tied ${meetings.length / 2}–${meetings.length / 2}` : 'First meeting';
 
-  const teamNames = new Set([normalize(input.awayName), normalize(input.homeName)]);
-  const relevantResults = playerResults.filter((row) => teamNames.has(normalize(row.player_team_name)));
-  const playerWins = countWins(relevantResults);
-  const provenLeaders = [input.awayRoster, input.homeRoster]
-    .map((roster) => bestPlayerForRoster(relevantResults, playerWins, roster))
-    .filter((leader): leader is {name: string; wins: number} => Boolean(leader));
-  const proven = provenLeaders.length
-    ? provenLeaders.map((leader) => `${lastName(leader.name)} · ${leader.wins} wins`).join('  ·  ')
-    : 'History building';
-
-  const swing = [
+  const selections = [
     {name: input.awayName, opponent: input.homeName, roster: input.awayRoster},
     {name: input.homeName, opponent: input.awayName, roster: input.homeRoster},
-  ].map((team) => {
-    const player = selectSwingPlayer(team.roster, team.opponent, playerResults);
+  ].map((team) => ({...team,
+    swing: selectSwingPlayer(team.roster, team.opponent, playerResults),
+  }));
+  const proven = selections.map((team) => {
+    const player = selectProvenPlayer(team.roster, playerResults, team.swing?.id);
+    if (!player) return `${shortTeamName(team.name)}: No other proven player on record`;
+    const ci = player.clashIndex == null ? '' : ` · CI ${player.clashIndex}`;
+    return `${shortTeamName(team.name)}: ${player.name}${ci} · ${player.wins} historical wins`;
+  }).join('\n');
+  const swing = selections.map((team) => {
+    const player = team.swing;
     if (!player) return `${shortTeamName(team.name)}: No lower-CI unbeaten record vs ${shortTeamName(team.opponent)}`;
     const record = `${player.wins}–0${player.ties ? `–${player.ties}` : ''}`;
     return `${shortTeamName(team.name)}: ${player.name} · CI ${player.clashIndex} · ${record} vs ${shortTeamName(team.opponent)}`;
@@ -120,29 +119,8 @@ const loadHistoricalPlayerResults = unstable_cache(
   {revalidate: 3600, tags: [HISTORICAL_STATS_CACHE_TAG]},
 );
 
-function countWins(rows: HistoricalPlayerResult[]) {
-  const wins = new Map<string, number>();
-  for (const row of rows) {
-    if (row.outcome === 'W') wins.set(row.player_id, (wins.get(row.player_id) ?? 0) + 1);
-  }
-  return wins;
-}
-
-function bestPlayerForRoster(rows: HistoricalPlayerResult[], wins: Map<string, number>, roster: LaunchPlayer[]) {
-  const rosterIds = new Set(roster.map((player) => player.id));
-  const players = rows.filter((row) => rosterIds.has(row.player_id));
-  const best = players
-    .map((row) => ({name: row.player_name, wins: wins.get(row.player_id) ?? 0}))
-    .sort((left, right) => right.wins - left.wins || left.name.localeCompare(right.name))[0];
-  return best?.wins ? best : undefined;
-}
-
 function normalize(value: string) {
   return value.toLocaleLowerCase('en').replace(/[’']/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
-}
-
-function lastName(value: string) {
-  return value.trim().split(/\s+/).at(-1) ?? value;
 }
 
 function shortTeamName(value: string) {

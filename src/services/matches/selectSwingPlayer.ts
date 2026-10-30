@@ -24,3 +24,12 @@ export function selectSwingPlayer(roster: Player[], opponent: string, results: R
 function normalize(value: string) {
   return value.toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 }
+
+export function selectProvenPlayer(roster: Player[], results: Result[], excludedId?: string) {
+  return roster.filter((player) => player.id !== excludedId)
+    .map((player) => ({...player,
+      wins: results.filter((row) => row.player_id === player.id && row.outcome === 'W').length,
+    }))
+    .filter((player) => player.wins > 0)
+    .sort((a, b) => b.wins - a.wins || a.name.localeCompare(b.name))[0];
+}
