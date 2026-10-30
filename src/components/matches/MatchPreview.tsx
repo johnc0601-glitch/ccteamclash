@@ -107,19 +107,14 @@ export async function MatchPreview({matchId, matchday}: {matchId: string; matchd
               <Stat label="Series" value={insights.series} />
               <Stat label="Proven" value={approved?.proven ?? insights.proven} />
               <Stat label="Swing players" value={insights.swing} />
-              <Stat label="Story" value={approved?.story ?? 'A new chapter'} />
-            </div>
+              </div>
             <p className={styles.battleLine}>{approved?.battle ?? `${matchday.awayTeam.name} meets ${matchday.homeTeam.name}.`}</p>
-            <details className={styles.fullPreview}>
-              <summary>
-                <span>Full matchup preview</span>
-                <span className={styles.chevron} aria-hidden="true">⌄</span>
-              </summary>
+            <div className={styles.fullPreview}>
               <div className={styles.fullPreviewBody}>
                 <PreviewCopy excerpt={excerpt} />
                 {storyUrl ? <a className={styles.storyLink} href={storyUrl}>Read Full Preview →</a> : null}
               </div>
-            </details>
+            </div>
           </>
         ) : <p className={styles.empty}>No match preview has been added yet.</p>}
       </section>
