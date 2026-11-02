@@ -52,6 +52,35 @@ export async function savePlayer(formData: FormData) {
   )}`);
 }
 
+export async function commissionerAssignUnclaimedPlayer(formData: FormData) {
+  const {commissionerProfileId, repository} = await getCommissionerService();
+  const commissioner = await repository.getProfile(commissionerProfileId);
+  if (commissioner?.role !== 'Commissioner' || commissioner.status !== 'Approved') {
+    redirect(PLAYERS_PATH + '?error=' + encodeURIComponent('Approved commissioner access is required.'));
+  }
+
+  const playerId = readFormValue(formData, 'playerId');
+  const teamId = readFormValue(formData, 'teamId');
+  const confirmedGender = readFormValue(formData, 'confirmedGender');
+  const verified = readFormValue(formData, 'confirmVerified') === 'true';
+  if (!playerId || !teamId || !verified || !['Male', 'Female'].includes(confirmedGender)) {
+    redirect(PLAYERS_PATH + '?error=' + encodeURIComponent('Choose a team and verify the player identity and division.'));
+  }
+
+  const supabase = await createClient();
+  const {error} = await supabase.rpc('commissioner_add_unclaimed_player_to_active_season' as never, {
+    target_player_id: playerId,
+    target_team_id: teamId,
+    confirmed_gender: confirmedGender,
+  } as never);
+  if (error) redirect(PLAYERS_PATH + '?error=' + encodeURIComponent(error.message));
+
+  revalidatePeoplePages();
+  revalidatePath('/captain');
+  revalidatePath('/account');
+  redirect(PLAYERS_PATH + '?notice=' + encodeURIComponent('Player added to the current season team. Historical statistics and CI were preserved.'));
+}
+
 export async function commissionerRoutePlayerToCaptain(formData: FormData) {
   const profileId = readFormValue(formData, 'profileId');
   const requestedTeamId = readFormValue(formData, 'requestedTeamId');

@@ -6,6 +6,7 @@ import {
   approveProfile,
   assignAccess,
   commissionerRoutePlayerToCaptain,
+  commissionerAssignUnclaimedPlayer,
   deleteAccount,
   rejectProfile,
   savePlayer,
@@ -139,7 +140,14 @@ export function LaunchPlayerManagement({
                             />
                           </>
                         ) : (
-                          <p className={styles.accountNote}>No website account is linked to this player.</p>
+                          <>
+                            <SeasonUnclaimedAssignment
+                              activeSeasonTeamId={activeSeasonTeamByPlayerId[player.id]}
+                              player={player}
+                              teams={teams}
+                            />
+                            <p className={styles.accountNote}>No website account is linked to this player.</p>
+                          </>
                         )}
                       </details>
                     </>
@@ -152,6 +160,60 @@ export function LaunchPlayerManagement({
           </div>
         </section>
       </div>
+    </section>
+  );
+}
+
+function SeasonUnclaimedAssignment({
+  activeSeasonTeamId,
+  player,
+  teams,
+}: {
+  activeSeasonTeamId?: string;
+  player: LaunchPlayer;
+  teams: LaunchTeam[];
+}) {
+  if (activeSeasonTeamId) {
+    return (
+      <p className={styles.accountNote}>
+        This player is already assigned to the current season. Use the existing team-management process for transfers.
+      </p>
+    );
+  }
+
+  const canAssign = player.gender === 'Male' || player.gender === 'Female';
+  return (
+    <section className={styles.accountAccess}>
+      <div>
+        <strong>Assign returning player</strong>
+        <span>Commissioner only · no account required</span>
+      </div>
+      <p className={styles.accountNote}>
+        Uses this player's existing record, match history and CI. Assignment to a season team does not add them to a locked match roster.
+        {!player.active ? ' This player will also be reactivated.' : ''}
+      </p>
+      {!canAssign ? (
+        <p className={styles.accountNote}>Set and verify this player's division before assigning a team.</p>
+      ) : (
+        <form className={styles.unclaimedForm} action={commissionerAssignUnclaimedPlayer}>
+          <input type="hidden" name="playerId" value={player.id} />
+          <input type="hidden" name="confirmedGender" value={player.gender} />
+          <label>
+            <span>Assign to team</span>
+            <select name="teamId" defaultValue="" required>
+              <option value="" disabled>Choose a team</option>
+              {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+            </select>
+          </label>
+          <label className={styles.verifyDivision}>
+            <input type="checkbox" name="confirmVerified" value="true" required />
+            <span>I've verified this player's identity and recorded division ({player.gender}).</span>
+          </label>
+          <button className={styles.primaryButton} type="submit">
+            {player.active ? 'Assign to season team' : 'Reactivate and assign'}
+          </button>
+        </form>
+      )}
     </section>
   );
 }
