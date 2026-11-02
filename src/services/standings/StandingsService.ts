@@ -183,14 +183,14 @@ function rankStandings(
 ): TeamStanding[] {
   const groups = new Map<number, TeamStanding[]>();
   for (const entry of entries) {
-    const group = groups.get(entry.winningPercentage) ?? [];
+    const group = groups.get(entry.wins) ?? [];
     group.push(entry);
-    groups.set(entry.winningPercentage, group);
+    groups.set(entry.wins, group);
   }
 
   const ranked = [...groups.keys()]
     .sort((left, right) => right - left)
-    .flatMap((percentage) => resolveHeadToHead(groups.get(percentage) ?? [], results));
+    .flatMap((wins) => resolveHeadToHead(groups.get(wins) ?? [], results));
 
   return ranked.map((entry, index) => ({...entry, rank: index + 1}));
 }

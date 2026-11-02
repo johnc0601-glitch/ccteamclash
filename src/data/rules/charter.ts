@@ -560,7 +560,7 @@ export const charterSections: CharterSection[] = [
     "title": "Tie Breakers",
     "items": [
       {
-        "text": "Teams are ranked first by regular-season Win Percentage. For teams tied in Win Percentage, Head-to-Head is the first tiebreaker when it resolves the tie; otherwise use Points Percentage.",
+        "text": "Teams are ranked first by total regular-season wins. For teams tied in wins, Head-to-Head is the first tiebreaker when it resolves the tie; otherwise use Points Percentage.",
         "level": 0
       },
       {
@@ -576,7 +576,7 @@ export const charterSections: CharterSection[] = [
         "level": 1
       },
       {
-        "text": "If there is a multiway tie for multiple spots, each tie is broken individually, the highest place is awarded first (or the last in the case of losing H2H vs all other if there is no outright H2H winter), then the tie-breaker is applied again with the remaining tied teams. After Win Percentage, H2H is always the first tiebreaker (with an outright H2H winner taking priority over an outright H2H loser).",
+        "text": "If there is a multiway tie for multiple spots, each tie is broken individually, the highest place is awarded first (or the last in the case of losing H2H vs all other if there is no outright H2H winter), then the tie-breaker is applied again with the remaining tied teams. After total wins, H2H is always the first tiebreaker (with an outright H2H winner taking priority over an outright H2H loser).",
         "level": 0
       },
       {

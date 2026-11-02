@@ -19,8 +19,8 @@ A tied team match counts as a game played but does not add a win or loss.
 
 Teams are ranked by:
 
-1. Win percentage (wins divided by games played)
-2. Head-to-head among teams with the same win percentage, when head-to-head can resolve the tie
+1. Total wins
+2. Head-to-head among teams with the same number of wins, when head-to-head can resolve the tie
 3. Unrounded points percentage (team points earned divided by combined team points earned in its played matches)
 4. If still tied, a commissioner-organized abbreviated playoff to resolve the official ranking
 

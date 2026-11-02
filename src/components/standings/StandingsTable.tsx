@@ -22,7 +22,6 @@ export function StandingsTable({
               <th className={styles.placeHeader} rowSpan={2}>Place</th>
               <th className={styles.teamHeader} rowSpan={2}>Team</th>
               <th rowSpan={2}>Wins</th>
-              <th rowSpan={2}>Win %</th>
               <th rowSpan={2}>Points %</th>
               <th colSpan={2}>Points</th>
               {rounds.map((round) => (
@@ -63,7 +62,6 @@ export function StandingsTable({
                     </Link>
                   </td>
                   <td className={styles.wins}>{entry.wins}</td>
-                  <td className={styles.percentage}>{formatPercentage(entry.winningPercentage)}</td>
                   <td className={styles.percentage}>{formatPercentage(entry.pointsPercentage)}</td>
                   <td>{formatPoints(entry.pointsFor)}</td>
                   <td>{formatPoints(entry.pointsAvailable)}</td>
@@ -82,7 +80,7 @@ export function StandingsTable({
         <div className={styles.mobileColumnHeader}>
           <span>Team</span>
           <span>W–L</span>
-          <span>Win %</span>
+          <span>Points %</span>
         </div>
         {entries.map((entry) => {
           const results = new Map(entry.roundResults.map((result) => [result.roundId, result]));
@@ -106,7 +104,7 @@ export function StandingsTable({
                   {entry.wins}–{entry.losses}
                 </strong>
                 <strong className={styles.mobileWinPct}>
-                  {formatPercentage(entry.winningPercentage)}
+                  {formatPercentage(entry.pointsPercentage)}
                 </strong>
               </summary>
 
@@ -114,7 +112,6 @@ export function StandingsTable({
                 <div className={styles.mobileMetrics}>
                   <Metric label="Points won" value={formatPoints(entry.pointsFor)} />
                   <Metric label="Available" value={formatPoints(entry.pointsAvailable)} />
-                  <Metric label="Points %" value={formatPercentage(entry.pointsPercentage)} />
                   <Link href={`/teams/${entry.team.id}`} className={styles.teamPageLink}>
                     Team page
                   </Link>
