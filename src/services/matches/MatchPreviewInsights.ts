@@ -1,4 +1,5 @@
 import 'server-only';
+import {buildMatchSeries} from './matchSeries';
 import {selectSwingPlayer, selectProvenPlayer} from './selectSwingPlayer';
 
 import {unstable_cache} from 'next/cache';
@@ -26,6 +27,10 @@ export type MatchPreviewInsights = {
   proven: string;
   swing: string;
 };
+
+export async function getMatchPreviewSeries(input: {awayName: string; homeName: string}) {
+  return buildMatchSeries(input.awayName, input.homeName, await loadHistoricalTeamMatches());
+}
 
 export async function getMatchPreviewInsights(input: {
   awayName: string;
