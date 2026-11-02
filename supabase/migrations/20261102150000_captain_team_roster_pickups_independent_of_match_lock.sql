@@ -70,7 +70,7 @@ begin
 
   return new;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.captain_add_listed_unassigned_player(target_player_id text)
  RETURNS text
@@ -235,5 +235,4 @@ begin
 
   return target_player.id;
 end;
-$function$
-
+$function$;
