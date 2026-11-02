@@ -18,8 +18,8 @@ const MATCHES: Match[] = [
   match('match-5', 'round-3', 'team-b', 'team-d'),
 ];
 
-function createContext() {
-  const matches = new Map(MATCHES.map((entry) => [entry.id, entry]));
+function createContext(extraMatches: Match[] = [], extraTeams: Team[] = []) {
+  const matches = new Map([...MATCHES, ...extraMatches].map((entry) => [entry.id, entry]));
   const rounds = new Map<string, Round>([
     ['round-1', round('round-1', 1, 'October')],
     ['round-2', round('round-2', 2, 'November')],
@@ -41,6 +41,7 @@ function createContext() {
       team('team-d', 'Delta'),
       team('team-e', 'Echo'),
       team('team-f', 'Foxtrot'),
+      ...extraTeams,
     ],
   } as unknown as TeamService;
   const schedules = scheduleProvider as unknown as ScheduleService;
@@ -117,17 +118,17 @@ test('standings aggregate published results across multiple rounds', async () =>
   assert.equal(charlie?.wins, 1);
 });
 
-test('standings rank by wins, head-to-head, then points percentage', async () => {
+test('standings rank by win percentage, then head-to-head, then points percentage', async () => {
   const {results, standings} = createContext();
   await results.publish('match-1', {homeScore: 10, awayScore: 5});
   await results.publish('match-2', {homeScore: 12, awayScore: 7});
-  await results.publish('match-4', {homeScore: 20, awayScore: 10});
+  await results.publish('match-4', {homeScore: 21, awayScore: 10});
   await results.publish('match-5', {homeScore: 100, awayScore: 0});
 
   const entries = await standings.getSeasonStandings('season-1');
   assert.deepEqual(
     entries.slice(0, 4).map((entry) => entry.team.id),
-    ['team-e', 'team-a', 'team-b', 'team-c'],
+    ['team-e', 'team-a', 'team-c', 'team-b'],
   );
 
   const emptyEntries = await createContext().standings.getSeasonStandings('season-1');
@@ -135,6 +136,71 @@ test('standings rank by wins, head-to-head, then points percentage', async () =>
     emptyEntries.map((entry) => entry.team.id),
     ['team-a', 'team-b', 'team-c', 'team-d', 'team-e', 'team-f'],
   );
+});
+
+test('head-to-head outranks points percentage for teams with equal win percentages', async () => {
+  const {results, standings} = createContext();
+  await results.publish('match-1', {homeScore: 9, awayScore: 8}); // A defeats B.
+  await results.publish('match-3', {homeScore: 0, awayScore: 10}); // A loses to C.
+  await results.publish('match-5', {homeScore: 100, awayScore: 0}); // B defeats D.
+
+  const tied = (await standings.getSeasonStandings('season-1'))
+    .filter((entry) => ['team-a', 'team-b'].includes(entry.team.id));
+  assert.equal(tied[0].winningPercentage, tied[1].winningPercentage);
+  assert.ok(tied[0].pointsPercentage < tied[1].pointsPercentage);
+  assert.deepEqual(tied.map((entry) => entry.team.id), ['team-a', 'team-b']);
+});
+
+test('partial three-team head-to-head is not treated as a transitive sweep', async () => {
+  const {results, standings} = createContext([
+    match('match-6', 'round-2', 'team-b', 'team-c'),
+    match('match-7', 'round-3', 'team-a', 'team-f'),
+    match('match-8', 'round-3', 'team-c', 'team-e'),
+  ]);
+  await results.publish('match-1', {homeScore: 8, awayScore: 7}); // A beats B.
+  await results.publish('match-6', {homeScore: 8, awayScore: 7}); // B beats C.
+  await results.publish('match-7', {homeScore: 0, awayScore: 20}); // A loses.
+  await results.publish('match-8', {homeScore: 19, awayScore: 1}); // C wins.
+
+  const tied = (await standings.getSeasonStandings('season-1'))
+    .filter((entry) => ['team-a', 'team-b', 'team-c'].includes(entry.team.id));
+  assert.ok(tied.every((entry) => entry.winningPercentage === 0.5));
+  assert.deepEqual(tied.map((entry) => entry.team.id), ['team-c', 'team-a', 'team-b']);
+});
+
+test('a team losing to every other team in a four-way tie is ranked last', async () => {
+  const {results, standings} = createContext([
+    match('tie-1', 'round-1', 'team-a', 'team-d'),
+    match('tie-2', 'round-1', 'team-b', 'team-d'),
+    match('tie-3', 'round-1', 'team-c', 'team-d'),
+    match('tie-4', 'round-2', 'team-a', 'team-e'),
+    match('tie-5', 'round-2', 'team-b', 'team-f'),
+    match('tie-6', 'round-2', 'team-c', 'team-g'),
+    match('tie-7', 'round-3', 'team-d', 'team-e'),
+    match('tie-8', 'round-3', 'team-d', 'team-f'),
+    match('tie-9', 'round-3', 'team-d', 'team-g'),
+    match('tie-10', 'round-3', 'team-e', 'team-f'),
+    match('tie-11', 'round-3', 'team-g', 'team-f'),
+  ], [team('team-g', 'Golf')]);
+
+  for (const matchId of ['tie-1', 'tie-2', 'tie-3']) {
+    await results.publish(matchId, {homeScore: 9, awayScore: 8}); // D loses to A/B/C.
+  }
+  for (const matchId of ['tie-4', 'tie-5', 'tie-6']) {
+    await results.publish(matchId, {homeScore: 0, awayScore: 20});
+  }
+  for (const matchId of ['tie-7', 'tie-8', 'tie-9']) {
+    await results.publish(matchId, {homeScore: 29, awayScore: 1}); // D wins elsewhere.
+  }
+  for (const matchId of ['tie-10', 'tie-11']) {
+    await results.publish(matchId, {homeScore: 0, awayScore: 20});
+  }
+
+  const tied = (await standings.getSeasonStandings('season-1'))
+    .filter((entry) => ['team-a', 'team-b', 'team-c', 'team-d'].includes(entry.team.id));
+  assert.ok(tied.every((entry) => entry.winningPercentage === 0.5));
+  assert.ok(tied.find((entry) => entry.team.id === 'team-d')!.pointsPercentage > tied[0].pointsPercentage);
+  assert.equal(tied.at(-1)?.team.id, 'team-d');
 });
 
 test('draft and reopened results are excluded until republished', async () => {

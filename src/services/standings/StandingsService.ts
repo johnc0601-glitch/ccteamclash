@@ -183,14 +183,14 @@ function rankStandings(
 ): TeamStanding[] {
   const groups = new Map<number, TeamStanding[]>();
   for (const entry of entries) {
-    const group = groups.get(entry.wins) ?? [];
+    const group = groups.get(entry.winningPercentage) ?? [];
     group.push(entry);
-    groups.set(entry.wins, group);
+    groups.set(entry.winningPercentage, group);
   }
 
   const ranked = [...groups.keys()]
     .sort((left, right) => right - left)
-    .flatMap((wins) => resolveHeadToHead(groups.get(wins) ?? [], results));
+    .flatMap((percentage) => resolveHeadToHead(groups.get(percentage) ?? [], results));
 
   return ranked.map((entry, index) => ({...entry, rank: index + 1}));
 }
@@ -201,63 +201,69 @@ function resolveHeadToHead(
 ): TeamStanding[] {
   if (entries.length < 2) return entries;
 
-  const byId = new Map(entries.map((entry) => [entry.team.id, entry]));
-  const pairRecords = new Map<string, {first: string; second: string; firstWins: number; secondWins: number}>();
+  const tiedTeamIds = new Set(entries.map((entry) => entry.team.id));
+  const pairRecords = new Map<string, {firstWins: number; secondWins: number}>();
 
   for (const result of results) {
-    if (!byId.has(result.homeTeamId) || !byId.has(result.awayTeamId)) continue;
+    if (!tiedTeamIds.has(result.homeTeamId) || !tiedTeamIds.has(result.awayTeamId)) continue;
     if (result.homeScore === result.awayScore) continue;
 
-    const [first, second] = [result.homeTeamId, result.awayTeamId].sort();
-    const key = `${first}::${second}`;
-    const record = pairRecords.get(key) ?? {first, second, firstWins: 0, secondWins: 0};
+    const [first] = [result.homeTeamId, result.awayTeamId].sort();
+    const key = [result.homeTeamId, result.awayTeamId].sort().join('::');
+    const record = pairRecords.get(key) ?? {firstWins: 0, secondWins: 0};
     const winner = result.homeScore > result.awayScore ? result.homeTeamId : result.awayTeamId;
     if (winner === first) record.firstWins += 1;
     else record.secondWins += 1;
     pairRecords.set(key, record);
   }
 
-  const outgoing = new Map(entries.map((entry) => [entry.team.id, new Set<string>()]));
-  const indegree = new Map(entries.map((entry) => [entry.team.id, 0]));
+  const headToHeadWinner = (firstId: string, secondId: string): string | undefined => {
+    const [first, second] = [firstId, secondId].sort();
+    const record = pairRecords.get(`${first}::${second}`);
+    if (!record || record.firstWins === record.secondWins) return undefined;
+    return record.firstWins > record.secondWins ? first : second;
+  };
 
-  for (const record of pairRecords.values()) {
-    if (record.firstWins === record.secondWins) continue;
-    const winner = record.firstWins > record.secondWins ? record.first : record.second;
-    const loser = winner === record.first ? record.second : record.first;
-    if (outgoing.get(winner)?.has(loser)) continue;
-    outgoing.get(winner)?.add(loser);
-    indegree.set(loser, (indegree.get(loser) ?? 0) + 1);
-  }
+  const resolveRemaining = (tied: TeamStanding[]): TeamStanding[] => {
+    if (tied.length < 2) return tied;
 
-  const remaining = new Set(entries.map((entry) => entry.team.id));
-  const ordered: TeamStanding[] = [];
-
-  while (remaining.size) {
-    const available = [...remaining]
-      .filter((id) => (indegree.get(id) ?? 0) === 0)
-      .map((id) => byId.get(id)!)
-      .sort(comparePointsPercentage);
-
-    if (!available.length) {
-      ordered.push(...[...remaining].map((id) => byId.get(id)!).sort(comparePointsPercentage));
-      break;
+    // A team that beats every other tied team wins the highest available spot.
+    const outrightWinner = tied.find((entry) => tied.every((opponent) =>
+      opponent.team.id === entry.team.id
+      || headToHeadWinner(entry.team.id, opponent.team.id) === entry.team.id));
+    if (outrightWinner) {
+      return [
+        outrightWinner,
+        ...resolveRemaining(tied.filter((entry) => entry !== outrightWinner)),
+      ];
     }
 
-    const next = available[0];
-    ordered.push(next);
-    remaining.delete(next.team.id);
-    for (const loser of outgoing.get(next.team.id) ?? []) {
-      indegree.set(loser, Math.max(0, (indegree.get(loser) ?? 0) - 1));
+    // A team that loses to every other tied team takes the lowest available spot.
+    const outrightLoser = tied.find((entry) => tied.every((opponent) =>
+      opponent.team.id === entry.team.id
+      || headToHeadWinner(entry.team.id, opponent.team.id) === opponent.team.id));
+    if (outrightLoser) {
+      return [
+        ...resolveRemaining(tied.filter((entry) => entry !== outrightLoser)),
+        outrightLoser,
+      ];
     }
-  }
 
-  return ordered;
+    // Incomplete / circular H2H is not transitive: A > B and B > C
+    // cannot rank A against C without an A-C result.
+    // Award the highest remaining spot by unrounded points percentage,
+    // then restart H2H for the remaining teams.
+    const [leader] = [...tied].sort(comparePointsPercentage);
+    return [leader, ...resolveRemaining(tied.filter((entry) => entry !== leader))];
+  };
+
+  return resolveRemaining(entries);
 }
 
 function comparePointsPercentage(left: TeamStanding, right: TeamStanding): number {
+  // Exact points-percent ties require the charter's commissioner-run playoff.
+  // Name/ID are display-order fallbacks only, not official tiebreakers.
   return right.pointsPercentage - left.pointsPercentage
-    || right.pointsFor - left.pointsFor
-    || right.pointDifferential - left.pointDifferential
     || left.team.name.localeCompare(right.team.name, undefined, {sensitivity: 'base'})
     || left.team.id.localeCompare(right.team.id);
 }

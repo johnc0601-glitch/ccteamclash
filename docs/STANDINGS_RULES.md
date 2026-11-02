@@ -19,14 +19,11 @@ A tied team match counts as a game played but does not add a win or loss.
 
 Teams are ranked by:
 
-1. Wins
-2. Head-to-head result among teams tied on wins
-3. Points percentage
-4. Points earned
-5. Point differential
-6. Team name
-7. Team ID
+1. Win percentage (wins divided by games played)
+2. Head-to-head among teams with the same win percentage, when head-to-head can resolve the tie
+3. Unrounded points percentage (team points earned divided by combined team points earned in its played matches)
+4. If still tied, a commissioner-organized abbreviated playoff to resolve the official ranking
 
-Head-to-head is evaluated before points percentage. When multiple tied teams create a circular head-to-head result, the unresolved portion falls back to points percentage.
+For a multi-team tie, the head-to-head rules are applied to the remaining tied teams after each place is awarded. A team that beat every other tied team can claim the highest remaining position, and a team that lost to every other tied team can be placed last. Incomplete or circular head-to-head chains do not establish an overall ranking (A over B and B over C is not proof of A over C). When no outright first- or last-place head-to-head result exists, the highest remaining position is awarded by points percentage, and head-to-head is reconsidered for the remaining teams.
 
-Team name and ID provide deterministic ordering only.
+Team name and ID are deterministic display-order fallbacks only if the official tiebreakers remain unresolved; they do not replace the charter's abbreviated-playoff provision.

@@ -12,7 +12,7 @@ export default async function OfficeStandingsPage() {
         <span>Automatic standings</span>
         <h2>{standings?.season.name ?? 'No active season'}</h2>
         <p>
-          Published regular-season results only. Ranking order: wins, head-to-head, then points percentage.
+          Published regular-season results only. Ranking order: win percentage, head-to-head, then points percentage.
         </p>
         <div style={{margin: '22px 0'}}>
           <Link className="office-public-link" href="/office/standings">Refresh standings</Link>

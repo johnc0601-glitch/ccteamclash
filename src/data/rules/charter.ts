@@ -1,5 +1,5 @@
 // Source: CCTC Charter 2025-26 R3(1).docx, as uploaded October 19, 2026.
-// Agreed revisions include Friday-noon roster submission, online registration,
+// Agreed revisions include Friday 3 PM roster submission, online registration,
 // protected women's positions and the 0.5-point no-show rules. Other charter text
 // remains as supplied, pending separate league changes.
 export type CharterEntry = {text: string; level: number; updated?: boolean; updatedLabel?: string; example?: boolean};
@@ -29,7 +29,7 @@ export const charterSections: CharterSection[] = [
         "level": 0
       },
       {
-        "text": "Team Registration: September 1th – 19th",
+        "text": "Team Registration: September 1st – 19th",
         "level": 0
       },
       {
@@ -49,78 +49,6 @@ export const charterSections: CharterSection[] = [
       {
         "text": "The intent is to have an even number of teams each year (6, 8, 10, 12, etc.) If an odd number of teams is assigned, each team will have a bye month chosen. Bye months will be determined by the previous season finish (i.e. first place finish = first choice of bye).",
         "level": 1
-      },
-      {
-        "text": "Seeding for 2025/26 is:",
-        "level": 1
-      },
-      {
-        "text": "Dark Knights",
-        "level": 2
-      },
-      {
-        "text": "Cougar Country",
-        "level": 2
-      },
-      {
-        "text": "Kure Beach",
-        "level": 2
-      },
-      {
-        "text": "Haynous OG’s",
-        "level": 2
-      },
-      {
-        "text": "Beast Mode",
-        "level": 2
-      },
-      {
-        "text": "Wild Turkey",
-        "level": 2
-      },
-      {
-        "text": "Jacksonville",
-        "level": 2
-      },
-      {
-        "text": "Myrtle Beach",
-        "level": 2
-      },
-      {
-        "text": "Team courses are as follows:",
-        "level": 2
-      },
-      {
-        "text": "Castle Hayne 1",
-        "level": 0
-      },
-      {
-        "text": "Cougar Country",
-        "level": 0
-      },
-      {
-        "text": "Joe Eaks Park",
-        "level": 0
-      },
-      {
-        "text": "Wild Turkey",
-        "level": 0
-      },
-      {
-        "text": "The Beast",
-        "level": 0
-      },
-      {
-        "text": "Jacksonville",
-        "level": 0
-      },
-      {
-        "text": "Castle Hayne 2",
-        "level": 0
-      },
-      {
-        "text": "Myrtle Beach",
-        "level": 0
       }
     ]
   },
@@ -293,7 +221,7 @@ export const charterSections: CharterSection[] = [
         "level": 1
       },
       {
-        "text": "Team captains must finalize and submit the official playing roster by 12:00 PM (noon) Eastern on the Friday immediately before the scheduled match, including which players are not in attendance.",
+        "text": "Team captains must finalize and submit the official playing roster by 3:00 PM Eastern on the Friday immediately before the scheduled match, including which players are not in attendance.",
         "level": 0,
         "updated": true
       },
@@ -425,7 +353,7 @@ export const charterSections: CharterSection[] = [
         "level": 0
       },
       {
-        "text": "Each captain must submit their official playing roster in writing by 12:00 PM (noon) Eastern on the Friday immediately before the scheduled match. Official rosters must include each player’s first and last name and any additional information needed to identify players. Changes after this deadline require commissioner approval.",
+        "text": "Each captain must submit their official playing roster in writing by 3:00 PM Eastern on the Friday immediately before the scheduled match. Official rosters must include each player’s first and last name and any additional information needed to identify players. Changes after this deadline require commissioner approval.",
         "level": 0,
         "updated": true
       },
@@ -632,11 +560,11 @@ export const charterSections: CharterSection[] = [
     "title": "Tie Breakers",
     "items": [
       {
-        "text": "Season ending ties will be broken by Head-to-Head, Points Percentage",
+        "text": "Teams are ranked first by regular-season Win Percentage. For teams tied in Win Percentage, Head-to-Head is the first tiebreaker when it resolves the tie; otherwise use Points Percentage.",
         "level": 0
       },
       {
-        "text": "Head-to-Head can’t break a multiway tie if teams haven’t played each other OR they haven’t beat the other team(s).",
+        "text": "In a multi-team tie, incomplete Head-to-Head results cannot automatically establish the full order. However, a team that beat every other tied team may be placed first, or a team that lost to every other tied team may be placed last; then reapply the tiebreakers to the remaining teams.",
         "level": 0
       },
       {
@@ -648,7 +576,7 @@ export const charterSections: CharterSection[] = [
         "level": 1
       },
       {
-        "text": "If there is a multiway tie for multiple spots, each tie is broken individually, the highest place is awarded first (or the last in the case of losing H2H vs all other if there is no outright H2H winter), then the tie-breaker is applied again with the remaining tied teams. H2H is always the first way used to break the tie (with H2H winner taking priority over H2H loser).",
+        "text": "If there is a multiway tie for multiple spots, each tie is broken individually, the highest place is awarded first (or the last in the case of losing H2H vs all other if there is no outright H2H winter), then the tie-breaker is applied again with the remaining tied teams. After Win Percentage, H2H is always the first tiebreaker (with an outright H2H winner taking priority over an outright H2H loser).",
         "level": 0
       },
       {
