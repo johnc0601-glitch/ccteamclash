@@ -1,6 +1,6 @@
 import {createClient} from '@/lib/supabase/server';
 import type {PublicMatchday} from '@/services/matches/MatchdayService';
-import {getMatchPreviewInsights} from '@/services/matches/MatchPreviewInsights';
+import {getMatchPreviewSeries} from '@/services/matches/MatchPreviewInsights';
 import {saveMatchPreview} from './matchPreviewActions';
 import styles from './MatchPreview.module.css';
 
@@ -32,14 +32,12 @@ const APPROVED_COPY: Record<string, {story: string; battle: string; proven?: str
 export async function MatchPreview({matchId, matchday}: {matchId: string; matchday: PublicMatchday}) {
   const supabase = await createClient();
   const db = supabase as any;
-  const [previewResult, claimsResult, insights] = await Promise.all([
+  const [previewResult, claimsResult, series] = await Promise.all([
     db.from('launch_match_previews').select('excerpt,story_url').eq('match_id', matchId).maybeSingle(),
     supabase.auth.getClaims(),
-    getMatchPreviewInsights({
+    getMatchPreviewSeries({
       awayName: matchday.awayTeam.name,
       homeName: matchday.homeTeam.name,
-      awayRoster: matchday.awayTeam.roster,
-      homeRoster: matchday.homeTeam.roster,
     }),
   ]);
 
@@ -104,10 +102,8 @@ export async function MatchPreview({matchId, matchday}: {matchId: string; matchd
         {excerpt ? (
           <>
             <div className={styles.synopsis}>
-              <Stat label="Series" value={insights.series} />
-              <Stat label="Proven" value={insights.proven} />
-              <Stat label="Swing players" value={insights.swing} />
-              </div>
+              <Stat label="Series" value={series} />
+            </div>
             <p className={styles.battleLine}>{approved?.battle ?? `${matchday.awayTeam.name} meets ${matchday.homeTeam.name}.`}</p>
             <div className={styles.fullPreview}>
               <div className={styles.fullPreviewBody}>
