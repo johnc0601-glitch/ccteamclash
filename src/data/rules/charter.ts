@@ -550,7 +550,7 @@ export const charterSections: CharterSection[] = [
     "title": "Season Scoring",
     "items": [
       {
-        "text": "Finals seeding is determined by each team’s record of match wins and losses. Point’s percentage will also be tracked.",
+        "text": "Finals seeding is determined by total regular-season match wins. Teams tied in wins are ranked by head-to-head results when they resolve the tie, followed by points percentage. See Tie Breakers below for multi-team ties.",
         "level": 0
       }
     ]
