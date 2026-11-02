@@ -339,3 +339,45 @@
     display: grid;
   }
 }
+
+.unclaimedForm {
+  display: grid;
+  gap: 12px;
+}
+
+.unclaimedForm label {
+  display: grid;
+  gap: 6px;
+  color: #111516;
+  font-size: 12px;
+}
+
+.unclaimedForm select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid #cfd4ce;
+  border-radius: 4px;
+  background: #fff;
+  color: #111516;
+  font: inherit;
+}
+
+.unclaimedForm .verifyDivision {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+.verifyDivision input {
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+  flex: none;
+  accent-color: #56701c;
+}
+
+.unclaimedForm .primaryButton {
+  padding: 0 12px;
+}
