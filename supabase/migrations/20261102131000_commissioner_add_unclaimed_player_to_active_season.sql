@@ -127,8 +127,14 @@ begin
     returning id into membership_id;
   end if;
 
-  -- Existing membership reconciliation and audit triggers update current team
-  -- and record this action. Match rosters and frozen snapshots are unchanged.
+  -- Keep the directory's current team in sync with the season membership.
+  -- The existing membership audit trigger records who made this change.
+  update public.launch_players
+  set current_team_id = target_team_id,
+      updated_at = ts
+  where id = player_record.id;
+
+  -- Do not alter match-specific rosters or frozen snapshots.
   return membership_id;
 end;
 $function$;
