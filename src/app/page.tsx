@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import {cookies} from 'next/headers';
 import type {ReactNode} from 'react';
 import {Intro} from '@/components/intro/Intro';
@@ -9,6 +10,7 @@ import {MatchCard} from '@/components/MatchCard';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
 import {getStoredTeams} from '@/services/teams/TeamStore';
 import {getStories} from '@/services/stories/StoryService';
+import styles from './matchday.module.css';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +22,6 @@ export default async function Home({searchParams}: HomeProps) {
   const [cookieStore, query] = await Promise.all([cookies(), searchParams]);
   const scheduleService = await createServerScheduleService();
   const stories = await getStories();
-  const lead = stories[0];
   const teamLogos = await getStoredTeams();
   const homeEvents = (await scheduleService.getHomePageEvents()).slice(0, 4);
 
@@ -28,19 +29,31 @@ export default async function Home({searchParams}: HomeProps) {
     <main className="home-page">
       <SiteHeader />
 
-      {lead ? (
-        <section className="story-home-hero">
-          <StoryPhoto className="story-home-photo" image={lead.image} />
-          <div className="story-home-content">
-            <span className="eyebrow">Featured story</span>
-            <h1>{lead.title}</h1>
-            <p>{lead.excerpt}</p>
-            <div className="home-actions">
-              <Link href={`/stories/${lead.slug}`} className="button gold-button">Read story <span>-&gt;</span></Link>
-            </div>
+      <section className={styles.banner} aria-labelledby="matchday-heading">
+        <div className={styles.poster}>
+          <Image
+            src="/matchday/round-2-fall.png"
+            alt="Coastal Carolina Team Clash Round 2 Matchday crest over an autumn coastal sunset"
+            width={1672}
+            height={941}
+            sizes="(max-width: 900px) 100vw, 60vw"
+            preload
+          />
+        </div>
+        <div className={styles.content}>
+          <span className="eyebrow">Round 2 Matchday</span>
+          <h1 id="matchday-heading">Round 2. Bring the Heat.</h1>
+          <p>
+            Fall is in the air, and Team Clash is back on the course. Round 2 brings fresh battles,
+            hometown pride, and another chance to put points on the board. Rally your team, bring
+            your best, and make every throw count.
+          </p>
+          <strong>Fun. Fellowship. Disc Golf.</strong>
+          <div className="home-actions">
+            <Link href="/schedule" className="button gold-button">View the schedule <span>-&gt;</span></Link>
           </div>
-        </section>
-      ) : null}
+        </div>
+      </section>
 
       <section className="shell home-matches-section">
         <div className="home-matches-heading">
