@@ -7,11 +7,11 @@ const FACEBOOK_GROUP_URL = 'https://facebook.com/groups/780013754161635/';
 
 export const metadata: Metadata = {
   title: 'Bring the Clash to Your Community | CCTeamClash',
-  description: 'Bring team-based disc golf to your area. Discover Coastal Carolina Team Clash, follow the current season, and prepare for 2027–28 expansion consideration.',
+  description: 'Discover the CCTeamClash matchday format: competitive singles, a home-team potluck meal, and doubles with friends. Follow this season and prepare for 2027–28.',
   alternates: {canonical: '/bring-the-clash'},
   openGraph: {
     title: 'Fun. Fellowship. Disc Golf. | Bring the Clash to Your Area',
-    description: 'More than competition: teams, friends, matchdays, and shared meals. Bring CCTeamClash to your community next season.',
+    description: 'Competitive singles. An amazing potluck provided by the home team. Doubles with friends. Bring the Clash to your community.',
     url: '/bring-the-clash',
     type: 'website',
     images: [{url: '/matchday/round-2-fall.png', width: 1672, height: 941, alt: 'Coastal Carolina Team Clash disc golf matchday artwork'}],
@@ -39,8 +39,11 @@ export default function BringTheClashPage() {
             <span className={styles.eyebrow}>Coastal Carolina Team Clash · Future expansion</span>
             <h1 id="expansion-title">YOUR AREA.<br />YOUR TEAM.<br /><em>YOUR CLASH.</em></h1>
             <p className={styles.heroLead}>
-              There&apos;s nothing like representing your home course with your friends.
-              The competition brings us together. The laughs, food, friendships, and stories are what make the Clash special.
+              Start with the thrill of competitive singles. Gather for an amazing potluck meal provided by the home team.
+              Then team up with friends for doubles. That&apos;s a Clash matchday: great competition, even better fellowship.
+            </p>
+            <p className={styles.heroSequence} aria-label="Matchday sequence: Singles, home-team potluck, doubles">
+              <span>COMPETE IN SINGLES</span><b aria-hidden="true">→</b><span>SHARE A POTLUCK</span><b aria-hidden="true">→</b><span>PLAY DOUBLES</span>
             </p>
             <div className={styles.heroActions}>
               <FacebookButton />
@@ -58,35 +61,41 @@ export default function BringTheClashPage() {
         </section>
         <p className={`shell ${styles.statFootnote}`}>2026–27 season · Player count verified November 6, 2026 · Five rounds on the published schedule</p>
 
-        <section className={`shell ${styles.introSection}`}>
+        <section className={`shell ${styles.introSection}`} aria-labelledby="matchday-format">
           <div className={styles.sectionHeading}>
-            <span className={styles.eyebrow}>More than a tournament</span>
-            <h2>GREAT MATCHES. <em>EVEN BETTER COMPANY.</em></h2>
-            <p>The Clash gives you something to compete for—and a reason to spend the day with your people. This is disc golf built around fun, fellowship, and community.</p>
+            <span className={styles.eyebrow}>The Clash matchday format</span>
+            <h2 id="matchday-format">COMPETE. BREAK BREAD. <em>PLAY TOGETHER.</em></h2>
+            <p>A Clash matchday has its own rhythm: competitive singles, an incredible home-team potluck, then a doubles round filled with camaraderie. Here&apos;s how the day unfolds.</p>
           </div>
           <div className={styles.benefitGrid}>
-            <article className={styles.benefitCard}>
-              <span className={styles.cardNumber}>01 / FRIENDSHIP</span>
-              <h3>Play with your people.</h3>
-              <p>Represent your home course, wear your team colors, and make memories with the friends and neighbors who make disc golf worth playing.</p>
+            <article className={`${styles.benefitCard} ${styles.singlesCard}`}>
+              <div className={styles.stageTop}><span className={styles.cardNumber}>01 / FIRST ROUND</span><span className={styles.stageKind}>THE COMPETITION</span></div>
+              <span className={styles.stageIcon} aria-hidden="true">◎</span>
+              <h3>Competitive singles.</h3>
+              <p>Match up head-to-head against a player from the opposing team. This is the more competitive part of the day, where individual battles earn points for your team.</p>
+              <strong className={styles.stageBottom}>Bring your best game.</strong>
             </article>
-            <article className={styles.benefitCard}>
-              <span className={styles.cardNumber}>02 / FELLOWSHIP</span>
-              <h3>Stay for the good stuff.</h3>
-              <p>Share a meal, tell stories from the round, and enjoy time together. Win or lose, the friendships are bigger than the scoreboard.</p>
+            <article className={`${styles.benefitCard} ${styles.potluckCard}`}>
+              <div className={styles.stageTop}><span className={styles.cardNumber}>02 / BETWEEN ROUNDS</span><span className={styles.stageKind}>THE FELLOWSHIP</span></div>
+              <span className={styles.stageIcon} aria-hidden="true">✦</span>
+              <h3>Amazing potluck meal.</h3>
+              <p>The home team provides a potluck meal for everyone. Both teams gather to eat, share stories, laugh, and get to know the people they&apos;re competing against.</p>
+              <strong className={styles.stageBottom}>Good food. Better company.</strong>
             </article>
-            <article className={styles.benefitCard}>
-              <span className={styles.cardNumber}>03 / COMPETITION</span>
-              <h3>Have fun competing.</h3>
-              <p>Singles and doubles match play give everyone a chance to contribute. Rivalries are real, but fun and sportsmanship come first.</p>
+            <article className={`${styles.benefitCard} ${styles.doublesCard}`}>
+              <div className={styles.stageTop}><span className={styles.cardNumber}>03 / FINAL ROUND</span><span className={styles.stageKind}>THE FUN</span></div>
+              <span className={styles.stageIcon} aria-hidden="true">◎◎</span>
+              <h3>Doubles with friends.</h3>
+              <p>Finish by teaming up with a friend for doubles. The points still count, but sharing shots, cheering each other on, and playing together bring a whole different energy.</p>
+              <strong className={styles.stageBottom}>Win together. Have fun together.</strong>
             </article>
           </div>
           <div className={styles.fellowshipCallout}>
             <div>
-              <span className={styles.calloutLabel}>The real spirit of the Clash</span>
-              <h3>THROW DISCS. SHARE A MEAL. <em>MAKE FRIENDS.</em></h3>
+              <span className={styles.calloutLabel}>Fun. Fellowship. Disc Golf.</span>
+              <h3>MORE THAN A MATCH. <em>IT&apos;S A DAY TOGETHER.</em></h3>
             </div>
-            <p>It&apos;s the conversations before the first tee, the cheers during a close match, and the food and fellowship afterward. That&apos;s the community we want to grow.</p>
+            <p>Come ready to compete. Stay to share a table with the other team. Finish the day playing alongside your friends. It&apos;s the mix of rivalry and friendship that makes the Clash special.</p>
           </div>
         </section>
 
@@ -102,10 +111,10 @@ export default function BringTheClashPage() {
               <div className={styles.scoreFoot}>YOUR TEAM COULD BE NEXT</div>
             </div>
             <div className={styles.matchdayContent}>
-              <span className={styles.eyebrow}>The fun of matchday</span>
-              <h2>ONE TEAM.<br /><em>ONE BIG DAY.</em></h2>
-              <p>Show up with your teammates, compete in singles and doubles, cheer each other on, and stick around to enjoy good company and a shared meal.</p>
-              <p>There&apos;s plenty to follow all season—matchups, standings, stats, stories, and new rivalries—but the heart of the Clash is the time spent together.</p>
+              <span className={styles.eyebrow}>A competitive league with a community spirit</span>
+              <h2>PLAY HARD.<br /><em>HAVE FUN.</em></h2>
+              <p>The singles round brings the intensity. The home team&apos;s potluck gives everyone a chance to connect. Doubles closes the day playing alongside friends.</p>
+              <p>Throughout the season, teams follow matchups, results, standings, and stories—but the real reward is the community built between rounds and across the table.</p>
               <div className={styles.textLinks}>
                 <Link href="/teams">Meet the current teams <span aria-hidden="true">→</span></Link>
                 <Link href="/standings">Explore the standings <span aria-hidden="true">→</span></Link>
@@ -144,7 +153,7 @@ export default function BringTheClashPage() {
           <div className="shell">
             <span className={styles.eyebrow}>Fun. Fellowship. Disc Golf.</span>
             <h2>THE BEST PART OF THE CLASH?<br /><em>THE PEOPLE YOU SHARE IT WITH.</em></h2>
-            <p>Come for the competition. Stay for the friends, the food, and the fun. Bring your community together for next season.</p>
+            <p>Competitive singles, a home-team potluck, and doubles with friends. Bring your community together for the next season of fun, fellowship, and disc golf.</p>
             <div className={styles.heroActions}>
               <FacebookButton label="Join the Clash community" />
               <Link className={styles.secondaryButton} href="/rules">Read the league rules <span aria-hidden="true">→</span></Link>
