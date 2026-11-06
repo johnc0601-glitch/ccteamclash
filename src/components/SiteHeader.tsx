@@ -88,6 +88,7 @@ export function Footer() {
               <Link href="/rules" prefetch={false}>Rules</Link>
           <Link href="/teams" prefetch={false}>Teams</Link>
           <Link href="/courses" prefetch={false}>Courses</Link>
+          <Link href="/bring-the-clash" prefetch={false}>Bring the Clash</Link>
           <FacebookLink size={20} />
         </div>
       </div>
