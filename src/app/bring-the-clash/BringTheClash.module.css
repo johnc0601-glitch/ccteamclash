@@ -42,6 +42,8 @@
 .benefitCard h3 { margin-top: 13px; }
 .benefitCard p { flex: 1; }
 .stageBottom { display: block; margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(50,50,50,.14); color: #82610d; font-size: 12px; font-weight: 950; }
+.singlesCard { border-top-color: #3f5962; }
+.singlesCard .stageIcon { color: #465f68; }
 .potluckCard { border-top-color: #cd9913; background: #f8efd6; }
 .potluckCard .stageIcon { color: #bd8500; }
 .doublesCard { border-top-color: #457c67; }
