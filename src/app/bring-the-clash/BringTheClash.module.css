@@ -5,6 +5,7 @@
 .heroInner { padding-top: 95px; padding-bottom: 100px; }
 .seasonLabel { display: inline-flex; align-items: center; gap: 9px; margin-bottom: 34px; padding: 10px 15px; border: 1px solid rgba(218,184,91,.5); border-radius: 50px; background: rgba(12,16,18,.55); color: #e1d4a3; font-size: 11px; letter-spacing: .09em; font-weight: 800; text-transform: uppercase; }
 .goldDot { width: 7px; height: 7px; border-radius: 50%; background: #d2a11a; box-shadow: 0 0 0 4px rgba(201,154,0,.15); }
+.heroTagline { display: block; margin-bottom: 18px; color: #efbd37; font-family: var(--cc-font-display); font-size: clamp(15px,2.8vw,23px); font-weight: 950; letter-spacing: .12em; text-transform: uppercase; }
 .hero h1, .sectionHeading h2, .matchdayContent h2, .faqHeading h2, .finalCta h2 { font-family: var(--cc-font-display); font-weight: 950; text-transform: uppercase; letter-spacing: -.065em; }
 .hero h1 { max-width: 850px; margin: 16px 0 22px; font-size: clamp(54px, 8.3vw, 116px); line-height: .91; }
 .hero h1 em, .sectionHeading h2 em, .matchdayContent h2 em, .finalCta h2 em { color: #d5a31c; font-style: normal; }
@@ -21,6 +22,9 @@
 .statRibbon > div:last-child { border: 0; }
 .statRibbon strong { display: block; font-family: var(--cc-font-display); font-size: clamp(30px,4.2vw,52px); letter-spacing: -.06em; line-height: 1; }
 .statRibbon span { display: block; margin-top: 9px; color: #626b6f; font-size: 10px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.statRibbon .statWord { display: flex; align-items: center; justify-content: center; min-height: 51px; color: #9a7300; font-size: clamp(23px,2.7vw,34px); letter-spacing: -.045em; }
+.statFootnote { margin-top: 17px; color: #737a78; font-size: 11px; font-weight: 750; text-align: center; }
+
 .introSection, .stepsSection { padding-top: 115px; padding-bottom: 120px; }
 .sectionHeading { max-width: 800px; margin-bottom: 43px; }
 .sectionHeading h2 { font-size: clamp(37px,5.1vw,68px); line-height: 1; margin: 17px 0 17px; }
@@ -30,6 +34,11 @@
 .cardNumber { color: #9b770b; font-size: 10px; font-weight: 950; letter-spacing: .15em; }
 .benefitCard h3 { font-size: clamp(22px,2.15vw,28px); line-height: 1.14; letter-spacing: -.035em; margin: 23px 0 12px; }
 .benefitCard p { margin: 0; color: #596266; font-size: 14px; line-height: 1.7; }
+.fellowshipCallout { display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; gap: 40px; margin-top: 22px; padding: 37px 40px; background: #efe4c5; border-left: 6px solid #c99a00; }
+.calloutLabel { color: #85620a; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: .13em; }
+.fellowshipCallout h3 { margin: 14px 0 0; font-family: var(--cc-font-display); font-size: clamp(26px,3.1vw,42px); line-height: 1.03; letter-spacing: -.045em; }
+.fellowshipCallout h3 em { color: #987000; font-style: normal; }
+.fellowshipCallout p { margin: 0; color: #4d4d46; font-size: 16px; line-height: 1.7; }
 .matchdayBand { background: #11181b; color: #fff; padding: 104px 0; }
 .matchdayGrid { display: grid; grid-template-columns: 1.04fr 1fr; gap: clamp(35px,6vw,88px); align-items: center; }
 .matchdayVisual { border: 1px solid #43494a; border-top: 5px solid #d4a11c; background: radial-gradient(circle at 50% 36%,#313e3e, #11191b 76%); min-height: 355px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 25px 60px rgba(0,0,0,.28); }
@@ -63,6 +72,6 @@
 .finalCta h2 { font-size: clamp(39px,5.6vw,73px); line-height: 1; margin: 17px 0 20px; }
 .finalCta p { max-width: 660px; color: #cfd7d7; font-size: 18px; line-height: 1.6; }
 .finalCta small { display: block; margin-top: 23px; color: #a9b2b2; font-size: 11px; }
-@media (max-width: 900px) { .matchdayGrid { grid-template-columns: 1fr; } .matchdayVisual { max-width: 620px; width: 100%; } .steps { grid-template-columns: repeat(2,1fr); } .faqSection { grid-template-columns: 1fr; gap: 25px; } }
-@media (max-width: 700px) { .hero { min-height: 690px; } .heroBackdrop { background-position: 62% center; } .heroInner { padding-top: 62px; padding-bottom: 100px; } .seasonLabel { font-size: 9px; margin-bottom: 25px; } .hero h1 { font-size: clamp(48px,12.2vw,75px); } .heroLead { font-size: 16px; } .statRibbon { grid-template-columns: repeat(2,1fr); margin-top: -22px; } .statRibbon > div:nth-child(2) { border-right: 0; } .statRibbon > div:nth-child(-n+2) { border-bottom: 1px solid #e2ded4; } .statRibbon > div { padding: 21px 8px; } .introSection, .stepsSection { padding-top: 75px; padding-bottom: 75px; } .benefitGrid { grid-template-columns: 1fr; } .benefitCard { padding: 27px; } .matchdayBand { padding: 75px 0; } .steps { gap: 24px 17px; } .faqSection { padding-bottom: 75px; } .finalCta { padding: 75px 0; } .heroActions { align-items: stretch; } }
+@media (max-width: 900px) { .fellowshipCallout { grid-template-columns: 1fr; gap: 16px; } .matchdayGrid { grid-template-columns: 1fr; } .matchdayVisual { max-width: 620px; width: 100%; } .steps { grid-template-columns: repeat(2,1fr); } .faqSection { grid-template-columns: 1fr; gap: 25px; } }
+@media (max-width: 700px) { .hero { min-height: 0; } .heroBackdrop { background-position: 62% center; } .heroInner { padding-top: 62px; padding-bottom: 76px; } .seasonLabel { font-size: 9px; margin-bottom: 25px; } .hero h1 { font-size: clamp(48px,12.2vw,75px); } .heroLead { font-size: 16px; } .statRibbon { grid-template-columns: repeat(2,1fr); margin-top: -22px; } .statRibbon > div:nth-child(2) { border-right: 0; } .statRibbon > div:nth-child(-n+2) { border-bottom: 1px solid #e2ded4; } .statRibbon > div { padding: 21px 8px; } .introSection, .stepsSection { padding-top: 75px; padding-bottom: 75px; } .benefitGrid { grid-template-columns: 1fr; } .benefitCard { padding: 27px; } .fellowshipCallout { padding: 28px 22px; } .fellowshipCallout p { font-size: 14px; } .matchdayBand { padding: 75px 0; } .steps { gap: 24px 17px; } .faqSection { padding-bottom: 75px; } .finalCta { padding: 75px 0; } .heroActions { align-items: stretch; } }
 @media (max-width: 430px) { .hero h1 { font-size: 46px; } .heroActions > * { width: 100%; } .steps { grid-template-columns: 1fr; } .scoreTop { font-size: 8px; } .teamRow strong { font-size: 17px; } }
