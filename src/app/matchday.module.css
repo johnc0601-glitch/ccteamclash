@@ -1,0 +1,55 @@
+.banner {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  border-bottom: 1px solid #a27752;
+  background:
+    radial-gradient(ellipse at top right, rgba(187, 86, 29, .3), transparent 65%),
+    linear-gradient(120deg, #101820, #061f24);
+  color: #f5f2ea;
+}
+
+.poster {
+  display: grid;
+  align-items: center;
+  background: #101820;
+}
+
+.poster img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.content {
+  min-width: 0;
+  padding: clamp(28px, 4vw, 64px);
+  align-self: center;
+}
+
+.content h1 {
+  margin: 12px 0 20px;
+  font-family: var(--cc-font-display);
+  font-size: clamp(32px, 4vw, 64px);
+  font-style: italic;
+  line-height: 1.05;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.content p {
+  max-width: 760px;
+  margin: 0 0 18px;
+  font-size: clamp(16px, 2vw, 18px);
+  line-height: 1.65;
+  color: #d7e0dd;
+}
+
+.content strong {
+  color: #fcc200;
+}
+
+@media (max-width: 900px) {
+  .banner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import Image from 'next/image';
+import styles from './matchday.module.css';
 import type {ReactNode} from 'react';
 import {ClashCountdown} from '@/components/ClashCountdown';
 import {ClashPulse} from '@/components/ClashPulse';
@@ -10,7 +12,7 @@ import {MatchCard} from '@/components/MatchCard';
 import {getHomepageData} from '@/services/home/HomepageDataService';
 import {getHomepageClashPulseItems} from '@/services/home/ClashPulseService';
 import {easternDate} from '@/services/weather/MatchWeather';
-import {formatStoryDate, getStoryPreview} from '@/services/stories/storyPresentation';
+import {formatStoryDate} from '@/services/stories/storyPresentation';
 
 // Regenerate the score cards regularly on Matchday while the other homepage
 // queries stay cached. Result publication also invalidates this route.
@@ -24,33 +26,37 @@ export default async function Home() {
   const {storyData, teams: teamLogos, homeEvents, publishedScores, feedPreviews, roundLabel} = homepageData;
   const today = easternDate();
   const hasUnpublishedMatchToday = homeEvents.some((match) => match.scheduledDate === today && !publishedScores.has(match.id));
-  const lead = storyData.lead;
-  // Story bodies can begin with a matchup label and a duplicate headline.
-  // Use the first full paragraph for the compact homepage teaser.
-  const firstParagraph = lead?.body.findIndex((part) => part.trim().length >= 90) ?? -1;
-  const previewBody = lead && firstParagraph > 0 && firstParagraph <= 2
-    ? lead.body.slice(firstParagraph)
-    : lead?.body ?? [];
-  const leadPreview = lead ? getStoryPreview({...lead, body: previewBody}, 145) : '';
 
   return (
     <main className="home-page">
       <SiteHeader />
       <ClashCountdown />
 
-      {lead ? (
-        <section className="story-home-hero">
-          <StoryPhoto className="story-home-photo" image={lead.image} />
-          <div className="story-home-content">
-            <span className="eyebrow">Featured story</span>
-            <h1>{lead.title}</h1>
-            <p>{leadPreview}</p>
-            <div className="home-actions">
-              <Link href={`/stories/${lead.slug}`} className="button gold-button">Read story <span>-&gt;</span></Link>
-            </div>
+      <section className={styles.banner} aria-labelledby="matchday-heading">
+        <div className={styles.poster}>
+          <Image
+            src="/matchday/round-2-fall.png"
+            alt="Coastal Carolina Team Clash Round 2 Matchday crest over an autumn coastal sunset"
+            width={1672}
+            height={941}
+            sizes="(max-width: 900px) 100vw, 60vw"
+            preload
+          />
+        </div>
+        <div className={styles.content}>
+          <span className="eyebrow">Round 2 Matchday</span>
+          <h1 id="matchday-heading">Round 2. Bring the Heat.</h1>
+          <p>
+            Fall is in the air, and Team Clash is back on the course. Round 2 brings fresh battles,
+            hometown pride, and another chance to put points on the board. Rally your team, bring
+            your best, and make every throw count.
+          </p>
+          <strong>Fun. Fellowship. Disc Golf.</strong>
+          <div className="home-actions">
+            <Link href="/schedule" className="button gold-button">View the schedule <span>-&gt;</span></Link>
           </div>
-        </section>
-      ) : null}
+        </div>
+      </section>
 
       <section className="shell home-matches-section">
         <HomeScoreAutoRefresh enabled={hasUnpublishedMatchToday} />
