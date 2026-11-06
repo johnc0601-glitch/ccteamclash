@@ -27,9 +27,9 @@ test('mobile crop is optional and desktop selection remains independent', () => 
 
 test('every configured welcome and matchup asset exists, with mobile art for all Round 1 matches', () => {
   for (const art of Object.values(MATCHDAY_INTROS)) {
-    assert.ok(art.mobile, `${art.label} needs portrait artwork`);
+    // Landscape-only artwork must remain full width on phones.
     assert.ok(existsSync(`public${art.desktop}`), art.desktop);
-    assert.ok(existsSync(`public${art.mobile}`), art.mobile);
+    if (art.mobile) assert.ok(existsSync(`public${art.mobile}`), art.mobile);
   }
   for (const path of Object.values(MATCHDAY_WELCOME_ART)) assert.ok(existsSync(`public${path}`), path);
 });

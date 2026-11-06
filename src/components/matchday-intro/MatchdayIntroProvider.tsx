@@ -1,8 +1,8 @@
 'use client';
 
-import {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
+import {createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode} from 'react';
 import {usePathname} from 'next/navigation';
-import {isMatchdayToday, findMatchdayIntro, selectIntroImage, MATCHDAY_WELCOME_ART, MATCHDAY_INTRO_TIMING, type MatchdayIntroArt} from './matchdayIntro.config';
+import {isMatchdayToday, findMatchdayIntro, selectIntroImage, MATCHDAY_INTRO_TIMING, type MatchdayIntroArt} from './matchdayIntro.config';
 import styles from './MatchdayIntro.module.css';
 
 type Run = {id: number; from: string; href: string; slug: string; art: MatchdayIntroArt; src: string; reduced: boolean};
@@ -21,12 +21,8 @@ export function MatchdayIntroProvider({children}: {children: ReactNode}) {
     if (!entry || pathname === href || pathname === `/matches/${entry.slug}`) return;
     const isMobile = window.matchMedia('(max-width: 767px)').matches;
     const src = selectIntroImage(entry.art, isMobile);
-    // Preload the matchup art. The welcome splash itself uses a responsive <picture>
-    // so the browser selects the correct mobile/desktop source.
-    for (const imageSrc of [isMobile ? MATCHDAY_WELCOME_ART.mobile : MATCHDAY_WELCOME_ART.desktop, src]) {
-      const preload = new window.Image();
-      preload.src = imageSrc;
-    }
+    const preload = new window.Image();
+    preload.src = src;
     setRun({id: ++counter.current, from: pathname, href, ...entry, src,
       reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches});
   }, [pathname]);
@@ -45,10 +41,12 @@ export function MatchdayIntroProvider({children}: {children: ReactNode}) {
 
 function MatchdayIntro({run, onFinish}: {run: Run; onFinish: () => void}) {
   const [src, setSrc] = useState(run.src);
-  const [welcomeReady, setWelcomeReady] = useState(false);
+  const pathname = usePathname();
+  const [held, setHeld] = useState(false);
+  const [exiting, setExiting] = useState(false);
   const [posterReady, setPosterReady] = useState(false);
-  const [reducedPoster, setReducedPoster] = useState(false);
-  const ready = welcomeReady && posterReady;
+  const ready = posterReady;
+  const destinationReady = pathname === run.href || pathname === `/matches/${run.slug}`;
   const skip = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -69,31 +67,30 @@ function MatchdayIntro({run, onFinish}: {run: Run; onFinish: () => void}) {
     };
   }, [onFinish]);
 
-  // Start the sequence only once both images are available, including on cold loads.
+  // Count the full hold only after the actual poster has loaded.
   useEffect(() => {
-    if (!ready) {
-      const deadline = window.setTimeout(onFinish, MATCHDAY_INTRO_TIMING.loadTimeoutMs);
-      return () => window.clearTimeout(deadline);
-    }
-    const timeout = window.setTimeout(onFinish,
-      run.reduced ? MATCHDAY_INTRO_TIMING.reducedMs : MATCHDAY_INTRO_TIMING.durationMs);
-    const reveal = run.reduced
-      ? window.setTimeout(() => setReducedPoster(true), MATCHDAY_INTRO_TIMING.reducedWelcomeMs)
-      : undefined;
-    return () => { window.clearTimeout(timeout); window.clearTimeout(reveal); };
-  }, [ready, onFinish, run.reduced]);
+    if (!ready) return;
+    const timer = window.setTimeout(() => setHeld(true), MATCHDAY_INTRO_TIMING.holdMs);
+    return () => window.clearTimeout(timer);
+  }, [ready]);
+
+  useEffect(() => {
+    if (!held || !destinationReady) return;
+    const frame = window.requestAnimationFrame(() => setExiting(true));
+    const timer = window.setTimeout(onFinish,
+      run.reduced ? MATCHDAY_INTRO_TIMING.reducedMs : MATCHDAY_INTRO_TIMING.zoomMs);
+    return () => { window.cancelAnimationFrame(frame); window.clearTimeout(timer); };
+  }, [held, destinationReady, onFinish, run.reduced]);
+
+  useEffect(() => {
+    const deadline = window.setTimeout(onFinish, MATCHDAY_INTRO_TIMING.loadTimeoutMs);
+    return () => window.clearTimeout(deadline);
+  }, [onFinish]);
 
   return (
-    <div className={styles.intro} data-matchday-intro data-reduced={run.reduced} data-ready={ready} data-reduced-poster={reducedPoster}
+    <div className={styles.intro} data-matchday-intro data-reduced={run.reduced} data-ready={ready} data-exiting={exiting}
+      style={{'--intro-zoom-ms': `${run.reduced ? MATCHDAY_INTRO_TIMING.reducedMs : MATCHDAY_INTRO_TIMING.zoomMs}ms`} as CSSProperties}
       role="dialog" aria-modal="true" aria-label={`Welcome to Matchday: ${run.art.label}`}>
-      <div className={styles.welcomeArt} aria-hidden="true">
-        <picture>
-          <source media="(max-width: 767px)" srcSet={MATCHDAY_WELCOME_ART.mobile} />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={MATCHDAY_WELCOME_ART.desktop} alt="" fetchPriority="high" loading="eager"
-            onLoad={() => setWelcomeReady(true)} onError={onFinish} />
-        </picture>
-      </div>
       <div className={styles.poster} data-has-mobile={src === run.art.mobile ? 'true' : 'false'}>
         {/* Native img shares the exact preloaded URL and supports optional art direction. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}

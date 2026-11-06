@@ -15,6 +15,11 @@ export const MATCHDAY_WELCOME_ART = {
 // Verified against live launch_schedule_matches on 2026-09-27.
 // IDs retain legacy team names: use public slugs, not names inferred from IDs.
 export const MATCHDAY_INTROS: Record<string, MatchdayIntroArt> = {
+  'ninjas-at-kb-2026-r2': {
+    matchId: 'ninjas-at-kb-2026-r2',
+    label: 'Ninjas at KB',
+    desktop: '/matchday-intros/2026-2027/round-2/ninjas-at-kb.webp',
+  },
   'kb-at-dark-knights-2026-r1': {
     matchId: 'ninjas-vs-kb-cccdd6ca-c5ce-4ecb-b7c9-c02d7d657e9f',
     label: 'KB at Dark Knights',
@@ -42,10 +47,9 @@ export const MATCHDAY_INTROS: Record<string, MatchdayIntroArt> = {
 };
 
 export const MATCHDAY_INTRO_TIMING = {
-  revealMs: 2400,
-  durationMs: 5700,
-  reducedMs: 1400,
-  reducedWelcomeMs: 700,
+  holdMs: 1000,
+  zoomMs: 650,
+  reducedMs: 150,
   loadTimeoutMs: 8000,
 } as const;
 
