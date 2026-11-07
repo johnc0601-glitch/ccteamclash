@@ -152,7 +152,12 @@ export default function BringTheClashPage() {
                   <p>Each team has 18 designated playing positions, with up to 16 men (including two players age 50+) and two positions reserved for women. Additional women can participate.</p>
                 </div>
               </div>
-              <p className={styles.rosterNote}>Teams carry larger season rosters to cover availability. You don&apos;t need a complete group just to start planning—find a captain, gather interested players, and follow the league while preparing for next season.</p>
+              <div className={styles.seasonRoster}>
+                <span className={styles.rosterEyebrow}>Maximum standard season roster</span>
+                <p><strong>25 men</strong><span aria-hidden="true"> / </span><strong>4 women</strong></p>
+                <small>Additional women may be rostered beyond the four standard women&apos;s spots.</small>
+              </div>
+              <p className={styles.rosterNote}>The larger season roster helps teams cover player availability from match to match. You don&apos;t need a complete group just to start planning—find a captain, gather interested players, and follow the league while preparing for next season.</p>
               <small>These are the current season&apos;s roster guidelines. Requirements for 2027–28 will be confirmed when registration opens.</small>
             </div>
             <details><summary>Can a new area join this season?</summary><p>No. The current 2026–27 season is underway. The earliest opportunity for a new team or community to be considered is next season, 2027–28.</p></details>
