@@ -81,6 +81,15 @@
 .faqSection { padding-bottom: 112px; display: grid; grid-template-columns: .85fr 1.15fr; gap: 65px; }
 .faqHeading h2 { font-size: clamp(30px,3.7vw,48px); line-height: 1.05; margin: 15px 0 0; }
 .faqItems { border-top: 1px solid #c9c5bc; }
+.rosterExplainer { padding: 24px; margin-bottom: 10px; border: 1px solid #d5c28b; border-left: 5px solid #bb8d09; background: #fcf8ec; }
+.rosterEyebrow { display: block; color: #9a7107; font-size: 10px; font-weight: 950; letter-spacing: .13em; text-transform: uppercase; }
+.rosterTopline { display: flex; align-items: flex-start; gap: 20px; margin-top: 13px; }
+.rosterNumber { color: #181d1d; font-family: var(--cc-font-display); font-size: clamp(58px, 6.3vw, 80px); line-height: .88; letter-spacing: -.075em; }
+.rosterTopline h3 { margin: 0 0 10px; font-family: var(--cc-font-display); font-size: clamp(20px, 2.15vw, 27px); line-height: 1.05; text-transform: uppercase; letter-spacing: -.035em; }
+.rosterTopline p, .rosterNote { margin: 0; color: #464e51; font-size: 14px; line-height: 1.65; }
+.rosterNote { margin-top: 18px; }
+.rosterExplainer small { display: block; margin-top: 14px; color: #6c7271; font-size: 11px; line-height: 1.55; }
+
 .faqItems details { border-bottom: 1px solid #c9c5bc; padding: 19px 0; }
 .faqItems summary { cursor: pointer; font-size: 16px; font-weight: 900; padding-right: 15px; }
 .faqItems p { font-size: 14px; line-height: 1.7; color: #5e696d; }
@@ -90,4 +99,4 @@
 .finalCta small { display: block; margin-top: 23px; color: #a9b2b2; font-size: 11px; }
 @media (max-width: 900px) { .fellowshipCallout { grid-template-columns: 1fr; gap: 16px; } .matchdayGrid { grid-template-columns: 1fr; } .matchdayVisual { max-width: 620px; width: 100%; } .steps { grid-template-columns: repeat(2,1fr); } .faqSection { grid-template-columns: 1fr; gap: 25px; } }
 @media (max-width: 700px) { .hero { min-height: 0; } .heroBackdrop { background-position: 62% center; } .heroInner { padding-top: 62px; padding-bottom: 76px; } .seasonLabel { font-size: 9px; margin-bottom: 25px; } .hero h1 { font-size: clamp(48px,12.2vw,75px); } .heroLead { font-size: 16px; } .heroSequence { font-size: 10px; gap: 6px; } .statRibbon { grid-template-columns: repeat(2,1fr); margin-top: -22px; } .statRibbon > div:nth-child(2) { border-right: 0; } .statRibbon > div:nth-child(-n+2) { border-bottom: 1px solid #e2ded4; } .statRibbon > div { padding: 21px 8px; } .introSection, .stepsSection { padding-top: 75px; padding-bottom: 75px; } .benefitGrid { grid-template-columns: 1fr; } .benefitCard { padding: 27px; } .stageIcon { margin-top: 18px; } .benefitCard h3 { font-size: 27px; } .fellowshipCallout { padding: 28px 22px; } .fellowshipCallout p { font-size: 14px; } .matchdayBand { padding: 75px 0; } .steps { gap: 24px 17px; } .faqSection { padding-bottom: 75px; } .finalCta { padding: 75px 0; } .heroActions { align-items: stretch; } }
-@media (max-width: 430px) { .hero h1 { font-size: 46px; } .heroActions > * { width: 100%; } .steps { grid-template-columns: 1fr; } .scoreTop { font-size: 8px; } .teamRow strong { font-size: 17px; } }
+@media (max-width: 430px) { .rosterExplainer { padding: 21px 18px; } .rosterTopline { gap: 14px; } .rosterNumber { font-size: 58px; } .rosterTopline h3 { font-size: 21px; } .hero h1 { font-size: 46px; } .heroActions > * { width: 100%; } .steps { grid-template-columns: 1fr; } .scoreTop { font-size: 8px; } .teamRow strong { font-size: 17px; } }
