@@ -7,11 +7,11 @@ const FACEBOOK_GROUP_URL = 'https://facebook.com/groups/780013754161635/';
 
 export const metadata: Metadata = {
   title: 'Bring the Clash to Your Community | CCTeamClash',
-  description: 'Discover the CCTeamClash matchday format: competitive singles, a home-team potluck meal, and doubles with friends. Follow this season and prepare for 2027–28.',
+  description: 'Discover the CCTeamClash matchday format: singles match play, a home-team potluck meal, and doubles stroke play with friends. Follow this season and prepare for 2027–28.',
   alternates: {canonical: '/bring-the-clash'},
   openGraph: {
     title: 'Fun. Fellowship. Disc Golf. | Bring the Clash to Your Area',
-    description: 'Competitive singles. An amazing potluck provided by the home team. Doubles with friends. Bring the Clash to your community.',
+    description: 'Singles match play. An amazing home-team potluck. Doubles stroke play with friends. Bring the Clash to your community.',
     url: '/bring-the-clash',
     type: 'website',
     images: [{url: '/matchday/round-2-fall.png', width: 1672, height: 941, alt: 'Coastal Carolina Team Clash disc golf matchday artwork'}],
@@ -39,11 +39,11 @@ export default function BringTheClashPage() {
             <span className={styles.eyebrow}>Coastal Carolina Team Clash · Future expansion</span>
             <h1 id="expansion-title">YOUR AREA.<br />YOUR TEAM.<br /><em>YOUR CLASH.</em></h1>
             <p className={styles.heroLead}>
-              Start with the thrill of competitive singles. Gather for an amazing potluck meal provided by the home team.
-              Then team up with friends for doubles. That&apos;s a Clash matchday: great competition, even better fellowship.
+              Start with competitive singles match play, battling head-to-head, hole by hole. Gather for an amazing potluck meal provided by the home team.
+              Then team up with friends for doubles stroke play, where the lowest total score wins. That&apos;s a Clash matchday: great competition, even better fellowship.
             </p>
-            <p className={styles.heroSequence} aria-label="Matchday sequence: Singles, home-team potluck, doubles">
-              <span>COMPETE IN SINGLES</span><b aria-hidden="true">→</b><span>SHARE A POTLUCK</span><b aria-hidden="true">→</b><span>PLAY DOUBLES</span>
+            <p className={styles.heroSequence} aria-label="Matchday sequence: Singles match play, home-team potluck, doubles stroke play">
+              <span>SINGLES MATCH PLAY</span><b aria-hidden="true">→</b><span>SHARE A POTLUCK</span><b aria-hidden="true">→</b><span>DOUBLES STROKE PLAY</span>
             </p>
             <div className={styles.heroActions}>
               <FacebookButton />
@@ -65,14 +65,14 @@ export default function BringTheClashPage() {
           <div className={styles.sectionHeading}>
             <span className={styles.eyebrow}>The Clash matchday format</span>
             <h2 id="matchday-format">COMPETE. BREAK BREAD. <em>PLAY TOGETHER.</em></h2>
-            <p>A Clash matchday has its own rhythm: competitive singles, an incredible home-team potluck, then a doubles round filled with camaraderie. Here&apos;s how the day unfolds.</p>
+            <p>A Clash matchday has its own rhythm: competitive singles match play, an incredible home-team potluck, then doubles stroke play with friends. Here&apos;s how the day unfolds.</p>
           </div>
           <div className={styles.benefitGrid}>
             <article className={`${styles.benefitCard} ${styles.singlesCard}`}>
               <div className={styles.stageTop}><span className={styles.cardNumber}>01 / FIRST ROUND</span><span className={styles.stageKind}>THE COMPETITION</span></div>
               <span className={styles.stageIcon} aria-hidden="true">◎</span>
-              <h3>Competitive singles.</h3>
-              <p>Match up head-to-head against a player from the opposing team. This is the more competitive part of the day, where individual battles earn points for your team.</p>
+              <h3>Singles match play.</h3>
+              <p>Face a player from the opposing team and compete hole by hole in match play. Win more holes than your opponent to take the singles matchup and earn a point for your team.</p>
               <strong className={styles.stageBottom}>Bring your best game.</strong>
             </article>
             <article className={`${styles.benefitCard} ${styles.potluckCard}`}>
@@ -85,8 +85,8 @@ export default function BringTheClashPage() {
             <article className={`${styles.benefitCard} ${styles.doublesCard}`}>
               <div className={styles.stageTop}><span className={styles.cardNumber}>03 / FINAL ROUND</span><span className={styles.stageKind}>THE FUN</span></div>
               <span className={styles.stageIcon} aria-hidden="true">◎◎</span>
-              <h3>Doubles with friends.</h3>
-              <p>Finish by teaming up with a friend for doubles. The points still count, but sharing shots, cheering each other on, and playing together bring a whole different energy.</p>
+              <h3>Doubles stroke play.</h3>
+              <p>Finish with a friend in doubles stroke play, competing for the lowest total score. Each doubles win earns points for the team, while playing together adds a fun, social side to the competition.</p>
               <strong className={styles.stageBottom}>Win together. Have fun together.</strong>
             </article>
           </div>
@@ -113,7 +113,7 @@ export default function BringTheClashPage() {
             <div className={styles.matchdayContent}>
               <span className={styles.eyebrow}>A competitive league with a community spirit</span>
               <h2>PLAY HARD.<br /><em>HAVE FUN.</em></h2>
-              <p>The singles round brings the intensity. The home team&apos;s potluck gives everyone a chance to connect. Doubles closes the day playing alongside friends.</p>
+              <p>Singles match play brings head-to-head intensity. The home team&apos;s potluck gives everyone a chance to connect. Doubles stroke play closes the day alongside friends.</p>
               <p>Throughout the season, teams follow matchups, results, standings, and stories—but the real reward is the community built between rounds and across the table.</p>
               <div className={styles.textLinks}>
                 <Link href="/teams">Meet the current teams <span aria-hidden="true">→</span></Link>
@@ -170,7 +170,7 @@ export default function BringTheClashPage() {
           <div className="shell">
             <span className={styles.eyebrow}>Fun. Fellowship. Disc Golf.</span>
             <h2>THE BEST PART OF THE CLASH?<br /><em>THE PEOPLE YOU SHARE IT WITH.</em></h2>
-            <p>Competitive singles, a home-team potluck, and doubles with friends. Bring your community together for the next season of fun, fellowship, and disc golf.</p>
+            <p>Singles match play, a home-team potluck, and doubles stroke play with friends. Bring your community together for the next season of fun, fellowship, and disc golf.</p>
             <div className={styles.heroActions}>
               <FacebookButton label="Join the Clash community" />
               <Link className={styles.secondaryButton} href="/rules">Read the league rules <span aria-hidden="true">→</span></Link>
