@@ -143,6 +143,18 @@ export default function BringTheClashPage() {
             <h2>QUESTIONS BEFORE YOU START?</h2>
           </div>
           <div className={styles.faqItems}>
+            <div className={styles.rosterExplainer}>
+              <span className={styles.rosterEyebrow}>Building your team</span>
+              <div className={styles.rosterTopline}>
+                <strong className={styles.rosterNumber}>18</strong>
+                <div>
+                  <h3>Players on matchday</h3>
+                  <p>Each team has 18 designated playing positions, with up to 16 men (including two players age 50+) and two positions reserved for women. Additional women can participate.</p>
+                </div>
+              </div>
+              <p className={styles.rosterNote}>Teams carry larger season rosters to cover availability. You don&apos;t need a complete group just to start planning—find a captain, gather interested players, and follow the league while preparing for next season.</p>
+              <small>These are the current season&apos;s roster guidelines. Requirements for 2027–28 will be confirmed when registration opens.</small>
+            </div>
             <details><summary>Can a new area join this season?</summary><p>No. The current 2026–27 season is underway. The earliest opportunity for a new team or community to be considered is next season, 2027–28.</p></details>
             <details><summary>Does joining the Facebook group register a team?</summary><p>No. The Facebook group is a place to connect and prepare. Official registration and any team approvals happen through the league&apos;s published process.</p></details>
             <details><summary>What should a potential team prepare?</summary><p>Start with an interested captain, a group of committed players, and a course where your team may be able to host matches. Final requirements and participation decisions rest with the commissioners.</p></details>
