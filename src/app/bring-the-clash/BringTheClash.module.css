@@ -87,6 +87,10 @@
 .rosterNumber { color: #181d1d; font-family: var(--cc-font-display); font-size: clamp(58px, 6.3vw, 80px); line-height: .88; letter-spacing: -.075em; }
 .rosterTopline h3 { margin: 0 0 10px; font-family: var(--cc-font-display); font-size: clamp(20px, 2.15vw, 27px); line-height: 1.05; text-transform: uppercase; letter-spacing: -.035em; }
 .rosterTopline p, .rosterNote { margin: 0; color: #464e51; font-size: 14px; line-height: 1.65; }
+.seasonRoster { margin-top: 20px; padding: 17px 20px; background: #fff; border: 1px solid #e0d6ba; }
+.seasonRoster p { margin: 10px 0 5px; color: #171b1d; font-family: var(--cc-font-display); font-size: clamp(23px, 3vw, 33px); font-weight: 900; letter-spacing: -.045em; }
+.seasonRoster p span { padding: 0 6px; color: #af850b; }
+.seasonRoster small { margin-top: 4px; }
 .rosterNote { margin-top: 18px; }
 .rosterExplainer small { display: block; margin-top: 14px; color: #6c7271; font-size: 11px; line-height: 1.55; }
 
