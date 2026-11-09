@@ -1,4 +1,5 @@
 import {OfficePage} from '@/components/commissioner/OfficePage';
+import {UnlockedMatchRosters} from './UnlockedMatchRosters';
 import {OfficeTeamCommandCenter} from '@/components/teams/OfficeTeamCommandCenter';
 import {
   rankTeamStrengths,
@@ -42,7 +43,9 @@ type AttendanceRow = {
 
 type TeamDraft = Omit<OfficeTeamDashboard, 'strengthRank'>;
 
-export default async function OfficeTeamsPage() {
+export default async function OfficeTeamsPage({searchParams}: {
+  searchParams: Promise<{rosterSaved?: string}>;
+}) {
   if (!hasSupabaseConfig()) {
     return officeMessage('Supabase is not configured for the team command center.');
   }
@@ -305,6 +308,10 @@ export default async function OfficeTeamsPage() {
 
   return (
     <OfficePage sectionId="teams">
+      {(await searchParams).rosterSaved === '1' ? (
+        <p role="status">Availability saved and official roster locked.</p>
+      ) : null}
+      <UnlockedMatchRosters supabase={supabase} teams={launchTeams} players={players} />
       <OfficeTeamCommandCenter data={data} />
     </OfficePage>
   );
