@@ -1,0 +1,95 @@
+.form {
+  max-width: 40rem;
+  margin-block: 1rem;
+}
+
+.form > legend {
+  font-weight: 700;
+}
+
+.player {
+  display: flow-root;
+  min-width: 0;
+  padding-block: 0.5rem;
+  border-bottom: 1px solid #ddd8cc;
+}
+
+.player > legend {
+  float: left;
+  padding-block: 0.4rem;
+  font-weight: 600;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.3rem;
+}
+
+.option {
+  position: relative;
+}
+
+.option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.option span,
+.save {
+  display: inline-block;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #817b6d;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.option input:checked + span {
+  background: #eeeae1;
+  border-color: #575145;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.option[data-status='Playing'] input:checked + span {
+  color: #245635;
+  background: #e0efe3;
+}
+
+.option[data-status='NotPlaying'] input:checked + span {
+  color: #922f2b;
+  background: #f8e6e4;
+}
+
+.option input:focus-visible + span,
+.save:focus-visible {
+  outline: 2px solid #725600;
+  outline-offset: 2px;
+}
+
+.save {
+  margin-top: 1rem;
+  padding: 0.5rem 0.9rem;
+  border-color: #846300;
+  background: #f8edcc;
+  color: #312600;
+  font-weight: 700;
+}
+
+.save:disabled,
+.form:disabled .option span {
+  cursor: default;
+  opacity: 0.6;
+}
+
+@media (max-width: 42rem) {
+  .player > legend {
+    float: none;
+  }
+
+  .options {
+    justify-content: flex-start;
+  }
+}
