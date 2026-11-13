@@ -15,7 +15,7 @@ export function LiveScoringLink({href, matchup}: {href: string; matchup: string}
         <path d="M5 5a10 10 0 0 0 0 14m14-14a10 10 0 0 1 0 14" />
         <circle cx="12" cy="12" r="2.3" fill="currentColor" stroke="none" />
       </svg>
-      <strong>LIVE SCORES</strong>
+      <strong>Follow live scoring on TCWhiteboard</strong>
     </a>
   );
 }

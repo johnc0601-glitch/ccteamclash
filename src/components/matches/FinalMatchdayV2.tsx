@@ -1,4 +1,5 @@
-import type {CSSProperties} from 'react';
+import {MatchdaySection} from './MatchdaySection';
+import type {CSSProperties, ReactNode} from 'react';
 import {getVerifiedUpsets, matchupKey, type PublishedUpsetMatch, type ScoreboardUpset, type ScoreboardUpsets} from '@/services/matches/FinalMatchdayUpsets';
 import {WeatherIcon} from '@/components/matches/WeatherIcon';
 import infoStyles from './MatchdayInfoStrip.module.css';
@@ -19,7 +20,8 @@ import {
 export function FinalMatchdayV2({
   snapshot,
   publishedUpsets = [],
-}: {snapshot: FinalMatchdayV2Snapshot; publishedUpsets?: PublishedUpsetMatch[]}) {
+  children,
+}: {snapshot: FinalMatchdayV2Snapshot; publishedUpsets?: PublishedUpsetMatch[]; children?: ReactNode}) {
   const pageStyle: CSSProperties & {'--match-away': string; '--match-home': string} = {
     '--match-away': snapshot.awayTeam.primaryColor || '#0b7285',
     '--match-home': snapshot.homeTeam.primaryColor || '#a31621',
@@ -83,9 +85,11 @@ export function FinalMatchdayV2({
             totals={doublesTotals}
             awayTeam={snapshot.awayTeam}
             homeTeam={snapshot.homeTeam}
+          initiallyOpen
           />
         </section>
-        <FinalAdjustmentSummary snapshot={snapshot} breakdown={breakdown} />
+        <MatchdaySection title="Scoring adjustments"><FinalAdjustmentSummary snapshot={snapshot} breakdown={breakdown} /></MatchdaySection>
+        {children}
       </div>
     </main>
   );

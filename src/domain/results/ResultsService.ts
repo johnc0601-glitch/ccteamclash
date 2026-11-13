@@ -1,3 +1,4 @@
+import {parseResultSourceDetails} from './ResultSourceDetails';
 import type {
   MatchResult,
   MatchResultInput,
@@ -149,6 +150,7 @@ export class ResultsService {
     awayTeamId: string,
   ): ResultsFieldErrors {
     if (!contests) return {};
+    if (contests.some(contest => contest.sourceDetails !== undefined && !parseResultSourceDetails(contest.sourceDetails))) return {contests: 'Source match details are invalid.'};
     const ids = new Set<string>();
     const positions = new Set<string>();
     for (const contest of contests) {

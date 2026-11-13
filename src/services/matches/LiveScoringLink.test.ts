@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {getLiveScoringHref} from './LiveScoringLink';
+import {getLiveScoringHref, getWhiteboardHref} from './LiveScoringLink';
 
 const beastAtRiptide = {
   id: 'beast-mode-vs-riptide-3ed22cf9-623e-4c11-96a2-b0e6c42b7e0d',
@@ -61,4 +61,9 @@ test('does not expose a Wild Turkey at Riptide live link while dates conflict', 
   };
   assert.equal(getLiveScoringHref(match, {today: '2026-11-22', hasPublishedResult: false}), undefined);
   assert.equal(getLiveScoringHref({...match, scheduledDate: '2026-11-07'}, {today: '2026-11-07', hasPublishedResult: false}), undefined);
+});
+
+test('verified source remains available after publication, but moved dates still invalidate it', () => {
+  assert.equal(getWhiteboardHref(beastAtRiptide), 'https://tcwhiteboard.com/l/cctc/matches/f4m09qxvri1hredzcoafzbst/live');
+  assert.equal(getWhiteboardHref({...beastAtRiptide, scheduledDate: '2026-11-22'}), undefined);
 });

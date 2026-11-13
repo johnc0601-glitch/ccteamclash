@@ -13,7 +13,18 @@ export type ResultContestPlayer = {
   slot: 1 | 2;
 };
 
+export type ResultSourceDetails = {
+  sourceMatchId: string;
+  sourceRound: 'Singles' | 'Doubles';
+  card?: number;
+  startingHole?: string;
+  resultText?: string;
+  homeStrokes?: number;
+  awayStrokes?: number;
+};
+
 export type ResultContest = {
+  sourceDetails?: ResultSourceDetails;
   id: string;
   matchId: string;
   format: ResultContestFormat;
@@ -31,7 +42,7 @@ export type ResultContestPlayerInput = Pick<ResultContestPlayer, 'playerId' | 't
 
 export type ResultContestInput = Pick<
   ResultContest,
-  'id' | 'format' | 'position' | 'homeOutcome' | 'awayOutcome' | 'homeScore' | 'awayScore'
+  'id' | 'format' | 'position' | 'homeOutcome' | 'awayOutcome' | 'homeScore' | 'awayScore' | 'sourceDetails'
 > & {players: ResultContestPlayerInput[]};
 
 export type MatchResult = {

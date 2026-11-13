@@ -1,3 +1,4 @@
+import {parseResultSourceDetails} from './ResultSourceDetails';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import type {
   MatchResult,
@@ -86,6 +87,7 @@ export class SupabaseResultsRepository implements ResultsRepository {
         away_outcome: contest.awayOutcome,
         home_score: contest.homeScore,
         away_score: contest.awayScore,
+        source_details: contest.sourceDetails ?? null,
         created_at: now,
         updated_at: now,
       })));
@@ -123,6 +125,7 @@ function toContest(row: ContestRow, players: ContestPlayerRow[]): ResultContest 
     awayOutcome: row.away_outcome as ResultContest['awayOutcome'],
     homeScore: row.home_score,
     awayScore: row.away_score,
+    sourceDetails: parseResultSourceDetails(row.source_details),
     players: players.map(toContestPlayer),
     createdAt: row.created_at,
     updatedAt: row.updated_at,

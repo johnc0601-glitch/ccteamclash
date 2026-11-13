@@ -140,3 +140,30 @@ test('unknown penalty language stays unclassified until commissioner review',()=
   assert.equal(result.awards.length,2);
   assert.ok(result.awards.every(a=>a.category==='Other'));
 });
+
+test('explicit identity choices are restricted to the official side and preserve source round', () => {
+  const source = fixture();
+  source.rounds[0].matchups[0].home.players[0].name = 'Unknown person';
+  const missing = prepareWhiteboardImport(source, match, players);
+  const issue = missing.identities.find(x => x.name === 'Unknown person');
+  assert.ok(issue);
+  const fixed = prepareWhiteboardImport(source, match, players, {[issue.key]: 'justin-brady'});
+  assert.deepEqual(fixed.errors, []);
+  assert.equal(fixed.contests.find(x => x.format === 'Singles' && x.position === 2)?.sourceDetails?.sourceRound, 'Doubles');
+  assert.ok(prepareWhiteboardImport(source, match, players, {[issue.key]: 'ben-grubbs'}).errors.some(x => x.includes('Unmatched')));
+  assert.ok(fixed.contests.every(x => x.homeScore === null && x.awayScore === null));
+});
+
+test('source detail survives import without becoming league score input', () => {
+  const source: any = fixture();
+  source.rounds[0].matchups[0].result.text = '3 & 2';
+  source.rounds[0].matchups[0].home.strokes = 59;
+  source.rounds[0].matchups[0].away.strokes = 55;
+  source.rounds[0].matchups[0].startingHole = '4';
+  const contest = prepareWhiteboardImport(source, match, players).contests[0];
+  assert.equal(contest.sourceDetails?.resultText, '3 & 2');
+  assert.equal(contest.sourceDetails?.homeStrokes, 59);
+  assert.equal(contest.sourceDetails?.startingHole, '4');
+  assert.equal(contest.homeScore, null);
+  assert.equal(contest.homeOutcome, 'L');
+});

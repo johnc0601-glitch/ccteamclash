@@ -3,129 +3,39 @@ import {canViewMatchPrediction} from '@/services/settings/MatchPredictionVisibil
 import type {PublicMatchPrediction} from '@/services/teamStrength/PublicMatchPrediction';
 import styles from './MatchPredictionCard.module.css';
 
-type MatchPredictionCardProps = {
+type Props = {
   actor: Pick<AttendanceActor, 'profileRole' | 'profileStatus'> | undefined;
   prediction: PublicMatchPrediction;
   awayTeamName: string;
   homeTeamName: string;
+  awayLogo?: string;
+  homeLogo?: string;
 };
 
-export function MatchPredictionCard({
-  actor,
-  prediction,
-  awayTeamName,
-  homeTeamName,
-}: MatchPredictionCardProps) {
+export function MatchPredictionCard({actor, prediction, awayTeamName, homeTeamName, awayLogo, homeLogo}: Props) {
   if (!canViewMatchPrediction('CaptainsCommissioner', actor)) return null;
-
+  const probability = prediction.state === 'calculated' ? prediction.homeChanceOfVictory : null;
+  const home = probability == null ? null : Math.round(Math.min(.95, Math.max(.05, probability)) * 100);
+  const away = home == null ? null : 100 - home;
+  const angle = home == null ? -90 : -180 + home * 1.8;
+  const radians = angle * Math.PI / 180;
   return (
-    <section className={styles.card} aria-label="Match forecast">
-      <div className={styles.header}>
-        <div>
-          <span>Match forecast</span>
-          <h2>{prediction.stageLabel}</h2>
+    <section className={styles.card} aria-label="CI Model Estimates">
+      <h2>CI Model Estimates</h2>
+      {home == null || away == null ? <p>{prediction.state === 'waiting' ? prediction.detail : 'Roster data is incomplete. Estimate unavailable.'}</p> : <>
+        <div className={styles.gauge} role="img" aria-label={`${awayTeamName} ${away}%; ${homeTeamName} ${home}%`}>
+          <svg viewBox="0 0 320 190" aria-hidden="true">
+            <path d="M 30 155 A 130 130 0 0 1 160 25" className={styles.awayArc} />
+            <path d="M 160 25 A 130 130 0 0 1 290 155" className={styles.homeArc} />
+            <line x1={160 + 99 * Math.cos(radians)} y1={155 + 99 * Math.sin(radians)} x2={160 + 119 * Math.cos(radians)} y2={155 + 119 * Math.sin(radians)} className={styles.needle} />
+          </svg>
+          <div className={styles.center}><strong>{Math.max(home, away)}%</strong><span>{home === away ? 'Even matchup' : home > away ? homeTeamName : awayTeamName}</span></div>
         </div>
-        <span className={styles.badge}>{prediction.displayLabel}</span>
-      </div>
-
-      {prediction.state === 'waiting' ? (
-        <div className={styles.message}>
-          <strong>Forecast is updating</strong>
-          <p>{prediction.detail}</p>
+        <div className={styles.teams}>
+          <div>{awayLogo ? <img src={awayLogo} alt="" width="44" height="44" /> : null}<strong>{awayTeamName}</strong><span>{away}%</span></div>
+          <div>{homeLogo ? <img src={homeLogo} alt="" width="44" height="44" /> : null}<strong>{homeTeamName}</strong><span>{home}%</span></div>
         </div>
-      ) : (
-        <CalculatedForecast
-          prediction={prediction}
-          awayTeamName={awayTeamName}
-          homeTeamName={homeTeamName}
-        />
-      )}
-
-      <div className={styles.footer}>
-        {prediction.state === 'calculated' ? <span>{prediction.venueNote}</span> : null}
-        <span>Captains + Commissioner only · {prediction.updateNote}</span>
-      </div>
+      </>}
     </section>
-  );
-}
-
-function CalculatedForecast({
-  prediction,
-  awayTeamName,
-  homeTeamName,
-}: {
-  prediction: Extract<PublicMatchPrediction, {state: 'calculated'}>;
-  awayTeamName: string;
-  homeTeamName: string;
-}) {
-  if (
-    prediction.awayChanceOfVictory == null
-    || prediction.homeChanceOfVictory == null
-  ) {
-    return (
-      <div className={styles.message}>
-        <strong>Prediction unavailable</strong>
-        <p>Roster data is incomplete, so no percentage is being published.</p>
-      </div>
-    );
-  }
-
-  const homePercent = Math.round(prediction.homeChanceOfVictory * 100);
-  const awayPercent = 100 - homePercent;
-
-  return (
-    <>
-      <div className={styles.teams}>
-        <TeamForecast
-          side="Away"
-          teamName={awayTeamName}
-          percent={awayPercent}
-          strengthLabel={prediction.strengthLabel}
-          strength={prediction.awayStrength}
-        />
-        <div className={styles.divider}>VS</div>
-        <TeamForecast
-          side="Home"
-          teamName={homeTeamName}
-          percent={homePercent}
-          strengthLabel={prediction.strengthLabel}
-          strength={prediction.homeStrength}
-          align="right"
-        />
-      </div>
-
-      <div
-        className={styles.probabilityBar}
-        aria-label={`${awayTeamName} ${awayPercent}% chance of victory; ${homeTeamName} ${homePercent}% chance of victory`}
-      >
-        <span className={styles.awayBar} style={{width: `${awayPercent}%`}} />
-        <span className={styles.homeBar} style={{width: `${homePercent}%`}} />
-      </div>
-    </>
-  );
-}
-
-function TeamForecast({
-  side,
-  teamName,
-  percent,
-  strengthLabel,
-  strength,
-  align = 'left',
-}: {
-  side: 'Away' | 'Home';
-  teamName: string;
-  percent: number;
-  strengthLabel: string;
-  strength: number;
-  align?: 'left' | 'right';
-}) {
-  return (
-    <div className={styles.team} data-align={align}>
-      <span>{side}</span>
-      <strong>{teamName}</strong>
-      <b>{percent}%</b>
-      <small>{strengthLabel}: {Math.round(strength)}</small>
-    </div>
   );
 }
