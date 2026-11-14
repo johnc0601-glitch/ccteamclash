@@ -14,6 +14,8 @@ type Props = {
   currentHomeMargin: number | null | undefined;
   notice?: string;
   error?: string;
+  /** Renders the commissioner controls inside the public Clash Line card. */
+  embedded?: boolean;
 };
 
 export async function CommissionerSpreadVote(props: Props) {
@@ -29,6 +31,8 @@ export async function CommissionerSpreadVote(props: Props) {
   const line = saved?.homeLine ?? roundHomeSpreadLine(props.currentHomeMargin);
   if (line === null) return null;
   const options = line === 0 ? null : getSpreadCoverOptions(line, props.homeName, props.awayName);
+  const displayedLine = roundHomeSpreadLine(props.currentHomeMargin);
+  const lockedLineDiffers = Boolean(props.embedded && saved && displayedLine !== null && displayedLine !== line);
   const open = isSpreadVoteOpen({date: props.matchDate, time: props.matchTime, status: props.matchStatus});
   const canVote = open && options !== null;
   // Legacy stored choices have stable meaning: low = favorite covers; high = underdog covers.
@@ -40,13 +44,16 @@ export async function CommissionerSpreadVote(props: Props) {
     ? saved.myVote === options.favorite.choice ? options.favorite.label : options.underdog.label
     : null;
 
-  return <section id="commissioner-spread-vote" className={styles.card} aria-label="Clash Spread Challenge">
+  return <section id="commissioner-spread-vote" className={`${styles.card} ${props.embedded ? styles.embedded : ''}`} aria-label="Clash Spread Challenge">
     <p className={styles.kicker}>CLASH SPREAD CHALLENGE</p>
     <h3>Pick the Spread</h3>
     <p className={styles.scope}>Commissioner-only pilot · Your selection is saved with this matchup</p>
 
-    <p className={styles.lineTitle}>The Clash Line</p>
-    <strong className={styles.line}>{spreadLineLabel(line, props.homeName, props.awayName)}</strong>
+    {!props.embedded ? <>
+      <p className={styles.lineTitle}>The Clash Line</p>
+      <strong className={styles.line}>{spreadLineLabel(line, props.homeName, props.awayName)}</strong>
+    </> : null}
+    {lockedLineDiffers ? <p className={styles.lockedLine}>Voting uses the original locked line: {spreadLineLabel(line, props.homeName, props.awayName)}. The projected line above has since changed.</p> : null}
     {options ? <p className={styles.question}>Will {options.favorite.teamName} cover the spread?</p> : null}
     <p className={styles.hint}>{saved ? 'Voting line locked with the first pick.' : 'The line locks when the first pick is submitted.'}</p>
 

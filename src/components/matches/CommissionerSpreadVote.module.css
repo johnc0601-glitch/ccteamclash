@@ -1,4 +1,6 @@
 .card { max-width: 620px; margin: 0 auto; padding: 20px; border-radius: 16px; border: 1px solid #ffffff2b; background: #101b2b; color: #f2f5f9; }
+.embedded { max-width: none; margin: 16px 0 0; padding: 18px 0 0; border: 0; border-top: 1px solid #ffffff35; border-radius: 0; background: transparent; }
+.lockedLine { margin: 10px auto; max-width: 450px; font-size: .8rem; line-height: 1.5; text-align: center; color: #f3d5a4; }
 .kicker { margin: 0 0 4px; text-align: center; font-size: .69rem; font-weight: 750; letter-spacing: .12em; color: #a9c9ee; }
 .card h3 { margin: 0; text-align: center; font-size: 1.3rem; }
 .scope { text-align: center; font-size: .75rem; color: #aebdd0; margin: 6px 0 18px; }

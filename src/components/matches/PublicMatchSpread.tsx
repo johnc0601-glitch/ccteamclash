@@ -1,7 +1,8 @@
+import type {ReactNode} from 'react';
 import type {PublicMatchSpreadSummary} from '@/services/teamStrength/PublicMatchSpread';
 import styles from './MatchPredictionCard.module.css';
 
-export function PublicMatchSpread({spread}: {spread: PublicMatchSpreadSummary}) {
+export function PublicMatchSpread({spread, children}: {spread: PublicMatchSpreadSummary; children?: ReactNode}) {
   return (
     <section className={styles.card} aria-label="Public projected point spread">
       <h2>The Clash Line</h2>
@@ -17,6 +18,7 @@ export function PublicMatchSpread({spread}: {spread: PublicMatchSpreadSummary}) 
         {spread.isEarlyEstimate ? <span className={styles.spreadLabel}>Early estimate — lineups may change</span> : null}
         <span className={styles.caution}>Typical projection error is about 5 points; bonuses and penalties may change the outcome.</span>
       </div>
+      {children}
     </section>
   );
 }
