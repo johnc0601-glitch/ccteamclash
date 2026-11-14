@@ -9,6 +9,7 @@ import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
 import {FinalMatchdayV2} from '@/components/matches/FinalMatchdayV2';
 import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
+import {PublicMatchSpread} from '@/components/matches/PublicMatchSpread';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
@@ -44,6 +45,7 @@ import {adaptCanarySnapshot, loadPublishedMatchAdjustments} from '@/services/mat
 import {loadPublishedUpsetEvidence} from '@/services/matches/PublicUpsetEvidence';
 import {canViewMatchPrediction} from '@/services/settings/MatchPredictionVisibility';
 import {buildPublicMatchPrediction} from '@/services/teamStrength/PublicMatchPrediction';
+import {toPublicMatchSpread} from '@/services/teamStrength/PublicMatchSpread';
 import styles from './Matchday.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -173,9 +175,9 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const canViewPrediction = canViewMatchPrediction('CaptainsCommissioner', actor);
   let matchPrediction: ReturnType<typeof buildPublicMatchPrediction> = undefined;
 
-  if (canViewPrediction && match.status !== 'Cancelled' && match.date && easternDate(now) >= match.date) {
+  if (match.status !== 'Cancelled' && match.date && easternDate(now) >= match.date) {
     matchPrediction = await loadSavedMatchPrediction(process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase, match.id, match.date, match.homeTeamId, match.awayTeamId);
-  } else if (canViewPrediction) {
+  } else if (match.status !== 'Cancelled') {
     let homePredictionPlayers = matchday.homeTeam.roster;
     let awayPredictionPlayers = matchday.awayTeam.roster;
     const officialRosters = officialSnapshot?.status === 'complete'
@@ -215,6 +217,9 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
       now,
     });
   }
+
+  // Only the point spread is public. Never pass the full prediction/probabilities to a public component.
+  const publicSpread = toPublicMatchSpread(matchPrediction, matchday.homeTeam.name, matchday.awayTeam.name);
 
   const personalAttendance = !locked && userId ? await matchRosterService.getPersonalAttendance(userId, matchId) : undefined;
   let managedRosters = userId && readParam(query.manage) === 'roster'
@@ -265,8 +270,12 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             <MatchPreview matchId={matchId} matchday={matchday} />
           </Suspense></MatchdaySection>
 
-          {matchPrediction ? (
-            <MatchdaySection title="Saved prematch estimates" collapsed={showResultsFirst}><MatchPredictionCard
+          {publicSpread ? <MatchdaySection title="Projected point spread" collapsed={showResultsFirst}>
+            <PublicMatchSpread spread={publicSpread} />
+          </MatchdaySection> : null}
+
+          {canViewPrediction && matchPrediction ? (
+            <MatchdaySection title="Captains' private matchup probabilities" collapsed={showResultsFirst}><MatchPredictionCard
               actor={actor}
               prediction={matchPrediction}
               awayTeamName={matchday.awayTeam.name}
