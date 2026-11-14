@@ -12,8 +12,6 @@ import {loadSavedMatchPrediction} from '@/services/teamStrength/SavedMatchPredic
 import {canViewMatchPrediction} from '@/services/settings/MatchPredictionVisibility';
 import {MatchdaySection} from './MatchdaySection';
 import {MatchPredictionCard} from './MatchPredictionCard';
-import {CommissionerSpreadVote} from './CommissionerSpreadVote';
-import {isApprovedCommissioner} from '@/services/teamStrength/SpreadVote';
 import {MatchRosterBoard} from './MatchRosterBoard';
 import {MatchPreview} from './MatchPreview';
 import {MatchTeamStats} from './MatchTeamStats';
@@ -58,14 +56,6 @@ async function loadFinalContext(snapshot: FinalMatchdaySnapshot) {
     <MatchdaySection title="Official roster"><MatchRosterBoard matchday={matchday} official={complete ? {status: 'complete', rosters} : {status: 'unavailable', rosters: []}} /></MatchdaySection>
     {canViewMatchPrediction('CaptainsCommissioner', actor) ? <MatchdaySection title="Saved prematch estimates">
       {prediction ? <MatchPredictionCard actor={actor} prediction={prediction} awayTeamName={snapshot.awayTeam.name} homeTeamName={snapshot.homeTeam.name} awayLogo={snapshot.awayTeam.logo} homeLogo={snapshot.homeTeam.logo} /> : <p>No prematch estimate was saved for this match.</p>}
-    </MatchdaySection> : null}
-    {isApprovedCommissioner(actor) ? <MatchdaySection title="Clash Challenge">
-      <CommissionerSpreadVote
-        matchId={snapshot.matchId} matchDate={match.date} matchTime={match.time} matchStatus={match.status}
-        homeName={snapshot.homeTeam.name} awayName={snapshot.awayTeam.name}
-        profileId={actor!.profileId}
-        currentHomeMargin={prediction?.state === 'calculated' ? prediction.homeProjectedMargin : null}
-      />
     </MatchdaySection> : null}
     <MatchdaySection title="Match preview"><MatchPreview matchId={snapshot.matchId} matchday={matchday} /></MatchdaySection>
     <MatchdaySection title="Team information"><MatchTeamStats awayTeam={{id: snapshot.awayTeam.id, name: snapshot.awayTeam.name}} homeTeam={{id: snapshot.homeTeam.id, name: snapshot.homeTeam.name}} seasonId={match.seasonId} /></MatchdaySection>
