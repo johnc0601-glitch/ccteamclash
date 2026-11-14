@@ -260,7 +260,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     <>
       <SiteHeader />
       <main className={styles.page} style={pageBackground}>
-        {match.status === 'Scheduled' && !publishedResult ? <MatchdayRefresh date={match.date} /> : null}
+        {match.status === 'Scheduled' && !publishedResult ? <MatchdayRefresh date={match.date} followClashLine={Boolean(publicSpread)} /> : null}
         <MatchHero
           matchday={matchday}
           roundLabel={round ? `Round ${round.number}` : undefined}
