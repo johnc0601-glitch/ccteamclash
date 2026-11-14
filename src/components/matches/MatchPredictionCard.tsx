@@ -19,10 +19,25 @@ export function MatchPredictionCard({actor, prediction, awayTeamName, homeTeamNa
   const away = home == null ? null : 100 - home;
   const angle = away == null ? -90 : -180 + away * 1.8;
   const radians = angle * Math.PI / 180;
+  const projectedMargin = prediction.state === 'calculated' ? prediction.homeProjectedMargin : null;
+  const spread = projectedMargin == null ? null : Math.round(Math.abs(projectedMargin) * 2) / 2;
+  const favorite = projectedMargin == null ? null : projectedMargin > 0 ? homeTeamName : awayTeamName;
+  const closeness = spread == null ? null : spread < 0.5
+    ? 'Even on projected points'
+    : spread <= 4 ? 'Within one doubles-result swing (4 pts)'
+      : spread <= 8 ? 'Within two doubles-result swings (8 pts)'
+        : 'More than two doubles-result swings apart';
   return (
     <section className={styles.card} aria-label="CI Model Estimates">
       <h2>CI Model Estimates</h2>
       {home == null || away == null ? <p>{prediction.state === 'waiting' ? prediction.detail : 'Roster data is incomplete. Estimate unavailable.'}</p> : <>
+        {spread != null && favorite ? <div className={styles.spread} aria-label="Projected point spread">
+          <span className={styles.spreadLabel}>Projected point spread</span>
+          <strong>{spread < 0.5 ? 'Pick ’em' : `${favorite} −${spread.toFixed(1)}`}</strong>
+          <span className={styles.spreadMeta}>{spread < 0.5 ? 'No meaningful favorite' : `${favorite} favored by ${spread.toFixed(1)} ${spread === 1 ? 'point' : 'points'}`}</span>
+          <span className={styles.closeness}>{closeness}</span>
+          <span className={styles.caution}>Historical average spread error is about 5 points. Bonuses and penalties can change the result.</span>
+        </div> : null}
         <div className={styles.gauge} role="img" aria-label={`${awayTeamName} ${away}%; ${homeTeamName} ${home}%`}>
           <svg viewBox="0 0 320 172" aria-hidden="true">
             <path d="M 30 155 A 130 130 0 0 1 290 155" className={styles.rim} />

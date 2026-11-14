@@ -44,6 +44,7 @@ test('active-roster forecast includes home advantage once but remains an early e
   assert.equal(prediction.displayLabel, 'Early estimate');
   assert.ok((prediction.homeChanceOfVictory ?? 0) > 0.5);
   assert.ok((prediction.awayChanceOfVictory ?? 1) < 0.5);
+  assert.ok((prediction.homeProjectedMargin ?? 0) > 0);
   assert.equal(prediction.homeStrength, 900);
   assert.equal(prediction.awayStrength, 900);
   assert.match(prediction.venueNote, /Home-course advantage/);
@@ -66,6 +67,7 @@ test('neutral equal teams remain a 50-50 early estimate', () => {
   assert.equal(prediction.displayLabel, 'Early estimate');
   assert.equal(prediction.homeChanceOfVictory, 0.5);
   assert.equal(prediction.awayChanceOfVictory, 0.5);
+  assert.equal(prediction.homeProjectedMargin, 0);
 });
 
 test('confirmed available stage uses only Playing players and remains early', () => {

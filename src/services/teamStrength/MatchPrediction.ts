@@ -8,8 +8,11 @@ import {
 } from './TeamStrength';
 import type {RosterStrengthResult, TeamStrengthSource} from './RosterStrength';
 
-export const CI_ESTIMATE_VERSION = 'ci-model-estimates-v2';
+export const CI_ESTIMATE_VERSION = 'ci-model-estimates-v3';
 export const CI_ESTIMATE_MARGIN_SLOPE = 0.20;
+// A 10% margin shrink modestly lowered historical absolute point-margin error
+// in 38 standard-format matches (4.74 to 4.68 points); review as data grows.
+export const CI_ESTIMATE_MARGIN_SHRINK = 0.90;
 
 // Retain v1 strength slopes only for legacy retrospective analysis.
 // Captain-facing v2 estimates use the margin slope above.
@@ -33,6 +36,8 @@ export type RosterBasedMatchPrediction = {
   opponentBaseStrength: number;
   matchupStrengthDifference: number;
   expectedPointShare: number;
+  /** Projected signed point margin, after historical calibration, in standard 36-point play. */
+  expectedPointMargin: number;
   calibrationSlope: number;
   /** Internal calibrated value retained for auditing and future calibration. */
   regularSeasonChanceOfVictory: number;
@@ -67,10 +72,8 @@ export function calculateRosterBasedMatchPrediction(input: {
     venue,
   );
   const calibrationSlope = CI_ESTIMATE_MARGIN_SLOPE;
-  const regularSeasonChanceOfVictory = boundedLogistic(
-    STANDARD_MATCH_POINTS * (2 * expectedPointShare - 1),
-    calibrationSlope,
-  );
+  const expectedPointMargin = STANDARD_MATCH_POINTS * (2 * expectedPointShare - 1) * CI_ESTIMATE_MARGIN_SHRINK;
+  const regularSeasonChanceOfVictory = boundedLogistic(expectedPointMargin, calibrationSlope);
   const confidence = lowerConfidence(team.confidence, opponent.confidence);
   const readiness = predictionReadinessForStrengths(team, opponent);
   const presentation = presentationForReadiness(
@@ -90,6 +93,7 @@ export function calculateRosterBasedMatchPrediction(input: {
     opponentBaseStrength: opponent.baseStrength,
     matchupStrengthDifference,
     expectedPointShare,
+    expectedPointMargin,
     calibrationSlope,
     regularSeasonChanceOfVictory,
     displayChanceOfVictory: presentation.chanceOfVictory,

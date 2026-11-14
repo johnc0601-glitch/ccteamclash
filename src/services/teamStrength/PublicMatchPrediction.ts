@@ -41,6 +41,8 @@ export type PublicMatchPrediction =
       homeStrength: number;
       awayChanceOfVictory: number | null;
       homeChanceOfVictory: number | null;
+      /** Signed spread for the home team: positive means home favored. */
+      homeProjectedMargin: number | null;
       venueNote: string;
       updateNote: string;
     };
@@ -146,6 +148,7 @@ export function buildPublicMatchPrediction(
     homeStrength: strengths.home.baseStrength,
     awayChanceOfVictory: awayPrediction.displayChanceOfVictory,
     homeChanceOfVictory: homePrediction.displayChanceOfVictory,
+    homeProjectedMargin: homePrediction.displayChanceOfVictory == null ? null : homePrediction.expectedPointMargin,
     venueNote: venueNote(input.matchVenue),
     updateNote: updateNote(source),
   };

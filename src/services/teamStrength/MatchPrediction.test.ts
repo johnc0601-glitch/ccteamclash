@@ -5,6 +5,7 @@ import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 
 import {
   CI_ESTIMATE_MARGIN_SLOPE,
+  CI_ESTIMATE_MARGIN_SHRINK,
   calculateRosterBasedMatchPrediction,
   predictionReadinessForStrengths,
   rosterStageChanceOfVictoryFromStrengthDifference,
@@ -21,6 +22,7 @@ test('equal neutral active roster strengths start at 50 percent as an early esti
   assert.ok(prediction);
   assert.equal(prediction.matchupStrengthDifference, 0);
   assert.equal(prediction.expectedPointShare, 0.5);
+  assert.equal(prediction.expectedPointMargin, 0);
   assert.equal(prediction.regularSeasonChanceOfVictory, 0.5);
   assert.equal(prediction.calibrationSlope, CI_ESTIMATE_MARGIN_SLOPE);
   assert.equal(prediction.readiness, 'EarlyEstimate');
@@ -191,8 +193,8 @@ function player(id: string, ci: number, provisional: boolean): LaunchPlayer {
   };
 }
 
-test('CI Model Estimates map 1–8 point advantages through the .20 margin curve without quantization', () => {
-  const percents = [55,60,65,69,73,77,80,83];
+test('CI Model Estimates keep 1–8 point spreads and soften percentages using margin shrinkage', () => {
+  const percents = [54,59,63,67,71,75,78,81];
   for (let margin = 1; margin <= 8; margin++) {
     const difference = 105 * Math.log10((36 + margin) / (36 - margin));
     const team = strength('activeRoster', 900 + difference);
@@ -201,6 +203,7 @@ test('CI Model Estimates map 1–8 point advantages through the .20 margin curve
     const prediction = calculateRosterBasedMatchPrediction({team, opponent});
     assert.ok(prediction);
     assert.equal(Math.round(prediction.regularSeasonChanceOfVictory * 100), percents[margin - 1]);
-    assert.equal(prediction.version, 'ci-model-estimates-v2');
+    assert.ok(Math.abs(prediction.expectedPointMargin - margin * CI_ESTIMATE_MARGIN_SHRINK) < 1e-10);
+    assert.equal(prediction.version, 'ci-model-estimates-v3');
   }
 });

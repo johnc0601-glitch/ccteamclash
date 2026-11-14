@@ -1,7 +1,8 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
 import type {Database} from '@/lib/supabase/database';
 import type {TeamStrengthSource} from './RosterStrength';
-import type {PredictionReadiness} from './MatchPrediction';
+import {CI_ESTIMATE_VERSION, CI_ESTIMATE_MARGIN_SHRINK, type PredictionReadiness} from './MatchPrediction';
+import {STANDARD_MATCH_POINTS} from './TeamStrength';
 import type {TeamStrengthConfidence} from './TeamStrength';
 import type {PublicMatchPrediction} from './PublicMatchPrediction';
 import {TEAM_STRENGTH_STAGE_LABELS} from './RosterStrength';
@@ -17,6 +18,17 @@ export function savedPrediction(row: Record<string, unknown>, date: string, home
     || !['activeRoster', 'confirmedAvailableRoster', 'matchLineup'].includes(String(row.source))
     || typeof row.chance_of_victory !== 'number' || !Number.isFinite(row.chance_of_victory) || row.chance_of_victory < 0 || row.chance_of_victory > 1) return undefined;
   const unavailable = row.prediction_readiness === 'Unavailable';
+  // Preserve the spread captured before the match, never reconstruct from the result.
+  // Earlier snapshots predate the v3 margin-calibration adjustment.
+  const share = typeof row.expected_point_share === 'number'
+    && Number.isFinite(row.expected_point_share)
+    && row.expected_point_share >= 0 && row.expected_point_share <= 1
+    ? row.expected_point_share : null;
+  const calculatedMargin = share == null ? null : STANDARD_MATCH_POINTS * (2 * share - 1)
+    * (row.model_version === CI_ESTIMATE_VERSION ? CI_ESTIMATE_MARGIN_SHRINK : 1);
+  const storedMargin = typeof row.expected_margin === 'number' && Number.isFinite(row.expected_margin)
+    ? row.expected_margin : null;
+  const homeProjectedMargin = unavailable ? null : (storedMargin ?? calculatedMargin);
   return {
     state: 'calculated', source: row.source as TeamStrengthSource, stageLabel: TEAM_STRENGTH_STAGE_LABELS[row.source as keyof typeof TEAM_STRENGTH_STAGE_LABELS],
     strengthLabel: String(row.strength_label ?? 'CI'), displayLabel: unavailable ? 'Prediction unavailable' : 'Early estimate',
@@ -24,6 +36,7 @@ export function savedPrediction(row: Record<string, unknown>, date: string, home
     awayStrength: Number(row.opponent_base_strength), homeStrength: Number(row.team_base_strength),
     homeChanceOfVictory: unavailable ? null : row.chance_of_victory,
     awayChanceOfVictory: unavailable ? null : 1 - row.chance_of_victory,
+    homeProjectedMargin,
     venueNote: '', updateNote: captured.toISOString(),
   };
 }
