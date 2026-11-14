@@ -1,5 +1,11 @@
 .card { padding: 16px 18px; border: 1px solid #ffffff24; border-radius: 16px; background: #101b2b; color: #f2f5f9; }
 .card h2 { text-align: center; font-size: .9rem; font-weight: 600; letter-spacing: .04em; margin: 0 0 4px; }
+.spread { max-width: 440px; margin: 12px auto 8px; padding: 14px 12px; border: 1px solid #ffffff22; border-radius: 12px; background: #ffffff08; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.spreadLabel { font-size: .69rem; text-transform: uppercase; letter-spacing: .09em; color: #b3becd; }
+.spread strong { font-size: 1.5rem; letter-spacing: -.03em; overflow-wrap: anywhere; }
+.spreadMeta { font-size: .82rem; color: #e1e8f1; }
+.closeness { font-size: .78rem; color: #d5e0f4; }
+.caution { font-size: .67rem; color: #a6b2c3; max-width: 350px; margin-top: 6px; }
 .gauge { max-width: 240px; margin: auto; position: relative; }
 .gauge svg { display: block; width: 100%; overflow: visible; }
 .rim { fill: none; stroke: #ffffff12; stroke-width: 24; }
