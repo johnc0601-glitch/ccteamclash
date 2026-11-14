@@ -14,7 +14,7 @@ test('spread matches the public favored-by half-point line', () => {
   assert.equal(roundHomeSpreadLine(0.1), 0);
   assert.equal(roundHomeSpreadLine(null), null);
   assert.equal(roundHomeSpreadLine(Infinity), null);
-  assert.equal(spreadLineLabel(-4.5, 'Home', 'Away'), 'Away favored by 4.5 points');
+  assert.equal(spreadLineLabel(-4.5, 'Home', 'Away'), 'Away projected to win by 4.5 points');
 });
 test('vote closes at the scheduled Eastern time, including daylight saving', () => {
   const match = {date: '2026-11-22', time: '09:00:00', status: 'Scheduled'};
@@ -30,8 +30,8 @@ test('vote closes at the scheduled Eastern time, including daylight saving', () 
 test('favorite cover means the old low vote, underdog cover means the old high vote', () => {
   const options = getSpreadCoverOptions(5.5, 'Dark Knights', 'Beast Mode');
   assert.deepEqual(options, {
-    favorite: {teamName: 'Dark Knights', choice: 'low', label: 'Dark Knights covers', explanation: 'Win by more than 5.5 points'},
-    underdog: {teamName: 'Beast Mode', choice: 'high', label: 'Beast Mode covers', explanation: 'Win, tie, or lose by fewer than 5.5 points'},
+    favorite: {teamName: 'Dark Knights', choice: 'low', label: 'Dark Knights', explanation: 'Win by more than the projected 5.5 points'},
+    underdog: {teamName: 'Beast Mode', choice: 'high', label: 'Beast Mode', explanation: 'Win, tie, or lose by fewer than 5.5 points'},
   });
   const reversed = getSpreadCoverOptions(-4.5, 'Dark Knights', 'Beast Mode');
   assert.equal(reversed.favorite.teamName, 'Beast Mode');

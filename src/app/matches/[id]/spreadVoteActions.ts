@@ -21,12 +21,12 @@ export async function castCommissionerSpreadVote(formData: FormData): Promise<vo
 
   const client = await createClient();
   const {data: {user}} = await client.auth.getUser();
-  if (!user) redirect('/account?error=' + encodeURIComponent('Sign in to pick the Clash Line.'));
+  if (!user) redirect('/account?error=' + encodeURIComponent('Sign in to play Clash Challenge.'));
 
   const {data: profile, error: profileError} = await client.from('launch_profiles')
     .select('id,role,status').eq('user_id', user.id).maybeSingle();
   if (profileError || !profile || !isApprovedCommissioner({profileRole: profile.role, profileStatus: profile.status})) {
-    redirect('/account?error=' + encodeURIComponent('Commissioner access is required for the Clash Spread Challenge.'));
+    redirect('/account?error=' + encodeURIComponent('Commissioner access is required for Clash Challenge.'));
   }
 
   const db = createAdminClient() as any;
@@ -40,7 +40,7 @@ export async function castCommissionerSpreadVote(formData: FormData): Promise<vo
   if (!isSpreadVoteOpen(match)) redirect(feedback('spreadVoteError', 'Picks are closed for this matchup.'));
 
   const acceptedLine = verifySpreadVoteLine(matchId, token);
-  if (acceptedLine === null) redirect(feedback('spreadVoteError', 'The displayed line is no longer valid. Reload and try again.'));
+  if (acceptedLine === null) redirect(feedback('spreadVoteError', 'The projection has changed. Reload and pick again.'));
 
   // The database locks the match row, checks the current quote, saves the accepted
   // line for this pick, and recalculates the market line in a single transaction.
@@ -52,12 +52,12 @@ export async function castCommissionerSpreadVote(formData: FormData): Promise<vo
   });
   if (error) {
     if (/stale_clash_line/i.test(error.message)) {
-      redirect(feedback('spreadVoteError', 'The Clash Line moved. Review the updated line and pick again.'));
+      redirect(feedback('spreadVoteError', 'The projection changed. Review the updated result and pick again.'));
     }
     console.error('Clash Line pick could not be saved.', {matchId, errorCode: error.code, errorMessage: error.message});
     redirect(feedback('spreadVoteError', 'Your pick could not be saved. Try again.'));
   }
   revalidatePath(href);
   revalidatePath('/matches/' + encodeURIComponent(matchId));
-  redirect(feedback('spreadVoteNotice', 'Your pick is saved at the line displayed when you picked.'));
+  redirect(feedback('spreadVoteNotice', 'Your Clash Challenge pick is saved at the projection shown when you picked.'));
 }
