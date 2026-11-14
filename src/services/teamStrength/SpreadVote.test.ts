@@ -41,16 +41,21 @@ test('favorite cover means the old low vote, underdog cover means the old high v
   assert.throws(() => getSpreadCoverOptions(0, 'Home', 'Away'));
 });
 
-test('the moving line reacts to net picks in half-point steps without disclosing tallies', () => {
+test('30-person poll moves only after six net picks, then caps at 1.5 points', () => {
   assert.equal(moveClashLine(18, 0, 0), 18);
-  assert.equal(moveClashLine(18, 1, 0), 18.5);
-  assert.equal(moveClashLine(18, 0, 1), 17.5);
-  assert.equal(moveClashLine(18, 2, 2), 18);
-  assert.equal(moveClashLine(18, 10, 0), 20);
-  assert.equal(moveClashLine(18, 0, 10), 16);
-  assert.equal(moveClashLine(-18, 1, 0), -18.5);
-  assert.equal(moveClashLine(-18, 0, 1), -17.5);
-  assert.equal(moveClashLine(0.5, 0, 10), 0.5);
-  assert.equal(moveClashLine(35.5, 10, 0), 36);
+  assert.equal(moveClashLine(18, 1, 0), 18);
+  assert.equal(moveClashLine(18, 5, 0), 18);
+  assert.equal(moveClashLine(18, 6, 0), 18.5);
+  assert.equal(moveClashLine(18, 18, 12), 18.5);
+  assert.equal(moveClashLine(18, 20, 10), 18.5);
+  assert.equal(moveClashLine(18, 21, 9), 19);
+  assert.equal(moveClashLine(18, 25, 5), 19.5);
+  assert.equal(moveClashLine(18, 30, 0), 19.5);
+  assert.equal(moveClashLine(18, 0, 30), 16.5);
+  assert.equal(moveClashLine(18, 12, 12), 18);
+  assert.equal(moveClashLine(-18, 12, 0), -19);
+  assert.equal(moveClashLine(-18, 0, 6), -17.5);
+  assert.equal(moveClashLine(0.5, 0, 30), 0.5);
+  assert.equal(moveClashLine(35.5, 30, 0), 36);
   assert.throws(() => moveClashLine(0, 1, 0));
 });

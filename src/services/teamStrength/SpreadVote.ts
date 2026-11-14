@@ -48,9 +48,9 @@ export function getSpreadCoverOptions(homeLine: number, homeName: string, awayNa
   };
 }
 
-/** One net commissioner pick shifts the public line by half a point.
- * Never cross into the opposite favorite; clamp moves to two points total.
- * This is a play-money approximation of market pressure, not betting odds.
+/** For a ~30-person recreational ballot, require six net picks per half point.
+ * Clamp movement to 1.5 points from the opening line and never reverse the favorite.
+ * This is deliberately slower than a real sports-betting market.
  */
 export function moveClashLine(openingHomeLine: number, favoritePicks: number, underdogPicks: number): number {
   if (roundHomeSpreadLine(openingHomeLine) !== openingHomeLine || openingHomeLine === 0
@@ -58,8 +58,8 @@ export function moveClashLine(openingHomeLine: number, favoritePicks: number, un
     || !Number.isInteger(underdogPicks) || underdogPicks < 0) {
     throw new Error('Invalid opening line or pick counts.');
   }
-  const net = Math.max(-4, Math.min(4, favoritePicks - underdogPicks));
-  const magnitude = Math.max(0.5, Math.min(36, Math.abs(openingHomeLine) + net * 0.5));
+  const netSteps = Math.max(-3, Math.min(3, Math.trunc((favoritePicks - underdogPicks) / 6)));
+  const magnitude = Math.max(0.5, Math.min(36, Math.abs(openingHomeLine) + netSteps * 0.5));
   return Math.sign(openingHomeLine) * magnitude;
 }
 
