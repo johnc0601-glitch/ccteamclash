@@ -4,8 +4,9 @@ import styles from './MatchPredictionCard.module.css';
 export function PublicMatchSpread({spread}: {spread: PublicMatchSpreadSummary}) {
   return (
     <section className={styles.card} aria-label="Public projected point spread">
-      <h2>Projected point spread</h2>
+      <h2>The Clash Line</h2>
       <div className={styles.spread}>
+        <span className={styles.spreadLabel}>Projected point spread</span>
         <strong>{spread.favoriteTeam ? `${spread.favoriteTeam} −${spread.points.toFixed(1)}` : 'Pick ’em'}</strong>
         <span className={styles.spreadMeta}>
           {spread.favoriteTeam

@@ -69,5 +69,5 @@ export async function castCommissionerSpreadVote(formData: FormData): Promise<vo
   }
   revalidatePath(href);
   revalidatePath('/matches/' + encodeURIComponent(matchId));
-  redirect(feedback('spreadVoteNotice', 'Your ' + (choice === 'high' ? 'Too High' : 'Too Low') + ' vote is saved.'));
+  redirect(feedback('spreadVoteNotice', 'Your Clash Spread Challenge pick is saved.'));
 }

@@ -59,7 +59,7 @@ async function loadFinalContext(snapshot: FinalMatchdaySnapshot) {
     {canViewMatchPrediction('CaptainsCommissioner', actor) ? <MatchdaySection title="Saved prematch estimates">
       {prediction ? <MatchPredictionCard actor={actor} prediction={prediction} awayTeamName={snapshot.awayTeam.name} homeTeamName={snapshot.homeTeam.name} awayLogo={snapshot.awayTeam.logo} homeLogo={snapshot.homeTeam.logo} /> : <p>No prematch estimate was saved for this match.</p>}
     </MatchdaySection> : null}
-    {isApprovedCommissioner(actor) ? <MatchdaySection title="Commissioner spread voting">
+    {isApprovedCommissioner(actor) ? <MatchdaySection title="Clash Spread Challenge">
       <CommissionerSpreadVote
         matchId={snapshot.matchId} matchDate={match.date} matchTime={match.time} matchStatus={match.status}
         homeName={snapshot.homeTeam.name} awayName={snapshot.awayTeam.name}

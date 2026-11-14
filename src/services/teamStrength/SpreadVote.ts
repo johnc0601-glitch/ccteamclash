@@ -18,6 +18,36 @@ export function spreadLineLabel(homeLine: number, homeName: string, awayName: st
   return favorite + ' favored by ' + Math.abs(homeLine).toFixed(1) + ' points';
 }
 
+/** Old "Too High" votes meant the favorite's projected margin was too high.
+ * Preserve that interpretation: high = underdog covers, low = favorite covers.
+ * The signed home line only determines which team is the favorite.
+ */
+export function getSpreadCoverOptions(homeLine: number, homeName: string, awayName: string): {
+  favorite: {teamName: string; choice: SpreadVoteChoice; label: string; explanation: string};
+  underdog: {teamName: string; choice: SpreadVoteChoice; label: string; explanation: string};
+} {
+  if (!Number.isFinite(homeLine) || homeLine === 0 || roundHomeSpreadLine(homeLine) !== homeLine) {
+    throw new Error('A nonzero half-point spread is required.');
+  }
+  const favorite = homeLine > 0 ? homeName : awayName;
+  const underdog = homeLine > 0 ? awayName : homeName;
+  const points = Math.abs(homeLine).toFixed(1);
+  return {
+    favorite: {
+      teamName: favorite,
+      choice: 'low',
+      label: favorite + ' covers',
+      explanation: 'Win by more than ' + points + ' points',
+    },
+    underdog: {
+      teamName: underdog,
+      choice: 'high',
+      label: underdog + ' covers',
+      explanation: 'Win, tie, or lose by fewer than ' + points + ' points',
+    },
+  };
+}
+
 /** Local ET clock; the ballot closes at the listed match start, not at midnight UTC. */
 export function isSpreadVoteOpen(match: {date: string | null; time: string | null; status: string}, now = new Date()): boolean {
   if (match.status !== 'Scheduled' || !match.date || !match.time
