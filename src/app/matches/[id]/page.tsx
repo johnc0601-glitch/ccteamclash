@@ -11,6 +11,7 @@ import {FinalMatchdayV2} from '@/components/matches/FinalMatchdayV2';
 import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
 import {PublicMatchSpread} from '@/components/matches/PublicMatchSpread';
 import {CommissionerSpreadVote} from '@/components/matches/CommissionerSpreadVote';
+import {loadPublicClashLine} from '@/services/teamStrength/SpreadVoteStore';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
@@ -224,6 +225,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
   // Only the point spread is public. Never pass the full prediction/probabilities to a public component.
   const publicSpread = toPublicMatchSpread(matchPrediction, matchday.homeTeam.name, matchday.awayTeam.name);
+  const clashLineMovement = publicSpread ? await loadPublicClashLine(matchId) : null;
 
   const personalAttendance = !locked && userId ? await matchRosterService.getPersonalAttendance(userId, matchId) : undefined;
   let managedRosters = userId && readParam(query.manage) === 'roster'
@@ -276,7 +278,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
           {publicSpread ? (
             <MatchdaySection title="The Clash Line" collapsed={showResultsFirst}>
-              <PublicMatchSpread spread={publicSpread}>
+              <PublicMatchSpread spread={publicSpread} movement={clashLineMovement} homeName={matchday.homeTeam.name} awayName={matchday.awayTeam.name}>
                 {isApprovedCommissioner(actor) ? (
                   <CommissionerSpreadVote
                     embedded

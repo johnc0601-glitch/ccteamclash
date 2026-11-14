@@ -28,18 +28,13 @@ export async function CommissionerSpreadVote(props: Props) {
   }
 
   // Frozen voting lines take precedence over subsequent changes to public estimates.
-  const line = saved?.homeLine ?? roundHomeSpreadLine(props.currentHomeMargin);
+  const line = saved?.currentHomeLine ?? roundHomeSpreadLine(props.currentHomeMargin);
   if (line === null) return null;
   const options = line === 0 ? null : getSpreadCoverOptions(line, props.homeName, props.awayName);
-  const displayedLine = roundHomeSpreadLine(props.currentHomeMargin);
-  const lockedLineDiffers = Boolean(props.embedded && saved && displayedLine !== null && displayedLine !== line);
+  const openingLine = saved?.openingHomeLine ?? line;
   const open = isSpreadVoteOpen({date: props.matchDate, time: props.matchTime, status: props.matchStatus});
   const canVote = open && options !== null;
-  // Legacy stored choices have stable meaning: low = favorite covers; high = underdog covers.
-  const favoriteVotes = saved?.low ?? 0;
-  const underdogVotes = saved?.high ?? 0;
-  const total = favoriteVotes + underdogVotes;
-  const favoritePercent = total ? Math.round(100 * favoriteVotes / total) : 0;
+  // Legacy stored choices retain their meaning: low = favorite covers; high = underdog covers.
   const myPick = options && saved?.myVote
     ? saved.myVote === options.favorite.choice ? options.favorite.label : options.underdog.label
     : null;
@@ -53,9 +48,9 @@ export async function CommissionerSpreadVote(props: Props) {
       <p className={styles.lineTitle}>The Clash Line</p>
       <strong className={styles.line}>{spreadLineLabel(line, props.homeName, props.awayName)}</strong>
     </> : null}
-    {lockedLineDiffers ? <p className={styles.lockedLine}>Voting uses the original locked line: {spreadLineLabel(line, props.homeName, props.awayName)}. The projected line above has since changed.</p> : null}
+    {!props.embedded && saved && openingLine !== line ? <p className={styles.lockedLine}>Opened at {spreadLineLabel(openingLine, props.homeName, props.awayName)}.</p> : null}
     {options ? <p className={styles.question}>Will {options.favorite.teamName} cover the spread?</p> : null}
-    <p className={styles.hint}>{saved ? 'Voting line locked with the first pick.' : 'The line locks when the first pick is submitted.'}</p>
+    <p className={styles.hint}>{saved ? 'Live line adjusts with commissioner picks, up to two points from the opening line.' : 'The opening line is set with the first pick; it can then move.'}</p>
 
     {props.notice ? <p className={styles.notice} role="status">{props.notice}</p> : null}
     {props.error ? <p className={styles.error} role="alert">{props.error}</p> : null}
@@ -73,20 +68,9 @@ export async function CommissionerSpreadVote(props: Props) {
           <span>{options.underdog.explanation}</span>
         </button>
       </form>
-    ) : <p className={styles.hint}>{line === 0 ? 'No meaningful spread to pick yet.' : 'Voting has closed. Picks and totals remain saved.'}</p>}
+    ) : <p className={styles.hint}>{line === 0 ? 'No meaningful spread to pick yet.' : 'Picking is closed. The closing line and your pick remain saved.'}</p>}
 
     {options ? <p className={styles.rules}>If the final margin lands exactly on the line, it’s a push: neither side covers.</p> : null}
-    {myPick ? <p className={styles.yourVote}>Your pick: <strong>{myPick}</strong>{canVote ? ' · Change your pick before match start.' : ''}</p> : null}
-
-    {total && options ? <div className={styles.results}>
-      <div className={styles.resultsHead}><span>Commissioner picks</span><span>{total} total</span></div>
-      <div className={styles.track} role="img" aria-label={options.favorite.label + ': ' + favoritePercent + ' percent. ' + options.underdog.label + ': ' + (100 - favoritePercent) + ' percent'}>
-        <span style={{width: favoritePercent + '%'}} />
-      </div>
-      <div className={styles.resultsHead}>
-        <span>{options.favorite.label}: {favoriteVotes} ({favoritePercent}%)</span>
-        <span>{options.underdog.label}: {underdogVotes} ({100 - favoritePercent}%)</span>
-      </div>
-    </div> : <p className={styles.hint}>No picks recorded yet.</p>}
+    {myPick ? <p className={styles.yourVote}>Your pick: <strong>{myPick}</strong>{saved?.myAcceptedHomeLine != null ? <span> · Accepted at {spreadLineLabel(saved.myAcceptedHomeLine, props.homeName, props.awayName)}</span> : null}{canVote ? ' · You can change it before match start.' : ''}</p> : null}
   </section>;
 }

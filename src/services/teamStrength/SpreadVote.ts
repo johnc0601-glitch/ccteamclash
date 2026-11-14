@@ -48,6 +48,21 @@ export function getSpreadCoverOptions(homeLine: number, homeName: string, awayNa
   };
 }
 
+/** One net commissioner pick shifts the public line by half a point.
+ * Never cross into the opposite favorite; clamp moves to two points total.
+ * This is a play-money approximation of market pressure, not betting odds.
+ */
+export function moveClashLine(openingHomeLine: number, favoritePicks: number, underdogPicks: number): number {
+  if (roundHomeSpreadLine(openingHomeLine) !== openingHomeLine || openingHomeLine === 0
+    || !Number.isInteger(favoritePicks) || favoritePicks < 0
+    || !Number.isInteger(underdogPicks) || underdogPicks < 0) {
+    throw new Error('Invalid opening line or pick counts.');
+  }
+  const net = Math.max(-4, Math.min(4, favoritePicks - underdogPicks));
+  const magnitude = Math.max(0.5, Math.min(36, Math.abs(openingHomeLine) + net * 0.5));
+  return Math.sign(openingHomeLine) * magnitude;
+}
+
 /** Local ET clock; the ballot closes at the listed match start, not at midnight UTC. */
 export function isSpreadVoteOpen(match: {date: string | null; time: string | null; status: string}, now = new Date()): boolean {
   if (match.status !== 'Scheduled' || !match.date || !match.time
