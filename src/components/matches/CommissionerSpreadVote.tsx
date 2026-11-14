@@ -42,7 +42,7 @@ export async function CommissionerSpreadVote(props: Props) {
   return <section id="commissioner-spread-vote" className={`${styles.card} ${props.embedded ? styles.embedded : ''}`} aria-label="Clash Challenge — beat expectations">
     <p className={styles.kicker}>MAKE YOUR PICK</p>
     <h3>Who will beat expectations?</h3>
-    <p className={styles.scope}>Commissioner-only game · Pick the team you think will outperform the projection</p>
+    <p className={styles.scope}>Pick the team you think will outperform the projection</p>
 
     {!props.embedded ? <>
       <p className={styles.lineTitle}>Current match projection</p>
@@ -50,7 +50,6 @@ export async function CommissionerSpreadVote(props: Props) {
     </> : null}
     {!props.embedded && saved && openingLine !== line ? <p className={styles.lockedLine}>Original projection: {spreadLineLabel(openingLine, props.homeName, props.awayName)}.</p> : null}
     {options ? <p className={styles.question}>Which team will perform better than our projection?</p> : null}
-    <p className={styles.hint}>{saved ? 'Predictions can gently adjust the projected margin.' : 'Make a pick to start the challenge — the projection can change as others choose.'}</p>
 
     {props.notice ? <p className={styles.notice} role="status">{props.notice}</p> : null}
     {props.error ? <p className={styles.error} role="alert">{props.error}</p> : null}
