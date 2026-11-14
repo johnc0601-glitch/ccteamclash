@@ -56,6 +56,14 @@ export async function loadPublishedCanaryAdjustments(
   snapshot: FinalMatchdaySnapshot,
 ): Promise<FinalScoreAdjustment[]> {
   if (!shouldUseFinalScoreboardCanary(snapshot)) return [];
+  return loadPublishedMatchAdjustments(client, snapshot);
+}
+
+export async function loadPublishedMatchAdjustments(
+  client: {from: (table: string) => any},
+  snapshot: FinalMatchdaySnapshot,
+): Promise<FinalScoreAdjustment[]> {
+  if (!snapshot.publishedAt) return [];
 
   try {
     const {data, error} = await client.from('launch_match_structural_points')
@@ -118,5 +126,6 @@ export function adaptCanarySnapshot(
     ...snapshot,
     // Copy only: the locked snapshot and published total remain immutable.
     adjustments: [...adjustments],
+    contests: snapshot.contests.map(contest => ({...contest, resultText: contest.sourceDetails?.resultText, card: contest.sourceDetails?.card, startingHole: contest.sourceDetails?.startingHole, homeStrokes: contest.sourceDetails?.homeStrokes, awayStrokes: contest.sourceDetails?.awayStrokes})),
   };
 }

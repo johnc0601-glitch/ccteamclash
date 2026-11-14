@@ -89,7 +89,15 @@ export function ResultsManagement({
   const [importAliasesReviewed, setImportAliasesReviewed] = useState(false);
   const [importAdjustmentsReviewed, setImportAdjustmentsReviewed] = useState(false);
   const [importApplied, setImportApplied] = useState(false);
+  const importBlocked = Boolean(whiteboardPreview && (!importApplied || whiteboardPreview.errors.length
+    || (whiteboardPreview.aliasMatches.length > 0 && !importAliasesReviewed)
+    || (needsAdjustmentReview(whiteboardPreview) && !importAdjustmentsReviewed)));
   const openedDirectMatch = useRef(false);
+  const editorGeneration = useRef(0);
+  const [importReading, setImportReading] = useState(false);
+  const [importFailed, setImportFailed] = useState(false);
+  const [importPayload, setImportPayload] = useState<unknown>(null);
+  const [identityOverrides, setIdentityOverrides] = useState<Record<string, string>>({});
 
   async function load(preferredRoundId?: string) {
     const workspace = await loadResultsWorkspace(preferredRoundId || roundId);
@@ -107,6 +115,8 @@ export function ResultsManagement({
   }
 
   async function selectRound(nextRoundId: string) {
+    editorGeneration.current += 1;
+    setImportReading(false);
     setRoundId(nextRoundId);
     const round = await loadResultsRound(nextRoundId);
     if (!round.ok) {
@@ -124,6 +134,10 @@ export function ResultsManagement({
   }
 
   async function openEditor(match: Match) {
+    const generation = ++editorGeneration.current;
+    setImportReading(false);
+    setImportPayload(null);
+    setImportFailed(false);
     const result = results.find((candidate) => candidate.matchId === match.id);
     setEditor({match, result});
     setEditorLoading(true);
@@ -143,6 +157,7 @@ export function ResultsManagement({
       loadResultStructuralPoints(match.id),
       loadResultProcessingStatus(match.id),
     ]);
+    if (generation !== editorGeneration.current) return;
     if (!contestResult.ok) {
       setContests([]);
       setOfficialRosterPlayers([]);
@@ -199,7 +214,13 @@ export function ResultsManagement({
   }, [initialMatchId]);
 
   async function save(action: 'draft' | 'publish' | 'reopen') {
-    if (!editor) return;
+    if (!editor || editorLoading || importReading || saving || importFailed) return;
+    if (action !== 'reopen' && whiteboardPreview && (!importApplied || whiteboardPreview.errors.length
+      || (whiteboardPreview.aliasMatches.length > 0 && !importAliasesReviewed)
+      || (needsAdjustmentReview(whiteboardPreview) && !importAdjustmentsReviewed))) {
+      setMessage('Resolve the highlighted import items before saving.');
+      return;
+    }
     if (previewReadOnly) {
       setMessage('Preview only: saving drafts and finalizing matches are disabled. Review the imported JSON locally.');
       return;
@@ -287,6 +308,12 @@ export function ResultsManagement({
           ? 'Match finalized. Clash Index, stats, standings, and Clash Pulse data are ready.'
           : 'Result reopened.',
     );
+    if (whiteboardPreview && importApplied && JSON.stringify(contests) === JSON.stringify(whiteboardPreview.contests)) {
+      try {
+        const stored = JSON.parse(localStorage.getItem('cctc-whiteboard-identities-v1') || '{}');
+        localStorage.setItem('cctc-whiteboard-identities-v1', JSON.stringify({...stored, ...Object.fromEntries(whiteboardPreview.identities.filter(x => x.playerId).map(x => [x.key, x.playerId]))}));
+      } catch { /* Browser storage is optional. Import remains usable. */ }
+    }
     await load(roundId);
     setEditor({match: editor.match, result: result.data});
     if (action === 'publish') {
@@ -296,53 +323,63 @@ export function ResultsManagement({
   }
 
 
-  async function reviewWhiteboardFile(file: File) {
-    if (!editor || editor.result?.status === 'Published') return;
-    setImportedAwards([]);
-    setWhiteboardPreview(null);
+  function stageImport(preview: WhiteboardReview) {
+    setWhiteboardPreview(preview);
     setImportApplied(false);
     setImportAliasesReviewed(false);
     setImportAdjustmentsReviewed(false);
-    if (file.size > 3_000_000) {
-      setMessage('TC Whiteboard export exceeds 3 MB; check the file.');
-      return;
-    }
-    try {
-      const json: unknown = JSON.parse(await file.text());
-      // Only use the official locked roster loaded for this match.
-      const candidates = officialRosterPlayers.map(row => {
-        const profile = initialPlayers.find(p => p.id === row.id);
-        return {...row, pdgaNumber: profile?.pdgaNumber || ''};
-      });
-      const preview = prepareWhiteboardImport(json, {
-        id: editor.match.id,
-        date: editor.match.date,
-        homeTeamId: editor.match.homeTeamId,
-        awayTeamId: editor.match.awayTeamId,
-        homeTeamName: editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) || '' : '',
-        awayTeamName: editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) || '' : '',
-      }, candidates);
-      setWhiteboardPreview(preview);
-      setMessage(preview.errors.length ? 'JSON review has blocking issues. No contest rows were loaded.'
-        : 'Export validated against the selected fixture and locked roster. Review aliases and non-contest team points before loading.');
-    } catch {
-      setMessage('Unable to read this TC Whiteboard JSON file. No data was changed.');
-    }
-  }
-
-  function applyWhiteboardPreview() {
-    if (!editor || !whiteboardPreview || whiteboardPreview.errors.length
-      || (whiteboardPreview.aliasMatches.length > 0 && !importAliasesReviewed)
-      || (whiteboardPreview.roundAdjustments.some(x => x.away > 0 || x.home > 0) && !importAdjustmentsReviewed)) return;
-    setHomeScore(String(whiteboardPreview.homeScore));
-    setAwayScore(String(whiteboardPreview.awayScore));
-    setContests(whiteboardPreview.contests);
+    if (preview.errors.length) {setMessage('Resolve the highlighted import items.'); return;}
+    setHomeScore(String(preview.homeScore));
+    setAwayScore(String(preview.awayScore));
+    setContests(preview.contests);
     setSavedAdjustments([]);
-    setImportedAwards(whiteboardPreview.awards);
+    setImportedAwards(preview.awards);
     setHomeAdjustment({category: '', note: ''});
     setAwayAdjustment({category: '', note: ''});
     setImportApplied(true);
-    setMessage('TC Whiteboard rows loaded into the editor only. No server save or CI updates occurred. Choose and document residual point categories, then save the draft.');
+    setMessage('Review the score and matchups below, then publish or save a draft.');
+  }
+
+  function prepareImport(json: unknown, overrides: Record<string, string>) {
+    if (!editor) return;
+    const candidates = officialRosterPlayers.map(row => ({...row, pdgaNumber: initialPlayers.find(p => p.id === row.id)?.pdgaNumber || ''}));
+    stageImport(prepareWhiteboardImport(json, {
+      id: editor.match.id, date: editor.match.date, homeTeamId: editor.match.homeTeamId, awayTeamId: editor.match.awayTeamId,
+      homeTeamName: teamNames.get(editor.match.homeTeamId || '') || '', awayTeamName: teamNames.get(editor.match.awayTeamId || '') || '',
+    }, candidates, overrides));
+  }
+
+  async function reviewWhiteboardFile(file: File) {
+    if (!editor || editorLoading || saving || editor.result?.status === 'Published') return;
+    const generation = ++editorGeneration.current;
+    setImportReading(true);
+    setWhiteboardPreview(null);
+    setImportApplied(false);
+    setImportPayload(null);
+    setImportFailed(false);
+    try {
+      if (file.size > 3_000_000) throw new Error('Export exceeds 3 MB.');
+      const json: unknown = JSON.parse(await file.text());
+      if (generation !== editorGeneration.current) return;
+      let overrides: Record<string, string> = {};
+      try {
+        const stored = JSON.parse(localStorage.getItem('cctc-whiteboard-identities-v1') || '{}');
+        if (stored && typeof stored === 'object' && !Array.isArray(stored)) overrides = stored;
+      } catch { /* No saved mappings. */ }
+      setIdentityOverrides(overrides);
+      setImportPayload(json);
+      prepareImport(json, overrides);
+    } catch {
+      if (generation === editorGeneration.current) {setImportFailed(true); setMessage('Unable to read this results file. Choose a valid export under 3 MB, or reopen this match to continue manually.');}
+    } finally {
+      if (generation === editorGeneration.current) setImportReading(false);
+    }
+  }
+
+  function resolveIdentity(key: string, playerId: string) {
+    const next = {...identityOverrides, [key]: playerId};
+    setIdentityOverrides(next);
+    prepareImport(importPayload, next);
   }
 
   const audit = useMemo(
@@ -488,19 +525,25 @@ export function ResultsManagement({
         <section className={styles.editor}>
           <header>
             <div><span>Result entry</span><h2>{editor.match.homeTeamId ? teamNames.get(editor.match.homeTeamId) : 'TBD'} vs {editor.match.awayTeamId ? teamNames.get(editor.match.awayTeamId) : 'TBD'}</h2></div>
-            <button type="button" onClick={() => setEditor(null)}>Close</button>
+            <button type="button" onClick={() => {editorGeneration.current += 1; setImportReading(false); setEditor(null);}}>Close</button>
           </header>
 
           {editor.result?.status !== 'Published' ? (
             <section className={styles.whiteboardImport}>
-              <h3>TC Whiteboard · JSON review</h3>
-              <p>Upload the final results export for this selected match. No file is sent to the server; the review happens in your browser.</p>
-              <input type="file" accept=".json,application/json"
+              <h3>Import TCWhiteboard results</h3>
+              <p>Choose the final export. Review the score and matchups below, resolve any highlighted items, then publish.</p>
+              <input type="file" accept=".json,application/json" disabled={editorLoading || saving || importReading}
                 aria-label="Select TC Whiteboard results JSON"
                 onChange={event => {const file=event.target.files?.[0]; if (file) void reviewWhiteboardFile(file);}} />
               {whiteboardPreview ? (
                 <div className={styles.whiteboardReview} aria-live="polite">
-                  <strong>Source ID: {whiteboardPreview.sourceMatchId}</strong>
+                  {whiteboardPreview.identities.filter(x => !x.playerId).map(identity => <label key={identity.key}>
+                    Match {identity.name} to the official roster
+                    <select value={identityOverrides[identity.key] || ''} onChange={event => resolveIdentity(identity.key, event.target.value)}>
+                      <option value="">Choose player</option>
+                      {officialRosterPlayers.filter(p => p.teamId === identity.teamId).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </label>)}
                   <span>Official final: {whiteboardPreview.awayScore}–{whiteboardPreview.homeScore} · {whiteboardPreview.contests.length} playable contests ({whiteboardPreview.contests.filter(x=>x.format==='Singles').length} singles, {whiteboardPreview.contests.filter(x=>x.format==='Doubles').length} doubles)</span>
                   {whiteboardPreview.roundAdjustments.map(x=>(
                     <span key={x.round}>Round {x.round}: source team points outside matchups — Away +{x.away}, Home +{x.home}</span>
@@ -529,34 +572,11 @@ export function ResultsManagement({
                     <input type="checkbox" checked={importAliasesReviewed} onChange={e=>setImportAliasesReviewed(e.target.checked)} />
                     I verified the player name aliases against the locked roster.
                   </label> : null}
-                  {whiteboardPreview.roundAdjustments.some(x=>x.away>0||x.home>0) ? <label>
+                  {needsAdjustmentReview(whiteboardPreview) ? <label>
                     <input type="checkbox" checked={importAdjustmentsReviewed} onChange={e=>setImportAdjustmentsReviewed(e.target.checked)} />
                     I reviewed the source penalties and the proposed category breakdown. Any inferred split has been verified against league rules.
                   </label> : null}
-                  {whiteboardPreview.errors.length ? <span role="status">Fix the blocking JSON issues listed above before loading rows.</span> : null}
-                  {whiteboardPreview.aliasMatches.length > 0 && !importAliasesReviewed ? <span role="status">To enable loading: verify and check the player-alias confirmation above.</span> : null}
-                  {whiteboardPreview.roundAdjustments.some(x=>x.away>0||x.home>0) && !importAdjustmentsReviewed ? <span role="status">To enable loading: check the unexplained-points confirmation above.</span> : null}
-                  {whiteboardPreview.errors.length > 0 ? (
-                    <p role="alert" className={styles.importBlocker}>
-                      Cannot load: {whiteboardPreview.errors.length} blocking validation issue(s). Review the errors above.
-                    </p>
-                  ) : whiteboardPreview.aliasMatches.length > 0 && !importAliasesReviewed ? (
-                    <p role="status" className={styles.importBlocker}>
-                      To enable the button, confirm the player-name aliases using the checkbox above.
-                    </p>
-                  ) : whiteboardPreview.roundAdjustments.some(x=>x.away>0||x.home>0) && !importAdjustmentsReviewed ? (
-                    <p role="status" className={styles.importBlocker}>
-                      To enable the button, confirm the additional-points review using the checkbox above.
-                    </p>
-                  ) : <p className={styles.importReady}>Checks complete. You can load the rows locally for review.</p>}
-                  <button type="button" className={styles.secondary}
-                    disabled={!!whiteboardPreview.errors.length
-                      || (whiteboardPreview.aliasMatches.length>0&&!importAliasesReviewed)
-                      || (whiteboardPreview.roundAdjustments.some(x=>x.away>0||x.home>0)&&!importAdjustmentsReviewed)}
-                    onClick={applyWhiteboardPreview}>
-                    Load verified rows into editor
-                  </button>
-                  {importApplied ? <strong>Loaded locally — not saved or published.</strong> : null}
+                  {importApplied ? <strong>Ready for review below</strong> : null}
                 </div>
               ) : null}
             </section>
@@ -735,11 +755,11 @@ export function ResultsManagement({
               <button type="button" className={styles.secondary} disabled={saving || previewReadOnly} onClick={() => void save('reopen')}>Reopen result</button>
             ) : (
               <>
-                <button type="button" className={styles.secondary} disabled={saving || editorLoading || previewReadOnly || (hasBreakdown && !breakdownMatches)} onClick={() => void save('draft')}>Save draft</button>
+                <button type="button" className={styles.secondary} disabled={saving || editorLoading || importReading || importFailed || importBlocked || previewReadOnly || (hasBreakdown && !breakdownMatches)} onClick={() => void save('draft')}>Save draft</button>
                 <button
                   type="button"
                   className={styles.primary}
-                  disabled={saving || editorLoading || previewReadOnly || audit.homeResidual < 0 || audit.awayResidual < 0 || !adjustmentReasonsComplete
+                  disabled={saving || editorLoading || importReading || importFailed || importBlocked || previewReadOnly || audit.homeResidual < 0 || audit.awayResidual < 0 || !adjustmentReasonsComplete
                     || (importApplied && !hasBreakdown && ((audit.awayResidual>0 && awayAdjustment.note.trim().length<12) || (audit.homeResidual>0 && homeAdjustment.note.trim().length<12)))}
                   onClick={() => void save('publish')}
                 >
@@ -757,6 +777,7 @@ export function ResultsManagement({
 function toContestInput(contest: ResultContest): ResultContestInput {
   return {
     id: contest.id,
+    sourceDetails: contest.sourceDetails,
     format: contest.format,
     position: contest.position,
     homeOutcome: contest.homeOutcome,
@@ -820,4 +841,10 @@ function formatTime(value: string | null): string {
   const [hours, minutes] = value.split(':').map(Number);
   return new Intl.DateTimeFormat('en-US', {hour: 'numeric', minute: '2-digit'})
     .format(new Date(2000, 0, 1, hours, minutes));
+}
+
+function needsAdjustmentReview(review: WhiteboardReview): boolean {
+  const residual = review.roundAdjustments.reduce((sum, row) => sum + row.away + row.home, 0);
+  const documented = review.awards.reduce((sum, row) => sum + row.points, 0);
+  return residual !== documented || review.awards.some(row => row.category !== 'WomenBonus');
 }

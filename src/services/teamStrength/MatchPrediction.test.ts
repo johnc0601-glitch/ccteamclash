@@ -4,9 +4,8 @@ import test from 'node:test';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 
 import {
-  ACTIVE_ROSTER_WIN_STRENGTH_SLOPE,
+  CI_ESTIMATE_MARGIN_SLOPE,
   calculateRosterBasedMatchPrediction,
-  MATCH_LINEUP_WIN_STRENGTH_SLOPE,
   predictionReadinessForStrengths,
   rosterStageChanceOfVictoryFromStrengthDifference,
 } from './MatchPrediction';
@@ -23,7 +22,7 @@ test('equal neutral active roster strengths start at 50 percent as an early esti
   assert.equal(prediction.matchupStrengthDifference, 0);
   assert.equal(prediction.expectedPointShare, 0.5);
   assert.equal(prediction.regularSeasonChanceOfVictory, 0.5);
-  assert.equal(prediction.calibrationSlope, ACTIVE_ROSTER_WIN_STRENGTH_SLOPE);
+  assert.equal(prediction.calibrationSlope, CI_ESTIMATE_MARGIN_SLOPE);
   assert.equal(prediction.readiness, 'EarlyEstimate');
   assert.equal(prediction.displayLabel, 'Early estimate');
   assert.equal(prediction.displayChanceOfVictory, 0.5);
@@ -79,8 +78,8 @@ test('complete official match lineup is the first roster stage labeled Chance of
   const lineup = calculateRosterBasedMatchPrediction({team: lineupTeam, opponent: lineupOpponent});
 
   assert.ok(active && lineup);
-  assert.equal(lineup.calibrationSlope, MATCH_LINEUP_WIN_STRENGTH_SLOPE);
-  assert.ok(lineup.regularSeasonChanceOfVictory > active.regularSeasonChanceOfVictory);
+  assert.equal(lineup.calibrationSlope, CI_ESTIMATE_MARGIN_SLOPE);
+  assert.equal(lineup.regularSeasonChanceOfVictory, active.regularSeasonChanceOfVictory);
   assert.equal(active.readiness, 'EarlyEstimate');
   assert.equal(lineup.readiness, 'Ready');
   assert.equal(lineup.displayLabel, 'Chance of Victory');
@@ -191,3 +190,17 @@ function player(id: string, ci: number, provisional: boolean): LaunchPlayer {
     updatedAt: '2026-08-27T00:00:00Z',
   };
 }
+
+test('CI Model Estimates map 1–8 point advantages through the .20 margin curve without quantization', () => {
+  const percents = [55,60,65,69,73,77,80,83];
+  for (let margin = 1; margin <= 8; margin++) {
+    const difference = 105 * Math.log10((36 + margin) / (36 - margin));
+    const team = strength('activeRoster', 900 + difference);
+    const opponent = strength('activeRoster', 900);
+    assert.ok(team && opponent);
+    const prediction = calculateRosterBasedMatchPrediction({team, opponent});
+    assert.ok(prediction);
+    assert.equal(Math.round(prediction.regularSeasonChanceOfVictory * 100), percents[margin - 1]);
+    assert.equal(prediction.version, 'ci-model-estimates-v2');
+  }
+});

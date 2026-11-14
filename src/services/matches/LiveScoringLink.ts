@@ -90,6 +90,13 @@ export function getLiveScoringHref(
     return undefined;
   }
 
+  return getWhiteboardHref(match);
+}
+
+/** Verified source link remains available after official publication. */
+export function getWhiteboardHref(
+  match: Pick<PublicScheduleEvent, 'id' | 'scheduledDate' | 'awayTeamId' | 'homeTeamId'>,
+): string | undefined {
   const feed = LIVE_SCORING_FEEDS[match.id];
   if (!feed
     || match.scheduledDate !== feed.date

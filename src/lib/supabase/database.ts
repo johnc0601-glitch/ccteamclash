@@ -913,6 +913,7 @@ export type Database = {
       }
       launch_result_contests: {
         Row: {
+          source_details: Json | null
           away_outcome: string
           away_score: number | null
           created_at: string
@@ -925,6 +926,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          source_details?: Json | null
           away_outcome: string
           away_score?: number | null
           created_at?: string
@@ -937,6 +939,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          source_details?: Json | null
           away_outcome?: string
           away_score?: number | null
           created_at?: string

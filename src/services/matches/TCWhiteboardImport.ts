@@ -22,7 +22,9 @@ export type WhiteboardAward = {
   points: number;
   note: string;
 };
+export type WhiteboardIdentity = {key: string; name: string; teamId: string; playerId: string};
 export type WhiteboardReview = {
+  identities: WhiteboardIdentity[];
   sourceMatchId: string;
   homeScore: number;
   awayScore: number;
@@ -43,11 +45,19 @@ const score = (x: unknown): number | null => typeof x === 'number' && Number.isF
 const simplify = (x: string) => x.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
   .replace(/["“][^"”]*["”]/g, ' ').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g, ' ');
 const coreName = (x: string) => simplify(x).replace(/\b(jr|sr|ii|iii)\b/g, '').trim();
+export const whiteboardIdentityKey = (teamId: string, name: string) => teamId + '|' + simplify(name);
 const approx = (a: number, b: number) => Math.abs(a-b)<0.001;
 
 function identity(whiteboardName: string, pdgaNumber: number | null, side: 'Home'|'Away', teamId: string,
-  candidates: readonly WhiteboardImportPlayer[], warnings: string[], errors: string[]): string {
+  candidates: readonly WhiteboardImportPlayer[], warnings: string[], errors: string[], overrides: Record<string, string>, identities: WhiteboardIdentity[]): string {
   const teamPlayers = candidates.filter(p => p.teamId===teamId);
+  const key = whiteboardIdentityKey(teamId, whiteboardName);
+  const override = overrides[key];
+  const pdgaMatch = pdgaNumber ? teamPlayers.filter(p => p.pdgaNumber && Number(p.pdgaNumber) === pdgaNumber) : [];
+  if (override && teamPlayers.some(p => p.id === override) && (pdgaMatch.length === 0 || (pdgaMatch.length === 1 && pdgaMatch[0].id === override))) {
+    identities.push({key, name: whiteboardName, teamId, playerId: override});
+    return override;
+  }
   const exactPdga = pdgaNumber ? teamPlayers.filter(p => p.pdgaNumber && Number(p.pdgaNumber) === pdgaNumber) : [];
   let matches = exactPdga;
   if (matches.length===0) {
@@ -68,12 +78,14 @@ function identity(whiteboardName: string, pdgaNumber: number | null, side: 'Home
   }
   if (matches.length!==1) {
     errors.push((matches.length ? 'Ambiguous' : 'Unmatched') + ' ' + side + ' player: ' + whiteboardName);
+    identities.push({key, name: whiteboardName, teamId, playerId: ''});
     return '';
   }
   const winner=matches[0];
   if (simplify(whiteboardName)!==simplify(winner.name) && coreName(whiteboardName)!==coreName(winner.name)) {
     warnings.push('Name alias: ' + whiteboardName + ' → ' + winner.name);
   }
+  identities.push({key, name: whiteboardName, teamId, playerId: winner.id});
   return winner.id;
 }
 
@@ -89,7 +101,9 @@ export function prepareWhiteboardImport(
   payload: unknown,
   expected: WhiteboardImportMatch,
   candidates: readonly WhiteboardImportPlayer[],
+  overrides: Record<string, string> = {},
 ): WhiteboardReview {
+  const identities: WhiteboardIdentity[] = [];
   const errors: string[] = [], warnings: string[] = [], aliasMatches: string[] = [];
   const source=object(payload), match=object(source.match);
   const home=object(match.home), away=object(match.away);
@@ -108,7 +122,7 @@ export function prepareWhiteboardImport(
   if (officialHome===null || officialAway===null) errors.push('Official final totals must be valid half-point scores.');
 
   const rounds=list(source.rounds);
-  if (rounds.length!==2) errors.push('Expected both completed singles and doubles rounds.');
+  if (rounds.length!==2 || new Set(rounds.map(row => string(object(row).name).toLowerCase())).size !== 2) errors.push('Expected both completed singles and doubles rounds.');
   const contests: ResultContestInput[]=[];
   const penalties: WhiteboardPenalty[]=[];
   const awards: WhiteboardAward[]=[];
@@ -169,7 +183,7 @@ export function prepareWhiteboardImport(
           const number=sourcePlayer.pdgaNumber;
           const pdga=typeof number==='number'&&Number.isInteger(number)?number:null;
           const previousCount=warnings.length;
-          const resolvedId=identity(name,pdga,side,teamId||'',candidates,warnings,errors);
+          const resolvedId=identity(name,pdga,side,teamId||'',candidates,warnings,errors,overrides,identities);
           if(warnings.length>previousCount) aliasMatches.push(warnings[warnings.length-1]);
           if(!resolvedId)continue;
           // A player may legitimately take singles in both rounds when a
@@ -187,6 +201,14 @@ export function prepareWhiteboardImport(
         homeOutcome:winner==='home'?'W':winner==='away'?'L':'T',
         awayOutcome:winner==='away'?'W':winner==='home'?'L':'T',
         homeScore:null,awayScore:null,players,
+        sourceDetails: {
+          sourceMatchId, sourceRound: currentFormat,
+          card: typeof matchup.card === 'number' && Number.isInteger(matchup.card) ? matchup.card : index + 1,
+          startingHole: typeof matchup.startingHole === 'number' ? String(matchup.startingHole) : string(matchup.startingHole) || undefined,
+          resultText: string(result.text) || undefined,
+          homeStrokes: typeof h.strokes === 'number' && Number.isFinite(h.strokes) ? h.strokes : undefined,
+          awayStrokes: typeof a.strokes === 'number' && Number.isFinite(a.strokes) ? a.strokes : undefined,
+        },
       });
     }
     summedHome+=reportedHome;summedAway+=reportedAway;
@@ -243,6 +265,6 @@ export function prepareWhiteboardImport(
   if(officialHome!==null&&!approx(summedHome,officialHome)) errors.push('Rounds do not sum to official home final.');
   if(officialAway!==null&&!approx(summedAway,officialAway)) errors.push('Rounds do not sum to official away final.');
   if(contests.length===0)errors.push('No supported played matchups.');
-  return {sourceMatchId,homeScore:officialHome??0,awayScore:officialAway??0,
+  return {identities: [...new Map(identities.map(item => [item.key, item])).values()],sourceMatchId,homeScore:officialHome??0,awayScore:officialAway??0,
     contests,errors,warnings,aliasMatches,penalties,awards,roundAdjustments};
 }

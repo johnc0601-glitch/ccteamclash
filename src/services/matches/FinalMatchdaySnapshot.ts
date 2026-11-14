@@ -1,3 +1,5 @@
+import {parseResultSourceDetails} from '@/domain/results/ResultSourceDetails';
+import type {ResultSourceDetails} from '@/domain/results/MatchResult';
 import type {SupabaseClient} from '@supabase/supabase-js';
 
 export type FinalMatchTeam = {
@@ -21,6 +23,7 @@ export type FinalMatchPlayer = {
 };
 
 export type FinalMatchContest = {
+  sourceDetails?: ResultSourceDetails;
   id: string;
   format: 'Singles' | 'Doubles';
   position: number;
@@ -172,6 +175,7 @@ function parseContests(value: unknown): FinalMatchContest[] {
       awayPlayers: parsePlayers(contest.awayPlayers),
       homePlayers: parsePlayers(contest.homePlayers),
       unplayed: contest.unplayed === true,
+      sourceDetails: parseResultSourceDetails(contest.sourceDetails),
     }];
   });
 }

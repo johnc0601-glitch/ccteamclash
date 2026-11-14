@@ -1,8 +1,12 @@
+import {FinalMatchdayExtras} from '@/components/matches/FinalMatchdayExtras';
+import {MatchdaySection} from '@/components/matches/MatchdaySection';
+import {MatchdayRefresh} from '@/components/matches/MatchdayRefresh';
+import {resultsFirst} from '@/services/matches/MatchdayPresentation';
+import {loadSavedMatchPrediction} from '@/services/teamStrength/SavedMatchPrediction';
 import {Suspense, type CSSProperties} from 'react';
 import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
-import {FinalMatchday} from '@/components/matches/FinalMatchday';
 import {FinalMatchdayV2} from '@/components/matches/FinalMatchdayV2';
 import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
@@ -33,10 +37,10 @@ import type {Match} from '@/domain/schedule/Match';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {createClient} from '@/lib/supabase/server';
 import {resolveMatchday, type PublicMatchday} from '@/services/matches/MatchdayService';
-import {getLiveScoringHref} from '@/services/matches/LiveScoringLink';
+import {getLiveScoringHref, getWhiteboardHref} from '@/services/matches/LiveScoringLink';
 import {easternDate} from '@/services/weather/MatchWeather';
 import {getFinalMatchdaySnapshot} from '@/services/matches/FinalMatchdaySnapshot';
-import {adaptCanarySnapshot, loadPublishedCanaryAdjustments, shouldUseFinalScoreboardCanary} from '@/services/matches/FinalMatchdayCanary';
+import {adaptCanarySnapshot, loadPublishedMatchAdjustments} from '@/services/matches/FinalMatchdayCanary';
 import {loadPublishedUpsetEvidence} from '@/services/matches/PublicUpsetEvidence';
 import {canViewMatchPrediction} from '@/services/settings/MatchPredictionVisibility';
 import {buildPublicMatchPrediction} from '@/services/teamStrength/PublicMatchPrediction';
@@ -73,31 +77,17 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const finalSnapshot = await getFinalMatchdaySnapshot(supabase, matchId);
 
   if (finalSnapshot) {
-    // Keep ALL previously locked Matchday pages on their original renderer.
-    // Only the published Riptide–Beast Mode Oct 17 snapshot uses the new UI.
-    if (shouldUseFinalScoreboardCanary(finalSnapshot)) {
-      const [publishedUpsets, adjustments] = await Promise.all([
-        loadPublishedUpsetEvidence(),
-        loadPublishedCanaryAdjustments(
-          process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase,
-          finalSnapshot,
-        ),
-      ]);
-      return (
-        <>
-          <SiteHeader />
-          <FinalMatchdayV2 snapshot={adaptCanarySnapshot(finalSnapshot, adjustments)} publishedUpsets={publishedUpsets} />
-          <Footer />
-        </>
-      );
-    }
-    return (
-      <>
-        <SiteHeader />
-        <FinalMatchday snapshot={finalSnapshot} />
-        <Footer />
-      </>
-    );
+    const [publishedUpsets, adjustments] = await Promise.all([
+      loadPublishedUpsetEvidence(),
+      loadPublishedMatchAdjustments(process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase, finalSnapshot),
+    ]);
+    return <>
+      <SiteHeader />
+      <FinalMatchdayV2 snapshot={adaptCanarySnapshot(finalSnapshot, adjustments)} publishedUpsets={publishedUpsets}>
+        <FinalMatchdayExtras snapshot={finalSnapshot} />
+      </FinalMatchdayV2>
+      <Footer />
+    </>;
   }
 
   const [scheduleService, resultsService] = await Promise.all([
@@ -120,6 +110,8 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   if (!event || !match || !match.homeTeamId || !match.awayTeamId || !match.courseId) notFound();
 
   const now = new Date();
+  const showResultsFirst = resultsFirst({date: match.date, status: match.status, published: Boolean(publishedResult)}, now);
+  const sourceHref = getWhiteboardHref(event);
   const locked = isMatchRosterLocked(match, now);
   const availabilityOpen = !locked && isMatchAttendanceOpen(match, now);
   const attendanceLockAt = match.date ? getPlayerAttendanceLockAt(match.date) : undefined;
@@ -151,7 +143,10 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const availabilityUnavailable = availabilityOpen && availability === null;
 
   let officialSnapshot: OfficialSnapshotState | undefined;
-  if (locked) {
+  if (locked && publishedResult) {
+    const rosters = await matchRosterService.getOfficialMatchRosters(matchId);
+    officialSnapshot = rosters.length === 2 ? {status: 'complete', rosters} : {status: 'unavailable', rosters: []};
+  } else if (locked) {
     officialSnapshot = await matchRosterService.ensureLockedSnapshot(matchId);
     if (officialSnapshot.status !== 'complete' && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       try {
@@ -178,7 +173,9 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const canViewPrediction = canViewMatchPrediction('CaptainsCommissioner', actor);
   let matchPrediction: ReturnType<typeof buildPublicMatchPrediction> = undefined;
 
-  if (canViewPrediction) {
+  if (canViewPrediction && match.status !== 'Cancelled' && match.date && easternDate(now) >= match.date) {
+    matchPrediction = await loadSavedMatchPrediction(process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase, match.id, match.date, match.homeTeamId, match.awayTeamId);
+  } else if (canViewPrediction) {
     let homePredictionPlayers = matchday.homeTeam.roster;
     let awayPredictionPlayers = matchday.awayTeam.roster;
     const officialRosters = officialSnapshot?.status === 'complete'
@@ -252,27 +249,32 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     <>
       <SiteHeader />
       <main className={styles.page} style={pageBackground}>
+        {match.status === 'Scheduled' && !publishedResult ? <MatchdayRefresh date={match.date} /> : null}
         <MatchHero
           matchday={matchday}
           roundLabel={round ? `Round ${round.number}` : undefined}
-          liveScoringHref={getLiveScoringHref(matchday, {today: easternDate(now), hasPublishedResult: Boolean(publishedResult)})}
+          liveScoringHref={match.status === 'Scheduled' ? getLiveScoringHref(matchday, {today: easternDate(now), hasPublishedResult: Boolean(publishedResult)}) : undefined}
         />
         <div className={`shell ${styles.content}`}>
-          <MatchdayInfoStrip matchday={matchday} attendance={attendanceTotals} />
-          <Suspense fallback={null}>
+          {showResultsFirst ? <section aria-label="Match results">
+            {publishedResult ? <MatchScoreboard matchday={matchday} result={publishedResult} contests={contests} /> : <h2>Awaiting official results</h2>}
+            {sourceHref ? <a href={sourceHref} target="_blank" rel="noreferrer">View scoring on TCWhiteboard</a> : null}
+          </section> : null}
+          <MatchdaySection title="Match details" collapsed={showResultsFirst}><MatchdayInfoStrip matchday={matchday} attendance={attendanceTotals} /></MatchdaySection>
+          <MatchdaySection title="Match preview" collapsed={showResultsFirst}><Suspense fallback={null}>
             <MatchPreview matchId={matchId} matchday={matchday} />
-          </Suspense>
+          </Suspense></MatchdaySection>
 
           {matchPrediction ? (
-            <MatchPredictionCard
+            <MatchdaySection title="Saved prematch estimates" collapsed={showResultsFirst}><MatchPredictionCard
               actor={actor}
               prediction={matchPrediction}
               awayTeamName={matchday.awayTeam.name}
               homeTeamName={matchday.homeTeam.name}
-            />
+              awayLogo={matchday.awayTeam.logo} homeLogo={matchday.homeTeam.logo}
+            /></MatchdaySection>
           ) : null}
 
-          {publishedResult ? <MatchScoreboard matchday={matchday} result={publishedResult} contests={contests} /> : null}
 
           {personalAttendance ? (
             <PersonalAttendanceCard attendance={personalAttendance} notice={readParam(query.attendanceNotice)} error={readParam(query.attendanceError)} />
@@ -287,24 +289,24 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             />
           ) : null}
 
-          <MatchRosterBoard
+          <MatchdaySection title="Official roster" collapsed={showResultsFirst}><MatchRosterBoard
             matchday={matchday}
             official={officialSnapshot}
             rosterUnavailable={rosterUnavailable}
             availability={showAvailabilityRoster ? availability ?? undefined : undefined}
             availabilityUnavailable={showAvailabilityRoster && availabilityUnavailable}
             lockedAvailability={lockedAvailability}
-          />
+          /></MatchdaySection>
 
-          <Suspense fallback={null}>
+          <MatchdaySection title="Team information" collapsed={showResultsFirst}><Suspense fallback={null}>
             <MatchTeamStats
               awayTeam={{id: matchday.awayTeam.id, name: matchday.awayTeam.name}}
               homeTeam={{id: matchday.homeTeam.id, name: matchday.homeTeam.name}}
               seasonId={match.seasonId}
             />
-          </Suspense>
+          </Suspense></MatchdaySection>
 
-          {!publishedResult ? <MatchScoreboard matchday={matchday} result={publishedResult} contests={[]} /> : null}
+          {!publishedResult && !showResultsFirst ? <MatchScoreboard matchday={matchday} result={publishedResult} contests={[]} /> : null}
 
           {lockedControls.canUnlockRoster && officialSnapshot?.status === 'complete' ? (
             <CommissionerRosterUnlockPanel
@@ -316,16 +318,16 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
           {lockedControls.rosterExport?.ok ? <OfficialRosterExportPanel exportData={lockedControls.rosterExport.data} /> : null}
 
-          <MatchCourseInfo course={matchday.courseDetails} />
+          <MatchdaySection title="Course" collapsed={showResultsFirst}><MatchCourseInfo course={matchday.courseDetails} /></MatchdaySection>
 
-          <Suspense fallback={null}>
+          <MatchdaySection title="Match feed & photos" collapsed={showResultsFirst}><Suspense fallback={null}>
             <MatchFeed
               matchId={matchId}
               matchDate={match.date}
               notice={readParam(query.feedNotice)}
               error={readParam(query.feedError)}
             />
-          </Suspense>
+          </Suspense></MatchdaySection>
         </div>
       </main>
       <Footer />

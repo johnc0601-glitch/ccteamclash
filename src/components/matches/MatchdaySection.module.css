@@ -1,0 +1,4 @@
+.section { border: 1px solid #ffffff24; border-radius: 14px; background: #101b2b; color: #f2f5f9; overflow: hidden; }
+.section summary { padding: 18px 22px; font-weight: 700; cursor: pointer; }
+.section summary:focus-visible { outline: 2px solid #8cc9ff; outline-offset: -4px; }
+.body { padding: 0 16px 16px; display: grid; gap: 18px; }
