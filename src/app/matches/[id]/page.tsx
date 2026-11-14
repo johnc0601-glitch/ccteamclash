@@ -10,6 +10,7 @@ import {MatchHero} from '@/components/matches/MatchHero';
 import {FinalMatchdayV2} from '@/components/matches/FinalMatchdayV2';
 import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
 import {PublicMatchSpread} from '@/components/matches/PublicMatchSpread';
+import {CommissionerSpreadVote} from '@/components/matches/CommissionerSpreadVote';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
@@ -46,6 +47,7 @@ import {loadPublishedUpsetEvidence} from '@/services/matches/PublicUpsetEvidence
 import {canViewMatchPrediction} from '@/services/settings/MatchPredictionVisibility';
 import {buildPublicMatchPrediction} from '@/services/teamStrength/PublicMatchPrediction';
 import {toPublicMatchSpread} from '@/services/teamStrength/PublicMatchSpread';
+import {isApprovedCommissioner} from '@/services/teamStrength/SpreadVote';
 import styles from './Matchday.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -62,6 +64,8 @@ type MatchdayPageProps = {
     captainError?: string | string[];
     commissionerNotice?: string | string[];
     commissionerError?: string | string[];
+    spreadVoteNotice?: string | string[];
+    spreadVoteError?: string | string[];
     feedNotice?: string | string[];
     feedError?: string | string[];
   }>;
@@ -273,6 +277,18 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
           {publicSpread ? <MatchdaySection title="Projected point spread" collapsed={showResultsFirst}>
             <PublicMatchSpread spread={publicSpread} />
           </MatchdaySection> : null}
+
+          {isApprovedCommissioner(actor) ? (
+            <MatchdaySection title="Commissioner spread voting" collapsed={showResultsFirst}>
+              <CommissionerSpreadVote
+                matchId={matchId} matchDate={match.date} matchTime={match.time} matchStatus={match.status}
+                homeName={matchday.homeTeam.name} awayName={matchday.awayTeam.name}
+                profileId={actor!.profileId}
+                currentHomeMargin={matchPrediction?.state === 'calculated' ? matchPrediction.homeProjectedMargin : null}
+                notice={readParam(query.spreadVoteNotice)} error={readParam(query.spreadVoteError)}
+              />
+            </MatchdaySection>
+          ) : null}
 
           {canViewPrediction && matchPrediction ? (
             <MatchdaySection title="Captains' private matchup probabilities" collapsed={showResultsFirst}><MatchPredictionCard
