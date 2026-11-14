@@ -256,11 +256,11 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
           liveScoringHref={match.status === 'Scheduled' ? getLiveScoringHref(matchday, {today: easternDate(now), hasPublishedResult: Boolean(publishedResult)}) : undefined}
         />
         <div className={`shell ${styles.content}`}>
+          <MatchdayInfoStrip matchday={matchday} attendance={attendanceTotals} />
           {showResultsFirst ? <section aria-label="Match results">
             {publishedResult ? <MatchScoreboard matchday={matchday} result={publishedResult} contests={contests} /> : <h2>Awaiting official results</h2>}
             {sourceHref ? <a href={sourceHref} target="_blank" rel="noreferrer">View scoring on TCWhiteboard</a> : null}
           </section> : null}
-          <MatchdaySection title="Match details" collapsed={showResultsFirst}><MatchdayInfoStrip matchday={matchday} attendance={attendanceTotals} /></MatchdaySection>
           <MatchdaySection title="Match preview" collapsed={showResultsFirst}><Suspense fallback={null}>
             <MatchPreview matchId={matchId} matchday={matchday} />
           </Suspense></MatchdaySection>
