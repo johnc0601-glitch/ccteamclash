@@ -44,8 +44,6 @@ export function PublicMatchSpread({spread, movement, homeName, awayName, childre
         </span>
         <span className={styles.closeness}>{closeness}</span>
         {spread.isEarlyEstimate && !movement ? <span className={styles.spreadLabel}>Early prediction — lineups may change</span> : null}
-        {movement ? <span className={styles.caution}>Based on the Clash Index and adjusted by commissioner predictions. Just for fun — no wagers or prizes.</span>
-          : <span className={styles.caution}>Based on the Clash Index. Actual results may differ by around 5 points; bonuses and penalties can affect the final margin.</span>}
       </div>
       {children}
     </section>
