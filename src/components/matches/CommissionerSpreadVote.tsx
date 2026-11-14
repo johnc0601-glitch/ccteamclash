@@ -50,7 +50,7 @@ export async function CommissionerSpreadVote(props: Props) {
     </> : null}
     {!props.embedded && saved && openingLine !== line ? <p className={styles.lockedLine}>Opened at {spreadLineLabel(openingLine, props.homeName, props.awayName)}.</p> : null}
     {options ? <p className={styles.question}>Will {options.favorite.teamName} cover the spread?</p> : null}
-    <p className={styles.hint}>{saved ? 'Live line adjusts with commissioner picks, up to two points from the opening line.' : 'The opening line is set with the first pick; it can then move.'}</p>
+    <p className={styles.hint}>{saved ? 'Live line moves 0.5 points for every six net picks, up to 1.5 points from opening.' : 'The opening line is set with the first pick; it can then move.'}</p>
 
     {props.notice ? <p className={styles.notice} role="status">{props.notice}</p> : null}
     {props.error ? <p className={styles.error} role="alert">{props.error}</p> : null}
