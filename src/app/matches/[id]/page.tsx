@@ -274,11 +274,23 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             <MatchPreview matchId={matchId} matchday={matchday} />
           </Suspense></MatchdaySection>
 
-          {publicSpread ? <MatchdaySection title="Projected point spread" collapsed={showResultsFirst}>
-            <PublicMatchSpread spread={publicSpread} />
-          </MatchdaySection> : null}
-
-          {isApprovedCommissioner(actor) ? (
+          {publicSpread ? (
+            <MatchdaySection title="The Clash Line" collapsed={showResultsFirst}>
+              <PublicMatchSpread spread={publicSpread}>
+                {isApprovedCommissioner(actor) ? (
+                  <CommissionerSpreadVote
+                    embedded
+                    matchId={matchId} matchDate={match.date} matchTime={match.time} matchStatus={match.status}
+                    homeName={matchday.homeTeam.name} awayName={matchday.awayTeam.name}
+                    profileId={actor!.profileId}
+                    currentHomeMargin={matchPrediction?.state === 'calculated' ? matchPrediction.homeProjectedMargin : null}
+                    notice={readParam(query.spreadVoteNotice)} error={readParam(query.spreadVoteError)}
+                  />
+                ) : null}
+              </PublicMatchSpread>
+            </MatchdaySection>
+          ) : isApprovedCommissioner(actor) ? (
+            // Preserve access to a previously locked ballot if the live estimate is unavailable.
             <MatchdaySection title="Clash Spread Challenge" collapsed={showResultsFirst}>
               <CommissionerSpreadVote
                 matchId={matchId} matchDate={match.date} matchTime={match.time} matchStatus={match.status}
