@@ -11,6 +11,7 @@ import {FinalMatchdayV2} from '@/components/matches/FinalMatchdayV2';
 import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
 import {PublicMatchSpread} from '@/components/matches/PublicMatchSpread';
 import {CommissionerSpreadVote} from '@/components/matches/CommissionerSpreadVote';
+import {loadPublicClashLine} from '@/services/teamStrength/SpreadVoteStore';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
@@ -223,7 +224,16 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   }
 
   // Only the point spread is public. Never pass the full prediction/probabilities to a public component.
-  const publicSpread = toPublicMatchSpread(matchPrediction, matchday.homeTeam.name, matchday.awayTeam.name);
+  const modelSpread = toPublicMatchSpread(matchPrediction, matchday.homeTeam.name, matchday.awayTeam.name);
+  const clashLineMovement = match.status !== 'Cancelled' ? await loadPublicClashLine(matchId) : null;
+  // Once voting opens, keep the stored public line visible even if a later
+  // roster refresh temporarily makes the CI-only projection unavailable.
+  const publicSpread = modelSpread ?? (clashLineMovement ? {
+    favoriteTeam: clashLineMovement.currentHomeLine > 0 ? matchday.homeTeam.name : matchday.awayTeam.name,
+    points: Math.abs(clashLineMovement.currentHomeLine),
+    closeness: 'Line retained from commissioner picks',
+    isEarlyEstimate: false,
+  } : undefined);
 
   const personalAttendance = !locked && userId ? await matchRosterService.getPersonalAttendance(userId, matchId) : undefined;
   let managedRosters = userId && readParam(query.manage) === 'roster'
@@ -258,7 +268,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     <>
       <SiteHeader />
       <main className={styles.page} style={pageBackground}>
-        {match.status === 'Scheduled' && !publishedResult ? <MatchdayRefresh date={match.date} /> : null}
+        {match.status === 'Scheduled' && !publishedResult ? <MatchdayRefresh date={match.date} followClashLine={Boolean(publicSpread)} /> : null}
         <MatchHero
           matchday={matchday}
           roundLabel={round ? `Round ${round.number}` : undefined}
@@ -276,7 +286,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
           {publicSpread ? (
             <MatchdaySection title="The Clash Line" collapsed={showResultsFirst}>
-              <PublicMatchSpread spread={publicSpread}>
+              <PublicMatchSpread spread={publicSpread} movement={clashLineMovement} homeName={matchday.homeTeam.name} awayName={matchday.awayTeam.name}>
                 {isApprovedCommissioner(actor) ? (
                   <CommissionerSpreadVote
                     embedded

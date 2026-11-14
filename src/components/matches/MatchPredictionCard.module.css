@@ -24,3 +24,6 @@
 .teams span { grid-column: 2; font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .teams > div:first-child span { color: var(--match-away, #3986d8); }
 .teams > div:last-child span { color: var(--match-home, #ca4580); }
+
+.lineMovement { display: flex; flex-direction: column; gap: 3px; align-items: center; padding: 7px 10px; border-radius: 8px; border: 1px solid #ffffff2c; color: #eaf0f8; font-size: .83rem; }
+.lineMovementNote { color: #a9d4f3; font-size: .75rem; }
