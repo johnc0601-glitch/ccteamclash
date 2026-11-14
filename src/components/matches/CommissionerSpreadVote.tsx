@@ -41,8 +41,6 @@ export async function CommissionerSpreadVote(props: Props) {
 
   return <section id="commissioner-spread-vote" className={`${styles.card} ${props.embedded ? styles.embedded : ''}`} aria-label="Clash Challenge — beat expectations">
     <p className={styles.kicker}>MAKE YOUR PICK</p>
-    <h3>Who will beat expectations?</h3>
-    <p className={styles.scope}>Pick the team you think will outperform the projection</p>
 
     {!props.embedded ? <>
       <p className={styles.lineTitle}>Current match projection</p>
