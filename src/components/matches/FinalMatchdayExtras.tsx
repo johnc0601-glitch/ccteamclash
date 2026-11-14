@@ -59,6 +59,6 @@ async function loadFinalContext(snapshot: FinalMatchdaySnapshot) {
     </MatchdaySection> : null}
     <MatchdaySection title="Match preview"><MatchPreview matchId={snapshot.matchId} matchday={matchday} /></MatchdaySection>
     <MatchdaySection title="Team information"><MatchTeamStats awayTeam={{id: snapshot.awayTeam.id, name: snapshot.awayTeam.name}} homeTeam={{id: snapshot.homeTeam.id, name: snapshot.homeTeam.name}} seasonId={match.seasonId} /></MatchdaySection>
-    <MatchdaySection title="Course & recorded conditions"><MatchCourseInfo course={course} />{snapshot.weather ? <p>Recorded: {snapshot.weather.temperature}° · {snapshot.weather.condition} · Wind {snapshot.weather.wind}</p> : <p>No conditions were recorded.</p>}</MatchdaySection>
+    <MatchdaySection title="Course details"><MatchCourseInfo course={course} /></MatchdaySection>
   </>;
 }

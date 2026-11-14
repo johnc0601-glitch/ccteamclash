@@ -21,7 +21,7 @@ export default function Preview() {
     <MatchdaySection title="Saved prematch estimates"><MatchPredictionCard actor={{profileRole: 'Captain', profileStatus: 'Approved'}} prediction={{state: 'calculated', source: 'matchLineup', stageLabel: 'Match lineup', strengthLabel: 'CI', displayLabel: 'Early estimate', readiness: 'Ready', confidence: 'Full', awayStrength: 900, homeStrength: 900, homeChanceOfVictory: .69, awayChanceOfVictory: .31, venueNote: '', updateNote: ''}} awayTeamName="Away Team" homeTeamName="Home Team" /></MatchdaySection>
     <MatchdaySection title="Match preview"><p>The original preview remains on the same page.</p></MatchdaySection>
     <MatchdaySection title="Team information"><p>Team statistics stay available here.</p></MatchdaySection>
-    <MatchdaySection title="Course & recorded conditions"><p>Example course</p></MatchdaySection>
+    <MatchdaySection title="Course details"><p>Example course</p></MatchdaySection>
     <MatchdaySection title="Match feed & photos"><p>The match feed stays available here.</p></MatchdaySection>
   </FinalMatchdayV2></>;
 }
