@@ -20,10 +20,6 @@ export function PublicMatchSpread({spread, movement, homeName, awayName, childre
   const openingPoints = movement ? Math.abs(movement.openingHomeLine) : null;
   const delta = movement ? Math.abs(movement.currentHomeLine) - Math.abs(movement.openingHomeLine) : 0;
   const movementDirection = delta > 0 ? 'higher' : 'lower';
-  const closeness = points < 0.5 ? 'Even on projected points'
-    : points <= 4 ? 'Within one doubles-result swing (4 pts)'
-      : points <= 8 ? 'Within two doubles-result swings (8 pts)'
-        : 'More than two doubles-result swings apart';
 
   return (
     <section className={styles.card} aria-label="Clash Challenge match projection">
@@ -37,12 +33,6 @@ export function PublicMatchSpread({spread, movement, homeName, awayName, childre
             <span className={styles.lineMovementNote}>Community adjustment: {Math.abs(delta).toFixed(1)} {Math.abs(delta) === 1 ? 'point' : 'points'} {movementDirection}</span>
           </span>
         ) : null}
-        <span className={styles.spreadMeta}>
-          {favorite
-            ? `Our predicted winning margin for ${favorite} is ${points.toFixed(1)} ${points === 1 ? 'point' : 'points'}.`
-            : 'Neither team has a meaningful projected advantage.'}
-        </span>
-        <span className={styles.closeness}>{closeness}</span>
         {spread.isEarlyEstimate && !movement ? <span className={styles.spreadLabel}>Early prediction — lineups may change</span> : null}
       </div>
       {children}
