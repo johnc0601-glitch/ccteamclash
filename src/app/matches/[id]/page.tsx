@@ -12,6 +12,8 @@ import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
 import {PublicMatchSpread} from '@/components/matches/PublicMatchSpread';
 import {CommissionerSpreadVote} from '@/components/matches/CommissionerSpreadVote';
 import {loadPublicClashLine} from '@/services/teamStrength/SpreadVoteStore';
+import {loadClashChallengeWindow} from '@/services/teamStrength/ClashChallengeWindowStore';
+import {isClashChallengeVisible} from '@/services/teamStrength/ClashChallengeWindows';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
 import {MatchScoreboard} from '@/components/matches/MatchScoreboard';
 import {MatchFeed} from '@/components/matches/MatchFeed';
@@ -223,9 +225,16 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     });
   }
 
-  // Only the point spread is public. Never pass the full prediction/probabilities to a public component.
-  const modelSpread = toPublicMatchSpread(matchPrediction, matchday.homeTeam.name, matchday.awayTeam.name);
-  const clashLineMovement = match.status !== 'Cancelled' ? await loadPublicClashLine(matchId) : null;
+  // Only the currently featured round receives the public Clash Challenge.
+  // The window table enforces a single active round at a time, including automatic Monday rollovers.
+  const challengeWindow = match.status === 'Scheduled' && !publishedResult
+    ? await loadClashChallengeWindow(match.roundId) : null;
+  const showClashChallenge = isClashChallengeVisible(match, challengeWindow, Boolean(publishedResult), now);
+  // Never pass full win probability estimates to public visitors.
+  const modelSpread = showClashChallenge
+    ? toPublicMatchSpread(matchPrediction, matchday.homeTeam.name, matchday.awayTeam.name)
+    : undefined;
+  const clashLineMovement = showClashChallenge ? await loadPublicClashLine(matchId) : null;
   // Once voting opens, keep the stored public line visible even if a later
   // roster refresh temporarily makes the CI-only projection unavailable.
   const publicSpread = modelSpread ?? (clashLineMovement ? {
@@ -268,7 +277,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
     <>
       <SiteHeader />
       <main className={styles.page} style={pageBackground}>
-        {match.status === 'Scheduled' && !publishedResult ? <MatchdayRefresh date={match.date} followClashLine={Boolean(publicSpread)} /> : null}
+        {match.status === 'Scheduled' && !publishedResult ? <MatchdayRefresh date={match.date} followClashLine={Boolean(challengeWindow && Date.parse(challengeWindow.closesAt) > now.getTime())} /> : null}
         <MatchHero
           matchday={matchday}
           roundLabel={round ? `Round ${round.number}` : undefined}
@@ -284,7 +293,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             <MatchPreview matchId={matchId} matchday={matchday} />
           </Suspense></MatchdaySection>
 
-          {publicSpread ? (
+          {showClashChallenge && publicSpread ? (
             <MatchdaySection title="Clash Challenge" collapsed={showResultsFirst}>
               <PublicMatchSpread spread={publicSpread} movement={clashLineMovement} homeName={matchday.homeTeam.name} awayName={matchday.awayTeam.name}>
                 {isApprovedCommissioner(actor) ? (
@@ -299,7 +308,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
                 ) : null}
               </PublicMatchSpread>
             </MatchdaySection>
-          ) : isApprovedCommissioner(actor) ? (
+          ) : showClashChallenge && isApprovedCommissioner(actor) ? (
             // Preserve access to a previously locked ballot if the live estimate is unavailable.
             <MatchdaySection title="Clash Challenge" collapsed={showResultsFirst}>
               <CommissionerSpreadVote

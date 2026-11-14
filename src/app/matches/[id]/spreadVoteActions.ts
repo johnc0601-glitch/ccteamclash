@@ -5,8 +5,10 @@ import {redirect} from 'next/navigation';
 import {createClient} from '@/lib/supabase/server';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {getPublicMatchHref} from '@/services/matches/MatchPublicIdentity';
-import {isApprovedCommissioner, isSpreadVoteOpen} from '@/services/teamStrength/SpreadVote';
+import {isApprovedCommissioner} from '@/services/teamStrength/SpreadVote';
 import {verifySpreadVoteLine} from '@/services/teamStrength/SpreadVoteStore';
+import {isClashChallengeVisible} from '@/services/teamStrength/ClashChallengeWindows';
+import {loadClashChallengeWindow} from '@/services/teamStrength/ClashChallengeWindowStore';
 
 function read(form: FormData, key: string): string {
   const value = form.get(key);
@@ -31,13 +33,16 @@ export async function castCommissionerSpreadVote(formData: FormData): Promise<vo
 
   const db = createAdminClient() as any;
   const {data: match, error: matchError} = await db.from('launch_schedule_matches')
-    .select('id,date,time,status').eq('id', matchId).maybeSingle();
+    .select('id,round_id,date,time,status').eq('id', matchId).maybeSingle();
   if (matchError || !match) return;
 
   const href = await getPublicMatchHref(client, matchId);
   const feedback = (key: 'spreadVoteNotice' | 'spreadVoteError', message: string) =>
     href + '?' + key + '=' + encodeURIComponent(message) + '#commissioner-spread-vote';
-  if (!isSpreadVoteOpen(match)) redirect(feedback('spreadVoteError', 'Picks are closed for this matchup.'));
+  const window = await loadClashChallengeWindow(match.round_id);
+  if (!isClashChallengeVisible(match, window, false)) {
+    redirect(feedback('spreadVoteError', 'Clash Challenge is not open for this round.'));
+  }
 
   const acceptedLine = verifySpreadVoteLine(matchId, token);
   if (acceptedLine === null) redirect(feedback('spreadVoteError', 'The projection has changed. Reload and pick again.'));
