@@ -224,8 +224,16 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   }
 
   // Only the point spread is public. Never pass the full prediction/probabilities to a public component.
-  const publicSpread = toPublicMatchSpread(matchPrediction, matchday.homeTeam.name, matchday.awayTeam.name);
-  const clashLineMovement = publicSpread ? await loadPublicClashLine(matchId) : null;
+  const modelSpread = toPublicMatchSpread(matchPrediction, matchday.homeTeam.name, matchday.awayTeam.name);
+  const clashLineMovement = match.status !== 'Cancelled' ? await loadPublicClashLine(matchId) : null;
+  // Once voting opens, keep the stored public line visible even if a later
+  // roster refresh temporarily makes the CI-only projection unavailable.
+  const publicSpread = modelSpread ?? (clashLineMovement ? {
+    favoriteTeam: clashLineMovement.currentHomeLine > 0 ? matchday.homeTeam.name : matchday.awayTeam.name,
+    points: Math.abs(clashLineMovement.currentHomeLine),
+    closeness: 'Line retained from commissioner picks',
+    isEarlyEstimate: false,
+  } : undefined);
 
   const personalAttendance = !locked && userId ? await matchRosterService.getPersonalAttendance(userId, matchId) : undefined;
   let managedRosters = userId && readParam(query.manage) === 'roster'
