@@ -13,13 +13,13 @@ export function roundHomeSpreadLine(margin: number | null | undefined): number |
 }
 
 export function spreadLineLabel(homeLine: number, homeName: string, awayName: string): string {
-  if (homeLine === 0) return 'Pick ’em — no meaningful point spread';
+  if (homeLine === 0) return 'No clear projected favorite';
   const favorite = homeLine > 0 ? homeName : awayName;
-  return favorite + ' favored by ' + Math.abs(homeLine).toFixed(1) + ' points';
+  return favorite + ' projected to win by ' + Math.abs(homeLine).toFixed(1) + ' points';
 }
 
 /** Old "Too High" votes meant the favorite's projected margin was too high.
- * Preserve that interpretation: high = underdog covers, low = favorite covers.
+ * Preserve that interpretation: high = underdog outperforms, low = favorite outperforms.
  * The signed home line only determines which team is the favorite.
  */
 export function getSpreadCoverOptions(homeLine: number, homeName: string, awayName: string): {
@@ -36,13 +36,13 @@ export function getSpreadCoverOptions(homeLine: number, homeName: string, awayNa
     favorite: {
       teamName: favorite,
       choice: 'low',
-      label: favorite + ' covers',
-      explanation: 'Win by more than ' + points + ' points',
+      label: favorite,
+      explanation: 'Win by more than the projected ' + points + ' points',
     },
     underdog: {
       teamName: underdog,
       choice: 'high',
-      label: underdog + ' covers',
+      label: underdog,
       explanation: 'Win, tie, or lose by fewer than ' + points + ' points',
     },
   };
