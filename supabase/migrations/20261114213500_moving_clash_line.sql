@@ -53,6 +53,7 @@ declare
   v_movement numeric;
   v_new_line numeric(4,1);
   v_old_line numeric(4,1);
+  v_opening_line numeric(4,1);
 begin
   if p_choice not in ('high', 'low')
     or p_expected_home_line is null
@@ -91,12 +92,13 @@ begin
     values
       (p_match_id,m.home_team_id,m.away_team_id,p_expected_home_line,p_expected_home_line,p_profile_id);
     v_old_line := p_expected_home_line;
-    poll.home_line := p_expected_home_line;
+    v_opening_line := p_expected_home_line;
   else
     if poll.home_team_id <> m.home_team_id or poll.away_team_id <> m.away_team_id then
       raise exception 'clash_teams_changed';
     end if;
     v_old_line := poll.current_home_line;
+    v_opening_line := poll.home_line;
   end if;
 
   if v_old_line <> p_expected_home_line then
@@ -128,8 +130,8 @@ begin
 
   -- Max two points from the CI opening line, no favorite reversal.
   v_movement := greatest(-4,least(4,v_favorite_picks - v_underdog_picks)) * 0.5;
-  v_new_line := sign(poll.home_line)
-    * greatest(0.5,least(36,abs(poll.home_line) + v_movement));
+  v_new_line := sign(v_opening_line)
+    * greatest(0.5,least(36,abs(v_opening_line) + v_movement));
   if v_new_line <> v_old_line then
     update public.launch_match_spread_polls
     set current_home_line = v_new_line, updated_at = clock_timestamp()
