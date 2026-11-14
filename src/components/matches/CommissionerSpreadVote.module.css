@@ -1,18 +1,25 @@
-.card { max-width: 580px; margin: 0 auto; padding: 18px; border-radius: 16px; border: 1px solid #ffffff2b; background: #101b2b; color: #f2f5f9; }
-.card h3 { margin: 0; text-align: center; font-size: 1.15rem; }
-.scope { text-align: center; font-size: .74rem; color: #aebdd0; margin: 6px 0 16px; }
-.line { display: block; text-align: center; font-size: 1.25rem; line-height: 1.35; }
+.card { max-width: 620px; margin: 0 auto; padding: 20px; border-radius: 16px; border: 1px solid #ffffff2b; background: #101b2b; color: #f2f5f9; }
+.kicker { margin: 0 0 4px; text-align: center; font-size: .69rem; font-weight: 750; letter-spacing: .12em; color: #a9c9ee; }
+.card h3 { margin: 0; text-align: center; font-size: 1.3rem; }
+.scope { text-align: center; font-size: .75rem; color: #aebdd0; margin: 6px 0 18px; }
+.lineTitle { text-align: center; font-size: .73rem; color: #b4c4d7; margin: 0 0 4px; text-transform: uppercase; letter-spacing: .07em; }
+.line { display: block; text-align: center; font-size: 1.3rem; line-height: 1.35; }
+.question { text-align: center; font-size: .94rem; margin: 12px 0 6px; font-weight: 650; }
 .hint { color: #aebdd0; text-align: center; font-size: .77rem; margin: 8px 0; }
-.buttons { display: flex; gap: 10px; margin: 16px auto 12px; justify-content: center; }
-.buttons button { flex: 1; min-width: 0; max-width: 220px; padding: 12px 10px; font-weight: 700; border-radius: 10px; border: 1px solid #8297af; color: #f2f5f9; background: #28394e; cursor: pointer; }
+.buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 16px auto 10px; }
+.buttons button { min-width: 0; padding: 14px 12px; border-radius: 10px; border: 1px solid #8297af; color: #f2f5f9; background: #28394e; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; }
 .buttons button:hover { border-color: #eaf2ff; }
+.buttons button:focus-visible { outline: 2px solid #89bdff; outline-offset: 2px; }
 .buttons button.selected { background: #2e5e96; border-color: #89bdff; }
+.buttons button strong { display: block; font-size: .97rem; line-height: 1.3; text-align: center; }
+.buttons button span { display: block; font-size: .75rem; line-height: 1.4; font-weight: 400; color: #d4e2f1; text-align: center; }
+.rules { margin: 6px auto 12px; max-width: 460px; text-align: center; font-size: .72rem; line-height: 1.5; color: #aebdd0; }
 .yourVote { text-align: center; font-size: .81rem; }
 .notice, .error { text-align: center; padding: 8px; border-radius: 8px; font-size: .8rem; }
 .notice { color: #b9eed7; background: #2853404f; }
 .error { color: #ffb9b9; background: #722d3847; }
 .results { margin-top: 16px; padding-top: 12px; border-top: 1px solid #ffffff24; }
-.resultsHead { display: flex; justify-content: space-between; gap: 8px; font-size: .77rem; color: #d1dfec; }
+.resultsHead { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: .77rem; color: #d1dfec; }
 .track { width: 100%; height: 12px; overflow: hidden; border-radius: 999px; background: #4b719c; margin: 9px 0; }
 .track span { display: block; height: 100%; background: #e28a57; }
-@media (max-width: 420px) { .card { padding: 14px; } .buttons button { font-size: .87rem; } }
+@media (max-width: 420px) { .card { padding: 14px; } .buttons button { padding: 12px 7px; } .buttons button strong { font-size: .86rem; } .buttons button span { font-size: .71rem; } }

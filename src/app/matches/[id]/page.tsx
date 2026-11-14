@@ -279,7 +279,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
           </MatchdaySection> : null}
 
           {isApprovedCommissioner(actor) ? (
-            <MatchdaySection title="Commissioner spread voting" collapsed={showResultsFirst}>
+            <MatchdaySection title="Clash Spread Challenge" collapsed={showResultsFirst}>
               <CommissionerSpreadVote
                 matchId={matchId} matchDate={match.date} matchTime={match.time} matchStatus={match.status}
                 homeName={matchday.homeTeam.name} awayName={matchday.awayTeam.name}
