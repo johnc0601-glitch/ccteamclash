@@ -66,7 +66,7 @@ export async function loadClashChallengeBoard(profileId:string|null):Promise<Cla
   if(!round?.published)return {roundNumber:null,nextOpenAt:null,matches:[]};
   const activeWindow={opensAt:featured.opens_at,closesAt:featured.closes_at};
   const matches:Row[]=(matchResult.data??[]).filter((m:Row)=>
-    m.home_team_id&&m.away_team_id&&m.date&&m.time&&isClashChallengeVisible(m,activeWindow,false,now));
+    m.home_team_id&&m.away_team_id&&m.date&&m.time&&isClashChallengeVisible(m as {date:string;time:string;status:string},activeWindow,false,now));
   if(!matches.length)return {roundNumber:round.number,nextOpenAt:null,matches:[]};
   const ids=matches.map(m=>m.id);
   const teamIds=[...new Set<string>(matches.flatMap(m=>[m.home_team_id,m.away_team_id]))];
