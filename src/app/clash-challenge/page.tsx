@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import {SiteHeader,Footer} from '@/components/SiteHeader';
 import {createClient} from '@/lib/supabase/server';
-import {isApprovedCommissionerClashPlayer} from '@/services/teamStrength/ClashChallengeBallot';
+import {canPlayClashChallenge} from '@/services/teamStrength/ClashChallengeBallot';
 import {loadClashChallengeBoard} from '@/services/teamStrength/ClashChallengeBoard';
 import {ClashChallengePicker} from './ClashChallengePicker';
 import styles from './ClashChallenge.module.css';
@@ -17,10 +17,8 @@ export default async function ClashChallengePage({
   const supabase=await createClient();
   const {data:{user}}=await supabase.auth.getUser();
   const {data:profile}=user?await supabase.from('launch_profiles')
-    .select('id,role,status,player_id').eq('user_id',user.id).maybeSingle():{data:null};
-  const canPlay=Boolean(user&&isApprovedCommissionerClashPlayer({
-    role:profile?.role,status:profile?.status,playerId:profile?.player_id,
-  }));
+    .select('id').eq('user_id',user.id).maybeSingle():{data:null};
+  const canPlay=canPlayClashChallenge(user?.id,profile?.id);
   const board=await loadClashChallengeBoard(canPlay&&profile?profile.id:null);
   const query=await searchParams;
   return <>
