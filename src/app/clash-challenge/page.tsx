@@ -27,7 +27,7 @@ export default async function ClashChallengePage({
       <header className={styles.hero}>
         <div className={styles.heroIcon} aria-hidden="true">🏆</div>
         <h1>Clash Challenge</h1>
-        <p>Pick the teams you think will outperform the projected match results.</p>
+        <p>Think you know the Clash? Each matchup has one fixed projection. Pick the team you think will outperform it — even if that team doesn’t win the match. Save your picks before tee-off and play for bragging rights!</p>
         {board.roundNumber!=null?<span className={styles.round}>Round {board.roundNumber} · Make your picks!</span>:null}
       </header>
       {board.nextOpenAt && board.matches.length ? <p className={styles.nextRoundNotice}>
