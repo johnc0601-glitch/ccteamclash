@@ -45,6 +45,7 @@ export async function SiteHeader() {
 
             <nav className="desktop-nav primary-nav" aria-label="Primary navigation">
               <HeaderPodcastPlayer isNew={podcastIsNew} episodeTitle={podcast.latestEpisodeTitle} episodeUrl={podcast.latestEpisodeUrl} />
+              <Link href="/clash-challenge" prefetch={false}>Clash Challenge</Link>
               <Link href="/schedule" prefetch={false}>Schedule</Link>
               <Link href="/standings" prefetch={false}>Standings</Link>
               <Link href="/stats" prefetch={false}>Players</Link>
@@ -81,6 +82,7 @@ export function Footer() {
         </div>
         <p>{FOOTER_COPY}</p>
         <div className="footer-links">
+          <Link href="/clash-challenge" prefetch={false}>Clash Challenge</Link>
           <Link href="/schedule" prefetch={false}>Schedule</Link>
           <Link href="/standings" prefetch={false}>Standings</Link>
           <Link href="/stats" prefetch={false}>Players</Link>

@@ -4,13 +4,13 @@ import {MatchdayRefresh} from '@/components/matches/MatchdayRefresh';
 import {resultsFirst} from '@/services/matches/MatchdayPresentation';
 import {loadSavedMatchPrediction} from '@/services/teamStrength/SavedMatchPrediction';
 import {Suspense, type CSSProperties} from 'react';
+import Link from 'next/link';
 import {notFound} from 'next/navigation';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {MatchHero} from '@/components/matches/MatchHero';
 import {FinalMatchdayV2} from '@/components/matches/FinalMatchdayV2';
 import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
 import {PublicMatchSpread} from '@/components/matches/PublicMatchSpread';
-import {CommissionerSpreadVote} from '@/components/matches/CommissionerSpreadVote';
 import {loadPublicClashLine} from '@/services/teamStrength/SpreadVoteStore';
 import {loadClashChallengeWindow} from '@/services/teamStrength/ClashChallengeWindowStore';
 import {isClashChallengeVisible} from '@/services/teamStrength/ClashChallengeWindows';
@@ -50,7 +50,6 @@ import {loadPublishedUpsetEvidence} from '@/services/matches/PublicUpsetEvidence
 import {canViewMatchPrediction} from '@/services/settings/MatchPredictionVisibility';
 import {buildPublicMatchPrediction} from '@/services/teamStrength/PublicMatchPrediction';
 import {toPublicMatchSpread} from '@/services/teamStrength/PublicMatchSpread';
-import {isApprovedCommissioner} from '@/services/teamStrength/SpreadVote';
 import styles from './Matchday.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -294,32 +293,15 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
           </Suspense></MatchdaySection>
 
           {showClashChallenge && publicSpread ? (
-            <MatchdaySection title={isApprovedCommissioner(actor) ? "Clash Challenge — Make Your Pick!" : "Clash Challenge"} collapsed={showResultsFirst}>
+            <MatchdaySection title="Clash Challenge — Make Your Picks!" collapsed={showResultsFirst}>
               <PublicMatchSpread spread={publicSpread} movement={clashLineMovement} homeName={matchday.homeTeam.name} awayName={matchday.awayTeam.name}>
-                {isApprovedCommissioner(actor) ? (
-                  <CommissionerSpreadVote
-                    embedded
-                    matchId={matchId} matchDate={match.date} matchTime={match.time} matchStatus={match.status}
-                    homeName={matchday.homeTeam.name} awayName={matchday.awayTeam.name}
-                    homeLogo={matchday.homeTeam.logo} awayLogo={matchday.awayTeam.logo}
-                    profileId={actor!.profileId}
-                    currentHomeMargin={matchPrediction?.state === 'calculated' ? matchPrediction.homeProjectedMargin : null}
-                    notice={readParam(query.spreadVoteNotice)} error={readParam(query.spreadVoteError)}
-                  />
-                ) : null}
+                <Link href="/clash-challenge" className={styles.challengeLink}>Play all matchups · Save your picks together</Link>
               </PublicMatchSpread>
             </MatchdaySection>
-          ) : showClashChallenge && isApprovedCommissioner(actor) ? (
-            // Preserve access to a previously locked ballot if the live estimate is unavailable.
-            <MatchdaySection title="Clash Challenge — Make Your Pick!" collapsed={showResultsFirst}>
-              <CommissionerSpreadVote
-                matchId={matchId} matchDate={match.date} matchTime={match.time} matchStatus={match.status}
-                homeName={matchday.homeTeam.name} awayName={matchday.awayTeam.name}
-                homeLogo={matchday.homeTeam.logo} awayLogo={matchday.awayTeam.logo}
-                profileId={actor!.profileId}
-                currentHomeMargin={matchPrediction?.state === 'calculated' ? matchPrediction.homeProjectedMargin : null}
-                notice={readParam(query.spreadVoteNotice)} error={readParam(query.spreadVoteError)}
-              />
+          ) : showClashChallenge ? (
+            <MatchdaySection title="Clash Challenge — Make Your Picks!" collapsed={showResultsFirst}>
+              <p>Match projections are being updated.</p>
+              <Link href="/clash-challenge" className={styles.challengeLink}>Go to Clash Challenge</Link>
             </MatchdaySection>
           ) : null}
 

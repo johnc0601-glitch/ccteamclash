@@ -62,6 +62,7 @@ export function MobileNav() {
         ) : null}
         <div className="mobile-nav-group">
           <span>Season</span>
+          <Link href="/clash-challenge" onClick={closeMenu}>Clash Challenge</Link>
           <Link href="/schedule" onClick={closeMenu}>Schedule</Link>
           <Link href="/standings" onClick={closeMenu}>Standings</Link>
           <Link href="/stats" onClick={closeMenu}>Players</Link>
