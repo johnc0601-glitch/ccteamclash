@@ -81,8 +81,8 @@ export function ClashChallengePicker({matches,canPlay}:Props) {
       </div>
       <SaveButton disabled={changes.length===0} count={changes.length}/>
     </div>:<div className={styles.signIn}>
-      <p>Clash Challenge picks are currently available to approved commissioners.</p>
-      <Link href="/account">Commissioners: sign in to play</Link>
+      <p>Sign in to make your picks. League registration is not required.</p>
+      <Link href="/account">Sign in to play</Link>
     </div>}
     <p className={styles.footnote}>If the final margin exactly matches the projection, neither team beats expectations. Picks are private and close at match start.</p>
   </form>;
