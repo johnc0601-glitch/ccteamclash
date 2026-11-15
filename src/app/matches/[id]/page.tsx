@@ -11,7 +11,8 @@ import {MatchHero} from '@/components/matches/MatchHero';
 import {FinalMatchdayV2} from '@/components/matches/FinalMatchdayV2';
 import {MatchPredictionCard} from '@/components/matches/MatchPredictionCard';
 import {PublicMatchSpread} from '@/components/matches/PublicMatchSpread';
-import {loadPublicClashLine} from '@/services/teamStrength/SpreadVoteStore';
+import {freezeClashChallengeProjection} from '@/services/teamStrength/SpreadVoteStore';
+import {roundHomeSpreadLine} from '@/services/teamStrength/SpreadVote';
 import {loadClashChallengeWindow} from '@/services/teamStrength/ClashChallengeWindowStore';
 import {isClashChallengeVisible} from '@/services/teamStrength/ClashChallengeWindows';
 import {MatchRosterBoard} from '@/components/matches/MatchRosterBoard';
@@ -233,15 +234,17 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const modelSpread = showClashChallenge
     ? toPublicMatchSpread(matchPrediction, matchday.homeTeam.name, matchday.awayTeam.name)
     : undefined;
-  const clashLineMovement = showClashChallenge ? await loadPublicClashLine(matchId) : null;
-  // Once voting opens, keep the stored public line visible even if a later
-  // roster refresh temporarily makes the CI-only projection unavailable.
-  const publicSpread = modelSpread ?? (clashLineMovement ? {
-    favoriteTeam: clashLineMovement.currentHomeLine > 0 ? matchday.homeTeam.name : matchday.awayTeam.name,
-    points: Math.abs(clashLineMovement.currentHomeLine),
-    closeness: 'Line retained from commissioner picks',
+  // First display freezes the game target; roster updates and votes cannot move it.
+  const proposedLine = matchPrediction?.state === 'calculated'
+    ? roundHomeSpreadLine(matchPrediction.homeProjectedMargin) : null;
+  const fixedHomeLine = showClashChallenge
+    ? await freezeClashChallengeProjection(matchId, proposedLine) : null;
+  const publicSpread = fixedHomeLine != null ? {
+    favoriteTeam: fixedHomeLine > 0 ? matchday.homeTeam.name : matchday.awayTeam.name,
+    points: Math.abs(fixedHomeLine),
+    closeness: 'Fixed Clash Challenge projection',
     isEarlyEstimate: false,
-  } : undefined);
+  } : modelSpread?.points === 0 ? modelSpread : undefined;
 
   const personalAttendance = !locked && userId ? await matchRosterService.getPersonalAttendance(userId, matchId) : undefined;
   let managedRosters = userId && readParam(query.manage) === 'roster'
@@ -294,7 +297,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
 
           {showClashChallenge && publicSpread ? (
             <MatchdaySection title="Clash Challenge — Make Your Picks!" collapsed={showResultsFirst}>
-              <PublicMatchSpread spread={publicSpread} movement={clashLineMovement} homeName={matchday.homeTeam.name} awayName={matchday.awayTeam.name}>
+              <PublicMatchSpread spread={publicSpread}>
                 <Link href="/clash-challenge" className={styles.challengeLink}>Play all matchups · Save your picks together</Link>
               </PublicMatchSpread>
             </MatchdaySection>

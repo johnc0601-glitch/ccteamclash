@@ -4,7 +4,7 @@ import {calculateMatchStageStrengthPair} from './PredictionStageStrength';
 import {calculateRosterBasedMatchPrediction} from './MatchPrediction';
 import {resolvePublicPredictionSource} from './PublicMatchPrediction';
 import {roundHomeSpreadLine, type SpreadVoteChoice} from './SpreadVote';
-import {signSpreadVoteLine} from './SpreadVoteStore';
+import {freezeClashChallengeProjection, signSpreadVoteLine} from './SpreadVoteStore';
 import {isClashChallengeVisible} from './ClashChallengeWindows';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
 import type {TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
@@ -23,7 +23,6 @@ export type ClashChallengeMatch = {
   date:string;
   time:string;
   homeLine:number|null;
-  originalHomeLine:number|null;
   lineToken:string|null;
   myChoice:SpreadVoteChoice|null;
   matchHref:string;
@@ -81,7 +80,7 @@ export async function loadClashChallengeBoard(profileId:string|null):Promise<Cla
       .in('match_id',ids).is('removed_at',null),
     db.from('launch_match_attendance').select('match_id,team_id,player_id,status').in('match_id',ids),
     db.from('launch_match_roster_snapshot_players').select('match_id,team_id,player_id').in('match_id',ids),
-    db.from('launch_match_spread_polls').select('match_id,home_line,current_home_line').in('match_id',ids),
+    db.from('launch_match_spread_polls').select('match_id,home_line').in('match_id',ids),
     db.from('launch_match_results').select('match_id,status,published_at').in('match_id',ids),
     db.from('launch_match_final_snapshots').select('match_id,locked').in('match_id',ids),
   ];
@@ -140,14 +139,13 @@ export async function loadClashChallengeBoard(profileId:string|null):Promise<Cla
     const computed=estimate&&estimate.readiness!=='Unavailable'
       ?roundHomeSpreadLine(estimate.expectedPointMargin):null;
     const poll=pollMap.get(m.id);
-    const homeLine=poll?lineFrom(poll.current_home_line):computed;
+    const homeLine=poll?lineFrom(poll.home_line):await freezeClashChallengeProjection(m.id,computed);
     const storedChoice=voteMap.get(m.id)?.choice;
     cards.push({
       matchId:m.id,homeName:home.name,awayName:away.name,
       homeLogo:home.logo??'',awayLogo:away.logo??'',
       homeColor:home.primary_color??'#a54a79',awayColor:away.primary_color??'#397bb8',
       date:m.date,time:m.time,homeLine,
-      originalHomeLine:poll?lineFrom(poll.home_line):null,
       lineToken:profileId&&homeLine!=null&&homeLine!==0?signSpreadVoteLine(m.id,homeLine):null,
       myChoice:storedChoice==='low'||storedChoice==='high'?storedChoice:null,
       matchHref:'/matches/'+encodeURIComponent(m.public_slug||m.id),

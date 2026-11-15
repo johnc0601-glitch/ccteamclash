@@ -52,10 +52,8 @@ export function ClashChallengePicker({matches,canPlay}:Props) {
             {selected?<span className={styles.pickedMark}>✓ Pick selected</span>:<span>Not picked</span>}
           </div>
           <div className={styles.projection}>
-            <span>Projected match result</span>
+            <span>Fixed match projection</span>
             <strong>{favored?favored+' by '+Math.abs(line!).toFixed(1):'Projection pending'}</strong>
-            {match.originalHomeLine!=null&&match.originalHomeLine!==line
-              ? <small>Original projection: {match.originalHomeLine>0?match.homeName:match.awayName} by {Math.abs(match.originalHomeLine).toFixed(1)}</small> : null}
           </div>
           {options? <div className={styles.tiles}>
             {optionsWithLook.map(option=><button key={option.choice} type="button"

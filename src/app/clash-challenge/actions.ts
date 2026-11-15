@@ -33,7 +33,7 @@ export async function saveClashChallengeBallot(formData: FormData): Promise<void
     expected_home_line:verifySpreadVoteLine(p.matchId,p.lineToken),
   }));
   if (picks.some(p=>p.expected_home_line == null)) {
-    respond('error','A projection changed. Review your picks and try again.');
+    respond('error','The projection could not be verified. Reload and try again.');
   }
   const db = createAdminClient() as any;
   const {error} = await db.rpc('cast_clash_challenge_ballot',{
@@ -43,7 +43,7 @@ export async function saveClashChallengeBallot(formData: FormData): Promise<void
   });
   if (error) {
     if (/stale_clash_line|clash_picks_closed|clash_round_changed/i.test(error.message)) {
-      respond('error','A match closed or a projection changed. Review the updated matches and save again.');
+      respond('error','A match closed or the challenge advanced to another round. Reload and try again.');
     }
     console.error('Clash Challenge ballot failed',{code:error.code,message:error.message});
     respond('error','Your picks could not be saved. Try again.');

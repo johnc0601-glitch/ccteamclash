@@ -48,21 +48,6 @@ export function getSpreadCoverOptions(homeLine: number, homeName: string, awayNa
   };
 }
 
-/** For a ~30-person recreational ballot, require six net picks per half point.
- * Clamp movement to 1.5 points from the opening line and never reverse the favorite.
- * This is deliberately slower than a real sports-betting market.
- */
-export function moveClashLine(openingHomeLine: number, favoritePicks: number, underdogPicks: number): number {
-  if (roundHomeSpreadLine(openingHomeLine) !== openingHomeLine || openingHomeLine === 0
-    || !Number.isInteger(favoritePicks) || favoritePicks < 0
-    || !Number.isInteger(underdogPicks) || underdogPicks < 0) {
-    throw new Error('Invalid opening line or pick counts.');
-  }
-  const netSteps = Math.max(-3, Math.min(3, Math.trunc((favoritePicks - underdogPicks) / 6)));
-  const magnitude = Math.max(0.5, Math.min(36, Math.abs(openingHomeLine) + netSteps * 0.5));
-  return Math.sign(openingHomeLine) * magnitude;
-}
-
 /** Local ET clock; the ballot closes at the listed match start, not at midnight UTC. */
 export function isSpreadVoteOpen(match: {date: string | null; time: string | null; status: string}, now = new Date()): boolean {
   if (match.status !== 'Scheduled' || !match.date || !match.time
