@@ -49,7 +49,7 @@ export async function CommissionerSpreadVote(props: Props) {
     <p className={`${styles.kicker} ${canVote && !saved?.myVote ? styles.invite : ''}`}>MAKE YOUR PICK</p>
 
     {!props.embedded ? <>
-      <p className={styles.lineTitle}>Current match projection</p>
+      <p className={styles.lineTitle}>Fixed match projection</p>
       <strong className={styles.line}>{spreadLineLabel(line, props.homeName, props.awayName)}</strong>
     </> : null}
     {!props.embedded && saved && openingLine !== line ? <p className={styles.lockedLine}>Original projection: {spreadLineLabel(openingLine, props.homeName, props.awayName)}.</p> : null}
