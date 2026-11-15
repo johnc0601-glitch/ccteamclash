@@ -1,14 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {isApprovedCommissionerClashPlayer,parseClashBallot} from './ClashChallengeBallot';
+import {canPlayClashChallenge,parseClashBallot} from './ClashChallengeBallot';
 
-test('only approved commissioners can vote, even without a linked player', () => {
-  assert.equal(isApprovedCommissionerClashPlayer({role:'Commissioner',status:'Approved',playerId:'p1'}),true);
-  assert.equal(isApprovedCommissionerClashPlayer({role:'Commissioner',status:'Approved',playerId:null}),true);
-  assert.equal(isApprovedCommissionerClashPlayer({role:'Commissioner',status:'Pending',playerId:'p1'}),false);
-  assert.equal(isApprovedCommissionerClashPlayer({role:'Player',status:'Approved',playerId:'p1'}),false);
-  assert.equal(isApprovedCommissionerClashPlayer({role:'Captain',status:'Approved',playerId:'p1'}),false);
-  assert.equal(isApprovedCommissionerClashPlayer({role:'Visitor',status:'Approved',playerId:'p1'}),false);
+test('any signed-in account with a profile can play without league registration', () => {
+  assert.equal(canPlayClashChallenge('account-1','profile-1'),true);
+  assert.equal(canPlayClashChallenge('account-2','profile-not-registered'),true);
+  assert.equal(canPlayClashChallenge(null,'profile-1'),false);
+  assert.equal(canPlayClashChallenge('account-1',null),false);
+  assert.equal(canPlayClashChallenge('','profile-1'),false);
 });
 test('ballot allows one through four updates, never duplicate or invalid choices', () => {
   const pick = (n:number) => ({matchId:'game-'+n,choice:'low',lineToken:'10.0|signed'});
