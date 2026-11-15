@@ -50,11 +50,10 @@ export async function loadClashChallengeBoard(profileId:string|null):Promise<Cla
   const now=new Date();
   const windows=ensureOk(await db.from('launch_clash_challenge_windows')
     .select('round_id,opens_at,closes_at').order('opens_at'),'windows');
+  const next=windows.find((w:Row)=>Date.parse(w.opens_at)>now.getTime());
+  const nextOpenAt=next?.opens_at??null;
   const featured=windows.find((w:Row)=>Date.parse(w.opens_at)<=now.getTime() && now.getTime()<Date.parse(w.closes_at));
-  if(!featured) {
-    const next=windows.find((w:Row)=>Date.parse(w.opens_at)>now.getTime());
-    return {roundNumber:null,nextOpenAt:next?.opens_at??null,matches:[]};
-  }
+  if(!featured) return {roundNumber:null,nextOpenAt,matches:[]};
   const [roundResult,matchResult]=await Promise.all([
     db.from('launch_rounds').select('id,number,published').eq('id',featured.round_id).maybeSingle(),
     db.from('launch_schedule_matches')
@@ -63,11 +62,11 @@ export async function loadClashChallengeBoard(profileId:string|null):Promise<Cla
   ]);
   if(roundResult.error||matchResult.error)throw new Error('Schedule is temporarily unavailable.');
   const round=roundResult.data;
-  if(!round?.published)return {roundNumber:null,nextOpenAt:null,matches:[]};
+  if(!round?.published)return {roundNumber:null,nextOpenAt,matches:[]};
   const activeWindow={opensAt:featured.opens_at,closesAt:featured.closes_at};
   const matches:Row[]=(matchResult.data??[]).filter((m:Row)=>
     m.home_team_id&&m.away_team_id&&m.date&&m.time&&isClashChallengeVisible(m as {date:string;time:string;status:string},activeWindow,false,now));
-  if(!matches.length)return {roundNumber:round.number,nextOpenAt:null,matches:[]};
+  if(!matches.length)return {roundNumber:round.number,nextOpenAt,matches:[]};
   const ids=matches.map(m=>m.id);
   const teamIds=[...new Set<string>(matches.flatMap(m=>[m.home_team_id,m.away_team_id]))];
   const courseIds=[...new Set<string>(matches.map(m=>m.course_id).filter(Boolean))];
@@ -155,5 +154,5 @@ export async function loadClashChallengeBoard(profileId:string|null):Promise<Cla
     });
   }
   cards.sort((a,b)=>a.homeName.localeCompare(b.homeName));
-  return {roundNumber:round.number,nextOpenAt:null,matches:cards};
+  return {roundNumber:round.number,nextOpenAt,matches:cards};
 }

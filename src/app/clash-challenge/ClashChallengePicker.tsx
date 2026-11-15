@@ -91,6 +91,6 @@ export function ClashChallengePicker({matches,canPlay}:Props) {
 function SaveButton({disabled,count}:{disabled:boolean;count:number}){
   const {pending}=useFormStatus();
   return <button type="submit" className={styles.saveButton} disabled={disabled||pending}>
-    {pending?'Saving…':count?'Save '+count+' '+(count===1?'Pick':'Picks'):'Save Picks'}
+    {pending?'Saving…':count?'Save '+count+' '+(count===1?'Pick':'Picks'):'Picks saved'}
   </button>;
 }
