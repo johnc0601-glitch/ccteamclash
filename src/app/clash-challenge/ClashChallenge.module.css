@@ -1,4 +1,6 @@
-.page{max-width:1000px;margin:0 auto;padding:34px 18px 85px;color:#f2f5f9}
+.page{width:100%;max-width:none;min-height:calc(100vh - 210px);box-sizing:border-box;margin:0;padding:34px max(18px,calc((100vw - 1000px)/2)) 85px;color:#f2f5f9;background:radial-gradient(ellipse at 15% 0%,#17334b 0%,transparent 48%),linear-gradient(155deg,#101d30 0%,#091421 100%)}
+.page h1,.page h2{color:#f5f8fc}
+.page a:focus-visible{outline:3px solid #8ecaff;outline-offset:3px}
 .hero{text-align:center;max-width:680px;margin:0 auto 26px}
 .heroIcon{color:#f3ca6d;font-size:2.15rem;margin:0 auto 5px}
 .hero h1{font-size:clamp(1.8rem,4vw,2.65rem);letter-spacing:-.035em;margin:0}
@@ -46,3 +48,9 @@
 @media(max-width:700px){.matchList{grid-template-columns:1fr}.page{padding-top:20px}.saveBar{padding:12px;gap:9px}.saveButton{padding:12px 14px}.saveCopy>span{font-size:.68rem}}
 @media(max-width:385px){.tile,.tileSelected{min-height:210px}.logo{height:52px;width:58px}.tile strong,.tileSelected strong{font-size:.82rem}}
 @media(prefers-reduced-motion:reduce){.tile,.tileSelected,.progressTrack>div{transition:none}.tile:hover,.tileSelected:hover{transform:none}}
+
+/* One remaining Round 2 match should be centered, not stranded in a two-column grid. */
+.matchCard:only-child{grid-column:1/-1;box-sizing:border-box;width:min(100%,440px);justify-self:center}
+.nextRoundNotice{max-width:800px;margin:0 auto 22px;padding:10px 16px;text-align:center;border:1px solid #e0bf7380;border-radius:11px;background:#e0bf7318;color:#f4dbad;font-size:.85rem;line-height:1.5}
+.nextRoundNotice strong{color:#ffe4aa}
+.page :global(.footer-links a){color:#d2dce8}

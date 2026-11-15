@@ -32,6 +32,13 @@ export default async function ClashChallengePage({
         <p>Pick the teams you think will outperform the projected match results.</p>
         {board.roundNumber!=null?<span className={styles.round}>Round {board.roundNumber} · Make your picks!</span>:null}
       </header>
+      {board.nextOpenAt && board.matches.length ? <p className={styles.nextRoundNotice}>
+        <strong>Next round unlocks </strong>
+        {new Date(board.nextOpenAt).toLocaleString('en-US', {
+          timeZone:'America/New_York',weekday:'long',month:'long',day:'numeric',
+          hour:'numeric',minute:'2-digit',
+        })} Eastern. Only the current round’s remaining matchups are open today.
+      </p> : null}
       {query.saved?<p role="status" className={styles.message}>{query.saved}</p>:null}
       {query.error?<p role="alert" className={styles.message+' '+styles.error}>{query.error}</p>:null}
       {board.matches.length
