@@ -298,7 +298,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
           {showClashChallenge && publicSpread ? (
             <MatchdaySection title="Clash Challenge — Make Your Picks!" collapsed={showResultsFirst}>
               <PublicMatchSpread spread={publicSpread}>
-                <Link href="/clash-challenge" className={styles.challengeLink}>Play all matchups · Save your picks together</Link>
+                <Link href="/clash-challenge" className={styles.challengeLink}>Open the Clash Challenge board</Link>
               </PublicMatchSpread>
             </MatchdaySection>
           ) : showClashChallenge ? (
