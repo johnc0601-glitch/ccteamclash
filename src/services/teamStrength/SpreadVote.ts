@@ -47,3 +47,17 @@ export function getSpreadCoverOptions(homeLine: number, homeName: string, awayNa
     },
   };
 }
+
+/** Local ET clock; the ballot closes at the listed match start, not at midnight UTC. */
+export function isSpreadVoteOpen(match: {date: string | null; time: string | null; status: string}, now = new Date()): boolean {
+  if (match.status !== 'Scheduled' || !match.date || !match.time
+    || !/^\d{4}-\d{2}-\d{2}$/.test(match.date)
+    || !/^([01]\d|2[0-3]):[0-5]\d/.test(match.time)) return false;
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(now);
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  const easternMinute = values.year + '-' + values.month + '-' + values.day + 'T' + values.hour + ':' + values.minute;
+  return easternMinute < match.date + 'T' + match.time.slice(0, 5);
+}
