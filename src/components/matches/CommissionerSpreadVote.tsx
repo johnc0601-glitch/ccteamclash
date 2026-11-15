@@ -10,6 +10,8 @@ type Props = {
   matchStatus: string;
   homeName: string;
   awayName: string;
+  homeLogo: string;
+  awayLogo: string;
   profileId: string;
   currentHomeMargin: number | null | undefined;
   notice?: string;
@@ -34,13 +36,17 @@ export async function CommissionerSpreadVote(props: Props) {
   const openingLine = saved?.openingHomeLine ?? line;
   const open = isSpreadVoteOpen({date: props.matchDate, time: props.matchTime, status: props.matchStatus});
   const canVote = open && options !== null;
+  const favoriteLogo = line > 0 ? props.homeLogo : props.awayLogo;
+  const underdogLogo = line > 0 ? props.awayLogo : props.homeLogo;
+  const favoriteSide = line > 0 ? 'home' : 'away';
+  const underdogSide = line > 0 ? 'away' : 'home';
   // Legacy stored choices retain their meaning: low = favorite covers; high = underdog covers.
   const myPick = options && saved?.myVote
     ? saved.myVote === options.favorite.choice ? options.favorite.label : options.underdog.label
     : null;
 
   return <section id="commissioner-spread-vote" className={`${styles.card} ${props.embedded ? styles.embedded : ''}`} aria-label="Clash Challenge — beat expectations">
-    <p className={styles.kicker}>MAKE YOUR PICK</p>
+    <p className={`${styles.kicker} ${canVote && !saved?.myVote ? styles.invite : ''}`}>MAKE YOUR PICK</p>
 
     {!props.embedded ? <>
       <p className={styles.lineTitle}>Current match projection</p>
@@ -56,18 +62,29 @@ export async function CommissionerSpreadVote(props: Props) {
       <form action={castCommissionerSpreadVote} className={styles.buttons}>
         <input type="hidden" name="matchId" value={props.matchId} />
         <input type="hidden" name="lineToken" value={signSpreadVoteLine(props.matchId, line)} />
-        <button type="submit" name="choice" value={options.favorite.choice} className={saved?.myVote === options.favorite.choice ? styles.selected : ''} aria-pressed={saved?.myVote === options.favorite.choice}>
-          <strong>{options.favorite.label}</strong>
-          <span>{options.favorite.explanation}</span>
+        <button type="submit" name="choice" value={options.favorite.choice} data-team-side={favoriteSide} className={saved?.myVote === options.favorite.choice ? styles.selected : ''} aria-pressed={saved?.myVote === options.favorite.choice}>
+          <PickTile name={options.favorite.teamName} logo={favoriteLogo} explanation={options.favorite.explanation} selected={saved?.myVote === options.favorite.choice} />
         </button>
-        <button type="submit" name="choice" value={options.underdog.choice} className={saved?.myVote === options.underdog.choice ? styles.selected : ''} aria-pressed={saved?.myVote === options.underdog.choice}>
-          <strong>{options.underdog.label}</strong>
-          <span>{options.underdog.explanation}</span>
+        <button type="submit" name="choice" value={options.underdog.choice} data-team-side={underdogSide} className={saved?.myVote === options.underdog.choice ? styles.selected : ''} aria-pressed={saved?.myVote === options.underdog.choice}>
+          <PickTile name={options.underdog.teamName} logo={underdogLogo} explanation={options.underdog.explanation} selected={saved?.myVote === options.underdog.choice} />
         </button>
       </form>
     ) : <p className={styles.hint}>{line === 0 ? 'No meaningful projection to compare yet.' : 'Picks are closed. The final projection and your pick remain saved.'}</p>}
 
+    {canVote ? <p className={styles.closingNote}>Picks close at match start</p> : null}
     {options ? <p className={styles.rules}>If the final margin matches the projection exactly, neither team beats expectations.</p> : null}
     {myPick ? <p className={styles.yourVote}>Your pick: <strong>{myPick}</strong>{saved?.myAcceptedHomeLine != null ? <span> · Your original projection: {spreadLineLabel(saved.myAcceptedHomeLine, props.homeName, props.awayName)}</span> : null}{canVote ? ' · You can change it before match start.' : ''}</p> : null}
   </section>;
+}
+
+function PickTile({name, logo, explanation, selected}: {name: string; logo: string; explanation: string; selected: boolean}) {
+  return <>
+    <span className={styles.logoFrame}>
+      {logo ? <img src={logo} alt="" className={styles.teamLogo} /> :
+        <span className={styles.teamInitials} aria-hidden="true">{name.split(/\s+/).filter(Boolean).map(part => part[0]).join('').slice(0,2).toUpperCase()}</span>}
+    </span>
+    <strong className={styles.teamName}>{name}</strong>
+    <span className={styles.choiceExplanation}>{explanation}</span>
+    <span className={styles.pickAction} aria-hidden="true">{selected ? '✓ YOUR PICK' : 'PICK ' + name.toUpperCase()}</span>
+  </>;
 }

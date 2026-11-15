@@ -294,13 +294,14 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
           </Suspense></MatchdaySection>
 
           {showClashChallenge && publicSpread ? (
-            <MatchdaySection title="Clash Challenge" collapsed={showResultsFirst}>
+            <MatchdaySection title={isApprovedCommissioner(actor) ? "Clash Challenge — Make Your Pick!" : "Clash Challenge"} collapsed={showResultsFirst}>
               <PublicMatchSpread spread={publicSpread} movement={clashLineMovement} homeName={matchday.homeTeam.name} awayName={matchday.awayTeam.name}>
                 {isApprovedCommissioner(actor) ? (
                   <CommissionerSpreadVote
                     embedded
                     matchId={matchId} matchDate={match.date} matchTime={match.time} matchStatus={match.status}
                     homeName={matchday.homeTeam.name} awayName={matchday.awayTeam.name}
+                    homeLogo={matchday.homeTeam.logo} awayLogo={matchday.awayTeam.logo}
                     profileId={actor!.profileId}
                     currentHomeMargin={matchPrediction?.state === 'calculated' ? matchPrediction.homeProjectedMargin : null}
                     notice={readParam(query.spreadVoteNotice)} error={readParam(query.spreadVoteError)}
@@ -310,10 +311,11 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
             </MatchdaySection>
           ) : showClashChallenge && isApprovedCommissioner(actor) ? (
             // Preserve access to a previously locked ballot if the live estimate is unavailable.
-            <MatchdaySection title="Clash Challenge" collapsed={showResultsFirst}>
+            <MatchdaySection title="Clash Challenge — Make Your Pick!" collapsed={showResultsFirst}>
               <CommissionerSpreadVote
                 matchId={matchId} matchDate={match.date} matchTime={match.time} matchStatus={match.status}
                 homeName={matchday.homeTeam.name} awayName={matchday.awayTeam.name}
+                homeLogo={matchday.homeTeam.logo} awayLogo={matchday.awayTeam.logo}
                 profileId={actor!.profileId}
                 currentHomeMargin={matchPrediction?.state === 'calculated' ? matchPrediction.homeProjectedMargin : null}
                 notice={readParam(query.spreadVoteNotice)} error={readParam(query.spreadVoteError)}
