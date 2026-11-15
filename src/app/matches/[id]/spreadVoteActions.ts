@@ -47,8 +47,7 @@ export async function castCommissionerSpreadVote(formData: FormData): Promise<vo
   const acceptedLine = verifySpreadVoteLine(matchId, token);
   if (acceptedLine === null) redirect(feedback('spreadVoteError', 'The projection has changed. Reload and pick again.'));
 
-  // The database locks the match row, checks the current quote, saves the accepted
-  // line for this pick, and recalculates the market line in a single transaction.
+  // Save the pick against the frozen projection in one transaction.
   const {error} = await db.rpc('cast_clash_spread_pick', {
     p_match_id: matchId,
     p_profile_id: profile.id,
@@ -64,5 +63,5 @@ export async function castCommissionerSpreadVote(formData: FormData): Promise<vo
   }
   revalidatePath(href);
   revalidatePath('/matches/' + encodeURIComponent(matchId));
-  redirect(feedback('spreadVoteNotice', 'Your Clash Challenge pick is saved at the projection shown when you picked.'));
+  redirect(feedback('spreadVoteNotice', 'Your pick is saved against the fixed Clash Challenge projection.'));
 }

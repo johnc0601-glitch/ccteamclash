@@ -41,17 +41,15 @@ export async function loadPublicClashLine(matchId: string): Promise<ClashLineMov
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
   const db = createAdminClient() as any;
   const {data: poll, error} = await db.from('launch_match_spread_polls')
-    .select('home_line,current_home_line').eq('match_id', matchId).maybeSingle();
+    .select('home_line').eq('match_id', matchId).maybeSingle();
   if (error) {
-    console.error('Moving Clash Line is unavailable.', {matchId, errorCode: error.code});
+    console.error('Fixed Clash Challenge projection unavailable.', {matchId, errorCode: error.code});
     return null;
   }
   if (!poll) return null;
   const openingHomeLine = Number(poll.home_line);
-  const currentHomeLine = Number(poll.current_home_line);
-  if (!openingHomeLine || !currentHomeLine
-    || roundHomeSpreadLine(openingHomeLine) !== openingHomeLine
-    || roundHomeSpreadLine(currentHomeLine) !== currentHomeLine) return null;
+  const currentHomeLine = openingHomeLine;
+  if (!openingHomeLine || roundHomeSpreadLine(openingHomeLine) !== openingHomeLine) return null;
   return {openingHomeLine, currentHomeLine};
 }
 
@@ -59,7 +57,7 @@ export async function loadPublicClashLine(matchId: string): Promise<ClashLineMov
 export async function loadCommissionerSpreadVote(matchId: string, profileId: string): Promise<StoredSpreadVote | null> {
   const db = createAdminClient() as any;
   const {data: poll, error: pollError} = await db.from('launch_match_spread_polls')
-    .select('home_line,current_home_line').eq('match_id', matchId).maybeSingle();
+    .select('home_line').eq('match_id', matchId).maybeSingle();
   if (pollError) throw pollError;
   if (!poll) return null;
   const {data: vote, error: voteError} = await db.from('launch_match_spread_votes')
@@ -67,8 +65,23 @@ export async function loadCommissionerSpreadVote(matchId: string, profileId: str
   if (voteError) throw voteError;
   return {
     openingHomeLine: Number(poll.home_line),
-    currentHomeLine: Number(poll.current_home_line),
+    currentHomeLine: Number(poll.home_line),
     myVote: vote?.choice === 'low' || vote?.choice === 'high' ? vote.choice : null,
     myAcceptedHomeLine: vote?.accepted_home_line == null ? null : Number(vote.accepted_home_line),
   };
+}
+
+
+/** Store one projection per matchup on its first display during the open round. */
+export async function freezeClashChallengeProjection(matchId: string, estimatedHomeLine: number | null): Promise<number | null> {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
+  const db = createAdminClient() as any;
+  const {data, error} = await db.rpc('freeze_clash_challenge_projection', {p_match_id: matchId, p_home_line: estimatedHomeLine});
+  if (error) {
+    console.error('Clash Challenge projection freeze failed.', {matchId, code: error.code});
+    return null;
+  }
+  if (data == null) return null;
+  const value = Number(data);
+  return value !== 0 && roundHomeSpreadLine(value) === value ? value : null;
 }
