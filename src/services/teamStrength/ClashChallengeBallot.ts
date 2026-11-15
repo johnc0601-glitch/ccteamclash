@@ -5,8 +5,6 @@ export type BallotPick = {matchId: string; choice: SpreadVoteChoice; lineToken: 
 /** Authentication, not league registration, is the requirement to play. */
 export function canPlayClashChallenge(userId: string | null | undefined, profileId: string | null | undefined): boolean {
   return Boolean(userId && profileId);
-} | null | undefined): boolean {
-  return profile?.status === 'Approved' && profile.role === 'Commissioner';
 }
 
 export function parseClashBallot(value: unknown): BallotPick[] | null {
