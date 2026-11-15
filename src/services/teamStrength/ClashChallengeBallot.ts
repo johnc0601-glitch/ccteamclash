@@ -2,8 +2,9 @@ import type {SpreadVoteChoice} from './SpreadVote';
 
 export type BallotPick = {matchId: string; choice: SpreadVoteChoice; lineToken: string};
 
-export function isApprovedCommissionerClashPlayer(profile: {
-  role?: string | null; status?: string | null; playerId?: string | null;
+/** Authentication, not league registration, is the requirement to play. */
+export function canPlayClashChallenge(userId: string | null | undefined, profileId: string | null | undefined): boolean {
+  return Boolean(userId && profileId);
 } | null | undefined): boolean {
   return profile?.status === 'Approved' && profile.role === 'Commissioner';
 }
