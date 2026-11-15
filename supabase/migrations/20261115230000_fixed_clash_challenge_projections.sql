@@ -158,7 +158,7 @@ begin
   end loop;
   return v_count;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.cast_clash_spread_pick(p_match_id text, p_profile_id text, p_choice text, p_expected_home_line numeric)
  RETURNS numeric
@@ -249,7 +249,7 @@ begin
   -- Save the choice only; the match projection never moves.
   return v_opening_line;
 end;
-$function$
+$function$;
 
 revoke all on function public.cast_clash_challenge_ballot(text,uuid,jsonb) from public,anon,authenticated;
 grant execute on function public.cast_clash_challenge_ballot(text,uuid,jsonb) to service_role;
