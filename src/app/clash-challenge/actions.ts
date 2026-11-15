@@ -4,7 +4,7 @@ import {redirect} from 'next/navigation';
 import {revalidatePath} from 'next/cache';
 import {createClient} from '@/lib/supabase/server';
 import {createAdminClient} from '@/lib/supabase/admin';
-import {isRegisteredClashPlayer,parseClashBallot} from '@/services/teamStrength/ClashChallengeBallot';
+import {isApprovedCommissionerClashPlayer,parseClashBallot} from '@/services/teamStrength/ClashChallengeBallot';
 import {verifySpreadVoteLine} from '@/services/teamStrength/SpreadVoteStore';
 
 function respond(kind:'saved'|'error',message:string):never {
@@ -22,10 +22,10 @@ export async function saveClashChallengeBallot(formData: FormData): Promise<void
 
   const {data:profile,error:profileError} = await client.from('launch_profiles')
     .select('id,role,status,player_id').eq('user_id',user.id).maybeSingle();
-  if (profileError || !isRegisteredClashPlayer({
+  if (profileError || !isApprovedCommissionerClashPlayer({
     role:profile?.role,status:profile?.status,playerId:profile?.player_id,
   })) {
-    respond('error','An approved player registration is required to save picks.');
+    respond('error','Only approved commissioners can save Clash Challenge picks.');
   }
   const picks = ballot.map(p=>({
     match_id:p.matchId,
