@@ -36,23 +36,6 @@ export function verifySpreadVoteLine(matchId: string, token: string): number | n
   return line !== 0 && roundHomeSpreadLine(line) === line ? line : null;
 }
 
-/** Public read returns two numbers only; private vote records are never sent to a public component. */
-export async function loadPublicClashLine(matchId: string): Promise<ClashLineMovement | null> {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
-  const db = createAdminClient() as any;
-  const {data: poll, error} = await db.from('launch_match_spread_polls')
-    .select('home_line').eq('match_id', matchId).maybeSingle();
-  if (error) {
-    console.error('Fixed Clash Challenge projection unavailable.', {matchId, errorCode: error.code});
-    return null;
-  }
-  if (!poll) return null;
-  const openingHomeLine = Number(poll.home_line);
-  const currentHomeLine = openingHomeLine;
-  if (!openingHomeLine || roundHomeSpreadLine(openingHomeLine) !== openingHomeLine) return null;
-  return {openingHomeLine, currentHomeLine};
-}
-
 /** Call only after verifying the visitor is an approved commissioner. */
 export async function loadCommissionerSpreadVote(matchId: string, profileId: string): Promise<StoredSpreadVote | null> {
   const db = createAdminClient() as any;

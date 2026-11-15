@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {getSpreadCoverOptions, isApprovedCommissioner, isSpreadVoteOpen, moveClashLine, roundHomeSpreadLine, spreadLineLabel} from './SpreadVote';
+import {getSpreadCoverOptions, isApprovedCommissioner, isSpreadVoteOpen, roundHomeSpreadLine, spreadLineLabel} from './SpreadVote';
 
 test('only approved commissioners may see the pilot', () => {
   assert.equal(isApprovedCommissioner({profileRole: 'Commissioner', profileStatus: 'Approved'}), true);
@@ -39,23 +39,4 @@ test('favorite cover means the old low vote, underdog cover means the old high v
   assert.equal(reversed.underdog.teamName, 'Dark Knights');
   assert.equal(reversed.underdog.choice, 'high');
   assert.throws(() => getSpreadCoverOptions(0, 'Home', 'Away'));
-});
-
-test('30-person poll moves only after six net picks, then caps at 1.5 points', () => {
-  assert.equal(moveClashLine(18, 0, 0), 18);
-  assert.equal(moveClashLine(18, 1, 0), 18);
-  assert.equal(moveClashLine(18, 5, 0), 18);
-  assert.equal(moveClashLine(18, 6, 0), 18.5);
-  assert.equal(moveClashLine(18, 18, 12), 18.5);
-  assert.equal(moveClashLine(18, 20, 10), 18.5);
-  assert.equal(moveClashLine(18, 21, 9), 19);
-  assert.equal(moveClashLine(18, 25, 5), 19.5);
-  assert.equal(moveClashLine(18, 30, 0), 19.5);
-  assert.equal(moveClashLine(18, 0, 30), 16.5);
-  assert.equal(moveClashLine(18, 12, 12), 18);
-  assert.equal(moveClashLine(-18, 12, 0), -19);
-  assert.equal(moveClashLine(-18, 0, 6), -17.5);
-  assert.equal(moveClashLine(0.5, 0, 30), 0.5);
-  assert.equal(moveClashLine(35.5, 30, 0), 36);
-  assert.throws(() => moveClashLine(0, 1, 0));
 });

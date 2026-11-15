@@ -25,9 +25,6 @@
 .teams > div:first-child span { color: var(--match-away, #3986d8); }
 .teams > div:last-child span { color: var(--match-home, #ca4580); }
 
-.lineMovement { display: flex; flex-direction: column; gap: 3px; align-items: center; padding: 7px 10px; border-radius: 8px; border: 1px solid #ffffff2c; color: #eaf0f8; font-size: .83rem; }
-.lineMovementNote { color: #a9d4f3; font-size: .75rem; }
-
 .challengeHeading { display: flex; align-items: center; justify-content: center; gap: 9px; }
 .challengeIcon { width: 25px; height: 25px; color: #f3cc75; flex: none; filter: drop-shadow(0 0 6px #f3cc7542); }
 .challengeHeading h2 { margin: 0; font-size: 1.08rem; font-weight: 800; letter-spacing: .02em; }
