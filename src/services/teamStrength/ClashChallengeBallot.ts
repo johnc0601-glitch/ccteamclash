@@ -2,12 +2,10 @@ import type {SpreadVoteChoice} from './SpreadVote';
 
 export type BallotPick = {matchId: string; choice: SpreadVoteChoice; lineToken: string};
 
-export function isRegisteredClashPlayer(profile: {
+export function isApprovedCommissionerClashPlayer(profile: {
   role?: string | null; status?: string | null; playerId?: string | null;
 } | null | undefined): boolean {
-  return profile?.status === 'Approved'
-    && ['Player', 'Captain', 'Commissioner'].includes(profile.role ?? '')
-    && Boolean(profile.playerId?.trim());
+  return profile?.status === 'Approved' && profile.role === 'Commissioner';
 }
 
 export function parseClashBallot(value: unknown): BallotPick[] | null {
