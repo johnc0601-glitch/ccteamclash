@@ -46,7 +46,7 @@ export function ClashChallengePicker({matches,canPlay}:Props) {
             color:underdogSide==='home'?match.homeColor:match.awayColor},
         ]:[];
         const favored=line!=null&&line!==0?(line>0?match.homeName:match.awayName):null;
-        return <section key={match.matchId} className={styles.matchCard}>
+        return <section key={match.matchId} className={styles.matchCard} data-complete={Boolean(selected)}>
           <div className={styles.matchTop}>
             <span>Matchup {index+1}</span>
             {selected?<span className={styles.pickedMark}>✓ Pick selected</span>:<span>Not picked</span>}
@@ -64,6 +64,7 @@ export function ClashChallengePicker({matches,canPlay}:Props) {
               style={{'--tile-color':option.color} as CSSProperties}
               aria-pressed={selected===option.choice}
               onClick={()=>setChosen(prev=>({...prev,[match.matchId]:option.choice}))}>
+              {selected===option.choice?<span className={styles.selectedCheck} aria-hidden="true">✓</span>:null}
               {option.logo?<img src={option.logo} alt="" className={styles.logo}/>:<span className={styles.logoFallback}>{option.teamName.slice(0,2).toUpperCase()}</span>}
               <strong>{option.teamName}</strong>
               <span className={styles.description}>{option.explanation}</span>
