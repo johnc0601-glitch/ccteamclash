@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import {SiteHeader,Footer} from '@/components/SiteHeader';
 import {createClient} from '@/lib/supabase/server';
-import {isRegisteredClashPlayer} from '@/services/teamStrength/ClashChallengeBallot';
+import {canPlayClashChallenge} from '@/services/teamStrength/ClashChallengeBallot';
 import {loadClashChallengeBoard} from '@/services/teamStrength/ClashChallengeBoard';
 import {ClashChallengePicker} from './ClashChallengePicker';
 import styles from './ClashChallenge.module.css';
@@ -17,10 +17,8 @@ export default async function ClashChallengePage({
   const supabase=await createClient();
   const {data:{user}}=await supabase.auth.getUser();
   const {data:profile}=user?await supabase.from('launch_profiles')
-    .select('id,role,status,player_id').eq('user_id',user.id).maybeSingle():{data:null};
-  const canPlay=Boolean(user&&isRegisteredClashPlayer({
-    role:profile?.role,status:profile?.status,playerId:profile?.player_id,
-  }));
+    .select('id').eq('user_id',user.id).maybeSingle():{data:null};
+  const canPlay=canPlayClashChallenge(user?.id,profile?.id);
   const board=await loadClashChallengeBoard(canPlay&&profile?profile.id:null);
   const query=await searchParams;
   return <>
@@ -29,7 +27,7 @@ export default async function ClashChallengePage({
       <header className={styles.hero}>
         <div className={styles.heroIcon} aria-hidden="true">🏆</div>
         <h1>Clash Challenge</h1>
-        <p>Pick the teams you think will outperform the projected match results.</p>
+        <p>Think you know the Clash? Each matchup has one fixed projection. Pick the team you think will outperform it — even if that team doesn’t win the match. Save your picks before tee-off and play for bragging rights!</p>
         {board.roundNumber!=null?<span className={styles.round}>Round {board.roundNumber} · Make your picks!</span>:null}
       </header>
       {board.nextOpenAt && board.matches.length ? <p className={styles.nextRoundNotice}>

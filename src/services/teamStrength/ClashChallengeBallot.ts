@@ -2,12 +2,9 @@ import type {SpreadVoteChoice} from './SpreadVote';
 
 export type BallotPick = {matchId: string; choice: SpreadVoteChoice; lineToken: string};
 
-export function isRegisteredClashPlayer(profile: {
-  role?: string | null; status?: string | null; playerId?: string | null;
-} | null | undefined): boolean {
-  return profile?.status === 'Approved'
-    && ['Player', 'Captain', 'Commissioner'].includes(profile.role ?? '')
-    && Boolean(profile.playerId?.trim());
+/** Authentication, not league registration, is the requirement to play. */
+export function canPlayClashChallenge(userId: string | null | undefined, profileId: string | null | undefined): boolean {
+  return Boolean(userId && profileId);
 }
 
 export function parseClashBallot(value: unknown): BallotPick[] | null {
