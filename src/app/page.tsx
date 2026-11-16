@@ -47,22 +47,19 @@ export default async function Home() {
             even if that team doesn’t win. Make your picks before tee-off, follow the results,
             and play for bragging rights.
           </p>
-          <div className={styles.challengeActions}>
-            <Link href="/clash-challenge" className={`button gold-button ${styles.challengeButton}`}>
-              Play Clash Challenge <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-          <p className={styles.challengeEligibility}>
-            Everyone can play. Just sign in to your CCTeamClash account — league registration isn’t required.
-          </p>
         </div>
 
-        <div className={styles.challengeVisual} aria-hidden="true">
+        <div className={styles.challengeVisual}>
           <div className={styles.challengeCard}>
             <div className={styles.cardHeader}>
               <span>Team Clash presents</span>
               <span className={styles.cardNew}>New game</span>
             </div>
+          <div className={styles.challengeActions}>
+            <Link href="/clash-challenge" className={`button gold-button ${styles.challengeButton}`}>
+              Play Clash Challenge <span aria-hidden="true">→</span>
+            </Link>
+          </div>
             <div className={styles.cardIdentity}>
               <div className={styles.brandEmblem}>
                 <Image src="/brand/cctc-logo-inverted.jpg" alt="" width={86} height={86} />
@@ -83,6 +80,9 @@ export default async function Home() {
               <span><b>02</b> Pick a side</span>
               <span><b>03</b> Beat expectations</span>
             </div>
+            <p className={styles.challengeEligibility}>
+              Everyone can play. Just sign in to your CCTeamClash account — league registration isn’t required.
+            </p>
           </div>
         </div>
       </section>
