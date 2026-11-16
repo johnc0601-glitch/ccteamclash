@@ -32,28 +32,57 @@ export default async function Home() {
       <SiteHeader />
       <ClashCountdown />
 
-      <section className={styles.banner} aria-labelledby="matchday-heading">
-        <div className={styles.poster}>
-          <Image
-            src="/matchday/round-2-fall.png"
-            alt="Coastal Carolina Team Clash Round 2 Matchday crest over an autumn coastal sunset"
-            width={1672}
-            height={941}
-            sizes="(max-width: 900px) 100vw, 60vw"
-            preload
-          />
-        </div>
-        <div className={styles.content}>
-          <span className="eyebrow">Round 2 Matchday</span>
-          <h1 id="matchday-heading">Round 2. Bring the Heat.</h1>
-          <p>
-            Fall is in the air, and Team Clash is back on the course. Round 2 brings fresh battles,
-            hometown pride, and another chance to put points on the board. Rally your team, bring
-            your best, and make every throw count.
+      <section className={styles.challengeHero} aria-labelledby="clash-challenge-heading">
+        <div className={styles.challengeCopy}>
+          <div className={styles.featureEyebrow}>
+            <span className={styles.featureDot} aria-hidden="true" />
+            <span>New at Team Clash · The game within the game</span>
+          </div>
+          <h1 id="clash-challenge-heading">Think You Know <span>the Clash?</span></h1>
+          <p className={styles.challengeLead}>
+            Winning the match is one thing. <strong>Beating expectations is another.</strong>
           </p>
-          <strong>Fun. Fellowship. Disc Golf.</strong>
-          <div className="home-actions">
-            <Link href="/schedule" className="button gold-button">View the schedule <span>-&gt;</span></Link>
+          <p className={styles.challengeDescription}>
+            Every matchup has one fixed projection. Pick the team you think will outperform it —
+            even if that team doesn’t win. Make your picks before tee-off, follow the results,
+            and play for bragging rights.
+          </p>
+          <div className={styles.challengeActions}>
+            <Link href="/clash-challenge" className={`button gold-button ${styles.challengeButton}`}>
+              Play Clash Challenge <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+          <p className={styles.challengeEligibility}>
+            Everyone can play. Just sign in to your CCTeamClash account — league registration isn’t required.
+          </p>
+        </div>
+
+        <div className={styles.challengeVisual} aria-hidden="true">
+          <div className={styles.challengeCard}>
+            <div className={styles.cardHeader}>
+              <span>Team Clash presents</span>
+              <span className={styles.cardNew}>New game</span>
+            </div>
+            <div className={styles.cardIdentity}>
+              <div className={styles.brandEmblem}>
+                <Image src="/brand/cctc-logo-inverted.jpg" alt="" width={86} height={86} />
+              </div>
+              <div className={styles.cardTitle}>
+                <span>The</span>
+                <strong>Clash<br />Challenge</strong>
+              </div>
+            </div>
+            <div className={styles.cardQuestion}>Who will beat expectations?</div>
+            <div className={styles.cardChoices}>
+              <div className={styles.cardFavorite}><small>Pick the</small><strong>Favorite</strong></div>
+              <span className={styles.cardOr}>or</span>
+              <div className={styles.cardUnderdog}><small>Back the</small><strong>Underdog</strong></div>
+            </div>
+            <div className={styles.cardSteps}>
+              <span><b>01</b> See the projection</span>
+              <span><b>02</b> Pick a side</span>
+              <span><b>03</b> Beat expectations</span>
+            </div>
           </div>
         </div>
       </section>
