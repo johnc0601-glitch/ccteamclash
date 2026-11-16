@@ -1,55 +1,331 @@
-.banner {
+/* The homepage's lead editorial feature. Kept separate from the matchup cards below. */
+.challengeHero {
+  position: relative;
+  isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  border-bottom: 1px solid #a27752;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+  align-items: stretch;
+  min-height: 565px;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(252, 194, 0, .45);
   background:
-    radial-gradient(ellipse at top right, rgba(187, 86, 29, .3), transparent 65%),
-    linear-gradient(120deg, #101820, #061f24);
-  color: #f5f2ea;
+    radial-gradient(ellipse at 27% 10%, rgba(160, 101, 22, .16), transparent 50%),
+    linear-gradient(116deg, #111718 0%, #0a1518 54%, #092c30 100%);
+  color: #f8f5ed;
 }
 
-.poster {
-  display: grid;
-  align-items: center;
-  background: #101820;
-}
-
-.poster img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.content {
+.challengeCopy {
   min-width: 0;
-  padding: clamp(28px, 4vw, 64px);
+  width: 100%;
+  max-width: 820px;
+  padding: clamp(36px, 5vw, 82px) clamp(24px, 5.1vw, 88px);
   align-self: center;
 }
 
-.content h1 {
-  margin: 12px 0 20px;
-  font-family: var(--cc-font-display);
-  font-size: clamp(32px, 4vw, 64px);
-  font-style: italic;
-  line-height: 1.05;
+.featureEyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+  color: #fcc200;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .13em;
   text-transform: uppercase;
+}
+
+.featureDot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+  background: #fcc200;
+  box-shadow: 0 0 0 5px rgba(252, 194, 0, .14);
+}
+
+.challengeCopy h1 {
+  margin: 0 0 25px;
+  max-width: 720px;
   color: #fff;
+  font-family: var(--cc-font-display);
+  font-size: clamp(46px, 5.3vw, 82px);
+  font-style: italic;
+  font-weight: 950;
+  line-height: .98;
+  letter-spacing: -.045em;
+  text-transform: uppercase;
 }
 
-.content p {
-  max-width: 760px;
-  margin: 0 0 18px;
-  font-size: clamp(16px, 2vw, 18px);
-  line-height: 1.65;
-  color: #d7e0dd;
-}
-
-.content strong {
+.challengeCopy h1 span {
+  display: block;
   color: #fcc200;
 }
 
-@media (max-width: 900px) {
-  .banner {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.challengeLead {
+  max-width: 610px;
+  margin: 0 0 14px;
+  color: #f7f3e9;
+  font-size: clamp(19px, 1.75vw, 24px);
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.challengeLead strong { color: #fcc200; }
+
+.challengeDescription {
+  max-width: 610px;
+  margin: 0;
+  color: #d5e0df;
+  font-size: clamp(15px, 1.25vw, 17px);
+  line-height: 1.65;
+}
+
+.challengeActions { margin-top: 24px; }
+
+.challengeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 0;
+  padding: 16px 22px;
+  font-size: 14px;
+  letter-spacing: .035em;
+  box-shadow: 0 9px 28px rgba(252, 194, 0, .12);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.challengeButton:hover,
+.challengeButton:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(252, 194, 0, .23);
+}
+
+.challengeButton span { margin-left: 7px; }
+
+.challengeEligibility {
+  max-width: 545px;
+  margin: 16px 0 0;
+  color: #bac9c9;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.challengeVisual {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  padding: clamp(34px, 4vw, 72px) clamp(28px, 4vw, 66px);
+  overflow: hidden;
+  border-left: 1px solid rgba(252, 194, 0, .09);
+  background:
+    radial-gradient(circle at 50% 47%, rgba(252, 194, 0, .19), transparent 41%),
+    radial-gradient(circle at 68% 66%, rgba(32, 157, 147, .22), transparent 44%);
+}
+
+.challengeVisual::before,
+.challengeVisual::after {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 540px;
+  height: 540px;
+  border: 1px solid rgba(252, 194, 0, .09);
+  border-radius: 50%;
+  content: '';
+  transform: translate(-50%, -50%);
+}
+
+.challengeVisual::after {
+  width: 690px;
+  height: 690px;
+  border-color: rgba(252, 194, 0, .06);
+}
+
+.challengeCard {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 505px);
+  padding: clamp(22px, 2.5vw, 33px);
+  border: 1px solid rgba(255, 224, 126, .38);
+  border-radius: 16px;
+  background:
+    linear-gradient(150deg, rgba(34, 47, 49, .97), rgba(9, 19, 23, .98) 70%),
+    #111b1d;
+  box-shadow: 0 25px 75px rgba(0, 0, 0, .47), inset 0 1px 0 rgba(255, 255, 255, .05);
+  transform: rotate(1deg);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: #c7d3cf;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.cardNew {
+  padding: 7px 9px;
+  border: 1px solid rgba(252, 194, 0, .55);
+  border-radius: 4px;
+  color: #fcc200;
+  white-space: nowrap;
+}
+
+.cardIdentity {
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 2vw, 22px);
+  margin: 24px 0 25px;
+}
+
+.brandEmblem {
+  display: grid;
+  flex: 0 0 clamp(70px, 7vw, 94px);
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid rgba(252, 194, 0, .6);
+  border-radius: 14px;
+  background: #111;
+  aspect-ratio: 1;
+}
+
+.brandEmblem img { width: 100%; height: 100%; object-fit: cover; }
+
+.cardTitle span {
+  display: block;
+  margin-bottom: 2px;
+  color: #fcc200;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.cardTitle strong {
+  display: block;
+  color: #fff;
+  font-family: var(--cc-font-display);
+  font-size: clamp(29px, 3.1vw, 49px);
+  font-style: italic;
+  line-height: .94;
+  letter-spacing: -.035em;
+  text-transform: uppercase;
+}
+
+.cardQuestion {
+  padding: 14px 9px;
+  border-top: 1px solid rgba(255, 255, 255, .15);
+  color: #fcc200;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.cardChoices {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.cardFavorite,
+.cardUnderdog {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  min-height: 102px;
+  gap: 6px;
+  padding: 16px 8px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.cardFavorite { background: linear-gradient(145deg, #682d31, #301a22); }
+.cardUnderdog { background: linear-gradient(145deg, #1c6670, #143237); }
+
+.cardChoices small {
+  color: #e5e6e2;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+.cardChoices strong {
+  color: white;
+  font-family: var(--cc-font-display);
+  font-size: clamp(17px, 1.7vw, 25px);
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: -.025em;
+}
+
+.cardOr {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 2px solid #fcc200;
+  border-radius: 50%;
+  background: #141819;
+  color: #fcc200;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  transform: translate(-50%, -50%);
+}
+
+.cardSteps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-top: 20px;
+  color: #becdce;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.cardSteps b {
+  margin-right: 5px;
+  color: #fcc200;
+}
+
+@media (max-width: 960px) {
+  .challengeHero { grid-template-columns: minmax(0, 1fr); }
+  .challengeCopy { max-width: 760px; padding: 45px 30px 34px; }
+  .challengeCopy h1 { font-size: clamp(44px, 8vw, 74px); }
+  .challengeVisual { padding: 32px 24px 40px; border-left: 0; border-top: 1px solid rgba(252, 194, 0, .12); }
+  .challengeCard { max-width: 540px; transform: none; }
+  .cardTitle strong { font-size: clamp(32px, 5.5vw, 49px); }
+}
+
+@media (max-width: 540px) {
+  .challengeCopy { padding: 33px 20px 28px; }
+  .featureEyebrow { font-size: 10px; line-height: 1.5; letter-spacing: .08em; }
+  .challengeCopy h1 { font-size: clamp(42px, 12vw, 60px); }
+  .challengeDescription { font-size: 15px; }
+  .challengeButton { justify-content: center; width: 100%; }
+  .challengeVisual { padding: 28px 15px 36px; }
+  .challengeCard { padding: 20px 16px; }
+  .cardIdentity { margin: 22px 0; }
+  .brandEmblem { flex-basis: 66px; }
+  .cardTitle strong { font-size: clamp(28px, 8vw, 42px); }
+  .cardChoices strong { font-size: clamp(16px, 5vw, 22px); }
+  .cardSteps { font-size: 9px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .challengeButton { transition: none; }
 }
