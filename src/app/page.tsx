@@ -72,11 +72,11 @@ export default async function Home() {
                 <strong>Clash<br />Challenge</strong>
               </div>
             </div>
-            <div className={styles.cardQuestion}>Who will beat expectations?</div>
+            <div className={styles.cardQuestion}>Which team beats the projection?</div>
             <div className={styles.cardChoices}>
               <div className={styles.cardFavorite}><small>Pick the</small><strong>Favorite</strong></div>
               <span className={styles.cardOr}>or</span>
-              <div className={styles.cardUnderdog}><small>Back the</small><strong>Underdog</strong></div>
+              <div className={styles.cardUnderdog}><small>Pick the</small><strong>Underdog</strong></div>
             </div>
             <div className={styles.cardSteps}>
               <span><b>01</b> See the projection</span>
