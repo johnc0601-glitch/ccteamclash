@@ -30,23 +30,13 @@ export default async function ClashChallengePage({
         <p>Think you know the Clash? Each matchup has one fixed projection. Pick the team you think will outperform it — even if that team doesn’t win the match. Save your picks before tee-off and play for bragging rights!</p>
         {board.roundNumber!=null?<span className={styles.round}>Round {board.roundNumber} · Make your picks!</span>:null}
       </header>
-      {board.nextOpenAt && board.matches.length ? <p className={styles.nextRoundNotice}>
-        <strong>Next round unlocks </strong>
-        {new Date(board.nextOpenAt).toLocaleString('en-US', {
-          timeZone:'America/New_York',weekday:'long',month:'long',day:'numeric',
-          hour:'numeric',minute:'2-digit',
-        })} Eastern. Only the current round’s remaining matchups are open today.
-      </p> : null}
       {query.saved?<p role="status" className={styles.message}>{query.saved}</p>:null}
       {query.error?<p role="alert" className={styles.message+' '+styles.error}>{query.error}</p>:null}
       {board.matches.length
         ? <ClashChallengePicker matches={board.matches} canPlay={canPlay}/>
         : <section className={styles.empty}>
-          <h2>{board.nextOpenAt?'Next round coming soon':'No open matchups right now'}</h2>
-          {board.nextOpenAt?<p>Next round opens {new Date(board.nextOpenAt).toLocaleString('en-US',{
-            timeZone:'America/New_York',month:'long',day:'numeric',hour:'numeric',minute:'2-digit',
-          })} Eastern.</p>
-            :<p>The challenge will reopen when the next featured round is available.</p>}
+          <h2>No open matchups right now</h2>
+          <p>Check back when the next matchups are ready.</p>
           <Link href="/schedule">View league schedule</Link>
         </section>}
     </main>
