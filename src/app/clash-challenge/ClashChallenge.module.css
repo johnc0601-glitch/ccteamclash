@@ -51,8 +51,6 @@
 
 /* One remaining Round 2 match should be centered, not stranded in a two-column grid. */
 .matchCard:only-child{grid-column:1/-1;box-sizing:border-box;width:min(100%,440px);justify-self:center}
-.nextRoundNotice{max-width:800px;margin:0 auto 22px;padding:10px 16px;text-align:center;border:1px solid #e0bf7380;border-radius:11px;background:#e0bf7318;color:#f4dbad;font-size:.85rem;line-height:1.5}
-.nextRoundNotice strong{color:#ffe4aa}
 .page :global(.footer-links a){color:#d2dce8}
 
 
