@@ -55,6 +55,7 @@ export function ClashChallengePicker({matches,canPlay}:Props) {
             <span>Fixed match projection</span>
             <strong>{favored?favored+' by '+Math.abs(line!).toFixed(1):'Projection pending'}</strong>
           </div>
+          {match.insights?<MatchupInsights match={match}/>:null}
           {options? <div className={styles.tiles}>
             {optionsWithLook.map(option=><button key={option.choice} type="button"
               disabled={!canPlay||!match.lineToken}
@@ -87,6 +88,38 @@ export function ClashChallengePicker({matches,canPlay}:Props) {
     <p className={styles.footnote}>If the final margin exactly matches the projection, neither team beats expectations. Picks are private and close at match start.</p>
   </form>;
 }
+function MatchupInsights({match}:{match:ClashChallengeMatch}){
+  const insights=match.insights;
+  if(!insights)return null;
+  const previous=insights.previousMeeting;
+  const formatScore=(value:number)=>Number.isInteger(value)?String(value):value.toFixed(1);
+  const displayRecord=(stats:typeof insights.home)=>
+    stats.wins+'–'+stats.losses+(stats.ties?'–'+stats.ties:'');
+  const displayMargin=(value:number|null,sign:'+'|'-')=>
+    value==null?'—':sign+value.toFixed(1)+' pts';
+  const previousHome=previous?.homeTeamId===match.homeName.toLowerCase().replace(/\\s+/g,'-')?match.homeName:
+    previous?.homeTeamId===match.awayName.toLowerCase().replace(/\\s+/g,'-')?match.awayName:undefined;
+  // The previous matchup uses the names from the current featured pairing.
+  const previousHomeName=previousHome??(previous?.homeTeamId==='cougar-country'?match.homeName:match.awayName);
+  const previousAwayName=previousHomeName===match.homeName?match.awayName:match.homeName;
+  return <details className={styles.insights}>
+    <summary className={styles.insightsSummary}>
+      <strong>Team stats</strong>
+      <span>Home vs. road <span className={styles.insightsChevron} aria-hidden="true">⌄</span></span>
+    </summary>
+    <div className={styles.insightsGrid}>
+      {([['HOME',match.homeName,insights.home],['AWAY',match.awayName,insights.away]] as const).map(([venue,name,stats])=><div key={venue} className={styles.insightTeam}>
+        <div className={styles.insightTeamHeading}><strong>{name}</strong><span>{venue}</span></div>
+        <div className={styles.insightRow}><span>Wins</span><strong>{displayRecord(stats)} · {stats.winPercentage==null?'—':stats.winPercentage.toFixed(1)+'%'}</strong></div>
+        <div className={styles.insightRow}><span>Avg. win</span><strong>{displayMargin(stats.averageVictoryMargin,'+')}</strong></div>
+        <div className={styles.insightRow}><span>Avg. loss</span><strong>{displayMargin(stats.averageDefeatMargin,'-')}</strong></div>
+      </div>)}
+    </div>
+    {previous?<p className={styles.insightPrevious}><strong>Previous meeting:</strong> {previousHomeName} {formatScore(previous.homeScore)}–{formatScore(previous.awayScore)} {previousAwayName} ({previous.seasonName})</p>:null}
+    <p className={styles.insightNote}>Completed matches, including playoffs. Average margins count wins and losses separately.</p>
+  </details>;
+}
+
 function SaveButton({disabled,count}:{disabled:boolean;count:number}){
   const {pending}=useFormStatus();
   return <button type="submit" className={styles.saveButton} disabled={disabled||pending}>
