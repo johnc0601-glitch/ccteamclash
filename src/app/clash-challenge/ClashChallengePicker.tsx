@@ -55,6 +55,7 @@ export function ClashChallengePicker({matches,canPlay}:Props) {
             <span>Fixed match projection</span>
             <strong>{favored?favored+' by '+Math.abs(line!).toFixed(1):'Projection pending'}</strong>
           </div>
+          {match.insights?<MatchupInsights match={match}/>:null}
           {options? <div className={styles.tiles}>
             {optionsWithLook.map(option=><button key={option.choice} type="button"
               disabled={!canPlay||!match.lineToken}
@@ -87,6 +88,59 @@ export function ClashChallengePicker({matches,canPlay}:Props) {
     <p className={styles.footnote}>If the final margin exactly matches the projection, neither team beats expectations. Picks are private and close at match start.</p>
   </form>;
 }
+function MatchupInsights({match}:{match:ClashChallengeMatch}){
+  const insights=match.insights;
+  if(!insights)return null;
+  const displayRecord=(record:{wins:number;losses:number;ties:number})=>
+    record.wins+'–'+record.losses+(record.ties?'–'+record.ties:'');
+  const displayMargin=(value:number|null,sign:'+'|'−')=>
+    value==null?'—':sign+value.toFixed(1);
+  const displayScore=(score:number)=>Number.isInteger(score)?String(score):score.toFixed(1);
+  const previous=insights.previousMeeting;
+  const previousScore=previous
+    ?previous.homeScore>previous.awayScore
+      ?previous.homeTeamName+' '+displayScore(previous.homeScore)+'–'+displayScore(previous.awayScore)
+      :previous.awayScore>previous.homeScore
+        ?previous.awayTeamName+' '+displayScore(previous.awayScore)+'–'+displayScore(previous.homeScore)
+        :'Tied '+displayScore(previous.homeScore)+'–'+displayScore(previous.awayScore)
+    :null;
+  return <details className={styles.insights}>
+    <summary className={styles.insightsSummary}>
+      <strong>Team Stats</strong>
+      <span className={styles.insightsChevron} aria-hidden="true">⌄</span>
+    </summary>
+    <div className={styles.insightsGrid}>
+      {([
+        ['HOME',match.homeName,insights.home,insights.homeSeason],
+        ['AWAY',match.awayName,insights.away,insights.awaySeason],
+      ] as const).map(([venue,name,stats,season])=><section key={venue} className={styles.insightTeam}>
+        <div className={styles.insightTeamHeading}>
+          <strong>{name}</strong>
+          <span>{venue} · {displayRecord(stats)}</span>
+        </div>
+        <div className={styles.insightRow}><span>Avg. win</span><strong>{displayMargin(stats.averageVictoryMargin,'+')}</strong></div>
+        <div className={styles.insightRow}><span>Avg. loss</span><strong>{displayMargin(stats.averageDefeatMargin,'−')}</strong></div>
+        <div className={styles.insightSeasonHeading}>This Season · {displayRecord(season)}</div>
+        <div className={styles.insightResults}>
+          {season.results.length?season.results.map((result,index)=><div key={result.playedOn+'-'+index} className={styles.insightResult}>
+            <span className={styles.insightOpponent}>{result.venue==='home'?'vs ':'at '}{result.opponent}</span>
+            <div className={styles.insightResultScore}>
+              <span className={styles.insightResultBadge} data-result={result.result}>{result.result}</span>
+              <strong>{displayScore(result.scoreFor)}–{displayScore(result.scoreAgainst)}</strong>
+            </div>
+          </div>):<span className={styles.insightEmpty}>No results yet</span>}
+        </div>
+      </section>)}
+    </div>
+    <div className={styles.insightPrevious}>
+      <span>Last head-to-head</span>
+      <strong>{previousScore??'No previous meeting'}</strong>
+      {previous?<small>{previous.seasonName}</small>:null}
+    </div>
+    <p className={styles.insightNote}>Home/away averages exclude shortened playoffs. Head-to-head includes playoffs.</p>
+  </details>;
+}
+
 function SaveButton({disabled,count}:{disabled:boolean;count:number}){
   const {pending}=useFormStatus();
   return <button type="submit" className={styles.saveButton} disabled={disabled||pending}>

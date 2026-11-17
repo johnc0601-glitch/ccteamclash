@@ -7,6 +7,7 @@ import {roundHomeSpreadLine, type SpreadVoteChoice} from './SpreadVote';
 import {freezeClashChallengeProjection, signSpreadVoteLine} from './SpreadVoteStore';
 import {isClashChallengeVisible} from './ClashChallengeWindows';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
+import {buildClashChallengeInsights,historicalClashTeamId,isFullLengthClashMatch,type CompletedClashMatch,type ClashChallengeInsights} from './ClashChallengeInsights';
 import type {TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import type {OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
 
@@ -14,6 +15,8 @@ type Row = Record<string,any>;
 
 export type ClashChallengeMatch = {
   matchId:string;
+  homeTeamId:string;
+  awayTeamId:string;
   homeName:string;
   awayName:string;
   homeLogo:string;
@@ -26,6 +29,7 @@ export type ClashChallengeMatch = {
   lineToken:string|null;
   myChoice:SpreadVoteChoice|null;
   matchHref:string;
+  insights?:ClashChallengeInsights;
 };
 export type ClashChallengeBoard = {
   roundNumber:number|null;
@@ -70,6 +74,63 @@ export async function loadClashChallengeBoard(profileId:string|null):Promise<Cla
   const teamIds=[...new Set<string>(matches.flatMap(m=>[m.home_team_id,m.away_team_id]))];
   const courseIds=[...new Set<string>(matches.map(m=>m.course_id).filter(Boolean))];
   const seasonId=matches[0].season_id;
+
+  // Stats are optional context: an unavailable stats query must never block picks.
+  const [archiveResponse,completedResponse,seasonScheduleResponse,seasonResponse]=await Promise.all([
+    db.from('historical_team_matches')
+      .select('home_team_name,away_team_name,home_score,away_score,season_name,event_label,played_on')
+      .order('season_name').order('event_order').order('id'),
+    db.from('launch_match_results')
+      .select('match_id,home_score,away_score,status').eq('status','Published'),
+    db.from('launch_schedule_matches')
+      .select('id,home_team_id,away_team_id,date').eq('season_id',seasonId),
+    db.from('launch_seasons').select('name').eq('id',seasonId).maybeSingle(),
+  ]);
+  const statsReady=!archiveResponse.error&&!completedResponse.error
+    &&!seasonScheduleResponse.error&&!seasonResponse.error;
+  if(!statsReady)console.error('Clash Challenge team statistics unavailable.');
+  const currentSeasonName=seasonResponse.data?.name?.match(/20\d{2}[-–]20\d{2}/)?.[0]
+    ??seasonResponse.data?.name??'Current season';
+  const archive:CompletedClashMatch[]=statsReady?(archiveResponse.data??[])
+    .filter((game:Row)=>game.home_score!=null&&game.away_score!=null)
+    .map((game:Row)=>({
+      homeTeamId:historicalClashTeamId(game.home_team_name),
+      awayTeamId:historicalClashTeamId(game.away_team_name),
+      homeTeamName:game.home_team_name,awayTeamName:game.away_team_name,
+      homeScore:Number(game.home_score),awayScore:Number(game.away_score),
+      seasonName:game.season_name,
+      eventLabel:game.event_label??undefined,playedOn:game.played_on??undefined,
+      isFullLength:isFullLengthClashMatch(game.event_label),
+      isCurrentSeason:false,
+    })):[];
+
+  const seasonSchedule=new Map<string,Row>(
+    (seasonScheduleResponse.data??[]).map((game:Row)=>[game.id,game]));
+  // Opponent names are needed for each team's results, not just the two featured teams.
+  const allTeamNamesResult=await db.from('launch_teams').select('id,name');
+  const allTeamNames=new Map<string,string>(
+    (allTeamNamesResult.data??[]).map((team:Row)=>[team.id,team.name]));
+  const currentGames:CompletedClashMatch[]=statsReady&&!allTeamNamesResult.error
+    ?(completedResponse.data??[])
+      .filter((result:Row)=>result.home_score!=null&&result.away_score!=null
+        &&seasonSchedule.has(result.match_id))
+      .sort((a:Row,b:Row)=>(seasonSchedule.get(a.match_id)?.date??'')
+        .localeCompare(seasonSchedule.get(b.match_id)?.date??''))
+      .map((result:Row)=>{
+        const played=seasonSchedule.get(result.match_id)!;
+        return {
+          homeTeamId:played.home_team_id,awayTeamId:played.away_team_id,
+          homeTeamName:allTeamNames.get(played.home_team_id)??played.home_team_id,
+          awayTeamName:allTeamNames.get(played.away_team_id)??played.away_team_id,
+          homeScore:Number(result.home_score),awayScore:Number(result.away_score),
+          seasonName:currentSeasonName,playedOn:played.date,
+          isFullLength:true,isCurrentSeason:true,
+        };
+      })
+    :[];
+  const completedGames=[...archive,...currentGames].filter(game=>
+    Number.isFinite(game.homeScore)&&Number.isFinite(game.awayScore));
+  const canShowStats=statsReady&&!allTeamNamesResult.error;
 
   const operations=[
     db.from('launch_teams').select('id,name,logo,primary_color').in('id',teamIds),
@@ -142,13 +203,14 @@ export async function loadClashChallengeBoard(profileId:string|null):Promise<Cla
     const homeLine=poll?lineFrom(poll.home_line):await freezeClashChallengeProjection(m.id,computed);
     const storedChoice=voteMap.get(m.id)?.choice;
     cards.push({
-      matchId:m.id,homeName:home.name,awayName:away.name,
+      matchId:m.id,homeTeamId:home.id,awayTeamId:away.id,homeName:home.name,awayName:away.name,
       homeLogo:home.logo??'',awayLogo:away.logo??'',
       homeColor:home.primary_color??'#a54a79',awayColor:away.primary_color??'#397bb8',
       date:m.date,time:m.time,homeLine,
       lineToken:profileId&&homeLine!=null&&homeLine!==0?signSpreadVoteLine(m.id,homeLine):null,
       myChoice:storedChoice==='low'||storedChoice==='high'?storedChoice:null,
       matchHref:'/matches/'+encodeURIComponent(m.public_slug||m.id),
+      insights:canShowStats?buildClashChallengeInsights(completedGames,home.id,away.id):undefined,
     });
   }
   cards.sort((a,b)=>a.homeName.localeCompare(b.homeName));
