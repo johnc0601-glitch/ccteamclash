@@ -89,7 +89,7 @@ export async function loadClashChallengeBoard(profileId:string|null):Promise<Cla
   const statsReady=!archiveResponse.error&&!completedResponse.error
     &&!seasonScheduleResponse.error&&!seasonResponse.error;
   if(!statsReady)console.error('Clash Challenge team statistics unavailable.');
-  const currentSeasonName=seasonResponse.data?.name?.match(/20\\d{2}[-–]20\\d{2}/)?.[0]
+  const currentSeasonName=seasonResponse.data?.name?.match(/20\d{2}[-–]20\d{2}/)?.[0]
     ??seasonResponse.data?.name??'Current season';
   const archive:CompletedClashMatch[]=statsReady?(archiveResponse.data??[])
     .filter((game:Row)=>game.home_score!=null&&game.away_score!=null)
