@@ -91,29 +91,53 @@ export function ClashChallengePicker({matches,canPlay}:Props) {
 function MatchupInsights({match}:{match:ClashChallengeMatch}){
   const insights=match.insights;
   if(!insights)return null;
+  const displayRecord=(record:{wins:number;losses:number;ties:number})=>
+    record.wins+'–'+record.losses+(record.ties?'–'+record.ties:'');
+  const displayMargin=(value:number|null,sign:'+'|'−')=>
+    value==null?'—':sign+value.toFixed(1);
+  const displayScore=(score:number)=>Number.isInteger(score)?String(score):score.toFixed(1);
   const previous=insights.previousMeeting;
-  const formatScore=(value:number)=>Number.isInteger(value)?String(value):value.toFixed(1);
-  const displayRecord=(stats:typeof insights.home)=>
-    stats.wins+'–'+stats.losses+(stats.ties?'–'+stats.ties:'');
-  const displayMargin=(value:number|null,sign:'+'|'-')=>
-    value==null?'—':sign+value.toFixed(1)+' pts';
-  const previousHomeName=previous?.homeTeamId===match.homeTeamId?match.homeName:match.awayName;
-  const previousAwayName=previousHomeName===match.homeName?match.awayName:match.homeName;
+  const previousScore=previous
+    ?previous.homeScore>previous.awayScore
+      ?previous.homeTeamName+' '+displayScore(previous.homeScore)+'–'+displayScore(previous.awayScore)
+      :previous.awayScore>previous.homeScore
+        ?previous.awayTeamName+' '+displayScore(previous.awayScore)+'–'+displayScore(previous.homeScore)
+        :'Tied '+displayScore(previous.homeScore)+'–'+displayScore(previous.awayScore)
+    :null;
   return <details className={styles.insights}>
     <summary className={styles.insightsSummary}>
-      <strong>Team stats</strong>
-      <span>Home vs. road <span className={styles.insightsChevron} aria-hidden="true">⌄</span></span>
+      <strong>Team Stats</strong>
+      <span className={styles.insightsChevron} aria-hidden="true">⌄</span>
     </summary>
     <div className={styles.insightsGrid}>
-      {([['HOME',match.homeName,insights.home],['AWAY',match.awayName,insights.away]] as const).map(([venue,name,stats])=><div key={venue} className={styles.insightTeam}>
-        <div className={styles.insightTeamHeading}><strong>{name}</strong><span>{venue}</span></div>
-        <div className={styles.insightRow}><span>Wins</span><strong>{displayRecord(stats)} · {stats.winPercentage==null?'—':stats.winPercentage.toFixed(1)+'%'}</strong></div>
+      {([
+        ['HOME',match.homeName,insights.home,insights.homeSeason],
+        ['AWAY',match.awayName,insights.away,insights.awaySeason],
+      ] as const).map(([venue,name,stats,season])=><section key={venue} className={styles.insightTeam}>
+        <div className={styles.insightTeamHeading}>
+          <strong>{name}</strong>
+          <span>{venue} · {displayRecord(stats)}</span>
+        </div>
         <div className={styles.insightRow}><span>Avg. win</span><strong>{displayMargin(stats.averageVictoryMargin,'+')}</strong></div>
-        <div className={styles.insightRow}><span>Avg. loss</span><strong>{displayMargin(stats.averageDefeatMargin,'-')}</strong></div>
-      </div>)}
+        <div className={styles.insightRow}><span>Avg. loss</span><strong>{displayMargin(stats.averageDefeatMargin,'−')}</strong></div>
+        <div className={styles.insightSeasonHeading}>This Season · {displayRecord(season)}</div>
+        <div className={styles.insightResults}>
+          {season.results.length?season.results.map((result,index)=><div key={result.playedOn+'-'+index} className={styles.insightResult}>
+            <span className={styles.insightOpponent}>{result.venue==='home'?'vs ':'at '}{result.opponent}</span>
+            <div className={styles.insightResultScore}>
+              <span className={styles.insightResultBadge} data-result={result.result}>{result.result}</span>
+              <strong>{displayScore(result.scoreFor)}–{displayScore(result.scoreAgainst)}</strong>
+            </div>
+          </div>):<span className={styles.insightEmpty}>No results yet</span>}
+        </div>
+      </section>)}
     </div>
-    {previous?<p className={styles.insightPrevious}><strong>Previous meeting:</strong> {previousHomeName} {formatScore(previous.homeScore)}–{formatScore(previous.awayScore)} {previousAwayName} ({previous.seasonName})</p>:null}
-    <p className={styles.insightNote}>Completed matches, including playoffs. Average margins count wins and losses separately.</p>
+    <div className={styles.insightPrevious}>
+      <span>Last head-to-head</span>
+      <strong>{previousScore??'No previous meeting'}</strong>
+      {previous?<small>{previous.seasonName}</small>:null}
+    </div>
+    <p className={styles.insightNote}>Home/away averages exclude shortened playoffs. Head-to-head includes playoffs.</p>
   </details>;
 }
 
