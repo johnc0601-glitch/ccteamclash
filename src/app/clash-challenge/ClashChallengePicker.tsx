@@ -96,6 +96,11 @@ function MatchupInsights({match}:{match:ClashChallengeMatch}){
   const displayMargin=(value:number|null,sign:'+'|'−')=>
     value==null?'—':sign+value.toFixed(1);
   const displayScore=(score:number)=>Number.isInteger(score)?String(score):score.toFixed(1);
+  const displayDifferential=(forPoints:number,againstPoints:number)=>{
+    const difference=Math.round((forPoints-againstPoints)*10)/10;
+    return difference>0?'+'+displayScore(difference)
+      :difference<0?'−'+displayScore(-difference):'0';
+  };
   const previous=insights.previousMeeting;
   const previousScore=previous
     ?previous.homeScore>previous.awayScore
@@ -127,6 +132,7 @@ function MatchupInsights({match}:{match:ClashChallengeMatch}){
             <div className={styles.insightResultScore}>
               <span className={styles.insightResultBadge} data-result={result.result}>{result.result}</span>
               <strong>{displayScore(result.scoreFor)}–{displayScore(result.scoreAgainst)}</strong>
+              <span className={styles.insightPointMargin}>({displayDifferential(result.scoreFor,result.scoreAgainst)})</span>
             </div>
           </div>):<span className={styles.insightEmpty}>No results yet</span>}
         </div>
