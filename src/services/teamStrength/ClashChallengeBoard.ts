@@ -7,6 +7,7 @@ import {roundHomeSpreadLine, type SpreadVoteChoice} from './SpreadVote';
 import {freezeClashChallengeProjection, signSpreadVoteLine} from './SpreadVoteStore';
 import {isClashChallengeVisible} from './ClashChallengeWindows';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
+import {buildClashChallengeInsights,historicalClashTeamId,type CompletedClashMatch,type ClashChallengeInsights} from './ClashChallengeInsights';
 import type {TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import type {OfficialMatchRoster} from '@/domain/match-roster/MatchRosterSnapshot';
 
@@ -26,6 +27,7 @@ export type ClashChallengeMatch = {
   lineToken:string|null;
   myChoice:SpreadVoteChoice|null;
   matchHref:string;
+  insights?:ClashChallengeInsights;
 };
 export type ClashChallengeBoard = {
   roundNumber:number|null;
@@ -66,6 +68,46 @@ export async function loadClashChallengeBoard(profileId:string|null):Promise<Cla
   const matches:Row[]=(matchResult.data??[]).filter((m:Row)=>
     m.home_team_id&&m.away_team_id&&m.date&&m.time&&isClashChallengeVisible(m as {date:string;time:string;status:string},activeWindow,false,now));
   if(!matches.length)return {roundNumber:round.number,nextOpenAt,matches:[]};
+  // Only the Cougar Country–Ninjas matchup is in this initial stat-display pilot.
+  const showInsightPilot=matches.some(m=>m.home_team_id==='cougar-country'&&m.away_team_id==='ninjas');
+  let completedGames:CompletedClashMatch[]=[];
+  if(showInsightPilot){
+    const [archiveResponse,resultsResponse,scheduleResponse]=await Promise.all([
+      db.from('historical_team_matches')
+        .select('home_team_name,away_team_name,home_score,away_score,season_name')
+        .order('season_name').order('event_order').order('id'),
+      db.from('launch_match_results')
+        .select('match_id,home_score,away_score,status').eq('status','Published'),
+      db.from('launch_schedule_matches')
+        .select('id,home_team_id,away_team_id,date'),
+    ]);
+    if(!archiveResponse.error&&!resultsResponse.error&&!scheduleResponse.error){
+      const archive:CompletedClashMatch[]=(archiveResponse.data??[])
+        .filter((game:Row)=>game.home_score!=null&&game.away_score!=null)
+        .map((game:Row)=>({
+          homeTeamId:historicalClashTeamId(game.home_team_name),
+          awayTeamId:historicalClashTeamId(game.away_team_name),
+          homeScore:Number(game.home_score),awayScore:Number(game.away_score),
+          seasonName:game.season_name,
+        }));
+      const allMatches=new Map<string,Row>((scheduleResponse.data??[]).map((game:Row)=>[game.id,game]));
+      const published:CompletedClashMatch[]=(resultsResponse.data??[])
+        .filter((result:Row)=>result.home_score!=null&&result.away_score!=null&&allMatches.has(result.match_id))
+        .sort((a:Row,b:Row)=>(allMatches.get(a.match_id)?.date??'').localeCompare(allMatches.get(b.match_id)?.date??''))
+        .map((result:Row)=>{
+          const game=allMatches.get(result.match_id)!;
+          return {
+            homeTeamId:game.home_team_id,awayTeamId:game.away_team_id,
+            homeScore:Number(result.home_score),awayScore:Number(result.away_score),
+            seasonName:'2026-2027',
+          };
+        });
+      completedGames=[...archive,...published].filter(game=>
+        Number.isFinite(game.homeScore)&&Number.isFinite(game.awayScore));
+    }else{
+      console.error('Clash Challenge team-stat preview unavailable.');
+    }
+  }
   const ids=matches.map(m=>m.id);
   const teamIds=[...new Set<string>(matches.flatMap(m=>[m.home_team_id,m.away_team_id]))];
   const courseIds=[...new Set<string>(matches.map(m=>m.course_id).filter(Boolean))];
@@ -149,6 +191,8 @@ export async function loadClashChallengeBoard(profileId:string|null):Promise<Cla
       lineToken:profileId&&homeLine!=null&&homeLine!==0?signSpreadVoteLine(m.id,homeLine):null,
       myChoice:storedChoice==='low'||storedChoice==='high'?storedChoice:null,
       matchHref:'/matches/'+encodeURIComponent(m.public_slug||m.id),
+      insights:showInsightPilot&&completedGames.length&&home.id==='cougar-country'&&away.id==='ninjas'
+        ?buildClashChallengeInsights(completedGames,home.id,away.id):undefined,
     });
   }
   cards.sort((a,b)=>a.homeName.localeCompare(b.homeName));
