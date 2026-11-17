@@ -97,10 +97,7 @@ function MatchupInsights({match}:{match:ClashChallengeMatch}){
     stats.wins+'–'+stats.losses+(stats.ties?'–'+stats.ties:'');
   const displayMargin=(value:number|null,sign:'+'|'-')=>
     value==null?'—':sign+value.toFixed(1)+' pts';
-  const previousHome=previous?.homeTeamId===match.homeName.toLowerCase().replace(/\\s+/g,'-')?match.homeName:
-    previous?.homeTeamId===match.awayName.toLowerCase().replace(/\\s+/g,'-')?match.awayName:undefined;
-  // The previous matchup uses the names from the current featured pairing.
-  const previousHomeName=previousHome??(previous?.homeTeamId==='cougar-country'?match.homeName:match.awayName);
+  const previousHomeName=previous?.homeTeamId===match.homeTeamId?match.homeName:match.awayName;
   const previousAwayName=previousHomeName===match.homeName?match.awayName:match.homeName;
   return <details className={styles.insights}>
     <summary className={styles.insightsSummary}>
