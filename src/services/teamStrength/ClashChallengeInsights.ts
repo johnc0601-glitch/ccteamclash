@@ -1,10 +1,17 @@
-/** Completed team-match results for interpreting Clash Challenge spreads. */
+/** Completed published matches used as context for Clash Challenge picks. */
 export type CompletedClashMatch = {
   homeTeamId: string;
   awayTeamId: string;
+  homeTeamName: string;
+  awayTeamName: string;
   homeScore: number;
   awayScore: number;
   seasonName: string;
+  eventLabel?: string;
+  playedOn?: string;
+  /** Shortened playoff matches count for head-to-head, not standard match margins. */
+  isFullLength: boolean;
+  isCurrentSeason: boolean;
 };
 
 export type ClashVenueStats = {
@@ -12,22 +19,42 @@ export type ClashVenueStats = {
   wins: number;
   losses: number;
   ties: number;
-  winPercentage: number | null;
   averageVictoryMargin: number | null;
   averageDefeatMargin: number | null;
+};
+
+export type ClashSeasonResult = {
+  opponent: string;
+  venue: 'home' | 'away';
+  result: 'W' | 'L' | 'T';
+  scoreFor: number;
+  scoreAgainst: number;
+  playedOn?: string;
+};
+
+export type ClashSeasonForm = {
+  wins: number;
+  losses: number;
+  ties: number;
+  results: ClashSeasonResult[];
 };
 
 export type ClashChallengeInsights = {
   home: ClashVenueStats;
   away: ClashVenueStats;
+  homeSeason: ClashSeasonForm;
+  awaySeason: ClashSeasonForm;
   previousMeeting: CompletedClashMatch | null;
 };
 
-/** Match names in the historical archive to the current team IDs. */
+/** The archive uses team display names rather than the site's stable team IDs. */
 export function historicalClashTeamId(name: string): string {
   const normalized = name.trim().toLowerCase().replace(/[’']/g, '').replace(/\s+/g, '-');
-  if (normalized === 'hayneous-ogs') return 'hayneous-og-s';
-  return normalized;
+  return normalized === 'hayneous-ogs' ? 'hayneous-og-s' : normalized;
+}
+
+export function isFullLengthClashMatch(eventLabel: string | null | undefined): boolean {
+  return !/semifinal|championship|3rd place|playoff/i.test(eventLabel ?? '');
 }
 
 function oneDecimal(value: number): number {
@@ -39,7 +66,8 @@ function average(values: number[]): number | null {
 }
 
 function summarizeVenue(games: CompletedClashMatch[], teamId: string, venue: 'home' | 'away'): ClashVenueStats {
-  const margins = games.filter(game => (venue === 'home' ? game.homeTeamId : game.awayTeamId) === teamId)
+  const margins = games
+    .filter(game => game.isFullLength && (venue === 'home' ? game.homeTeamId : game.awayTeamId) === teamId)
     .map(game => venue === 'home' ? game.homeScore - game.awayScore : game.awayScore - game.homeScore);
   const wins = margins.filter(margin => margin > 0);
   const losses = margins.filter(margin => margin < 0);
@@ -48,20 +76,41 @@ function summarizeVenue(games: CompletedClashMatch[], teamId: string, venue: 'ho
     wins: wins.length,
     losses: losses.length,
     ties: margins.length - wins.length - losses.length,
-    winPercentage: margins.length ? oneDecimal(wins.length * 100 / margins.length) : null,
     averageVictoryMargin: average(wins),
     averageDefeatMargin: average(losses.map(Math.abs)),
   };
 }
 
-/**
- * Historical games must be passed before published current-season games,
- * and each set should be chronological so the last matching game is the latest.
- * Averages of victories and defeats are deliberately kept separate.
- */
+function summarizeSeason(games: CompletedClashMatch[], teamId: string): ClashSeasonForm {
+  // Current-season games are supplied in chronological order by the published-results loader.
+  const results: ClashSeasonResult[] = games
+    .filter(game => game.isCurrentSeason && (game.homeTeamId === teamId || game.awayTeamId === teamId))
+    .map(game => {
+      const home = game.homeTeamId === teamId;
+      const scoreFor = home ? game.homeScore : game.awayScore;
+      const scoreAgainst = home ? game.awayScore : game.homeScore;
+      return {
+        opponent: home ? game.awayTeamName : game.homeTeamName,
+        venue: home ? 'home' as const : 'away' as const,
+        result: scoreFor > scoreAgainst ? 'W' as const : scoreFor < scoreAgainst ? 'L' as const : 'T' as const,
+        scoreFor,
+        scoreAgainst,
+        playedOn: game.playedOn,
+      };
+    });
+  return {
+    wins: results.filter(result => result.result === 'W').length,
+    losses: results.filter(result => result.result === 'L').length,
+    ties: results.filter(result => result.result === 'T').length,
+    results,
+  };
+}
+
+/** Calculate once for each featured match without changing fixed projections or votes. */
 export function buildClashChallengeInsights(
   games: CompletedClashMatch[], homeTeamId: string, awayTeamId: string,
 ): ClashChallengeInsights {
+  // Archive, then published current-season results, are loaded in chronological order.
   const previousMeeting = games.filter(game =>
     (game.homeTeamId === homeTeamId && game.awayTeamId === awayTeamId)
     || (game.homeTeamId === awayTeamId && game.awayTeamId === homeTeamId)
@@ -69,6 +118,8 @@ export function buildClashChallengeInsights(
   return {
     home: summarizeVenue(games, homeTeamId, 'home'),
     away: summarizeVenue(games, awayTeamId, 'away'),
+    homeSeason: summarizeSeason(games, homeTeamId),
+    awaySeason: summarizeSeason(games, awayTeamId),
     previousMeeting,
   };
 }
