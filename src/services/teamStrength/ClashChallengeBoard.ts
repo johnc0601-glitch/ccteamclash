@@ -15,6 +15,8 @@ type Row = Record<string,any>;
 
 export type ClashChallengeMatch = {
   matchId:string;
+  homeTeamId:string;
+  awayTeamId:string;
   homeName:string;
   awayName:string;
   homeLogo:string;
@@ -184,7 +186,7 @@ export async function loadClashChallengeBoard(profileId:string|null):Promise<Cla
     const homeLine=poll?lineFrom(poll.home_line):await freezeClashChallengeProjection(m.id,computed);
     const storedChoice=voteMap.get(m.id)?.choice;
     cards.push({
-      matchId:m.id,homeName:home.name,awayName:away.name,
+      matchId:m.id,homeTeamId:home.id,awayTeamId:away.id,homeName:home.name,awayName:away.name,
       homeLogo:home.logo??'',awayLogo:away.logo??'',
       homeColor:home.primary_color??'#a54a79',awayColor:away.primary_color??'#397bb8',
       date:m.date,time:m.time,homeLine,
