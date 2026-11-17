@@ -115,6 +115,7 @@
 .insightOpponent{color:#bfcede;font-size:.69rem;line-height:1.35;overflow-wrap:anywhere}
 .insightResultScore{display:flex;align-items:center;gap:6px;font-size:.73rem;white-space:nowrap}
 .insightResultScore strong{font-size:.74rem;font-weight:730}
+.insightPointMargin{font-size:.67rem;color:#b2c1d0;font-variant-numeric:tabular-nums}
 .insightResultBadge{display:inline-grid;place-items:center;width:18px;height:18px;flex:none;border-radius:4px;background:#ffffff13;border:1px solid #ffffff25;color:#d6e0e8;font-size:.65rem;font-weight:800}
 .insightResultBadge[data-result="W"]{color:#a6e0c1;background:#3e916927;border-color:#6bb58b45}
 .insightResultBadge[data-result="L"]{color:#e7aaaa;background:#a75d5d26;border-color:#c1828240}
@@ -124,5 +125,5 @@
 .insightPrevious strong{font-size:.75rem}
 .insightPrevious small{width:100%;text-align:right;color:#a7b8c8;font-size:.64rem}
 .insightNote{margin:0;padding:0 12px 12px;color:#9fb2c5;font-size:.64rem;line-height:1.5}
-@media(max-width:410px){.insightsGrid{gap:6px;padding:0 7px 9px}.insightTeam{padding:8px 6px}.insightTeamHeading strong{font-size:.73rem}.insightRow{font-size:.65rem}.insightRow strong{font-size:.68rem}.insightResultScore{gap:4px}.insightResultScore strong{font-size:.69rem}}
+@media(max-width:410px){.insightsGrid{gap:6px;padding:0 7px 9px}.insightTeam{padding:8px 6px}.insightTeamHeading strong{font-size:.73rem}.insightRow{font-size:.65rem}.insightRow strong{font-size:.68rem}.insightResultScore{gap:4px}.insightResultScore strong{font-size:.69rem}.insightPointMargin{font-size:.62rem}}
 @media(prefers-reduced-motion:reduce){.insightsChevron{transition:none}}
