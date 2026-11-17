@@ -93,3 +93,24 @@
   color:#e0ffee;
 }
 @media(max-width:385px){.selectedCheck{width:23px;height:23px;top:5px;right:5px}}
+
+/* Optional Clash Challenge matchup evidence: closed by default. */
+.insights{border:1px solid #ffffff30;border-radius:11px;background:#0e1c2dc7;overflow:hidden}
+.insightsSummary{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 12px;cursor:pointer;list-style:none;font-size:.84rem}
+.insightsSummary::-webkit-details-marker{display:none}
+.insightsSummary>span{display:flex;align-items:center;gap:8px;color:#b4cadd;font-size:.72rem}
+.insightsSummary:focus-visible{outline:3px solid #92d4ff;outline-offset:-3px}
+.insightsChevron{display:inline-block;font-size:1.2rem;line-height:1;transition:transform .15s}
+.insights[open] .insightsChevron{transform:rotate(180deg)}
+.insightsGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 11px 10px}
+.insightTeam{min-width:0;padding:10px;border-radius:9px;border:1px solid #ffffff28;background:#ffffff08}
+.insightTeamHeading{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px;margin-bottom:9px}
+.insightTeamHeading strong{font-size:.78rem;overflow-wrap:anywhere}
+.insightTeamHeading span{font-size:.58rem;letter-spacing:.08em;color:#b1c9dd;font-weight:800}
+.insightRow{display:flex;justify-content:space-between;align-items:baseline;gap:5px;padding:5px 0;border-top:1px solid #ffffff12;font-size:.69rem}
+.insightRow>span{color:#b6c9da}
+.insightRow strong{text-align:right;font-size:.7rem;white-space:nowrap}
+.insightPrevious{margin:0 11px;padding:8px 0 9px;border-top:1px solid #ffffff2e;font-size:.74rem;line-height:1.5}
+.insightNote{margin:0;padding:0 12px 12px;color:#adc1d5;font-size:.66rem;line-height:1.45}
+@media(max-width:410px){.insightsGrid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.insightsChevron{transition:none}}
