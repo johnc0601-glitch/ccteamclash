@@ -55,7 +55,6 @@ export function ClashChallengePicker({matches,canPlay}:Props) {
             <span>Fixed match projection</span>
             <strong>{favored?favored+' by '+Math.abs(line!).toFixed(1):'Projection pending'}</strong>
           </div>
-          {match.insights?<MatchupInsights match={match}/>:null}
           {options? <div className={styles.tiles}>
             {optionsWithLook.map(option=><button key={option.choice} type="button"
               disabled={!canPlay||!match.lineToken}
@@ -70,6 +69,7 @@ export function ClashChallengePicker({matches,canPlay}:Props) {
               <span className={styles.tileAction}>{selected===option.choice?'✓ YOUR PICK':'CHOOSE TEAM'}</span>
             </button>)}
           </div>:<p className={styles.unavailable}>The projection is being updated. Picks will be available when it is ready.</p>}
+          {match.insights?<MatchupInsights match={match}/>:null}
           <Link className={styles.matchLink} href={match.matchHref}>View match details</Link>
         </section>;
       })}
