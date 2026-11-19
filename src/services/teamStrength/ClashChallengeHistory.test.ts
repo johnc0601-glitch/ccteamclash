@@ -44,6 +44,6 @@ test('round selector auto-loads active round and respects previous-round request
   assert.equal(chooseChallengeRound(rounds,1),1);
   assert.equal(chooseChallengeRound(rounds,3),3);
   assert.equal(chooseChallengeRound(rounds,99),2);
-  assert.equal(chooseChallengeRound(rounds.map(r=>({...r,state:r.number===2?'past':'future'})),null),1);
+  assert.equal(chooseChallengeRound(rounds.map(r=>({...r,state:r.number===3?'future':'past'})),null),3);
   assert.equal(chooseChallengeRound([],null),null);
 });
