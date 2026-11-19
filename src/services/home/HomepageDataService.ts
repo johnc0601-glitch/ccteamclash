@@ -139,8 +139,9 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
   const lead = featured ?? candidates[0] ?? null;
   const storyData: HomepageStoryData = {
     lead,
-    // Keep the main feature out of Latest Stories; show two other articles.
-    latest: candidates.filter((story) => story.id !== lead?.id).slice(0, 2),
+    // The dedicated lead-story UI is no longer displayed on the homepage.
+    // Keep the newest published headline visible in Latest Stories instead.
+    latest: candidates.slice(0, 2),
   };
 
   const teams: Team[] = rows.teams.map((row: any) => mapTeam(row));
