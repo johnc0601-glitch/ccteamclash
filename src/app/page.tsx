@@ -32,6 +32,39 @@ export default async function Home() {
       <SiteHeader />
       <ClashCountdown />
 
+      <section className="shell home-matches-section">
+        <HomeScoreAutoRefresh enabled={hasUnpublishedMatchToday} />
+        <div className="home-matches-heading">
+          <h2>{roundLabel}</h2>
+        </div>
+        <HomeMatchCarousel count={homeEvents.length}>
+          {homeEvents.map((match) => (
+            <MatchCard key={match.id} match={match} teams={teamLogos} feedPreview={feedPreviews.get(match.id)} today={today} result={publishedScores.get(match.id)} />
+          ))}
+        </HomeMatchCarousel>
+      </section>
+
+      <section className="shell story-home-bottom">
+        <section className="dark-panel latest-panel">
+          <div className="panel-heading">
+            <span className="panel-title">Latest stories</span>
+            <Link href="/stories">View all -&gt;</Link>
+          </div>
+          <div className="compact-story-grid">
+            {storyData.latest.map((story) => (
+              <article className="compact-story" key={story.id}>
+                <StoryPhoto className="compact-photo" image={story.image}><span>League story</span></StoryPhoto>
+                <div>
+                  <small>{formatStoryDate(story.publishedAt)}</small>
+                  <h3>{story.title}</h3>
+                  <Link href={`/stories/${story.slug}`}>Read more -&gt;</Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </section>
+
       <section className={styles.challengeHero} aria-labelledby="clash-challenge-heading">
         <div className={styles.challengeCopy}>
           <div className={styles.featureEyebrow}>
@@ -85,39 +118,6 @@ export default async function Home() {
             </p>
           </div>
         </div>
-      </section>
-
-      <section className="shell home-matches-section">
-        <HomeScoreAutoRefresh enabled={hasUnpublishedMatchToday} />
-        <div className="home-matches-heading">
-          <h2>{roundLabel}</h2>
-        </div>
-        <HomeMatchCarousel count={homeEvents.length}>
-          {homeEvents.map((match) => (
-            <MatchCard key={match.id} match={match} teams={teamLogos} feedPreview={feedPreviews.get(match.id)} today={today} result={publishedScores.get(match.id)} />
-          ))}
-        </HomeMatchCarousel>
-      </section>
-
-      <section className="shell story-home-bottom">
-        <section className="dark-panel latest-panel">
-          <div className="panel-heading">
-            <span className="panel-title">Latest stories</span>
-            <Link href="/stories">View all -&gt;</Link>
-          </div>
-          <div className="compact-story-grid">
-            {storyData.latest.map((story) => (
-              <article className="compact-story" key={story.id}>
-                <StoryPhoto className="compact-photo" image={story.image}><span>League story</span></StoryPhoto>
-                <div>
-                  <small>{formatStoryDate(story.publishedAt)}</small>
-                  <h3>{story.title}</h3>
-                  <Link href={`/stories/${story.slug}`}>Read more -&gt;</Link>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
       </section>
 
       <Footer />
