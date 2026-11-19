@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  chooseChallengeRound,countChallengeRecord,evaluateClashChoice,selectedChallengeTeam,
+  chooseChallengeRound,chooseChallengeAvailableRounds,isChallengeRoundMatchListed,
+  countChallengeRecord,evaluateClashChoice,selectedChallengeTeam,
   type ChallengeRoundOption,
 } from './ClashChallengeHistory';
 
@@ -46,4 +47,28 @@ test('round selector auto-loads active round and respects previous-round request
   assert.equal(chooseChallengeRound(rounds,99),2);
   assert.equal(chooseChallengeRound(rounds.map(r=>({...r,state:r.number===3?'future':'past'})),null),3);
   assert.equal(chooseChallengeRound([],null),null);
+});
+
+test('Challenge starts in Round 2; Round 1 was never offered',()=>{
+  const rounds:ChallengeRoundOption[]=[
+    {number:1,date:'2026-10-03',state:'past'},
+    {number:2,date:'2026-11-07',state:'active'},
+    {number:3,date:'2026-12-05',state:'future'},
+  ];
+  const offered=new Set([2,3]);
+  const choices=chooseChallengeAvailableRounds(rounds,offered);
+  assert.deepEqual(choices.map(round=>round.number),[2,3]);
+  assert.equal(chooseChallengeRound(choices,1),2);
+  assert.equal(chooseChallengeRound(choices,null),2);
+});
+
+test('only Riptide vs Wild Turkey is eligible in Round 2',()=>{
+  // All three original November fixtures were completed before this game opened.
+  assert.equal(isChallengeRoundMatchListed('active',false,false),false);
+  assert.equal(isChallengeRoundMatchListed('active',true,true),true);
+  assert.equal(isChallengeRoundMatchListed('past',false,false),false);
+  assert.equal(isChallengeRoundMatchListed('past',true,false),true);
+  assert.equal(isChallengeRoundMatchListed('future',false,false),true);
+  // An upcoming active match can first appear before its line is frozen.
+  assert.equal(isChallengeRoundMatchListed('active',false,true),true);
 });
