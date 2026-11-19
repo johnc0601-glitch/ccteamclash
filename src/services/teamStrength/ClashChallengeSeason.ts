@@ -127,7 +127,7 @@ export async function loadClashChallengeSeason(
     m.round_id===selectedRoundId&&selectedState!=null
     &&isChallengeRoundMatchListed(
       selectedState,offeredIds.has(m.id),
-      selectedState==='active'&&isSpreadVoteOpen(m,now),
+      selectedState==='active'&&isSpreadVoteOpen({date:m.date,time:m.time,status:m.status},now),
     ))
     .sort((a:Row,b:Row)=>a.date.localeCompare(b.date)
       ||a.time.localeCompare(b.time)||a.home_team_id.localeCompare(b.home_team_id));
