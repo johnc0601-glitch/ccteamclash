@@ -2,7 +2,8 @@ import 'server-only';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {roundHomeSpreadLine,isSpreadVoteOpen,type SpreadVoteChoice} from './SpreadVote';
 import {
-  chooseChallengeRound,countChallengeRecord,evaluateClashChoice,
+  chooseChallengeRound,chooseChallengeAvailableRounds,isChallengeRoundMatchListed,
+  countChallengeRecord,evaluateClashChoice,
   selectedChallengeTeam,type ChallengeRoundOption,type ChallengeHistoryMatch,
   type ChallengeOutcome,type ClashChallengeSeason,
 } from './ClashChallengeHistory';
@@ -95,11 +96,11 @@ export async function loadClashChallengeSeason(
   // A completed round exists in the game only if at least one matchup has a
   // frozen Challenge projection (or a recorded pick).
   const offeredIds=new Set([...pollMap.keys(),...voteMap.keys()]);
-  const options=preliminaryOptions.filter(round=>{
-    if(round.state!=='past')return true;
-    const roundId=dbRounds.find((r:Row)=>r.number===round.number)?.id;
-    return allMatches.some((m:Row)=>m.round_id===roundId&&offeredIds.has(m.id));
-  });
+  const offeredRoundNumbers=new Set<number>(dbRounds
+    .filter((round:Row)=>allMatches.some((m:Row)=>
+      m.round_id===round.id&&offeredIds.has(m.id)))
+    .map((round:Row)=>round.number));
+  const options=chooseChallengeAvailableRounds(preliminaryOptions,offeredRoundNumbers);
   const selectedRound=chooseChallengeRound(options,requestedRound);
   const selectedState=options.find(round=>round.number===selectedRound)?.state??null;
   const activeRound=options.find(round=>round.state==='active')?.number??null;
@@ -123,13 +124,10 @@ export async function loadClashChallengeSeason(
     return evaluateClashChoice(choice,line,scoreHome,scoreAway);
   };
   const selectedRows=allMatches.filter((m:Row)=>
-    m.round_id===selectedRoundId&&(
-      // Show the full schedule for upcoming rounds, without exposing lines.
-      selectedState==='future'
-      // The past only includes matchups where the Challenge was offered.
-      ||offeredIds.has(m.id)
-      // Newly opened rounds can show a playable match before its line is frozen.
-      ||(selectedState==='active'&&isSpreadVoteOpen(m,now))
+    m.round_id===selectedRoundId&&selectedState!=null
+    &&isChallengeRoundMatchListed(
+      selectedState,offeredIds.has(m.id),
+      selectedState==='active'&&isSpreadVoteOpen(m,now),
     ))
     .sort((a:Row,b:Row)=>a.date.localeCompare(b.date)
       ||a.time.localeCompare(b.time)||a.home_team_id.localeCompare(b.home_team_id));
