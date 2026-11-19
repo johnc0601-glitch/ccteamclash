@@ -1,6 +1,6 @@
 import 'server-only';
 import {createAdminClient} from '@/lib/supabase/admin';
-import {roundHomeSpreadLine,type SpreadVoteChoice} from './SpreadVote';
+import {roundHomeSpreadLine,isSpreadVoteOpen,type SpreadVoteChoice} from './SpreadVote';
 import {
   chooseChallengeRound,countChallengeRecord,evaluateClashChoice,
   selectedChallengeTeam,type ChallengeRoundOption,type ChallengeHistoryMatch,
@@ -62,7 +62,7 @@ export async function loadClashChallengeSeason(
   const teamMap=new Map<string,Row>(rows(teamResponse,'teams').map((team:Row)=>[team.id,team]));
   const today=easternDate(now);
   const timestamp=now.getTime();
-  const options:ChallengeRoundOption[]=dbRounds.map((round:Row)=>{
+  const preliminaryOptions:ChallengeRoundOption[]=dbRounds.map((round:Row)=>{
     const window=windows.find((w:Row)=>w.round_id===round.id);
     const opens=window?Date.parse(window.opens_at):NaN;
     const closes=window?Date.parse(window.closes_at):NaN;
@@ -71,11 +71,8 @@ export async function loadClashChallengeSeason(
       :round.date>=today?'future':'past';
     return {number:round.number,date:round.date,state};
   });
-  const selectedRound=chooseChallengeRound(options,requestedRound);
-  const selectedState=options.find(round=>round.number===selectedRound)?.state??null;
-  const activeRound=options.find(round=>round.state==='active')?.number??null;
-  if(selectedRound==null||!allMatches.length)return {
-    rounds:options,selectedRound,activeRound,selectedState,
+  if(!allMatches.length)return {
+    rounds:[],selectedRound:null,activeRound:null,selectedState:null,
     matches:[],roundRecord:countChallengeRecord([]),seasonRecord:countChallengeRecord([]),
   };
   const ids=allMatches.map((m:Row)=>m.id);
@@ -93,6 +90,23 @@ export async function loadClashChallengeSeason(
     .map((poll:Row)=>[poll.match_id,poll]));
   const voteMap=new Map<string,Row>((resultSets[2]?rows(resultSets[2],'my-picks'):[])
     .map((vote:Row)=>[vote.match_id,vote]));
+  // This game began after Round 1 and only one Round 2 match was offered.
+  // Do not re-label regular league results as Clash Challenge history.
+  // A completed round exists in the game only if at least one matchup has a
+  // frozen Challenge projection (or a recorded pick).
+  const offeredIds=new Set([...pollMap.keys(),...voteMap.keys()]);
+  const options=preliminaryOptions.filter(round=>{
+    if(round.state!=='past')return true;
+    const roundId=dbRounds.find((r:Row)=>r.number===round.number)?.id;
+    return allMatches.some((m:Row)=>m.round_id===roundId&&offeredIds.has(m.id));
+  });
+  const selectedRound=chooseChallengeRound(options,requestedRound);
+  const selectedState=options.find(round=>round.number===selectedRound)?.state??null;
+  const activeRound=options.find(round=>round.state==='active')?.number??null;
+  if(selectedRound==null)return {
+    rounds:options,selectedRound,activeRound,selectedState,
+    matches:[],roundRecord:countChallengeRecord([]),seasonRecord:countChallengeRecord([]),
+  };
   const selectedRoundId=dbRounds.find((r:Row)=>r.number===selectedRound)?.id;
   const outcomeFor=(m:Row):ChallengeOutcome=>{
     const result=resultMap.get(m.id);
@@ -108,7 +122,15 @@ export async function loadClashChallengeSeason(
     const line=validLine(vote?.accepted_home_line)??validLine(pollMap.get(m.id)?.home_line);
     return evaluateClashChoice(choice,line,scoreHome,scoreAway);
   };
-  const selectedRows=allMatches.filter((m:Row)=>m.round_id===selectedRoundId)
+  const selectedRows=allMatches.filter((m:Row)=>
+    m.round_id===selectedRoundId&&(
+      // Show the full schedule for upcoming rounds, without exposing lines.
+      selectedState==='future'
+      // The past only includes matchups where the Challenge was offered.
+      ||offeredIds.has(m.id)
+      // Newly opened rounds can show a playable match before its line is frozen.
+      ||(selectedState==='active'&&isSpreadVoteOpen(m,now))
+    ))
     .sort((a:Row,b:Row)=>a.date.localeCompare(b.date)
       ||a.time.localeCompare(b.time)||a.home_team_id.localeCompare(b.home_team_id));
   const matches:ChallengeHistoryMatch[]=selectedRows.map((m:Row)=>{
