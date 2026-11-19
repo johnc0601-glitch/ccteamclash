@@ -118,7 +118,7 @@ const getCachedHomepageRows = unstable_cache(
       previews: previewsResult.data ?? [],
     };
   },
-  ['public-homepage-rows-v5'],
+  ['public-homepage-rows-v6'],
   {
     revalidate: HOMEPAGE_CACHE_SECONDS,
     tags: ['public:homepage', 'public:stories', 'public:teams', 'public:schedule', 'public:match-feed'],
@@ -139,9 +139,8 @@ export async function getHomepageData(referenceDate = new Date()): Promise<Homep
   const lead = featured ?? candidates[0] ?? null;
   const storyData: HomepageStoryData = {
     lead,
-    // The dedicated lead-story UI is no longer displayed on the homepage.
-    // Keep the newest published headline visible in Latest Stories instead.
-    latest: candidates.slice(0, 2),
+    // Keep the featured article in the headline, not duplicated below.
+    latest: candidates.filter((story) => story.id !== lead?.id).slice(0, 2),
   };
 
   const teams: Team[] = rows.teams.map((row: any) => mapTeam(row));
