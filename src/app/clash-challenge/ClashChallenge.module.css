@@ -127,3 +127,39 @@
 .insightNote{margin:0;padding:0 12px 12px;color:#9fb2c5;font-size:.64rem;line-height:1.5}
 @media(max-width:410px){.insightsGrid{gap:6px;padding:0 7px 9px}.insightTeam{padding:8px 6px}.insightTeamHeading strong{font-size:.73rem}.insightRow{font-size:.65rem}.insightRow strong{font-size:.68rem}.insightResultScore{gap:4px}.insightResultScore strong{font-size:.69rem}.insightPointMargin{font-size:.62rem}}
 @media(prefers-reduced-motion:reduce){.insightsChevron{transition:none}}
+
+/* Clash Challenge season selector and player record. */
+.roundSelectRow{max-width:800px;margin:0 auto 17px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 15px;border:1px solid #ffffff2b;border-radius:12px;background:#132538}
+.roundSelectRow label{font-size:.84rem;font-weight:760;color:#d6e3ef}
+.roundSelect{min-width:180px;max-width:70%;padding:10px 30px 10px 11px;border:1px solid #ffffff44;border-radius:8px;background:#1a2e44;color:#f2f5f9;font:inherit;font-size:.85rem;cursor:pointer}
+.roundSelect:focus-visible{outline:3px solid #92d4ff;outline-offset:2px}
+.challengeRecords{max-width:800px;margin:0 auto 18px;padding:11px 15px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:5px 15px;border:1px solid #ffffff25;border-radius:11px;background:#ffffff08;font-size:.78rem}
+.challengeRecords>strong{font-size:.81rem}
+.challengeRecords>span{color:#becedb}
+.challengeRecords b{color:#f0f4f8;font-variant-numeric:tabular-nums}
+.roundReview{max-width:800px;margin:16px auto 0}
+.reviewHeading{font-size:1rem;margin:24px 0 12px}
+.reviewList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.reviewCard{min-width:0;display:flex;flex-direction:column;gap:10px;padding:15px;border-radius:15px;border:1px solid #ffffff2a;background:#132136}
+.reviewTop{display:flex;justify-content:space-between;gap:12px;color:#aebfd0;font-size:.73rem;font-weight:700}
+.reviewTeams{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center;text-align:center;min-height:50px}
+.reviewTeams strong{overflow-wrap:anywhere;font-size:.86rem}
+.reviewScore{white-space:nowrap;font-size:1.05rem;font-weight:800;font-variant-numeric:tabular-nums}
+.reviewVersus{color:#b3c5d9;font-size:.72rem}
+.reviewProjection{margin:0;text-align:center;color:#c0cfdf;font-size:.76rem}
+.reviewPickRow{border-top:1px solid #ffffff20;padding-top:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:9px;flex-wrap:wrap;color:#dce5ee;font-size:.73rem;line-height:1.35}
+.reviewOutcome{font-size:.7rem;white-space:nowrap;color:#bccad8}
+.reviewOutcome[data-outcome="correct"]{color:#a7dfc2}
+.reviewOutcome[data-outcome="incorrect"]{color:#e4acac}
+.reviewUpcoming{color:#aebfd0;text-align:center;font-size:.73rem;margin:0}
+.reviewCard .matchLink{margin-top:auto}
+@media(max-width:650px){
+  .reviewList{grid-template-columns:1fr}
+  .roundSelectRow{padding:10px 12px}
+  .challengeRecords{justify-content:flex-start}
+  .challengeRecords>strong{width:100%}
+}
+@media(max-width:410px){
+  .roundSelect{min-width:0;max-width:66%;font-size:.78rem}
+  .roundSelectRow label{font-size:.78rem}
+}
