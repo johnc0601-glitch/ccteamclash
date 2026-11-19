@@ -89,3 +89,20 @@ export function chooseChallengeRound(
     ??rounds.find(round=>round.state==='future')?.number
     ??rounds.at(-1)?.number??null;
 }
+
+/** Only rounds with actual Challenge matchups belong in completed game history. */
+export function chooseChallengeAvailableRounds(
+  rounds:ChallengeRoundOption[],
+  offeredRoundNumbers:ReadonlySet<number>,
+):ChallengeRoundOption[]{
+  return rounds.filter(round=>round.state!=='past'||offeredRoundNumbers.has(round.number));
+}
+
+/** Do not show regular league matches that were never part of this game. */
+export function isChallengeRoundMatchListed(
+  state:ChallengeRoundState,
+  hadChallengeProjectionOrPick:boolean,
+  isStillPlayable:boolean,
+):boolean{
+  return state==='future'||hadChallengeProjectionOrPick||(state==='active'&&isStillPlayable);
+}
