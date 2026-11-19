@@ -34,7 +34,7 @@ export default async function Home() {
 
       <section className={styles.banner} aria-labelledby="matchday-heading">
         <div className={styles.poster}>
-          {storyData.lead?.image && /^(https?:\\/\\/|\\/)/.test(storyData.lead.image) ? (
+          {storyData.lead?.image && (storyData.lead.image.startsWith('https://') || storyData.lead.image.startsWith('http://') || storyData.lead.image.startsWith('/')) ? (
             <div
               className={styles.posterArtwork}
               role="img"
