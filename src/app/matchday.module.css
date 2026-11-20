@@ -56,24 +56,57 @@
 
 /* Keep the game accessible without displacing the editorial headline. */
 .challengeCompact {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px 14px;
-  flex-wrap: wrap;
-  width: fit-content;
-  max-width: 100%;
+  gap: 14px;
+  width: 100%;
+  max-width: 460px;
   margin-top: 22px;
-  padding: 10px 14px;
+  padding: 12px 14px;
   border: 1px solid rgba(252, 194, 0, .25);
   border-radius: 6px;
   color: #d7e0dd;
-  font-size: 13px;
 }
 
-.challengeCompact a {
+.challengeCompactCopy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.challengeCompactCopy strong {
   color: #fcc200;
-  font-weight: 800;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.challengeCompactCopy span {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.challengeCompactLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 12px;
+  border-radius: 4px;
+  background: #fcc200;
+  color: #101820;
+  font-size: 12px;
+  font-weight: 900;
   white-space: nowrap;
+}
+
+.challengeCompactLink:hover,
+.challengeCompactLink:focus-visible {
+  background: #ffdc50;
+}
+
+@media (max-width: 540px) {
+  .challengeCompact { gap: 9px; padding: 10px 12px; }
+  .challengeCompactLink { padding: 9px 10px; }
 }
 
 @media (max-width: 900px) {
