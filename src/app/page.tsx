@@ -70,8 +70,11 @@ export default async function Home() {
             </Link>
           </div>
           <div className={styles.challengeCompact}>
-            <span><strong>Clash Challenge</strong> — Pick who beats the projection.</span>
-            <Link href="/clash-challenge">Play now →</Link>
+            <div className={styles.challengeCompactCopy}>
+              <strong>Clash Challenge</strong>
+              <span>Beat the projection. Pick your team.</span>
+            </div>
+            <Link href="/clash-challenge" aria-label="Play Clash Challenge" className={styles.challengeCompactLink}>Play →</Link>
           </div>
         </div>
       </section>
