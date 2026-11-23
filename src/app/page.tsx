@@ -53,7 +53,7 @@ export default async function Home() {
           )}
         </div>
         <div className={styles.content}>
-          <span className="eyebrow">{storyData.lead ? 'Featured Match Preview' : 'Round 2 Matchday'}</span>
+          <span className="eyebrow">{storyData.lead ? 'Featured Story' : 'Round 2 Matchday'}</span>
           <h1 id="matchday-heading">{storyData.lead?.title ?? 'Round 2. Bring the Heat.'}</h1>
           <p>
             {storyData.lead?.body.find((paragraph) =>
@@ -66,7 +66,7 @@ export default async function Home() {
           <strong>Fun. Fellowship. Disc Golf.</strong>
           <div className="home-actions">
             <Link href={storyData.lead ? `/stories/${storyData.lead.slug}` : '/schedule'} className="button gold-button">
-              {storyData.lead ? 'Read the preview' : 'View the schedule'} <span aria-hidden="true">→</span>
+              {storyData.lead ? 'Read the story' : 'View the schedule'} <span aria-hidden="true">→</span>
             </Link>
           </div>
           <div className={styles.challengeCompact}>
