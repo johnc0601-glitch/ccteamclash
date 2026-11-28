@@ -7,6 +7,7 @@ import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository
 import {createClient} from '@/lib/supabase/server';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createPublicStandingsService} from '@/core/createPublicStandingsService';
+import {historicalClashTeamId} from '@/services/teamStrength/ClashChallengeInsights';
 import type {RecordSummary} from '@/services/statistics/StatisticsTypes';
 import {SupabaseStatisticsRepository} from '@/services/statistics/SupabaseStatisticsRepository';
 import styles from './Scouting.module.css';
@@ -141,7 +142,30 @@ async function ScoutingContent({params}: {params: Params}) {
     const names = new Map(teamsRaw.map(t=>[t.id,t.name]));
     const meetings = own && own.id!==selected.id ? results.filter(r=>[r.homeTeamId,r.awayTeamId].includes(own.id)&&[r.homeTeamId,r.awayTeamId].includes(selected.id)).sort((a,b)=>b.date.localeCompare(a.date)) : [];
     const resultTable = (items: typeof results) => items.length ? <table className={styles.table}><thead><tr><th>Date</th><th>Opponent</th><th>Score</th></tr></thead><tbody>{items.map(r=><tr key={r.id}><td><Link href={'/matches/'+r.challengeId}>{r.date}</Link></td><td>{names.get(r.homeTeamId===selected.id?r.awayTeamId:r.homeTeamId) ?? '—'}</td><td>{r.homeTeamId===selected.id?r.homeScore:r.awayScore}–{r.homeTeamId===selected.id?r.awayScore:r.homeScore}</td></tr>)}</tbody></table> : <p>No published results.</p>;
-    if (tab==='history') return <>{controls}<section className={styles.panel}><h2>{own && own.id!==selected.id ? own.name+' vs '+selected.name+' · All seasons' : selected.name+' · Selected season'}</h2>{resultTable(own && own.id!==selected.id?meetings:relevant)}</section></>;
+    if (tab==='history') {
+      if (!own || own.id===selected.id) return <>{controls}<section className={styles.panel}><h2>{selected.name} · Current season</h2>{resultTable(relevant)}</section></>;
+      // Historical team totals predate launch_match_results. Read the same public archive
+      // used by Clash Challenge; do not create new match results or alter official scores.
+      const archive = await (db as any).from('historical_team_matches')
+        .select('id,season_name,event_order,event_label,played_on,home_team_name,away_team_name,home_score,away_score')
+        .order('season_name',{ascending:false}).order('event_order',{ascending:false}).order('id',{ascending:false});
+      type ArchiveMatch = {id:number;season_name:string;event_order:number;event_label:string|null;played_on:string|null;home_team_name:string;away_team_name:string;home_score:number|null;away_score:number|null};
+      const aliases = new Map(teamsRaw.map(t=>[historicalClashTeamId(t.name),t.id]));
+      const teamId = (name:string)=>aliases.get(historicalClashTeamId(name))??historicalClashTeamId(name);
+      const seasonKey = (name:string)=>name.match(/20\d{2}[-–]20\d{2}/)?.[0].replace('–','-')??name;
+      const seasonNames = new Map(seasonsRaw.map(s=>[s.id,s.name]));
+      type Meeting = {id:string;season:string;date:string|null;event:string|null;order:number;homeId:string;awayId:string;homeScore:number;awayScore:number;href?:string};
+      const historical:Meeting[] = ((archive.error?[]:archive.data??[]) as ArchiveMatch[]).flatMap(r=>{
+        const homeId=teamId(r.home_team_name),awayId=teamId(r.away_team_name);
+        if (![homeId,awayId].includes(own.id)||![homeId,awayId].includes(selected.id)||r.home_score==null||r.away_score==null) return [];
+        return [{id:'archive-'+r.id,season:seasonKey(r.season_name),date:r.played_on,event:r.event_label,order:r.event_order,homeId,awayId,homeScore:Number(r.home_score),awayScore:Number(r.away_score)}];
+      });
+      const publishedMeetings:Meeting[]=meetings.map(r=>({id:'published-'+r.id,season:seasonKey(seasonNames.get(r.seasonId)??r.seasonId),date:r.date,event:null,order:0,homeId:r.homeTeamId,awayId:r.awayTeamId,homeScore:r.homeScore,awayScore:r.awayScore,href:'/matches/'+r.challengeId}));
+      // Preserve distinct archive rounds. Only suppress an overlapping published copy
+      // when season, sides, scores and any known dates agree.
+      const merged=[...historical,...publishedMeetings.filter(r=>!historical.some(h=>h.season===r.season&&h.homeId===r.homeId&&h.awayId===r.awayId&&h.homeScore===r.homeScore&&h.awayScore===r.awayScore&&(!h.date||!r.date||h.date===r.date)))].sort((a,b)=>b.season.localeCompare(a.season)||(a.date&&b.date?b.date.localeCompare(a.date):b.order-a.order));
+      return <>{controls}<section className={styles.panel}><h2>{own.name} vs {selected.name}</h2><p>Head-to-head · All recorded seasons</p>{archive.error&&<p>Historical archive temporarily unavailable; published results shown below.</p>}{merged.length?<table className={styles.table}><thead><tr><th>Match</th><th>{own.name}</th><th>{selected.name}</th></tr></thead><tbody>{merged.map(r=>{const ownHome=r.homeId===own.id;const ownScore=ownHome?r.homeScore:r.awayScore;const opposingScore=ownHome?r.awayScore:r.homeScore;const label=r.date??r.event??r.season;return <tr key={r.id}><td>{r.href?<Link href={r.href}>{label}</Link>:label}<br/><small>{r.season} · {ownHome?'Home':'Away'}</small></td><td>{ownScore>opposingScore?<strong>{ownScore}</strong>:ownScore}</td><td>{opposingScore>ownScore?<strong>{opposingScore}</strong>:opposingScore}</td></tr>})}</tbody></table>:<p>No recorded head-to-head matches.</p>}</section></>;
+    }
     const ids = own && own.id!==selected.id ? [own.id,selected.id] : [selected.id];
     const overview = await services.statistics.getMatchdayTeamStatisticsForTeams(ids,season.id,season.id);
     const standings = await createPublicStandingsService().getSeasonStandings(season.id).catch(()=>[]);
