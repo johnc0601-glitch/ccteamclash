@@ -1,3 +1,4 @@
+import {PlayerName} from '@/components/players/PlayerName';
 import {MatchdaySection} from './MatchdaySection';
 import type {CSSProperties, ReactNode} from 'react';
 import {getVerifiedUpsets, matchupKey, type PublishedUpsetMatch, type ScoreboardUpset, type ScoreboardUpsets} from '@/services/matches/FinalMatchdayUpsets';
@@ -350,7 +351,7 @@ function PlayerNames({
   if (!players.length) return <>—</>;
   return (
     <span className={`${styles.playerList} ${pairClass}`}>
-      {players.map((player) => <span className={styles.playerName} key={player.id}>{player.name}</span>)}
+      {players.map((player) => <span className={styles.playerName} key={player.id}><PlayerName gender={player.gender}>{player.name}</PlayerName></span>)}
     </span>
   );
 }
