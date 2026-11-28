@@ -92,3 +92,27 @@
 
 @media (max-width:860px){.summaryGrid,.grid{grid-template-columns:1fr}.approvalRow{grid-template-columns:1fr}.approvalControls{grid-template-columns:1fr auto}.approvalActions{justify-content:flex-start}}
 @media (max-width:560px){.page{padding:34px 0 70px}.summaryGrid{gap:10px}.quickCard{padding:18px}.appearanceForm{padding:18px}.colorGrid{grid-template-columns:1fr 1fr}.brandPreview strong{font-size:22px}.rosterRow{padding:12px 16px}.rosterRow > div{gap:8px}.row{padding:16px}.playerName{font-size:18px}.rosterMeta{font-size:10px;letter-spacing:.1em}.rosterMeta > span + span::before{margin:0 6px}.registrationDetails summary{font-size:15px}.registrationPanel{margin-top:10px}.registrationForm .primaryButton,.row form .removeButton{width:100%;min-height:42px}.approvalToolbar{align-items:stretch;flex-direction:column;padding:12px 16px}.approvalToolbar .primaryButton{width:100%}.approvalRow{padding:12px 16px}.approvalControls{grid-template-columns:1fr}.approvalCheck{padding:0;min-height:32px}.approvalActions{display:grid;grid-template-columns:1fr 1fr}.approvalActions button{width:100%;min-height:42px}}
+
+/* Match preparation first; season administration stays available below. */
+.compactHeader{max-width:820px;margin-bottom:18px}
+.compactHeader span,.nextMatchLabel{color:var(--cc-gold);font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+.compactHeader h1{margin:6px 0;color:var(--cc-heading);font-family:var(--cc-font-display);font-size:clamp(32px,5vw,54px);font-style:italic;line-height:1;text-transform:uppercase}
+.compactHeader p{margin:6px 0;color:var(--cc-muted);font-size:14px}
+.nextMatch{background:var(--cc-card-bg);border-radius:8px;padding:20px;margin-bottom:14px;box-shadow:var(--cc-card-shadow)}
+.nextMatch h2{margin:5px 0 4px;color:var(--cc-heading);font-family:var(--cc-font-display);font-size:clamp(23px,4vw,34px);font-style:italic;text-transform:uppercase;line-height:1.1}
+.nextMatch p{margin:3px 0;color:var(--cc-muted);font-size:14px}
+.captainActions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.matchAction,.scoutingAction,.laterAction,.adminSummary{display:flex;align-items:center;justify-content:center;min-height:48px;border:0;border-radius:6px;padding:12px 16px;font:inherit;font-size:14px;font-weight:900;text-align:center;text-decoration:none;cursor:pointer}
+.matchAction,.laterAction{background:#b18d23;color:#111}
+.scoutingAction{background:#20252a;color:#fff}
+.matchAction:hover,.scoutingAction:hover,.laterAction:hover,.adminSummary:hover{filter:brightness(1.1)}
+.matchAction:focus-visible,.scoutingAction:focus-visible,.laterAction:focus-visible,.adminSummary:focus-visible{outline:3px solid var(--cc-gold);outline-offset:3px}
+.laterMatches{margin:16px 0;display:grid;gap:6px}
+.laterMatches h2{margin:0 0 4px;font-size:16px;color:var(--cc-heading)}
+.laterMatch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--cc-card-border)}
+.laterMatch div{display:grid;gap:4px;min-width:0}.laterMatch strong{color:var(--cc-heading)}.laterMatch small{color:var(--cc-muted)}
+.laterAction{font-size:12px;min-height:40px;flex-shrink:0;padding:8px 12px}
+.adminDetails{margin-top:20px}.adminSummary{background:#333940;color:#fff;justify-content:space-between;list-style:none;gap:12px;text-align:left}
+.adminSummary::-webkit-details-marker{display:none}.adminSummary small{font-size:12px;font-weight:600;opacity:.85}.adminSummary span:last-child{font-size:18px}.adminDetails[open] .adminSummary span:last-child{transform:rotate(180deg)}
+.adminDetails .grid{margin-top:12px}
+@media(max-width:560px){.compactHeader{margin-bottom:12px}.nextMatch{padding:14px}.captainActions{grid-template-columns:1fr;gap:8px;margin-top:12px}.matchAction,.scoutingAction{min-height:50px}.laterMatch{gap:8px}.laterAction{font-size:11px;padding:8px}.adminSummary{flex-wrap:wrap}}
