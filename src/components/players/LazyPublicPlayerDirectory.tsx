@@ -1,5 +1,6 @@
 'use client';
 
+import {PlayerName} from '@/components/players/PlayerName';
 import {useEffect, useState} from 'react';
 import {captainAddListedPlayer, loadCaptainPickupAccess, loadPublicPlayerProfile} from '@/app/players/actions';
 import {useHeaderAccess} from '@/components/HeaderAccessProvider';
@@ -121,7 +122,7 @@ export function LazyPublicPlayerDirectory({
             >
               <summary>
                 <span>
-                  <strong>{player.name}</strong>
+                  <strong><PlayerName gender={player.gender}>{player.name}</PlayerName></strong>
                   <small>{isAddable ? 'Unassigned · Available' : player.teamName}</small>
                 </span>
                 <span className={styles.summaryStats}>
