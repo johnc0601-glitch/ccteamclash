@@ -1,3 +1,4 @@
+import {PlayerName} from '@/components/players/PlayerName';
 import type {TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import v1 from '@/app/matches/[id]/MatchdayV1.module.css';
 
@@ -9,7 +10,7 @@ type LockedRosterTeam = {
   accent?: string;
   maleCount: number;
   femaleCount: number;
-  players: Array<Pick<TeamAttendanceMember, 'playerName' | 'status'>>;
+  players: Array<Pick<TeamAttendanceMember, 'playerName' | 'status' | 'gender'>>;
 };
 
 export function LockedRosterPair({away, home}: {away: LockedRosterTeam; home: LockedRosterTeam}) {
@@ -54,7 +55,7 @@ function LockedRosterCard({team}: {team: LockedRosterTeam}) {
                 aria-label={player.status === 'Playing' ? 'Coming' : 'Not coming'}
                 title={player.status === 'Playing' ? 'Coming' : 'Not coming'}
               />
-              <strong>{player.playerName}</strong>
+              <strong><PlayerName gender={player.gender}>{player.playerName}</PlayerName></strong>
             </span>
           </div>
         )) : (
