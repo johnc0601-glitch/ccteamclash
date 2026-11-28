@@ -8,7 +8,8 @@ import {createAdminClient} from '@/lib/supabase/admin';
 import {SupabaseMatchRosterRepository} from '@/domain/match-roster/SupabaseMatchRosterRepository';
 import {isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
 import {hasSupabaseConfig} from '@/lib/supabase';
-import type {ChallengeResult, RecordSummary} from '@/services/statistics/StatisticsTypes';
+import {createPublicStandingsService} from '@/core/createPublicStandingsService';
+import type {RecordSummary} from '@/services/statistics/StatisticsTypes';
 import {SupabaseStatisticsRepository} from '@/services/statistics/SupabaseStatisticsRepository';
 import styles from './Scouting.module.css';
 
@@ -118,6 +119,18 @@ async function ScoutingContent({params}: {params: Params}) {
       const rows = roster.filter(p=>p.name.toLowerCase().includes(query)&&(!category||categories.get(p.id)===category)).sort((a,b)=>score(b)-score(a)||a.name.localeCompare(b.name));
       const player = roster.find(p=>p.id===param(params,'player'));
       const history = player ? (await services.statistics.getPlayerMatchHistoriesForPlayers([player.id],100,scope==='career'?undefined:season.id)).get(player.id) ?? [] : [];
+      const historyMatchIds = [...new Set(history.map(h=>h.challengeId))];
+      const ratingRows = player && historyMatchIds.length ? await (db as any).from('clash_contest_rating_facts').select('match_id,contest_id,clash_index_before,opponent_effective_ci,ci_delta').eq('player_id',player.id).in('match_id',historyMatchIds) : null;
+      const facts = (ratingRows?.error ? [] : ratingRows?.data ?? []) as Array<{match_id:string;contest_id:string;clash_index_before:number;opponent_effective_ci:number;ci_delta:number}>;
+      const progression = new Map<string,{date:string;before:number;after:number}>();
+      for (const fact of facts) {
+        const date=published.find(r=>r.challengeId===fact.match_id)?.date;
+        if (!date) continue;
+        const row=progression.get(fact.match_id)??{date,before:fact.clash_index_before,after:fact.clash_index_before};
+        row.after+=fact.ci_delta;
+        progression.set(fact.match_id,row);
+      }
+      const timeline=[...progression.entries()].sort((a,b)=>a[1].date.localeCompare(b[1].date));
       const partners = new Map<string,{name:string;wins:number;losses:number;ties:number}>();
       if (player) for (const r of (scope==='career'?published:seasonResults)) for (const entry of r.playerResults.filter(p=>p.playerId===player.id&&p.format==='Doubles'&&p.contestId)) {
         const group=r.playerResults.filter(p=>p.contestId===entry.contestId);
@@ -138,7 +151,7 @@ async function ScoutingContent({params}: {params: Params}) {
       <label>Sort<select name="sort" defaultValue={sort}>{[['ci','Highest CI'],['pdga','Highest PDGA'],['singles','Singles wins'],['doubles','Doubles wins'],['change','CI gain']].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label><button>Apply</button></form>
       <table className={`${styles.table} ${view==='ratings'?styles.ratingView:styles.recordView}`}><thead><tr><th>Player</th><th>CI</th><th className={styles.secondary}>PDGA</th><th className={styles.recordColumn}>Singles</th><th className={styles.recordColumn}>Doubles</th><th className={styles.secondary}>CI ±</th></tr></thead><tbody>{rows.map(p=><tr key={p.id}><td><Link href={url({player:p.id,q:param(params,'q'),category,sort,view,scope,match:matchChoice?.id??'',roster:param(params,'roster')||'auto'})+'#player-detail'}>{p.name}</Link></td><td>{ci(p) ?? '—'}{ci(p) != null && p.clashIndexProvisional?'*':''}</td><td className={styles.secondary}>{pdga(p) ?? '—'}</td><td className={styles.recordColumn}>{record(stats.get(p.id)?.singlesRecord)}</td><td className={styles.recordColumn}>{record(stats.get(p.id)?.doublesRecord)}</td><td className={styles.secondary}>{snapshot.ciMovements.get(p.id)?.ciGain ?? '—'}</td></tr>)}</tbody></table>
       {!rows.length&&<p>No matching roster players.</p>}<small>* Provisional CI. — Unavailable.</small></section>
-      {player&&<section id="player-detail" className={styles.panel}><h2>{player.name}</h2><p>Current CI: {ci(player) ?? '—'} · PDGA: {pdga(player) ?? '—'}</p><h3>Doubles partners · {scope==='career'?'Career':'Selected season'}</h3>{partners.size?<table className={styles.table}><thead><tr><th>Partner</th><th>Played</th><th>W–L–T</th></tr></thead><tbody>{[...partners.entries()].sort((a,b)=>(b[1].wins+b[1].losses+b[1].ties)-(a[1].wins+a[1].losses+a[1].ties)).map(([id,p])=><tr key={id}><td>{p.name}</td><td>{p.wins+p.losses+p.ties}</td><td>{record(p)}</td></tr>)}</tbody></table>:<p>No recorded complete doubles partnerships.</p>}<h3>Contest history</h3>{history.length ? <table className={styles.table}><thead><tr><th>Date / Format</th><th>Opponents / Partner</th><th>Result</th></tr></thead><tbody>{history.map(h=><tr key={h.id}><td>{h.date}<br/>{h.format}</td><td>{h.opponentPlayerNames.join(', ')||'—'}{h.partnerPlayerNames.length>0&&<><br/><small>Partner: {h.partnerPlayerNames.join(', ')}</small></>}</td><td>{h.outcome}</td></tr>)}</tbody></table>:<p>No published contest history in this season.</p>}</section>}</>;
+      {player&&<section id="player-detail" className={styles.panel}><h2>{player.name}</h2><p>Current CI: {ci(player) ?? '—'} · PDGA: {pdga(player) ?? '—'}</p><h3>Published CI history</h3>{timeline.length?<table className={styles.table}><thead><tr><th>Match date</th><th>Before</th><th>After</th></tr></thead><tbody>{timeline.map(([id,p])=><tr key={id}><td>{p.date}</td><td>{p.before}</td><td>{p.after}</td></tr>)}</tbody></table>:<p>No verified rating snapshots available.</p>}<h3>Doubles partners · {scope==='career'?'Career':'Selected season'}</h3>{partners.size?<table className={styles.table}><thead><tr><th>Partner</th><th>Played</th><th>W–L–T</th></tr></thead><tbody>{[...partners.entries()].sort((a,b)=>(b[1].wins+b[1].losses+b[1].ties)-(a[1].wins+a[1].losses+a[1].ties)).map(([id,p])=><tr key={id}><td>{p.name}</td><td>{p.wins+p.losses+p.ties}</td><td>{record(p)}</td></tr>)}</tbody></table>:<p>No recorded complete doubles partnerships.</p>}<h3>Contest history</h3>{history.length ? <table className={styles.table}><thead><tr><th>Date / Format</th><th>Opponents / Partner</th><th>Result</th></tr></thead><tbody>{history.map(h=><tr key={h.id}><td>{h.date}<br/>{h.format}</td><td>{h.opponentPlayerNames.join(', ')||'—'}{h.partnerPlayerNames.length>0&&<><br/><small>Partner: {h.partnerPlayerNames.join(', ')}</small></>}</td><td>{h.outcome}{facts.find(f=>f.match_id===h.challengeId&&h.id.startsWith(f.contest_id+':'))&&<><br/><small>Opp. CI: {number(facts.find(f=>f.match_id===h.challengeId&&h.id.startsWith(f.contest_id+':'))?.opponent_effective_ci)}</small></>}</td></tr>)}</tbody></table>:<p>No published contest history in this season.</p>}</section>}</>;
     }
     const results = await new SupabaseStatisticsRepository(db).getPublishedChallengeResults();
     const relevant = results.filter(r=>r.seasonId===season.id&&(r.homeTeamId===selected.id||r.awayTeamId===selected.id)).sort((a,b)=>b.date.localeCompare(a.date));
@@ -148,14 +161,31 @@ async function ScoutingContent({params}: {params: Params}) {
     if (tab==='history') return <>{controls}<section className={styles.panel}><h2>{own && own.id!==selected.id ? own.name+' vs '+selected.name+' · All seasons' : selected.name+' · Selected season'}</h2>{resultTable(own && own.id!==selected.id?meetings:relevant)}</section></>;
     const ids = own && own.id!==selected.id ? [own.id,selected.id] : [selected.id];
     const overview = await services.statistics.getMatchdayTeamStatisticsForTeams(ids,season.id,season.id);
-    return <>{controls}<section className={styles.panel}><h2>Team comparison</h2><table className={styles.table}><thead><tr><th>Statistic</th>{ids.map(id=><th key={id}>{names.get(id)}</th>)}</tr></thead><tbody>
+    const standings = await createPublicStandingsService().getSeasonStandings(season.id).catch(()=>[]);
+    const averages = new Map<string,{average:number;count:number}>();
+    if (season.id===active?.id) {
+      const [allPlayers, memberships] = await Promise.all([repository.getPlayers(),(db as any).from('launch_season_roster_memberships').select('player_id,team_id').eq('season_id',season.id).eq('status','Active').in('team_id',ids)]);
+      if (!memberships.error) {
+        const ratings=new Map(allPlayers.filter(p=>p.active&&p.clashIndex!=null).map(p=>[p.id,p.clashIndex as number]));
+        for(const id of ids){
+          const memberIds=new Set<string>((memberships.data??[]).filter((m:{team_id:string})=>m.team_id===id).map((m:{player_id:string})=>m.player_id));
+          const values=[...memberIds].flatMap(pid=>ratings.has(pid)?[ratings.get(pid)!]:[]);
+          if(values.length) averages.set(id,{average:values.reduce((a,b)=>a+b,0)/values.length,count:values.length});
+        }
+      }
+    }
+    return <>{controls}<section className={styles.panel}><h2>Team comparison</h2><p>Published results. Contest percentages award half credit for ties; team points include official adjustments.</p><table className={styles.table}><thead><tr><th>Statistic</th>{ids.map(id=><th key={id}>{names.get(id)}</th>)}</tr></thead><tbody>
     {[
       ['Record',(id:string)=>record(overview.current.find(s=>s.teamId===id)?.record)],
+      ['League rank',(id:string)=>standings.find(s=>s.team.id===id)?.rank ?? '—'],
+      ['Avg. season roster CI',(id:string)=>{const a=averages.get(id);return a?number(a.average)+' ('+a.count+' rated)':'—';}],
       ['Matches',(id:string)=>overview.current.find(s=>s.teamId===id)?.matchesPlayed ?? '—'],
       ['Points %',(id:string)=>{const s=overview.current.find(s=>s.teamId===id);return s?.matchesPlayed?number(s.pointsPercentage)+'%':'—';}],
       ['Avg. points',(id:string)=>{const s=overview.current.find(s=>s.teamId===id);return s?.matchesPlayed?number(s.pointsFor/s.matchesPlayed):'—';}],
       ['Singles W–L–T',(id:string)=>record(overview.previousFormats.find(s=>s.teamId===id)?.singlesRecord)],
       ['Doubles W–L–T',(id:string)=>record(overview.previousFormats.find(s=>s.teamId===id)?.doublesRecord)],
+      ['Singles contest %',(id:string)=>{const f=overview.previousFormats.find(s=>s.teamId===id);return f&&f.singlesRecord.wins+f.singlesRecord.losses+f.singlesRecord.ties>0?number(f.singlesWinPercentage)+'%':'—';}],
+      ['Doubles contest %',(id:string)=>{const f=overview.previousFormats.find(s=>s.teamId===id);return f&&f.doublesRecord.wins+f.doublesRecord.losses+f.doublesRecord.ties>0?number(f.doublesWinPercentage)+'%':'—';}],
       ['Home record',(id:string)=>record(overview.current.find(s=>s.teamId===id)?.homeRecord)],
       ['Away record',(id:string)=>record(overview.current.find(s=>s.teamId===id)?.awayRecord)],
     ].map(([label, fn])=><tr key={String(label)}><td>{String(label)}</td>{ids.map(id=><td key={id}>{(fn as (id:string)=>string|number)(id)}</td>)}</tr>)}</tbody></table></section>
