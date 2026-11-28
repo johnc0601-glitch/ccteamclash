@@ -54,13 +54,13 @@ async function ScoutingContent({params}: {params: Params}) {
     const opponent = next && own ? (next.homeTeamId === own.id ? next.awayTeamId : next.homeTeamId) : undefined;
     const selected = teams.find(t => t.id === param(params,'team')) ?? teams.find(t => t.id === opponent) ?? teams.find(t => t.id !== own?.id) ?? teams[0];
     if (!season || !selected) return <p>No published season or team is available.</p>;
-    const tab = ['team','players','history'].includes(param(params,'tab')) ? param(params,'tab') : 'team';
+    const tab = ['players','team','history'].includes(param(params,'tab')) ? param(params,'tab') : 'players';
     const url = (extra: Record<string,string>) => '/captain/scouting?' + new URLSearchParams({team:selected.id,tab,...extra}).toString();
     const controls = <><form method="get" className={styles.controls}>
       <input type="hidden" name="tab" value={tab}/>
       <label>Team<select name="team" defaultValue={selected.id}>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
       <button type="submit">View</button>
-    </form><nav aria-label="Scouting sections" className={styles.tabs}>{['team','players','history'].map(t=><Link key={t} aria-current={tab===t?'page':undefined} href={url({tab:t})}>{t[0].toUpperCase()+t.slice(1)}</Link>)}</nav></>;
+    </form><nav aria-label="Scouting sections" className={styles.tabs}>{['players','team','history'].map(t=><Link key={t} aria-current={tab===t?'page':undefined} href={url({tab:t})}>{t==='team'?'Teams':t[0].toUpperCase()+t.slice(1)}</Link>)}</nav></>;
     if (tab === 'players') {
       const current = season.id === active?.id;
       const published = await new SupabaseStatisticsRepository(db).getPublishedChallengeResults();
