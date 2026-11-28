@@ -1,5 +1,6 @@
 'use client';
 
+import {PlayerName} from '@/components/players/PlayerName';
 import {useState} from 'react';
 import {PublicPlayerProfileCard} from '@/components/players/PublicPlayerProfileCard';
 import type {PublicPlayerView} from '@/services/public/PublicPlayerService';
@@ -89,7 +90,7 @@ export function PublicPlayerDirectory({
             <details className={styles.player} key={player.id} open={openFromLink || undefined}>
               <summary>
                 <span>
-                  <strong>{player.name}</strong>
+                  <strong><PlayerName gender={player.gender}>{player.name}</PlayerName></strong>
                   <small>{teamName}</small>
                 </span>
                 <span className={styles.summaryStats}>
