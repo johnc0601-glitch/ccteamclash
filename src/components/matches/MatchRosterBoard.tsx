@@ -66,7 +66,7 @@ export async function MatchRosterBoard({
             logo: matchday.awayTeam.logo,
             accent: awayStoredTeam?.primaryColor,
             ...lockedRosterGenderCounts(away, playerGenders),
-            players: lockedRosterPlayers(away, lockedAvailability?.get(away.teamId)),
+            players: lockedRosterPlayers(away, lockedAvailability?.get(away.teamId), playerGenders),
           }}
           home={{
             name: home.teamNameSnapshot,
@@ -74,7 +74,7 @@ export async function MatchRosterBoard({
             logo: matchday.homeTeam.logo,
             accent: homeStoredTeam?.primaryColor,
             ...lockedRosterGenderCounts(home, playerGenders),
-            players: lockedRosterPlayers(home, lockedAvailability?.get(home.teamId)),
+            players: lockedRosterPlayers(home, lockedAvailability?.get(home.teamId), playerGenders),
           }}
         />
       </section>
@@ -160,10 +160,12 @@ function lockedRosterGenderCounts(
 function lockedRosterPlayers(
   official: OfficialMatchRoster,
   attendance: TeamAttendanceMember[] | undefined,
+  genders: ReadonlyMap<string, LaunchPlayer['gender']>,
 ) {
   const players = new Map(
     (attendance ?? []).map((player) => [player.playerId, {
       playerName: player.playerName,
+      gender: player.gender ?? genders.get(player.playerId),
       status: player.status,
     }]),
   );
@@ -171,6 +173,7 @@ function lockedRosterPlayers(
     if (!players.has(player.playerId)) {
       players.set(player.playerId, {
         playerName: player.playerNameSnapshot,
+        gender: genders.get(player.playerId),
         status: 'Playing' as const,
       });
     }
