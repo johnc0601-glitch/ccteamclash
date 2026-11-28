@@ -1,3 +1,4 @@
+import {PlayerName} from '@/components/players/PlayerName';
 import type {MatchResult, ResultContest} from '@/domain/results/MatchResult';
 import type {PublicMatchday} from '@/services/matches/MatchdayService';
 import styles from '@/app/matches/[id]/MatchdayV1.module.css';
@@ -11,6 +12,7 @@ export function MatchScoreboard({
   result: MatchResult | undefined;
   contests?: ResultContest[];
 }) {
+  const genders = new Map([...matchday.awayTeam.roster,...matchday.homeTeam.roster].map(p => [p.id,p.gender]));
   const awayScore = result?.awayScore ?? '—';
   const homeScore = result?.homeScore ?? '—';
   const singles = contests.filter((contest) => contest.format === 'Singles').sort((a, b) => a.position - b.position);
@@ -34,8 +36,8 @@ export function MatchScoreboard({
         <summary>{result ? 'View full scoring' : 'Scoring'}</summary>
         {result ? (
           <div className={styles.scoreSheet}>
-            <ContestSection title="Singles" contests={singles} />
-            <ContestSection title="Doubles" contests={doubles} />
+            <ContestSection title="Singles" contests={singles} genders={genders} />
+            <ContestSection title="Doubles" contests={doubles} genders={genders} />
             <div className={styles.finalBand}>
               <span>Final</span>
               <strong>{matchday.awayTeam.name} {awayScore} · {matchday.homeTeam.name} {homeScore}</strong>
@@ -49,7 +51,7 @@ export function MatchScoreboard({
   );
 }
 
-function ContestSection({title, contests}: {title: string; contests: ResultContest[]}) {
+function ContestSection({title, contests, genders}: {title: string; contests: ResultContest[]; genders: ReadonlyMap<string,string>}) {
   const totals = sectionTotals(contests);
   return (
     <section className={styles.contestSection}>
@@ -57,12 +59,12 @@ function ContestSection({title, contests}: {title: string; contests: ResultConte
         <strong>{title}</strong>
         <span>{contests.length ? `${formatPoint(totals.away)} – ${formatPoint(totals.home)}` : 'No matchups'}</span>
       </div>
-      {contests.length ? contests.map((contest) => <ContestRow contest={contest} key={contest.id} />) : <p className={styles.scoreEmpty}>No {title.toLowerCase()} details were published.</p>}
+      {contests.length ? contests.map((contest) => <ContestRow contest={contest} key={contest.id} genders={genders} />) : <p className={styles.scoreEmpty}>No {title.toLowerCase()} details were published.</p>}
     </section>
   );
 }
 
-function ContestRow({contest}: {contest: ResultContest}) {
+function ContestRow({contest, genders}: {contest: ResultContest; genders: ReadonlyMap<string,string>}) {
   const awayPlayers = contest.players.filter((player) => player.side === 'Away').sort((a, b) => a.slot - b.slot);
   const homePlayers = contest.players.filter((player) => player.side === 'Home').sort((a, b) => a.slot - b.slot);
   const awayWon = contest.awayOutcome === 'W';
@@ -74,9 +76,9 @@ function ContestRow({contest}: {contest: ResultContest}) {
 
   return (
     <div className={styles.contestRow} data-tied={tied || undefined}>
-      <div className={awayWon ? styles.winner : undefined}>{awayPlayers.map((player) => player.playerName).join(' / ')}</div>
+      <div className={awayWon ? styles.winner : undefined}>{awayPlayers.map((player,index) => <span key={player.playerId+':'+index}>{index>0?' / ':''}<PlayerName gender={genders.get(player.playerId)}>{player.playerName}</PlayerName></span>)}</div>
       <strong className={styles.contestScore}>{score}</strong>
-      <div className={homeWon ? styles.winner : undefined}>{homePlayers.map((player) => player.playerName).join(' / ')}</div>
+      <div className={homeWon ? styles.winner : undefined}>{homePlayers.map((player,index) => <span key={player.playerId+':'+index}>{index>0?' / ':''}<PlayerName gender={genders.get(player.playerId)}>{player.playerName}</PlayerName></span>)}</div>
     </div>
   );
 }
