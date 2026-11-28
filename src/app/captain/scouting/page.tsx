@@ -54,6 +54,8 @@ async function ScoutingContent({params}: {params: Params}) {
     const opponent = next && own ? (next.homeTeamId === own.id ? next.awayTeamId : next.homeTeamId) : undefined;
     const selected = teams.find(t => t.id === param(params,'team')) ?? teams.find(t => t.id === opponent) ?? teams.find(t => t.id !== own?.id) ?? teams[0];
     if (!season || !selected) return <p>No published season or team is available.</p>;
+    const teamLogos = new Map(teamsRaw.map(t=>[t.id,t.logo]));
+    const logo = (id:string,className:string) => {const src=teamLogos.get(id);return src?<img src={src} className={className} alt="" />:null;};
     const tab = ['players','team','history'].includes(param(params,'tab')) ? param(params,'tab') : 'players';
     const url = (extra: Record<string,string>) => '/captain/scouting?' + new URLSearchParams({team:selected.id,tab,...extra}).toString();
     const controls = <><form method="get" className={styles.controls}>
@@ -105,7 +107,7 @@ async function ScoutingContent({params}: {params: Params}) {
         if(entry.outcome==='Win')row.wins++;else if(entry.outcome==='Loss')row.losses++;else row.ties++;
         partners.set(partner.playerId,row);
       }
-      return <>{controls}<section className={styles.panel}><h2>{selected.name} · {current?'Season roster':'Recorded season players'}</h2><p>{current?'Tap a player to view their statistics.':'Historical roster coverage may be incomplete; current ratings are hidden.'}</p>
+      return <>{controls}<section className={styles.panel}><h2 className={styles.rosterHeading}>{logo(selected.id,styles.rosterLogo)}<span>{selected.name} · {current?'Season roster':'Recorded season players'}</span></h2><p>{current?'Tap a player to view their statistics.':'Historical roster coverage may be incomplete; current ratings are hidden.'}</p>
       <form method="get" className={styles.controls}><input type="hidden" name="tab" value="players"/><input type="hidden" name="team" value={selected.id}/>
       <label>Sort<select name="sort" defaultValue={sort}>{[['ci','Highest CI'],['pdga','Highest PDGA'],['singles','Singles wins'],['doubles','Doubles wins'],['change','CI gain']].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label><button type="submit">Apply</button></form>
       <div className={styles.playerCards} aria-label="Player scouting cards">
@@ -152,7 +154,7 @@ async function ScoutingContent({params}: {params: Params}) {
         }
       }
     }
-    const resultTable = (items: typeof results) => items.length ? <table className={styles.table}><thead><tr><th>Round</th><th>Opponent</th><th>Score</th></tr></thead><tbody>{items.map(r=><tr key={r.id}><td><Link href={'/matches/'+r.challengeId}>{roundLabels.get(r.challengeId)??r.date}</Link></td><td>{names.get(r.homeTeamId===selected.id?r.awayTeamId:r.homeTeamId) ?? '—'}</td><td>{r.homeTeamId===selected.id?r.homeScore:r.awayScore}–{r.homeTeamId===selected.id?r.awayScore:r.homeScore}</td></tr>)}</tbody></table> : <p>No published results.</p>;
+    const resultTable = (items: typeof results) => items.length ? <table className={styles.table}><thead><tr><th>Round</th><th>Opponent</th><th>Score</th></tr></thead><tbody>{items.map(r=><tr key={r.id}><td><Link href={'/matches/'+r.challengeId}>{roundLabels.get(r.challengeId)??r.date}</Link></td><td><span className={styles.resultTeam}>{logo(r.homeTeamId===selected.id?r.awayTeamId:r.homeTeamId,styles.resultLogo)}<span>{names.get(r.homeTeamId===selected.id?r.awayTeamId:r.homeTeamId) ?? '—'}</span></span></td><td>{r.homeTeamId===selected.id?r.homeScore:r.awayScore}–{r.homeTeamId===selected.id?r.awayScore:r.homeScore}</td></tr>)}</tbody></table> : <p>No published results.</p>;
     if (tab==='history') {
       if (!own || own.id===selected.id) return <>{controls}<section className={styles.panel}><h2>{selected.name} · Current season</h2>{resultTable(relevant)}</section></>;
       // Historical team totals predate launch_match_results. Read the same public archive
@@ -175,7 +177,7 @@ async function ScoutingContent({params}: {params: Params}) {
       // Preserve distinct archive rounds. Only suppress an overlapping published copy
       // when season, sides, scores and any known dates agree.
       const merged=[...historical,...publishedMeetings.filter(r=>!historical.some(h=>h.season===r.season&&h.homeId===r.homeId&&h.awayId===r.awayId&&h.homeScore===r.homeScore&&h.awayScore===r.awayScore&&(!h.date||!r.date||h.date===r.date)))].sort((a,b)=>b.season.localeCompare(a.season)||(a.date&&b.date?b.date.localeCompare(a.date):b.order-a.order));
-      return <>{controls}<section className={styles.panel}><h2>{own.name} vs {selected.name}</h2><p>Head-to-head · All recorded seasons</p>{archive.error&&<p>Historical archive temporarily unavailable; published results shown below.</p>}{merged.length?<table className={styles.table}><thead><tr><th>Match</th><th>{own.name}</th><th>{selected.name}</th></tr></thead><tbody>{merged.map(r=>{const ownHome=r.homeId===own.id;const ownScore=ownHome?r.homeScore:r.awayScore;const opposingScore=ownHome?r.awayScore:r.homeScore;const label=r.date??r.event??r.season;return <tr key={r.id}><td>{r.href?<Link href={r.href}>{label}</Link>:label}<br/><small>{r.season} · {ownHome?'Home':'Away'}</small></td><td>{ownScore>opposingScore?<strong>{ownScore}</strong>:ownScore}</td><td>{opposingScore>ownScore?<strong>{opposingScore}</strong>:opposingScore}</td></tr>})}</tbody></table>:<p>No recorded head-to-head matches.</p>}</section></>;
+      return <>{controls}<section className={styles.panel}><h2>{own.name} vs {selected.name}</h2><p>Head-to-head · All recorded seasons</p>{archive.error&&<p>Historical archive temporarily unavailable; published results shown below.</p>}{merged.length?<table className={styles.table}><thead><tr><th>Match</th><th><span className={styles.comparisonTeam}>{logo(own.id,styles.comparisonLogo)}<span>{own.name}</span></span></th><th><span className={styles.comparisonTeam}>{logo(selected.id,styles.comparisonLogo)}<span>{selected.name}</span></span></th></tr></thead><tbody>{merged.map(r=>{const ownHome=r.homeId===own.id;const ownScore=ownHome?r.homeScore:r.awayScore;const opposingScore=ownHome?r.awayScore:r.homeScore;const label=r.date??r.event??r.season;return <tr key={r.id}><td>{r.href?<Link href={r.href}>{label}</Link>:label}<br/><small>{r.season} · {ownHome?'Home':'Away'}</small></td><td>{ownScore>opposingScore?<strong>{ownScore}</strong>:ownScore}</td><td>{opposingScore>ownScore?<strong>{opposingScore}</strong>:opposingScore}</td></tr>})}</tbody></table>:<p>No recorded head-to-head matches.</p>}</section></>;
     }
     const ids = own && own.id!==selected.id ? [own.id,selected.id] : [selected.id];
     const overview = await services.statistics.getMatchdayTeamStatisticsForTeams(ids,season.id,season.id);
@@ -192,7 +194,7 @@ async function ScoutingContent({params}: {params: Params}) {
         }
       }
     }
-    return <>{controls}<section className={styles.panel}><h2>Team comparison</h2><p>Published results. Contest percentages award half credit for ties; team points include official adjustments.</p><table className={styles.table}><thead><tr><th>Statistic</th>{ids.map(id=><th key={id}>{names.get(id)}</th>)}</tr></thead><tbody>
+    return <>{controls}<section className={styles.panel}><h2>Team comparison</h2><p>Published results. Contest percentages award half credit for ties; team points include official adjustments.</p><table className={styles.table}><thead><tr><th>Statistic</th>{ids.map(id=><th key={id}><span className={styles.comparisonTeam}>{logo(id,styles.comparisonLogo)}<span>{names.get(id)}</span></span></th>)}</tr></thead><tbody>
     {[
       ['Record',(id:string)=>record(overview.current.find(s=>s.teamId===id)?.record)],
       ['League rank',(id:string)=>standings.find(s=>s.team.id===id)?.rank ?? '—'],
