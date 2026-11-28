@@ -97,7 +97,6 @@ async function ScoutingContent({params}: {params: Params}) {
         } catch {lockedNotice='Official roster status could not be verified.';}
       }
       const rosterMode = lockedIds && param(params,'roster')!=='full' ? 'locked' : 'full';
-      const view = param(params,'view')==='ratings'?'ratings':'records';
       const scope = param(params,'scope')==='career'?'career':'season';
       const [players, memberships] = await Promise.all([
         repository.getPlayers(),
@@ -117,7 +116,7 @@ async function ScoutingContent({params}: {params: Params}) {
       const sort = param(params,'sort') || 'ci';
       const score = (p: typeof roster[number]) => sort==='pdga' ? pdga(p) ?? -Infinity : sort==='change' ? snapshot.ciMovements.get(p.id)?.ciGain ?? -Infinity : sort==='singles' ? stats.get(p.id)?.singlesRecord.wins ?? 0 : sort==='doubles' ? stats.get(p.id)?.doublesRecord.wins ?? 0 : ci(p) ?? -Infinity;
       const rows = roster.filter(p=>p.name.toLowerCase().includes(query)&&(!category||categories.get(p.id)===category)).sort((a,b)=>score(b)-score(a)||a.name.localeCompare(b.name));
-      const player = roster.find(p=>p.id===param(params,'player'));
+      const player = rows.find(p=>p.id===param(params,'player'));
       const history = player ? (await services.statistics.getPlayerMatchHistoriesForPlayers([player.id],100,scope==='career'?undefined:season.id)).get(player.id) ?? [] : [];
       const historyMatchIds = [...new Set(history.map(h=>h.challengeId))];
       const ratingRows = player && historyMatchIds.length ? await (db as any).from('clash_contest_rating_facts').select('match_id,contest_id,clash_index_before,opponent_effective_ci,ci_delta').eq('player_id',player.id).in('match_id',historyMatchIds) : null;
@@ -146,12 +145,36 @@ async function ScoutingContent({params}: {params: Params}) {
       <label>Match<select name="match" defaultValue={matchChoice?.id??''}><option value="">Automatic</option>{choices.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
       <label>Roster<select name="roster" defaultValue={param(params,'roster')||'auto'}><option value="auto">Automatic / locked when available</option><option value="full">Season roster</option></select></label>
       <label>Records<select name="scope" defaultValue={scope}><option value="season">Selected season</option><option value="career">Career</option></select></label>
-      <label>Columns<select name="view" defaultValue={view}><option value="records">Records</option><option value="ratings">Ratings</option></select></label>
       <label>Player<input name="q" defaultValue={param(params,'q')} placeholder="Search name"/></label><label>Category<select name="category" defaultValue={category}><option value="">All</option>{['Men','Women','Junior'].map(c=><option key={c}>{c}</option>)}</select></label>
       <label>Sort<select name="sort" defaultValue={sort}>{[['ci','Highest CI'],['pdga','Highest PDGA'],['singles','Singles wins'],['doubles','Doubles wins'],['change','CI gain']].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label><button>Apply</button></form>
-      <table className={`${styles.table} ${view==='ratings'?styles.ratingView:styles.recordView}`}><thead><tr><th>Player</th><th>CI</th><th className={styles.secondary}>PDGA</th><th className={styles.recordColumn}>Singles</th><th className={styles.recordColumn}>Doubles</th><th className={styles.secondary}>CI ±</th></tr></thead><tbody>{rows.map(p=><tr key={p.id}><td><Link href={url({player:p.id,q:param(params,'q'),category,sort,view,scope,match:matchChoice?.id??'',roster:param(params,'roster')||'auto'})+'#player-detail'}>{p.name}</Link></td><td>{ci(p) ?? '—'}{ci(p) != null && p.clashIndexProvisional?'*':''}</td><td className={styles.secondary}>{pdga(p) ?? '—'}</td><td className={styles.recordColumn}>{record(stats.get(p.id)?.singlesRecord)}</td><td className={styles.recordColumn}>{record(stats.get(p.id)?.doublesRecord)}</td><td className={styles.secondary}>{snapshot.ciMovements.get(p.id)?.ciGain ?? '—'}</td></tr>)}</tbody></table>
-      {!rows.length&&<p>No matching roster players.</p>}<small>* Provisional CI. — Unavailable.</small></section>
-      {player&&<section id="player-detail" className={styles.panel}><h2>{player.name}</h2><p>Current CI: {ci(player) ?? '—'} · PDGA: {pdga(player) ?? '—'}</p><h3>Published CI history</h3>{timeline.length?<table className={styles.table}><thead><tr><th>Match date</th><th>Before</th><th>After</th></tr></thead><tbody>{timeline.map(([id,p])=><tr key={id}><td>{p.date}</td><td>{p.before}</td><td>{p.after}</td></tr>)}</tbody></table>:<p>No verified rating snapshots available.</p>}<h3>Doubles partners · {scope==='career'?'Career':'Selected season'}</h3>{partners.size?<table className={styles.table}><thead><tr><th>Partner</th><th>Played</th><th>W–L–T</th></tr></thead><tbody>{[...partners.entries()].sort((a,b)=>(b[1].wins+b[1].losses+b[1].ties)-(a[1].wins+a[1].losses+a[1].ties)).map(([id,p])=><tr key={id}><td>{p.name}</td><td>{p.wins+p.losses+p.ties}</td><td>{record(p)}</td></tr>)}</tbody></table>:<p>No recorded complete doubles partnerships.</p>}<h3>Contest history</h3>{history.length ? <table className={styles.table}><thead><tr><th>Date / Format</th><th>Opponents / Partner</th><th>Result</th></tr></thead><tbody>{history.map(h=><tr key={h.id}><td>{h.date}<br/>{h.format}</td><td>{h.opponentPlayerNames.join(', ')||'—'}{h.partnerPlayerNames.length>0&&<><br/><small>Partner: {h.partnerPlayerNames.join(', ')}</small></>}</td><td>{h.outcome}{facts.find(f=>f.match_id===h.challengeId&&h.id.startsWith(f.contest_id+':'))&&<><br/><small>Opp. CI: {number(facts.find(f=>f.match_id===h.challengeId&&h.id.startsWith(f.contest_id+':'))?.opponent_effective_ci)}</small></>}</td></tr>)}</tbody></table>:<p>No published contest history in this season.</p>}</section>}</>;
+      <div className={styles.playerCards} aria-label="Player scouting cards">
+        {rows.map(p=>{
+          const expanded=player?.id===p.id;
+          const summary=stats.get(p.id);
+          const change=snapshot.ciMovements.get(p.id)?.ciGain;
+          const cardId='scouting-player-'+p.id;
+          const detailId=cardId+'-detail';
+          const href=url({player:expanded?'':p.id,q:param(params,'q'),category,sort,scope,match:matchChoice?.id??'',roster:param(params,'roster')||'auto'});
+          return <article key={p.id} id={cardId} className={`${styles.playerCard} ${expanded?styles.playerCardExpanded:''}`}>
+            <Link className={styles.playerToggle} href={href} scroll={false} prefetch={false} aria-expanded={expanded} aria-controls={expanded?detailId:undefined}>
+              <span className={styles.playerIdentity}><strong>{p.name}</strong>{categories.get(p.id)&&<small>{categories.get(p.id)}</small>}</span>
+              <span className={styles.playerRating}><small>CI</small><strong>{ci(p)??'—'}{ci(p)!=null&&p.clashIndexProvisional?'*':''}</strong></span>
+              <span className={styles.playerChevron} aria-hidden="true">{expanded?'⌃':'⌄'}</span>
+            </Link>
+            {expanded&&<section className={styles.playerDetails} id={detailId} aria-label={p.name+' statistics'}>
+              <dl className={styles.playerMetrics}>
+                <div className={styles.playerMetric}><dt>PDGA rating</dt><dd>{pdga(p)??'—'}</dd></div>
+                <div className={styles.playerMetric}><dt>Season CI change</dt><dd>{change==null?'—':change>0?'+'+change:change}</dd></div>
+                <div className={styles.playerMetric}><dt>Singles W–L–T</dt><dd>{record(summary?.singlesRecord)}</dd></div>
+                <div className={styles.playerMetric}><dt>Doubles W–L–T</dt><dd>{record(summary?.doublesRecord)}</dd></div>
+              </dl>
+              <p>{summary?.matchesPlayed??0} matches played · {scope==='career'?'Career':'Selected season'}{p.pdgaNumber&&<> · <a href={'https://www.pdga.com/player/'+encodeURIComponent(p.pdgaNumber)} target="_blank" rel="noreferrer">PDGA profile</a></>}</p>
+              <h3>Published CI history</h3>{timeline.length?<table className={styles.table}><thead><tr><th>Match date</th><th>Before</th><th>After</th></tr></thead><tbody>{timeline.map(([id,p])=><tr key={id}><td>{p.date}</td><td>{p.before}</td><td>{p.after}</td></tr>)}</tbody></table>:<p>No verified rating snapshots available.</p>}<h3>Doubles partners · {scope==='career'?'Career':'Selected season'}</h3>{partners.size?<table className={styles.table}><thead><tr><th>Partner</th><th>Played</th><th>W–L–T</th></tr></thead><tbody>{[...partners.entries()].sort((a,b)=>(b[1].wins+b[1].losses+b[1].ties)-(a[1].wins+a[1].losses+a[1].ties)).map(([id,p])=><tr key={id}><td>{p.name}</td><td>{p.wins+p.losses+p.ties}</td><td>{record(p)}</td></tr>)}</tbody></table>:<p>No recorded complete doubles partnerships.</p>}<h3>Contest history</h3>{history.length ? <table className={styles.table}><thead><tr><th>Date / Format</th><th>Opponents / Partner</th><th>Result</th></tr></thead><tbody>{history.map(h=><tr key={h.id}><td>{h.date}<br/>{h.format}</td><td>{h.opponentPlayerNames.join(', ')||'—'}{h.partnerPlayerNames.length>0&&<><br/><small>Partner: {h.partnerPlayerNames.join(', ')}</small></>}</td><td>{h.outcome}{facts.find(f=>f.match_id===h.challengeId&&h.id.startsWith(f.contest_id+':'))&&<><br/><small>Opp. CI: {number(facts.find(f=>f.match_id===h.challengeId&&h.id.startsWith(f.contest_id+':'))?.opponent_effective_ci)}</small></>}</td></tr>)}</tbody></table>:<p>No published contest history in this season.</p>}
+            </section>}
+          </article>;
+        })}
+      </div>
+      {!rows.length&&<p>No matching roster players.</p>}<small>* Provisional CI. — Unavailable.</small></section></>;
     }
     const results = await new SupabaseStatisticsRepository(db).getPublishedChallengeResults();
     const relevant = results.filter(r=>r.seasonId===season.id&&(r.homeTeamId===selected.id||r.awayTeamId===selected.id)).sort((a,b)=>b.date.localeCompare(a.date));
