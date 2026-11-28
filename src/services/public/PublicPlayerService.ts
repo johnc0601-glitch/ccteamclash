@@ -37,6 +37,7 @@ export type PublicPlayerIdentity = {
 export type PublicPlayerSearchEntry = {
   id: string;
   name: string;
+  gender?: string;
   pdgaNumber: string;
   teamName: string;
   record: string;
@@ -136,6 +137,7 @@ export class PublicPlayerService {
       return {
         id: player.id,
         name: player.name,
+        gender: player.gender,
         pdgaNumber: player.pdgaNumber,
         teamName: player.teamId ? teamNames.get(player.teamId) ?? player.teamId : 'Unassigned',
         record: formatRecord(currentStatistics?.overallRecord ?? careerRecord),
@@ -222,6 +224,7 @@ export class PublicPlayerService {
       return {
         id: player.id,
         name: player.name,
+        gender: player.gender,
         record: formatRecord(currentStatistics?.overallRecord ?? careerRecord),
         recordLabel: currentStatistics ? activeSeason?.name ?? 'Current season' : 'Career',
       };
