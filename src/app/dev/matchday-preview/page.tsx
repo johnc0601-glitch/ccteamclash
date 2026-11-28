@@ -18,7 +18,7 @@ export default function Preview() {
   return <><p style={{textAlign: 'center'}}>Local design preview · example data</p><FinalMatchdayV2 snapshot={snapshot}>
     <a href="https://tcwhiteboard.com" target="_blank" rel="noreferrer">View scoring on TCWhiteboard</a>
     <MatchdaySection title="Official roster"><p>Official roster stays available here.</p></MatchdaySection>
-    <MatchdaySection title="Saved prematch estimates"><MatchPredictionCard actor={{profileRole: 'Captain', profileStatus: 'Approved'}} prediction={{state: 'calculated', source: 'matchLineup', stageLabel: 'Match lineup', strengthLabel: 'CI', displayLabel: 'Early estimate', readiness: 'Ready', confidence: 'Full', awayStrength: 900, homeStrength: 900, homeChanceOfVictory: .69, awayChanceOfVictory: .31, homeProjectedMargin: 4, venueNote: '', updateNote: ''}} awayTeamName="Away Team" homeTeamName="Home Team" /></MatchdaySection>
+    <MatchdaySection title="Saved prematch estimates"><MatchPredictionCard actor={{profileRole: 'Commissioner', profileStatus: 'Approved'}} prediction={{state: 'calculated', source: 'matchLineup', stageLabel: 'Match lineup', strengthLabel: 'CI', displayLabel: 'Early estimate', readiness: 'Ready', confidence: 'Full', awayStrength: 900, homeStrength: 900, homeChanceOfVictory: .69, awayChanceOfVictory: .31, homeProjectedMargin: 4, venueNote: '', updateNote: ''}} awayTeamName="Away Team" homeTeamName="Home Team" /></MatchdaySection>
     <MatchdaySection title="Match preview"><p>The original preview remains on the same page.</p></MatchdaySection>
     <MatchdaySection title="Team information"><p>Team statistics stay available here.</p></MatchdaySection>
     <MatchdaySection title="Course details"><p>Example course</p></MatchdaySection>
