@@ -80,7 +80,7 @@ export class SeasonAwareMatchRosterRepository extends SupabaseMatchRosterReposit
     ] = await Promise.all([
       this.seasonSupabase
         .from('launch_players')
-        .select('id,name')
+        .select('id,name,gender')
         .in('id', playerIds)
         .eq('active', true)
         .order('name'),
@@ -113,6 +113,7 @@ export class SeasonAwareMatchRosterRepository extends SupabaseMatchRosterReposit
       return {
         playerId: player.id,
         playerName: player.name,
+        gender: player.gender,
         teamId,
         status: statuses.get(player.id) ?? 'Unconfirmed',
         ...(originalTeamId ? {
