@@ -11,6 +11,7 @@ import {historicalClashTeamId} from '@/services/teamStrength/ClashChallengeInsig
 import type {RecordSummary} from '@/services/statistics/StatisticsTypes';
 import {SupabaseStatisticsRepository} from '@/services/statistics/SupabaseStatisticsRepository';
 import styles from './Scouting.module.css';
+import {PrintScoutingButton} from './PrintScoutingButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,7 @@ const number = (n: number | null | undefined) => n == null ? '—' : n.toFixed(1
 
 export default async function ScoutingPage({searchParams}: {searchParams?: Promise<Params>}) {
   const params = searchParams ? await searchParams : {};
+  if (param(params,'print')==='1') return <main className={styles.printPage}><ScoutingContent params={params}/></main>;
   return <><SiteHeader/><main className={styles.page}><div className="shell">
     <header className={styles.header}><Link href="/captain">Captain Home</Link><h1>Team Scouting</h1></header>
     <ScoutingContent params={params}/>
@@ -56,13 +58,14 @@ async function ScoutingContent({params}: {params: Params}) {
     if (!season || !selected) return <p>No published season or team is available.</p>;
     const teamLogos = new Map(teamsRaw.map(t=>[t.id,t.logo]));
     const logo = (id:string,className:string) => {const src=teamLogos.get(id);return src?<img src={src} className={className} alt="" />:null;};
-    const tab = ['players','team','history'].includes(param(params,'tab')) ? param(params,'tab') : 'players';
+    const printable = param(params,'print')==='1';
+    const tab = !printable && ['players','team','history'].includes(param(params,'tab')) ? param(params,'tab') : 'players';
     const url = (extra: Record<string,string>) => '/captain/scouting?' + new URLSearchParams({team:selected.id,tab,...extra}).toString();
     const controls = <><form method="get" className={styles.controls}>
       <input type="hidden" name="tab" value={tab}/>
       <label>Team<select name="team" defaultValue={selected.id}>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
       <button type="submit">View</button>
-    </form><nav aria-label="Scouting sections" className={styles.tabs}>{['players','team','history'].map(t=><Link key={t} aria-current={tab===t?'page':undefined} href={url({tab:t})}>{t==='team'?'Teams':t[0].toUpperCase()+t.slice(1)}</Link>)}</nav></>;
+    </form><div className={styles.printEntry}><Link href={url({print:'1',tab:'players',sort:param(params,'sort')||'ci'})}>Print / PDF</Link></div><nav aria-label="Scouting sections" className={styles.tabs}>{['players','team','history'].map(t=><Link key={t} aria-current={tab===t?'page':undefined} href={url({tab:t})}>{t==='team'?'Teams':t[0].toUpperCase()+t.slice(1)}</Link>)}</nav></>;
     if (tab === 'players') {
       const current = season.id === active?.id;
       const published = await new SupabaseStatisticsRepository(db).getPublishedChallengeResults();
@@ -84,6 +87,28 @@ async function ScoutingContent({params}: {params: Params}) {
       const sort = param(params,'sort') || 'ci';
       const score = (p: typeof roster[number]) => sort==='pdga' ? pdga(p) ?? -Infinity : sort==='change' ? snapshot.ciMovements.get(p.id)?.ciGain ?? -Infinity : sort==='singles' ? stats.get(p.id)?.singlesRecord.wins ?? 0 : sort==='doubles' ? stats.get(p.id)?.doublesRecord.wins ?? 0 : ci(p) ?? -Infinity;
       const rows = [...roster].sort((a,b)=>score(b)-score(a)||a.name.localeCompare(b.name));
+      if (printable) {
+        const generated = new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'America/New_York'}).format(new Date());
+        const summary = await services.statistics.getMatchdayTeamStatisticsForTeams([selected.id],season.id,season.id);
+        const teamStats = summary.current.find(t=>t.teamId===selected.id);
+        return <div className={styles.printSheet}>
+          <div className={styles.printToolbar}><Link href={url({tab:'players',sort})}>← Back to scouting</Link><PrintScoutingButton/></div>
+          <header className={styles.printHeading}>
+            {logo(selected.id,styles.printLogo)}
+            <div><div className={styles.printKicker}>CAPE FEAR TEAM CLASH · CAPTAIN SCOUTING</div><h1>{selected.name}</h1><p>{season.name} · {rows.length} roster players · As of {generated}</p></div>
+          </header>
+          <p className={styles.printSummary}>Season record: <strong>{record(teamStats?.record)}</strong> · Points: <strong>{teamStats?.matchesPlayed?number(teamStats.pointsPercentage)+'%':'—'}</strong> · {own && own.id!==selected.id?'Prepared for '+own.name:'Full roster reference'}</p>
+          <table className={styles.printTable}>
+            <colgroup><col style={{width:'32%'}}/><col style={{width:'9%'}}/><col style={{width:'9%'}}/><col style={{width:'12%'}}/><col style={{width:'12%'}}/><col style={{width:'8%'}}/><col style={{width:'18%'}}/></colgroup>
+            <thead><tr><th>Player</th><th>CI</th><th>PDGA</th><th>Singles</th><th>Doubles</th><th>CI ±</th><th>Matchup notes</th></tr></thead>
+            <tbody>{rows.map(p=>{const st=stats.get(p.id);const delta=snapshot.ciMovements.get(p.id)?.ciGain;return <tr key={p.id}><td>{p.name}{p.gender==='Female'?<sup className={styles.printMarker}> W</sup>:null}{categories.get(p.id)==='Junior'?<sup className={styles.printMarker}> J</sup>:null}</td><td>{ci(p)??'—'}{ci(p)!=null&&p.clashIndexProvisional?'*':''}</td><td>{pdga(p)??'—'}</td><td>{record(st?.singlesRecord)}</td><td>{record(st?.doublesRecord)}</td><td>{delta==null?'—':delta>0?'+'+delta:delta}</td><td></td></tr>})}</tbody>
+          </table>
+          {!rows.length&&<p>No roster players available.</p>}
+          <p className={styles.printLegend}>W = Woman · J = Junior · * = Provisional CI · — = Unavailable · Records: W–L–T. Full season roster; attendance is not indicated.</p>
+          <div className={styles.printNotes}><strong>Match preparation notes</strong><div/><div/></div>
+          <footer className={styles.printFooter}>CCTeamClash.com · Captain reference · Published season statistics</footer>
+        </div>;
+      }
       const player = rows.find(p=>p.id===param(params,'player'));
       const history = player ? (await services.statistics.getPlayerMatchHistoriesForPlayers([player.id],100,season.id)).get(player.id) ?? [] : [];
       const historyMatchIds = [...new Set(history.map(h=>h.challengeId))];

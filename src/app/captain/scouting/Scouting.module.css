@@ -39,3 +39,44 @@
 .comparisonLogo{width:32px;height:32px;object-fit:contain}
 .resultTeam{display:inline-flex;align-items:center;justify-content:flex-end;gap:5px}
 .resultLogo{width:20px;height:20px;object-fit:contain;flex:none}
+
+/* Dedicated printable roster, independent of the interactive player cards. */
+.printEntry{display:flex;justify-content:flex-end;margin:-4px 0 10px}
+.printEntry a,.printToolbar button{background:#20252a;color:#fff;border:0;border-radius:5px;padding:8px 12px;min-height:36px;font:inherit;font-size:12px;font-weight:700;text-decoration:none;cursor:pointer}
+.printPage{min-height:100vh;background:#fff;color:#111;padding:18px}
+.printSheet{max-width:780px;margin:0 auto;color:#111;font-family:Arial,sans-serif;font-size:12px;line-height:1.3}
+.printToolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.printToolbar a{color:#333;text-decoration:underline}
+.printHeading{display:flex;align-items:center;gap:10px;border-bottom:2px solid #25282a;padding-bottom:8px}
+.printLogo{width:44px;height:44px;object-fit:contain;flex:none}
+.printHeading h1{font:800 25px/1.15 Arial,sans-serif;margin:3px 0;color:#111;text-transform:uppercase}
+.printHeading p{margin:2px 0;color:#444;font-size:11px}
+.printKicker{font-size:9px;font-weight:800;letter-spacing:.07em;color:#555}
+.printSummary{margin:8px 0;font-size:11px}
+.printTable{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px;font-variant-numeric:tabular-nums}
+.printTable th,.printTable td{border:1px solid #bbb;padding:4px 5px;text-align:center;overflow-wrap:anywhere;color:#111}
+.printTable th{background:#eee;font-weight:700}
+.printTable th:first-child,.printTable td:first-child,.printTable th:last-child{text-align:left}
+.printTable td:first-child{font-weight:600}
+.printMarker{font-size:8px;font-weight:800;color:#333;vertical-align:super}
+.printLegend{font-size:9px;color:#444;margin:7px 0}
+.printNotes{font-size:10px;break-inside:avoid;margin-top:8px}
+.printNotes div{height:18px;border-bottom:1px solid #aaa}
+.printFooter{font-size:9px;color:#555;border-top:1px solid #ccc;margin-top:10px;padding-top:5px}
+@media screen and (max-width:550px){.printPage{padding:10px}.printSheet{min-width:570px}.printPage{overflow:auto}}
+@media print{
+  @page{size:letter portrait;margin:.42in}
+  .printPage{padding:0!important;margin:0!important;min-height:0!important;background:#fff!important}
+  .printSheet{max-width:none!important;min-width:0!important;margin:0!important;font-size:10pt}
+  .printToolbar{display:none!important}
+  .printHeading{padding-bottom:5px}
+  .printHeading h1{font-size:20pt}
+  .printHeading p,.printSummary{font-size:9pt}
+  .printLogo{width:34pt;height:34pt}
+  .printTable{font-size:9pt}
+  .printTable th,.printTable td{padding:2.5pt 3pt;line-height:1.15}
+  .printTable thead{display:table-header-group}
+  .printTable tr{break-inside:avoid}
+  .printLegend,.printFooter{font-size:8pt}
+  .printNotes div{height:13pt}
+}
