@@ -59,6 +59,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
 
   return (
     <>
+      <nav aria-label="Captain sections" style={{display:"flex",gap:16,marginBottom:18}}><strong>Management</strong><Link href="/captain/scouting" style={{color:"var(--cc-gold)"}}>Team Scouting →</Link></nav>
       <div className={styles.summaryGrid}>
         <SummaryCard label="Team" value={team.name} />
         <SummaryCard
