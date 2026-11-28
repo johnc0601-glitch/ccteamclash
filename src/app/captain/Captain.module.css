@@ -101,8 +101,8 @@
 .nextMatch{background:var(--cc-card-bg);border-radius:8px;padding:20px;margin-bottom:14px;box-shadow:var(--cc-card-shadow)}
 .nextMatch h2{margin:5px 0 4px;color:var(--cc-heading);font-family:var(--cc-font-display);font-size:clamp(23px,4vw,34px);font-style:italic;text-transform:uppercase;line-height:1.1}
 .nextMatch p{margin:3px 0;color:var(--cc-muted);font-size:14px}
-.captainActions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
-.matchAction,.scoutingAction,.laterAction,.adminSummary{display:flex;align-items:center;justify-content:center;min-height:48px;border:0;border-radius:6px;padding:12px 16px;font:inherit;font-size:14px;font-weight:900;text-align:center;text-decoration:none;cursor:pointer}
+.captainActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.matchAction,.scoutingAction,.laterAction,.adminSummary{display:flex;align-items:center;justify-content:center;min-height:44px;border:0;border-radius:6px;padding:8px 14px;font:inherit;font-size:13px;font-weight:800;text-align:center;text-decoration:none;cursor:pointer}
 .matchAction,.laterAction{background:#b18d23;color:#111}
 .scoutingAction{background:#20252a;color:#fff}
 .matchAction:hover,.scoutingAction:hover,.laterAction:hover,.adminSummary:hover{filter:brightness(1.1)}
@@ -115,4 +115,4 @@
 .adminDetails{margin-top:20px}.adminSummary{background:#333940;color:#fff;justify-content:space-between;list-style:none;gap:12px;text-align:left}
 .adminSummary::-webkit-details-marker{display:none}.adminSummary small{font-size:12px;font-weight:600;opacity:.85}.adminSummary span:last-child{font-size:18px}.adminDetails[open] .adminSummary span:last-child{transform:rotate(180deg)}
 .adminDetails .grid{margin-top:12px}
-@media(max-width:560px){.compactHeader{margin-bottom:12px}.nextMatch{padding:14px}.captainActions{grid-template-columns:1fr;gap:8px;margin-top:12px}.matchAction,.scoutingAction{min-height:50px}.laterMatch{gap:8px}.laterAction{font-size:11px;padding:8px}.adminSummary{flex-wrap:wrap}}
+@media(max-width:560px){.compactHeader{margin-bottom:12px}.nextMatch{padding:14px}.captainActions{gap:8px;margin-top:10px}.matchAction,.scoutingAction{min-height:44px;padding:8px 10px;font-size:12px}.laterMatch{gap:8px}.laterAction{font-size:11px;padding:8px}.adminSummary{flex-wrap:wrap}}
