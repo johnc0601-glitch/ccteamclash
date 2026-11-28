@@ -123,3 +123,20 @@
 .laterMatch .opponentActions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;flex-shrink:0}
 .laterMatch .opponentActions .scoutingAction{min-height:40px;font-size:12px;padding:8px 12px}
 @media(max-width:560px){.laterMatch{align-items:flex-start;flex-direction:column;gap:8px}.laterMatch .opponentActions{justify-content:flex-start;gap:8px}.laterMatch .opponentActions .laterAction,.laterMatch .opponentActions .scoutingAction{min-height:44px;padding:8px 10px;font-size:12px}.scoutingEntry{margin-bottom:14px;gap:8px}}
+
+/* Captain match cards share one compact layout at every breakpoint. */
+.scoutingEntry{display:block;margin:0 0 12px}
+.scoutingEntry .scoutingAction{display:flex;justify-content:space-between;gap:12px;text-align:left;padding:9px 12px}
+.scoutingEntry .scoutingAction > span:first-child{display:grid;gap:2px}
+.scoutingEntry .scoutingAction small{color:inherit;opacity:.78;font-size:11px;font-weight:500}
+.matchCards{display:grid;gap:9px}
+.matchCards .nextMatch{margin:0;padding:12px 14px;box-shadow:none;border:1px solid var(--cc-card-border)}
+.matchCardHeader{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.matchCardHeader .nextMatchLabel{color:var(--cc-muted)}
+.matchCardHeader[data-next=true] .nextMatchLabel{color:var(--cc-gold)}
+.matchVenue{color:var(--cc-muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.matchCards .nextMatch h2{font-size:clamp(19px,3.5vw,26px);margin:5px 0 3px;line-height:1.15}
+.matchCards .nextMatch p{font-size:12px;margin:0;line-height:1.4}
+.matchCards .captainActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}
+.matchCards .captainActions a{min-width:0;min-height:40px;padding:7px 8px;font-size:12px;line-height:1.2}
+@media(max-width:560px){.matchCards .nextMatch{padding:10px 12px}.matchCards .captainActions a{min-height:44px}.scoutingEntry .scoutingAction{min-height:44px}.adminDetails{margin-top:12px}}
