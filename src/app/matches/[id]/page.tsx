@@ -86,13 +86,16 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const finalSnapshot = await getFinalMatchdaySnapshot(supabase, matchId);
 
   if (finalSnapshot) {
-    const [publishedUpsets, adjustments] = await Promise.all([
+    const [publishedUpsets, adjustments, finalPlayers] = await Promise.all([
       loadPublishedUpsetEvidence(),
       loadPublishedMatchAdjustments(process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase, finalSnapshot),
+      getPlayersByIds(supabase, [...new Set(finalSnapshot.contests.flatMap(c => [...c.awayPlayers, ...c.homePlayers].map(p => p.id)))]).catch(() => [] as LaunchPlayer[]),
     ]);
+    const genders = new Map(finalPlayers.map(p => [p.id,p.gender]));
+    const displaySnapshot = {...finalSnapshot, contests: finalSnapshot.contests.map(c => ({...c, awayPlayers:c.awayPlayers.map(p => ({...p,gender:genders.get(p.id)})), homePlayers:c.homePlayers.map(p => ({...p,gender:genders.get(p.id)}))}))};
     return <>
       <SiteHeader />
-      <FinalMatchdayV2 snapshot={adaptCanarySnapshot(finalSnapshot, adjustments)} publishedUpsets={publishedUpsets}>
+      <FinalMatchdayV2 snapshot={adaptCanarySnapshot(displaySnapshot, adjustments)} publishedUpsets={publishedUpsets}>
         <FinalMatchdayExtras snapshot={finalSnapshot} />
       </FinalMatchdayV2>
       <Footer />
@@ -416,7 +419,7 @@ async function getPublicAvailability(supabase: Awaited<ReturnType<typeof createC
   const statuses = new Map<string, TeamAttendanceMember['status']>((data ?? []).map((row: {player_id: string; status: string}) => [row.player_id, row.status as TeamAttendanceMember['status']]));
   const availability = new Map<string, TeamAttendanceMember[]>();
   for (const team of [matchday.awayTeam, matchday.homeTeam]) {
-    availability.set(team.id, team.roster.map((player) => ({playerId: player.id, playerName: player.name, teamId: team.id, status: statuses.get(player.id) ?? 'Unconfirmed'})));
+    availability.set(team.id, team.roster.map((player) => ({playerId: player.id, playerName: player.name, gender: player.gender, teamId: team.id, status: statuses.get(player.id) ?? 'Unconfirmed'})));
   }
   return availability;
 }
@@ -568,6 +571,7 @@ async function getLockedAvailability(
   const rosterPlayerIds = [...new Set([...rosterPlayerIdsByTeam.values()].flatMap((ids) => [...ids]))];
   const players = await getPlayersByIds(supabase, rosterPlayerIds);
   const names = new Map(players.map((player) => [player.id, player.name]));
+  const genders = new Map(players.map((player) => [player.id, player.gender]));
   const availability = new Map(teamIds.map((teamId) => [teamId, [] as TeamAttendanceMember[]]));
   for (const teamId of teamIds) {
     for (const playerId of rosterPlayerIdsByTeam.get(teamId) ?? []) {
@@ -576,6 +580,7 @@ async function getLockedAvailability(
       availability.get(teamId)?.push({
         playerId,
         playerName,
+        gender: genders.get(playerId),
         teamId,
         status: statuses.get(playerId) ?? 'Unconfirmed',
       });
