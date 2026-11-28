@@ -30,15 +30,15 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
       <SiteHeader />
       <section className={styles.page}>
         <div className="shell">
-          <header className={styles.header}>
+          <header className={styles.compactHeader}>
             <span>Captain home</span>
-            <h1>Team control</h1>
-            <p>See your roster and match schedule from one simple captain screen.</p>
+            <h1>{captainData.ok ? captainData.team.name : 'Team control'}</h1>
+            {captainData.ok ? <p>{captainData.roster.length} players · {captainData.events.filter(event => event.bucket === 'upcoming').length} upcoming matches</p> : null}
           </header>
           {notice ? <p className={styles.notice}>{notice}</p> : null}
           {error ? <p className={styles.error}>{error}</p> : null}
           {!captainData.ok ? <AccessMessage message={captainData.message} /> : (
-            <CaptainDashboard events={captainData.events} pendingApplications={captainData.pendingApplications} roster={captainData.roster} season={captainData.season} team={captainData.team} />
+            <CaptainDashboard events={captainData.events} pendingApplications={captainData.pendingApplications} roster={captainData.roster} season={captainData.season} team={captainData.team} showAdmin={Boolean(notice || error)} />
           )}
         </div>
       </section>
@@ -47,8 +47,9 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
   );
 }
 
-function CaptainDashboard({events, pendingApplications, roster, season, team}: {events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; roster: CaptainRosterPlayer[]; season: CaptainSeason | null; team: LaunchTeam}) {
-  const upcomingEvents = events.filter((event) => event.bucket === 'upcoming');
+function CaptainDashboard({events, pendingApplications, roster, season, team, showAdmin}: {events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; roster: CaptainRosterPlayer[]; season: CaptainSeason | null; team: LaunchTeam; showAdmin: boolean}) {
+  const upcomingEvents = events.filter((event) => event.bucket === 'upcoming').sort((a,b) => a.dateTime.getTime() - b.dateTime.getTime());
+  const nextMatch = upcomingEvents[0];
   const rosterCounts = {
     women: roster.filter((player) => player.rosterCategory === 'Women').length,
     men: roster.filter((player) => player.rosterCategory === 'Men').length,
@@ -59,18 +60,27 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
 
   return (
     <>
-      <nav aria-label="Captain sections" style={{display:"flex",gap:16,marginBottom:18}}><strong>Management</strong><Link href="/captain/scouting" style={{color:"var(--cc-gold)"}}>Team Scouting →</Link></nav>
-      <div className={styles.summaryGrid}>
-        <SummaryCard label="Team" value={team.name} />
-        <SummaryCard
-          label="Roster"
-          value={`${roster.length} players`}
-          detail={`${rosterCounts.women} Women · ${rosterCounts.men} Men · ${rosterCounts.junior} Junior`}
-        />
-        <SummaryCard label="Confirm" value={`${pendingApplications.length} pending`} />
-        <SummaryCard label="Upcoming" value={`${upcomingEvents.length} matches`} />
-      </div>
-
+      <section className={styles.nextMatch} aria-label="Match preparation">
+        <span className={styles.nextMatchLabel}>Next match</span>
+        {nextMatch ? <>
+          <h2>vs {nextMatch.opponent}</h2>
+          <p>{nextMatch.date} · {nextMatch.time} · {nextMatch.isHome ? 'Home' : 'Away'}</p>
+          <p>{nextMatch.course}</p>
+        </> : <p>No upcoming matches are posted yet.</p>}
+        <nav className={styles.captainActions} aria-label="Match preparation actions">
+          {nextMatch ? <Link className={styles.matchAction} href={nextMatch.href + '?manage=roster'}>Manage Match Roster</Link> : null}
+          <Link className={styles.scoutingAction} href="/captain/scouting">Team Scouting</Link>
+        </nav>
+      </section>
+      {upcomingEvents.length > 1 ? <section className={styles.laterMatches}>
+        <h2>Other upcoming matches</h2>
+        {upcomingEvents.slice(1).map(event => <article className={styles.laterMatch} key={event.id}>
+          <div><strong>vs {event.opponent}</strong><small>{event.date} · {event.isHome ? 'Home' : 'Away'}</small><small>{event.course}</small></div>
+          <Link className={styles.laterAction} href={event.href + '?manage=roster'}>Manage Roster</Link>
+        </article>)}
+      </section> : null}
+      <details className={styles.adminDetails} open={showAdmin || pendingApplications.length > 0 ? true : undefined}>
+        <summary className={styles.adminSummary}><div>Team Administration<br/><small>{roster.length} players · {pendingApplications.length} pending requests</small></div><span aria-hidden="true">⌄</span></summary>
       <div className={styles.grid}>
         <section className={styles.panel} id="season-requests">
           <header className={styles.panelHeader}><span>Captain confirmation</span><h2>Season requests</h2><p className={styles.muted}>Approve players here without reloading Captain Home after every request.</p></header>
@@ -117,18 +127,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
         </section>
 
         <section className={styles.panel}>
-          <header className={styles.panelHeader}><span>Matchdays</span><h2>Upcoming matches</h2><p className={styles.muted}>Use this section to know where your team is playing next.</p></header>
-          <div className={styles.list}>{upcomingEvents.length ? upcomingEvents.map((event) => (
-            <article className={styles.row} key={event.id}>
-              <div className={styles.matchHeading}><strong>vs {event.opponent}</strong><span className={styles.sideLabel}>{event.isHome ? 'Home' : 'Away'}</span></div>
-              <span className={styles.muted}>{event.date} / {event.time}</span><span className={styles.muted}>{event.course}</span>
-              <Link href={`${event.href}?manage=roster`}>Manage Match Roster</Link>
-            </article>
-          )) : <p className={styles.empty}>No upcoming matches are posted for your team yet.</p>}</div>
-        </section>
-
-        <section className={styles.panel}>
-          <header className={styles.panelHeader}><span>Roster</span><h2>{team.name}</h2><p className={styles.muted}>{season?.canEditRegistrations ? 'Tap Edit registration to update player details or remove a player from your roster.' : 'Registration details are locked, but captains may still remove players. A player removed after the season starts cannot rejoin that season.'}</p></header>
+          <header className={styles.panelHeader}><span>Season roster</span><h2>{team.name}</h2><p className={styles.muted}>{rosterCounts.women} women · {rosterCounts.men} men · {rosterCounts.junior} juniors</p><p className={styles.muted}>{season?.canEditRegistrations ? 'Tap Edit registration to update player details or remove a player from your roster.' : 'Registration details are locked, but captains may still remove players. A player removed after the season starts cannot rejoin that season.'}</p></header>
           <div className={styles.list}>{roster.length ? roster.map((player) => (
             <article className={styles.row} key={player.id}>
               <div className={styles.playerIdentity}>
@@ -163,6 +162,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team}: {
           )) : <p className={styles.empty}>No players are on this season roster yet.</p>}</div>
         </section>
       </div>
+      </details>
     </>
   );
 }
@@ -190,15 +190,6 @@ function easternDateKey(date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
-function SummaryCard({label, value, detail}: {label: string; value: string; detail?: string}) {
-  return (
-    <article className={styles.quickCard}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      {detail ? <small className={styles.quickCardMeta}>{detail}</small> : null}
-    </article>
-  );
-}
 function AccessMessage({message}: {message: string}) {return <section className={styles.alert}><strong>{message}</strong><p className={styles.muted}>Sign in with the account your commissioner approved for captain access.</p><Link href="/account">Open account page</Link></section>;}
 
 async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: CaptainRosterPlayer[]; events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; season: CaptainSeason | null} | {ok: false; message: string}> {
