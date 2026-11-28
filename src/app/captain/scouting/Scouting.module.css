@@ -9,18 +9,18 @@
 @media(max-width:600px){.table.ratingView .secondary{display:table-cell}.table.ratingView .recordColumn{display:none}.table.recordView .secondary{display:none}}
 
 /* Player scouting: compact list, one inline expanded profile. */
-.playerCards{display:grid;gap:8px;margin:12px 0}
+.playerCards{display:grid;gap:5px;margin:10px 0}
 .playerCard{min-width:0;border-radius:7px;background:var(--cc-surface-deep);overflow:hidden}
 .playerCardExpanded{background:var(--cc-card-bg);box-shadow:0 0 0 1px var(--cc-card-border)}
-.playerToggle{display:flex;align-items:center;gap:12px;min-height:52px;padding:10px 14px;color:var(--cc-heading);text-decoration:none}
+.playerToggle{display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 12px;color:var(--cc-heading);text-decoration:none}
 .playerToggle:hover{background:var(--cc-surface-raised)}
 .playerToggle:focus-visible{outline:2px solid var(--cc-gold);outline-offset:-3px}
 .playerIdentity{flex:1;min-width:0;display:grid;gap:3px}
 .playerIdentity strong{font-size:15px;line-height:1.25;overflow-wrap:anywhere}
 .playerIdentity small{font-size:11px;color:var(--cc-muted)}
-.playerRating{display:grid;gap:2px;text-align:right;min-width:46px;font-variant-numeric:tabular-nums}
+.playerRating{display:flex;align-items:baseline;justify-content:flex-end;gap:5px;min-width:68px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .playerRating small{font-size:10px;letter-spacing:.08em}
-.playerRating strong{color:var(--cc-heading);font-size:20px;line-height:1}
+.playerRating strong{color:var(--cc-heading);font-size:17px;line-height:1.2}
 .playerChevron{font-size:18px;color:var(--cc-muted);flex:none}
 .playerDetails{border-top:1px solid var(--cc-card-border);padding:14px;min-width:0}
 .playerMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 12px}
@@ -29,4 +29,4 @@
 .playerMetric dd{font-size:17px;font-weight:800;color:var(--cc-heading);font-variant-numeric:tabular-nums;margin:0;overflow-wrap:anywhere}
 .playerDetails h3{margin:16px 0 5px}
 .playerDetails .table{margin-bottom:8px}
-@media(max-width:600px){.playerToggle{padding:9px 11px;gap:10px;min-height:48px}.playerDetails{padding:10px}.playerMetrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.playerMetric{padding:8px}}
+@media(max-width:600px){.playerToggle{padding:5px 9px;gap:8px;min-height:44px}.playerDetails{padding:10px}.playerMetrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.playerMetric{padding:8px}}
