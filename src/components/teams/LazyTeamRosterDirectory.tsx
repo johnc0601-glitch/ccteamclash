@@ -1,5 +1,6 @@
 'use client';
 
+import {PlayerName} from '@/components/players/PlayerName';
 import {useState} from 'react';
 import {
   loadTeamRosterPlayerProfile,
@@ -75,7 +76,7 @@ export function LazyTeamRosterDirectory({
           >
             <summary>
               <span>
-                <strong>{player.name}</strong>
+                <strong><PlayerName gender={player.gender}>{player.name}</PlayerName></strong>
                 <small>{teamName}</small>
               </span>
               <span className={styles.summaryStats}>
