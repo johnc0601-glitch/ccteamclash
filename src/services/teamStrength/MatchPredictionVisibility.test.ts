@@ -34,6 +34,8 @@ test('captains and commissioners mode allows only approved leadership roles', ()
 test('commissioner-only mode allows only approved commissioners', () => {
   assert.equal(canViewMatchPrediction('Commissioner', actor('Commissioner')), true);
   assert.equal(canViewMatchPrediction('Commissioner', actor('Captain')), false);
+  assert.equal(canViewMatchPrediction('Commissioner', actor('Player')), false);
+  assert.equal(canViewMatchPrediction('Commissioner', actor('Commissioner', 'Pending')), false);
   assert.equal(canViewMatchPrediction('Commissioner', actor('Commissioner', 'Suspended')), false);
   assert.equal(canViewMatchPrediction('Commissioner', undefined), false);
 });
