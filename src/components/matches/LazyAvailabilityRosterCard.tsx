@@ -1,5 +1,6 @@
 'use client';
 
+import {PlayerName} from '@/components/players/PlayerName';
 import {useState, type SyntheticEvent} from 'react';
 import type {TeamAttendanceMember} from '@/domain/match-roster/MatchAttendance';
 import {loadAvailabilityRosterRemainder} from '@/app/matches/[id]/publicRosterActions';
@@ -82,7 +83,7 @@ function AvailabilityPlayerRow({player}: {player: TeamAttendanceMember}) {
       : v1.availabilityUnconfirmed;
   return (
     <div className={v1.previewPlayer}>
-      <strong>{player.playerName}</strong>
+      <strong><PlayerName gender={player.gender}>{player.playerName}</PlayerName></strong>
       <span className={`${v1.playerMeta} ${statusClass}`}>
         {player.borrowed ? `Borrowed · ${player.originalTeamName ?? 'League'} · ` : ''}{status}
       </span>
