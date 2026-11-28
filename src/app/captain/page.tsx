@@ -82,6 +82,10 @@ function CaptainDashboard({events, pendingApplications, roster, season, team, sh
             <Link className={styles.matchAction} href={event.href + '?manage=roster'}>Manage Roster</Link>
             <Link className={styles.scoutingAction} href={scoutHref(event)}>Scout Opponent</Link>
           </nav>
+          <Link className={styles.worksheetAction} href={scoutHref(event)+'&print=1&match='+encodeURIComponent(event.id)} prefetch={false}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6zM18 12h.01"/></svg>
+            Print Match Worksheet
+          </Link>
         </article>) : <article className={styles.nextMatch}><p>No upcoming matches are posted yet.</p></article>}
       </section>
       <details className={styles.adminDetails} open={showAdmin || pendingApplications.length > 0 ? true : undefined}>

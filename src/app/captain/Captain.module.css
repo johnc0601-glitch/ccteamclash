@@ -151,3 +151,9 @@
 .matchCards .matchIdentity h2{margin:0 0 3px}
 .matchIdentity > div{min-width:0}
 @media(max-width:560px){.captainTeamLogo{width:38px;height:38px}.opponentLogo{width:32px;height:32px}}
+
+/* Match-specific printable worksheet is separate from the two primary actions. */
+.worksheetAction{display:flex;align-items:center;justify-content:center;gap:7px;min-height:36px;margin-top:5px;color:var(--cc-heading);font-size:12px;font-weight:700;text-decoration:none}
+.worksheetAction:hover{text-decoration:underline}
+.worksheetAction:focus-visible{outline:2px solid var(--cc-gold);outline-offset:2px;border-radius:4px}
+@media(max-width:560px){.worksheetAction{min-height:40px}}

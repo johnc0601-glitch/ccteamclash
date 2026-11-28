@@ -65,7 +65,7 @@ async function ScoutingContent({params}: {params: Params}) {
       <input type="hidden" name="tab" value={tab}/>
       <label>Team<select name="team" defaultValue={selected.id}>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
       <button type="submit">View</button>
-    </form><div className={styles.printEntry}><Link href={url({print:'1',tab:'players',sort:param(params,'sort')||'ci'})}>Print / PDF</Link></div><nav aria-label="Scouting sections" className={styles.tabs}>{['players','team','history'].map(t=><Link key={t} aria-current={tab===t?'page':undefined} href={url({tab:t})}>{t==='team'?'Teams':t[0].toUpperCase()+t.slice(1)}</Link>)}</nav></>;
+    </form><nav aria-label="Scouting sections" className={styles.tabs}>{['players','team','history'].map(t=><Link key={t} aria-current={tab===t?'page':undefined} href={url({tab:t})}>{t==='team'?'Teams':t[0].toUpperCase()+t.slice(1)}</Link>)}</nav></>;
     if (tab === 'players') {
       const current = season.id === active?.id;
       const published = await new SupabaseStatisticsRepository(db).getPublishedChallengeResults();
@@ -93,6 +93,7 @@ async function ScoutingContent({params}: {params: Params}) {
       const score = (p: typeof roster[number]) => sort==='pdga' ? pdga(p) ?? -Infinity : sort==='change' ? snapshot.ciMovements.get(p.id)?.ciGain ?? -Infinity : sort==='singles' ? stats.get(p.id)?.singlesRecord.wins ?? 0 : sort==='doubles' ? stats.get(p.id)?.doublesRecord.wins ?? 0 : ci(p) ?? -Infinity;
       const rows = [...roster].sort((a,b)=>score(b)-score(a)||a.name.localeCompare(b.name));
       if (printable && sideBySide) {
+        const worksheetMatch = events.find(e=>e.id===param(params,'match')&&[e.homeTeamId,e.awayTeamId].includes(selected.id)&&[e.homeTeamId,e.awayTeamId].includes(sideBySide.id));
         const ownRows = [...ownRoster].sort((a,b)=>score(b)-score(a)||a.name.localeCompare(b.name));
         const generated = new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'America/New_York'}).format(new Date());
         const overview = await services.statistics.getMatchdayTeamStatisticsForTeams([sideBySide.id,selected.id],season.id,season.id);
@@ -103,9 +104,9 @@ async function ScoutingContent({params}: {params: Params}) {
           return <><td><span className={styles.printCheck} aria-label={'Mark off '+p.name}/></td><td className={styles.printName}>{p.name}{p.gender==='Female'?<sup className={styles.printMarker}> W</sup>:null}{cats.get(p.id)==='Junior'?<sup className={styles.printMarker}> J</sup>:null}</td><td>{ci(p)??'—'}{ci(p)!=null&&p.clashIndexProvisional?'*':''}</td><td>{pdga(p)??'—'}</td><td>{record(st?.singlesRecord)}</td><td>{record(st?.doublesRecord)}</td><td>{delta==null?'—':delta>0?'+'+delta:delta}</td></>;
         };
         return <div className={styles.printSheet}>
-          <div className={styles.printToolbar}><Link href={url({tab:'players',sort})}>← Back to scouting</Link><PrintScoutingButton/></div>
+          <div className={styles.printToolbar}><Link href="/captain">← Captain Home</Link><PrintScoutingButton/></div>
           <header className={styles.printHeading}>
-            <div><div className={styles.printKicker}>CAPE FEAR TEAM CLASH · CAPTAIN SCOUTING</div><h1>Match preparation worksheet</h1><p>{season.name} · As of {generated}</p></div>
+            <div><div className={styles.printKicker}>CAPE FEAR TEAM CLASH · CAPTAIN SCOUTING</div><h1>Match preparation worksheet</h1><p>{season.name} · {worksheetMatch?worksheetMatch.date+' · '+worksheetMatch.course+' · ':''}As of {generated}</p></div>
           </header>
           <table className={`${styles.printTable} ${styles.dualPrintTable}`}>
             <colgroup>{['own','opponent'].flatMap(side=>[4,19,5,5,6,6,5].map((width,i)=><col key={side+i} style={{width:width+'%'}}/>))}</colgroup>
@@ -125,7 +126,7 @@ async function ScoutingContent({params}: {params: Params}) {
         const summary = await services.statistics.getMatchdayTeamStatisticsForTeams([selected.id],season.id,season.id);
         const teamStats = summary.current.find(t=>t.teamId===selected.id);
         return <div className={styles.printSheet}>
-          <div className={styles.printToolbar}><Link href={url({tab:'players',sort})}>← Back to scouting</Link><PrintScoutingButton/></div>
+          <div className={styles.printToolbar}><Link href="/captain">← Captain Home</Link><PrintScoutingButton/></div>
           <header className={styles.printHeading}>
             {logo(selected.id,styles.printLogo)}
             <div><div className={styles.printKicker}>CAPE FEAR TEAM CLASH · CAPTAIN SCOUTING</div><h1>{selected.name}</h1><p>{season.name} · {rows.length} roster players · As of {generated}</p></div>
