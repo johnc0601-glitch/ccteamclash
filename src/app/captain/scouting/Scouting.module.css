@@ -84,7 +84,7 @@
 /* Independent side-by-side rosters; checkboxes are for handwritten use. */
 .dualPrintTable{font-size:10px}
 .dualPrintTable th,.dualPrintTable td{padding:3px 2px}
-.dualPrintTable td.printName,.dualPrintTable th:nth-child(2),.dualPrintTable th:nth-child(9){text-align:left;font-weight:600}
+.printTable td.printName,.dualPrintTable th:nth-child(3),.dualPrintTable th:nth-child(10){text-align:left;font-weight:600}
 .dualPrintTable td:nth-child(8),.dualPrintTable thead tr:last-child th:nth-child(8),.dualPrintTable thead tr:first-child th:nth-child(2){border-left:2px solid #555}
 .dualPrintTable td:first-child,.dualPrintTable th:first-child,.dualPrintTable th:last-child{text-align:center}
 .printTeam{display:flex;align-items:center;gap:7px;text-align:left;padding:4px}
@@ -99,3 +99,8 @@
  .printTeam small{font-size:8pt}
  .printCheck{width:8pt;height:8pt}
 }
+
+/* Keep assignment boxes and the compact two-roster layout readable on paper. */
+.dualPrintTable td:first-child,.dualPrintTable td:nth-child(2),.dualPrintTable td:nth-child(8),.dualPrintTable td:nth-child(9){padding-inline:1px;text-align:center}
+.dualPrintTable thead tr:last-child th:nth-child(2),.dualPrintTable thead tr:last-child th:nth-child(9){text-align:center}
+@media print{.dualPrintTable th,.dualPrintTable td{padding:2.2pt 1.4pt}.dualPrintTable .printCheck{width:9pt;height:9pt}.printNotes{margin-top:5px}}

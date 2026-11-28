@@ -101,7 +101,7 @@ async function ScoutingContent({params}: {params: Params}) {
         const playerCells = (p:typeof roster[number]|undefined, cats:Map<string,string>) => {
           if (!p) return <><td/><td/><td/><td/><td/><td/><td/></>;
           const st=stats.get(p.id),delta=snapshot.ciMovements.get(p.id)?.ciGain;
-          return <><td><span className={styles.printCheck} aria-label={'Mark off '+p.name}/></td><td className={styles.printName}>{p.name}{p.gender==='Female'?<sup className={styles.printMarker}> W</sup>:null}{cats.get(p.id)==='Junior'?<sup className={styles.printMarker}> J</sup>:null}</td><td>{ci(p)??'—'}{ci(p)!=null&&p.clashIndexProvisional?'*':''}</td><td>{pdga(p)??'—'}</td><td>{record(st?.singlesRecord)}</td><td>{record(st?.doublesRecord)}</td><td>{delta==null?'—':delta>0?'+'+delta:delta}</td></>;
+          return <><td><span className={styles.printCheck} aria-label={'Singles assigned: '+p.name}/></td><td><span className={styles.printCheck} aria-label={'Doubles assigned: '+p.name}/></td><td className={styles.printName}>{p.name}{p.gender==='Female'?<sup className={styles.printMarker}> W</sup>:null}{cats.get(p.id)==='Junior'?<sup className={styles.printMarker}> J</sup>:null}</td><td>{ci(p)??'—'}{ci(p)!=null&&p.clashIndexProvisional?'*':''}</td><td>{record(st?.singlesRecord)}</td><td>{record(st?.doublesRecord)}</td><td>{delta==null?'—':delta>0?'+'+delta:delta}</td></>;
         };
         return <div className={styles.printSheet}>
           <div className={styles.printToolbar}><Link href="/captain">← Captain Home</Link><PrintScoutingButton/></div>
@@ -109,14 +109,14 @@ async function ScoutingContent({params}: {params: Params}) {
             <div><div className={styles.printKicker}>CAPE FEAR TEAM CLASH · CAPTAIN SCOUTING</div><h1>Match preparation worksheet</h1><p>{season.name} · {worksheetMatch?worksheetMatch.date+' · '+worksheetMatch.course+' · ':''}As of {generated}</p></div>
           </header>
           <table className={`${styles.printTable} ${styles.dualPrintTable}`}>
-            <colgroup>{['own','opponent'].flatMap(side=>[4,19,5,5,6,6,5].map((width,i)=><col key={side+i} style={{width:width+'%'}}/>))}</colgroup>
+            <colgroup>{['own','opponent'].flatMap(side=>[3.5,3.5,21,5.5,6.5,6.5,3.5].map((width,i)=><col key={side+i} style={{width:width+'%'}}/>))}</colgroup>
             <thead>
               <tr><th colSpan={7}><div className={styles.printTeam}>{logo(sideBySide.id,styles.printLogo)}<div><strong>{sideBySide.name}</strong><small>Your team · {ownRows.length} players · {teamRecord(sideBySide.id)}</small></div></div></th><th colSpan={7}><div className={styles.printTeam}>{logo(selected.id,styles.printLogo)}<div><strong>{selected.name}</strong><small>Opponent · {rows.length} players · {teamRecord(selected.id)}</small></div></div></th></tr>
-              <tr>{['own','opponent'].flatMap(side=>['✓','Player','CI','PDGA','S','D','±'].map((label,i)=><th key={side+i}>{label}</th>))}</tr>
+              <tr>{['own','opponent'].flatMap(side=>['S','D','Player','CI','Singles','Doubles','±'].map((label,i)=><th key={side+i}>{label}</th>))}</tr>
             </thead>
             <tbody>{Array.from({length:Math.max(ownRows.length,rows.length)},(_,i)=><tr key={i}>{playerCells(ownRows[i],ownCategories)}{playerCells(rows[i],categories)}</tr>)}</tbody>
           </table>
-          <p className={styles.printLegend}>S = Singles · D = Doubles · W–L–T · ± = Season CI change · W = Woman · J = Junior · * = Provisional CI · — = Unavailable. Both lists are full season rosters, independently sorted, not proposed pairings. Mark boxes manually.</p>
+          <p className={styles.printLegend}>S / D boxes = singles / doubles assigned · Records W–L–T · ± = season CI change · W = woman · J = junior · * = provisional CI · — = unavailable. Full rosters; rows are not suggested pairings.</p>
           <div className={styles.printNotes}><strong>Match preparation notes</strong><div/><div/><div/></div>
           <footer className={styles.printFooter}>CCTeamClash.com · Captain reference · Published season statistics</footer>
         </div>;
@@ -133,12 +133,12 @@ async function ScoutingContent({params}: {params: Params}) {
           </header>
           <p className={styles.printSummary}>Season record: <strong>{record(teamStats?.record)}</strong> · Points: <strong>{teamStats?.matchesPlayed?number(teamStats.pointsPercentage)+'%':'—'}</strong> · {own && own.id!==selected.id?'Prepared for '+own.name:'Full roster reference'}</p>
           <table className={styles.printTable}>
-            <colgroup><col style={{width:'32%'}}/><col style={{width:'9%'}}/><col style={{width:'9%'}}/><col style={{width:'12%'}}/><col style={{width:'12%'}}/><col style={{width:'8%'}}/><col style={{width:'18%'}}/></colgroup>
-            <thead><tr><th>Player</th><th>CI</th><th>PDGA</th><th>Singles</th><th>Doubles</th><th>CI ±</th><th>Matchup notes</th></tr></thead>
-            <tbody>{rows.map(p=>{const st=stats.get(p.id);const delta=snapshot.ciMovements.get(p.id)?.ciGain;return <tr key={p.id}><td>{p.name}{p.gender==='Female'?<sup className={styles.printMarker}> W</sup>:null}{categories.get(p.id)==='Junior'?<sup className={styles.printMarker}> J</sup>:null}</td><td>{ci(p)??'—'}{ci(p)!=null&&p.clashIndexProvisional?'*':''}</td><td>{pdga(p)??'—'}</td><td>{record(st?.singlesRecord)}</td><td>{record(st?.doublesRecord)}</td><td>{delta==null?'—':delta>0?'+'+delta:delta}</td><td></td></tr>})}</tbody>
+            <colgroup>{[5,5,30,10,12,12,8,18].map((w,i)=><col key={i} style={{width:w+'%'}}/>)}</colgroup>
+            <thead><tr><th>S</th><th>D</th><th>Player</th><th>CI</th><th>Singles</th><th>Doubles</th><th>CI ±</th><th>Notes</th></tr></thead>
+            <tbody>{rows.map(p=>{const st=stats.get(p.id);const delta=snapshot.ciMovements.get(p.id)?.ciGain;return <tr key={p.id}><td><span className={styles.printCheck} aria-label={'Singles assigned: '+p.name}/></td><td><span className={styles.printCheck} aria-label={'Doubles assigned: '+p.name}/></td><td className={styles.printName}>{p.name}{p.gender==='Female'?<sup className={styles.printMarker}> W</sup>:null}{categories.get(p.id)==='Junior'?<sup className={styles.printMarker}> J</sup>:null}</td><td>{ci(p)??'—'}{ci(p)!=null&&p.clashIndexProvisional?'*':''}</td><td>{record(st?.singlesRecord)}</td><td>{record(st?.doublesRecord)}</td><td>{delta==null?'—':delta>0?'+'+delta:delta}</td><td></td></tr>})}</tbody>
           </table>
           {!rows.length&&<p>No roster players available.</p>}
-          <p className={styles.printLegend}>W = Woman · J = Junior · * = Provisional CI · — = Unavailable · Records: W–L–T. Full season roster; attendance is not indicated.</p>
+          <p className={styles.printLegend}>S / D boxes = singles / doubles assigned · W = Woman · J = Junior · * = provisional CI · — = unavailable · Records W–L–T. Full season roster.</p>
           <div className={styles.printNotes}><strong>Match preparation notes</strong><div/><div/></div>
           <footer className={styles.printFooter}>CCTeamClash.com · Captain reference · Published season statistics</footer>
         </div>;
