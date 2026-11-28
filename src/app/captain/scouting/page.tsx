@@ -22,7 +22,7 @@ const number = (n: number | null | undefined) => n == null ? '—' : n.toFixed(1
 export default async function ScoutingPage({searchParams}: {searchParams?: Promise<Params>}) {
   const params = searchParams ? await searchParams : {};
   return <><SiteHeader/><main className={styles.page}><div className="shell">
-    <header className={styles.header}><Link href="/captain">Captain Home</Link><h1>Team Scouting</h1><p>Research teams and players using official published results.</p></header>
+    <header className={styles.header}><Link href="/captain">Captain Home</Link><h1>Team Scouting</h1></header>
     <ScoutingContent params={params}/>
   </div></main><Footer/></>;
 }
