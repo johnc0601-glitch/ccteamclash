@@ -141,7 +141,18 @@ async function ScoutingContent({params}: {params: Params}) {
     const relevant = results.filter(r=>r.seasonId===season.id&&(r.homeTeamId===selected.id||r.awayTeamId===selected.id)).sort((a,b)=>b.date.localeCompare(a.date));
     const names = new Map(teamsRaw.map(t=>[t.id,t.name]));
     const meetings = own && own.id!==selected.id ? results.filter(r=>[r.homeTeamId,r.awayTeamId].includes(own.id)&&[r.homeTeamId,r.awayTeamId].includes(selected.id)).sort((a,b)=>b.date.localeCompare(a.date)) : [];
-    const resultTable = (items: typeof results) => items.length ? <table className={styles.table}><thead><tr><th>Date</th><th>Opponent</th><th>Score</th></tr></thead><tbody>{items.map(r=><tr key={r.id}><td><Link href={'/matches/'+r.challengeId}>{r.date}</Link></td><td>{names.get(r.homeTeamId===selected.id?r.awayTeamId:r.homeTeamId) ?? '—'}</td><td>{r.homeTeamId===selected.id?r.homeScore:r.awayScore}–{r.homeTeamId===selected.id?r.awayScore:r.homeScore}</td></tr>)}</tbody></table> : <p>No published results.</p>;
+    const roundLabels = new Map<string,string>();
+    if (relevant.length) {
+      const matchRows = await db.from('launch_schedule_matches').select('id,round_id').in('id',relevant.map(r=>r.challengeId));
+      if (!matchRows.error && matchRows.data?.length) {
+        const roundRows = await db.from('launch_rounds').select('id,number,name').in('id',[...new Set(matchRows.data.map(m=>m.round_id))]);
+        if (!roundRows.error) {
+          const labels = new Map((roundRows.data??[]).map(r=>[r.id,/playoff|final|championship|place/i.test(r.name)?r.name:'Round '+r.number]));
+          for (const m of matchRows.data) {const label=labels.get(m.round_id);if(label)roundLabels.set(m.id,label);}
+        }
+      }
+    }
+    const resultTable = (items: typeof results) => items.length ? <table className={styles.table}><thead><tr><th>Round</th><th>Opponent</th><th>Score</th></tr></thead><tbody>{items.map(r=><tr key={r.id}><td><Link href={'/matches/'+r.challengeId}>{roundLabels.get(r.challengeId)??r.date}</Link></td><td>{names.get(r.homeTeamId===selected.id?r.awayTeamId:r.homeTeamId) ?? '—'}</td><td>{r.homeTeamId===selected.id?r.homeScore:r.awayScore}–{r.homeTeamId===selected.id?r.awayScore:r.homeScore}</td></tr>)}</tbody></table> : <p>No published results.</p>;
     if (tab==='history') {
       if (!own || own.id===selected.id) return <>{controls}<section className={styles.panel}><h2>{selected.name} · Current season</h2>{resultTable(relevant)}</section></>;
       // Historical team totals predate launch_match_results. Read the same public archive
