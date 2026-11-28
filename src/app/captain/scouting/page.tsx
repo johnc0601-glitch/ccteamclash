@@ -1,3 +1,4 @@
+import {PlayerName} from '@/components/players/PlayerName';
 import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
@@ -117,7 +118,7 @@ async function ScoutingContent({params}: {params: Params}) {
           const href=url({player:expanded?'':p.id,sort});
           return <article key={p.id} id={cardId} className={`${styles.playerCard} ${expanded?styles.playerCardExpanded:''}`}>
             <Link className={styles.playerToggle} href={href} scroll={false} prefetch={false} aria-expanded={expanded} aria-controls={expanded?detailId:undefined}>
-              <span className={styles.playerIdentity}><strong>{p.name}</strong>{categories.get(p.id)&&<small>{categories.get(p.id)}</small>}</span>
+              <span className={styles.playerIdentity}><strong><PlayerName gender={p.gender}>{p.name}</PlayerName></strong>{categories.get(p.id)&&<small>{categories.get(p.id)}</small>}</span>
               <span className={styles.playerRating}><small>CI</small><strong>{ci(p)??'—'}{ci(p)!=null&&p.clashIndexProvisional?'*':''}</strong></span>
               <span className={styles.playerChevron} aria-hidden="true">{expanded?'⌃':'⌄'}</span>
             </Link>
