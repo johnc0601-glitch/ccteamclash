@@ -186,6 +186,7 @@ export class PublicPlayerService {
       return {
         id: existing?.id ?? id,
         name: name || existing?.name || id,
+        gender: existing?.gender,
       };
     }).filter(({id}) => Boolean(id));
     const playerIds = Array.from(new Set(resolvedPlayers.map(({id}) => id)));
