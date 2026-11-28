@@ -1,3 +1,4 @@
+import {PlayerName} from '@/components/players/PlayerName';
 import Link from 'next/link';
 import {Footer, SiteHeader} from '@/components/SiteHeader';
 import {createServerScheduleService} from '@/core/createServerScheduleService';
@@ -131,7 +132,7 @@ function CaptainDashboard({events, pendingApplications, roster, season, team, sh
           <div className={styles.list}>{roster.length ? roster.map((player) => (
             <article className={styles.row} key={player.id}>
               <div className={styles.playerIdentity}>
-                <strong className={styles.playerName}>{player.name}</strong>
+                <strong className={styles.playerName}><PlayerName gender={player.gender}>{player.name}</PlayerName></strong>
                 <span className={styles.rosterMeta}>
                   <span>CI: {formatClashIndex(player)}</span>
                   <span>{player.gender}</span>
