@@ -80,3 +80,22 @@
   .printLegend,.printFooter{font-size:8pt}
   .printNotes div{height:13pt}
 }
+
+/* Independent side-by-side rosters; checkboxes are for handwritten use. */
+.dualPrintTable{font-size:10px}
+.dualPrintTable th,.dualPrintTable td{padding:3px 2px}
+.dualPrintTable td.printName,.dualPrintTable th:nth-child(2),.dualPrintTable th:nth-child(9){text-align:left;font-weight:600}
+.dualPrintTable td:nth-child(8),.dualPrintTable thead tr:last-child th:nth-child(8),.dualPrintTable thead tr:first-child th:nth-child(2){border-left:2px solid #555}
+.dualPrintTable td:first-child,.dualPrintTable th:first-child,.dualPrintTable th:last-child{text-align:center}
+.printTeam{display:flex;align-items:center;gap:7px;text-align:left;padding:4px}
+.printTeam strong{display:block;font-size:14px}
+.printTeam small{display:block;font-size:10px;font-weight:400}
+.printCheck{display:inline-block;width:10px;height:10px;border:1px solid #555;vertical-align:middle}
+@media screen and (max-width:700px){.printPage:has(.dualPrintTable) .printSheet{min-width:720px}}
+@media print{
+ .dualPrintTable{font-size:8pt}
+ .dualPrintTable th,.dualPrintTable td{padding:2.4pt 1.5pt}
+ .printTeam strong{font-size:11pt}
+ .printTeam small{font-size:8pt}
+ .printCheck{width:8pt;height:8pt}
+}

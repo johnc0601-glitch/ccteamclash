@@ -71,22 +71,55 @@ async function ScoutingContent({params}: {params: Params}) {
       const published = await new SupabaseStatisticsRepository(db).getPublishedChallengeResults();
       const seasonResults = published.filter(r=>r.seasonId===season.id);
       const teamResults = seasonResults.filter(r=>r.homeTeamId===selected.id||r.awayTeamId===selected.id);
+      const sideBySide = printable && own && own.id!==selected.id ? own : undefined;
       const [players, memberships] = await Promise.all([
         repository.getPlayers(),
-        (db as any).from('launch_season_roster_memberships').select('player_id,roster_category').eq('season_id',season.id).eq('team_id',selected.id).eq('status','Active'),
+        (db as any).from('launch_season_roster_memberships').select('player_id,roster_category,team_id').eq('season_id',season.id).in('team_id',sideBySide?[selected.id,sideBySide.id]:[selected.id]).eq('status','Active'),
       ]);
       if (memberships.error) throw memberships.error;
-      const categories = new Map<string,string>((memberships.data ?? []).map((m: {player_id:string;roster_category:string})=>[m.player_id,m.roster_category]));
+      const membershipRows = (memberships.data??[]) as {player_id:string;roster_category:string;team_id:string}[];
+      const categories = new Map(membershipRows.filter(m=>m.team_id===selected.id).map(m=>[m.player_id,m.roster_category]));
+      const ownCategories = new Map(membershipRows.filter(m=>m.team_id===sideBySide?.id).map(m=>[m.player_id,m.roster_category]));
       const historicalNames = new Map(teamResults.flatMap(r=>r.playerResults.filter(p=>p.teamId===selected.id).map(p=>[p.playerId,p.playerName] as const)));
       const roster = players.filter(p=>current?p.active&&categories.has(p.id):categories.has(p.id)||historicalNames.has(p.id));
       // Current ratings are not historical season ratings; hide them for past seasons.
       const ci = (p:typeof roster[number])=>current?p.clashIndex:null;
       const pdga = (p:typeof roster[number])=>current?p.pdgaRating:null;
-      const snapshot = await services.statistics.getPlayerSeasonStatisticsSnapshot(roster.map(p=>p.id),season.id);
+      const ownHistoricalIds = new Set(seasonResults.flatMap(r=>r.playerResults.filter(p=>p.teamId===sideBySide?.id).map(p=>p.playerId)));
+      const ownRoster = sideBySide ? players.filter(p=>current?p.active&&ownCategories.has(p.id):ownCategories.has(p.id)||ownHistoricalIds.has(p.id)) : [];
+      const snapshot = await services.statistics.getPlayerSeasonStatisticsSnapshot([...new Set([...roster,...ownRoster].map(p=>p.id))],season.id);
       const stats = new Map(snapshot.statistics.map(s=>[s.playerId,s]));
       const sort = param(params,'sort') || 'ci';
       const score = (p: typeof roster[number]) => sort==='pdga' ? pdga(p) ?? -Infinity : sort==='change' ? snapshot.ciMovements.get(p.id)?.ciGain ?? -Infinity : sort==='singles' ? stats.get(p.id)?.singlesRecord.wins ?? 0 : sort==='doubles' ? stats.get(p.id)?.doublesRecord.wins ?? 0 : ci(p) ?? -Infinity;
       const rows = [...roster].sort((a,b)=>score(b)-score(a)||a.name.localeCompare(b.name));
+      if (printable && sideBySide) {
+        const ownRows = [...ownRoster].sort((a,b)=>score(b)-score(a)||a.name.localeCompare(b.name));
+        const generated = new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'America/New_York'}).format(new Date());
+        const overview = await services.statistics.getMatchdayTeamStatisticsForTeams([sideBySide.id,selected.id],season.id,season.id);
+        const teamRecord = (id:string) => record(overview.current.find(t=>t.teamId===id)?.record);
+        const playerCells = (p:typeof roster[number]|undefined, cats:Map<string,string>) => {
+          if (!p) return <><td/><td/><td/><td/><td/><td/><td/></>;
+          const st=stats.get(p.id),delta=snapshot.ciMovements.get(p.id)?.ciGain;
+          return <><td><span className={styles.printCheck} aria-label={'Mark off '+p.name}/></td><td className={styles.printName}>{p.name}{p.gender==='Female'?<sup className={styles.printMarker}> W</sup>:null}{cats.get(p.id)==='Junior'?<sup className={styles.printMarker}> J</sup>:null}</td><td>{ci(p)??'—'}{ci(p)!=null&&p.clashIndexProvisional?'*':''}</td><td>{pdga(p)??'—'}</td><td>{record(st?.singlesRecord)}</td><td>{record(st?.doublesRecord)}</td><td>{delta==null?'—':delta>0?'+'+delta:delta}</td></>;
+        };
+        return <div className={styles.printSheet}>
+          <div className={styles.printToolbar}><Link href={url({tab:'players',sort})}>← Back to scouting</Link><PrintScoutingButton/></div>
+          <header className={styles.printHeading}>
+            <div><div className={styles.printKicker}>CAPE FEAR TEAM CLASH · CAPTAIN SCOUTING</div><h1>Match preparation worksheet</h1><p>{season.name} · As of {generated}</p></div>
+          </header>
+          <table className={`${styles.printTable} ${styles.dualPrintTable}`}>
+            <colgroup>{['own','opponent'].flatMap(side=>[4,19,5,5,6,6,5].map((width,i)=><col key={side+i} style={{width:width+'%'}}/>))}</colgroup>
+            <thead>
+              <tr><th colSpan={7}><div className={styles.printTeam}>{logo(sideBySide.id,styles.printLogo)}<div><strong>{sideBySide.name}</strong><small>Your team · {ownRows.length} players · {teamRecord(sideBySide.id)}</small></div></div></th><th colSpan={7}><div className={styles.printTeam}>{logo(selected.id,styles.printLogo)}<div><strong>{selected.name}</strong><small>Opponent · {rows.length} players · {teamRecord(selected.id)}</small></div></div></th></tr>
+              <tr>{['own','opponent'].flatMap(side=>['✓','Player','CI','PDGA','S','D','±'].map((label,i)=><th key={side+i}>{label}</th>))}</tr>
+            </thead>
+            <tbody>{Array.from({length:Math.max(ownRows.length,rows.length)},(_,i)=><tr key={i}>{playerCells(ownRows[i],ownCategories)}{playerCells(rows[i],categories)}</tr>)}</tbody>
+          </table>
+          <p className={styles.printLegend}>S = Singles · D = Doubles · W–L–T · ± = Season CI change · W = Woman · J = Junior · * = Provisional CI · — = Unavailable. Both lists are full season rosters, independently sorted, not proposed pairings. Mark boxes manually.</p>
+          <div className={styles.printNotes}><strong>Match preparation notes</strong><div/><div/><div/></div>
+          <footer className={styles.printFooter}>CCTeamClash.com · Captain reference · Published season statistics</footer>
+        </div>;
+      }
       if (printable) {
         const generated = new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'America/New_York'}).format(new Date());
         const summary = await services.statistics.getMatchdayTeamStatisticsForTeams([selected.id],season.id,season.id);
