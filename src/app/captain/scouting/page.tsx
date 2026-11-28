@@ -24,7 +24,7 @@ export default async function ScoutingPage({searchParams}: {searchParams?: Promi
   const params = searchParams ? await searchParams : {};
   if (param(params,'print')==='1') return <main className={styles.printPage}><ScoutingContent params={params}/></main>;
   return <><SiteHeader/><main className={styles.page}><div className="shell">
-    <header className={styles.header}><Link href="/captain">Captain Home</Link><h1>Team Scouting</h1></header>
+    <header className={styles.header}><Link href="/captain" style={{display:'inline-flex',alignItems:'center',justifyContent:'center',gap:6,minHeight:40,padding:'7px 12px',borderRadius:6,background:'#20252a',color:'#fff',fontSize:13,fontWeight:800,textDecoration:'none'}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Captain Home</Link><h1>Team Scouting</h1></header>
     <ScoutingContent params={params}/>
   </div></main><Footer/></>;
 }
