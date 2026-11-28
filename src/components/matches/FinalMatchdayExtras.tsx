@@ -49,12 +49,12 @@ async function loadFinalContext(snapshot: FinalMatchdaySnapshot) {
   if (!matchday) return null;
   const userId = claims.data?.claims?.sub;
   const actor = typeof userId === 'string' ? await rosterRepository.getAttendanceActor(userId) : undefined;
-  const prediction = canViewMatchPrediction('CaptainsCommissioner', actor)
+  const prediction = canViewMatchPrediction('Commissioner', actor)
     ? await loadSavedMatchPrediction(process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : client, snapshot.matchId, snapshot.date, snapshot.homeTeam.id, snapshot.awayTeam.id) : undefined;
   const complete = rosters.length === 2 && rosters.some(row => row.teamId === snapshot.homeTeam.id) && rosters.some(row => row.teamId === snapshot.awayTeam.id);
   return <>
     <MatchdaySection title="Official roster"><MatchRosterBoard matchday={matchday} official={complete ? {status: 'complete', rosters} : {status: 'unavailable', rosters: []}} /></MatchdaySection>
-    {canViewMatchPrediction('CaptainsCommissioner', actor) ? <MatchdaySection title="Saved prematch estimates">
+    {canViewMatchPrediction('Commissioner', actor) ? <MatchdaySection title="Saved prematch estimates">
       {prediction ? <MatchPredictionCard actor={actor} prediction={prediction} awayTeamName={snapshot.awayTeam.name} homeTeamName={snapshot.homeTeam.name} awayLogo={snapshot.awayTeam.logo} homeLogo={snapshot.homeTeam.logo} /> : <p>No prematch estimate was saved for this match.</p>}
     </MatchdaySection> : null}
     <MatchdaySection title="Match preview"><MatchPreview matchId={snapshot.matchId} matchday={matchday} /></MatchdaySection>
