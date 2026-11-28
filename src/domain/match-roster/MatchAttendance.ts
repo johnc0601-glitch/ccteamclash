@@ -29,6 +29,7 @@ export type AttendanceActor = {
 export type TeamAttendanceMember = {
   playerId: string;
   playerName: string;
+  gender?: string;
   teamId: string;
   status: MatchAttendanceStatus | 'Unconfirmed';
   borrowed?: boolean;
