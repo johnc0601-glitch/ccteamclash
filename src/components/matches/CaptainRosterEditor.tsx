@@ -1,5 +1,6 @@
 'use client';
 
+import {PlayerName} from '@/components/players/PlayerName';
 import {useMemo, useState} from 'react';
 import {
   borrowFemaleForMatch,
@@ -223,7 +224,7 @@ export function CaptainRosterEditor({
             >
               <div className={styles.captainPlayerIdentity}>
                 <div className={styles.captainPlayerNameLine}>
-                  <strong>{player.playerName}</strong>
+                  <strong><PlayerName gender={player.gender}>{player.playerName}</PlayerName></strong>
                   {status === 'Playing' ? (
                     <span className={styles.roundAvailabilityBadges} aria-label="Round availability">
                       <button
