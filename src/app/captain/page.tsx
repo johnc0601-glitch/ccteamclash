@@ -19,7 +19,7 @@ type ApplicationRow = {id: string; profile_id: string; requested_team_id: string
 type SeasonMembershipRow = {player_id: string; roster_category: string};
 type CaptainSeason = {id: string; name: string; startDate: string; canEditRegistrations: boolean};
 type CaptainRosterPlayer = LaunchPlayer & {rosterCategory: string};
-type CaptainMatchEvent = TeamScheduleEvent & {roundLabel?: string};
+type CaptainMatchEvent = TeamScheduleEvent & {roundLabel?: string; opponentLogo?: string};
 
 export default async function CaptainPage({searchParams}: CaptainPageProps) {
   const params = searchParams ? await searchParams : {};
@@ -34,7 +34,7 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
         <div className="shell">
           <header className={styles.compactHeader}>
             <span>Captain home</span>
-            <h1>{captainData.ok ? captainData.team.name : 'Team control'}</h1>
+            <div className={styles.captainTeamHeading}>{captainData.ok && captainData.team.logo ? <img className={styles.captainTeamLogo} src={captainData.team.logo} alt="" /> : null}<h1>{captainData.ok ? captainData.team.name : 'Team control'}</h1></div>
             {captainData.ok ? <p>{captainData.roster.length} players · {captainData.events.filter(event => event.bucket === 'upcoming').length} upcoming matches</p> : null}
           </header>
           {notice ? <p className={styles.notice}>{notice}</p> : null}
@@ -74,8 +74,10 @@ function CaptainDashboard({events, pendingApplications, roster, season, team, sh
             <span className={styles.nextMatchLabel}>{index===0 ? 'Next match'+(event.roundLabel?' · '+event.roundLabel:'') : event.roundLabel??'Upcoming match'}</span>
             <span className={styles.matchVenue}>{event.isHome?'Home':'Away'}</span>
           </header>
-          <h2>vs {event.opponent}</h2>
-          <p>{shortDate(event)} · {event.time}{event.course?' · '+event.course:''}</p>
+          <div className={styles.matchIdentity}>
+            {event.opponentLogo ? <img className={styles.opponentLogo} src={event.opponentLogo} alt="" /> : null}
+            <div><h2>vs {event.opponent}</h2><p>{shortDate(event)} · {event.time}{event.course?' · '+event.course:''}</p></div>
+          </div>
           <nav className={styles.captainActions} aria-label={'Match preparation against '+event.opponent}>
             <Link className={styles.matchAction} href={event.href + '?manage=roster'}>Manage Roster</Link>
             <Link className={styles.scoutingAction} href={scoutHref(event)}>Scout Opponent</Link>
@@ -208,10 +210,11 @@ async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: Ca
     if (!profile.captainTeamId) return {ok: false, message: 'No captain team has been assigned yet.'};
 
     const scheduleService = await createServerScheduleService();
-    const [baseTeam, players, events, activeSeason, branding] = await Promise.all([
+    const [baseTeam, players, events, activeSeason, branding, allTeams] = await Promise.all([
       repository.getTeam(profile.captainTeamId), repository.getPlayers(), scheduleService.getTeamEvents(profile.captainTeamId),
       supabase.from('launch_seasons').select('id, name, start_date').eq('active', true).eq('published', true).order('year', {ascending: false}).limit(1).maybeSingle(),
       (supabase as any).from('launch_teams').select('logo, primary_color, secondary_color').eq('id', profile.captainTeamId).maybeSingle(),
+      repository.getTeams().catch(()=>[] as LaunchTeam[]),
     ]);
     if (!baseTeam) return {ok: false, message: 'Captain team could not be found.'};
     if (activeSeason.error) throw activeSeason.error;
@@ -255,7 +258,8 @@ async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: Ca
         }
       } catch { /* Keep the match links available if round metadata cannot load. */ }
     }
-    return {ok: true, team, roster, events:teamEvents.map(event=>({...event,roundLabel:roundLabels.get(event.id)})), pendingApplications, season};
+    const logos = new Map(allTeams.map(t=>[t.id,t.logo]));
+    return {ok: true, team, roster, events:teamEvents.map(event=>({...event,roundLabel:roundLabels.get(event.id),opponentLogo:logos.get(event.isHome?event.awayTeamId:event.homeTeamId)})), pendingApplications, season};
   } catch {return {ok: false, message: 'Captain Home could not load right now.'};}
 }
 
