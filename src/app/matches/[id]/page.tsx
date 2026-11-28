@@ -179,7 +179,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
   const actor = userId ? await attendanceRepository.getAttendanceActor(userId) : undefined;
   const openUnlockTeamIds = locked ? await getOpenRosterUnlockTeamIds(supabase, matchId) : new Set<string>();
 
-  const canViewPrediction = canViewMatchPrediction('CaptainsCommissioner', actor);
+  const canViewPrediction = canViewMatchPrediction('Commissioner', actor);
   let matchPrediction: ReturnType<typeof buildPublicMatchPrediction> = undefined;
 
   if (match.status !== 'Cancelled' && match.date && easternDate(now) >= match.date) {
@@ -309,7 +309,7 @@ export default async function MatchdayPage({params, searchParams}: MatchdayPageP
           ) : null}
 
           {canViewPrediction && matchPrediction ? (
-            <MatchdaySection title="Captains' private matchup probabilities" collapsed={showResultsFirst}><MatchPredictionCard
+            <MatchdaySection title="Commissioners' private matchup probabilities" collapsed={showResultsFirst}><MatchPredictionCard
               actor={actor}
               prediction={matchPrediction}
               awayTeamName={matchday.awayTeam.name}
