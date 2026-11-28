@@ -4,9 +4,6 @@ import {createServerScheduleService} from '@/core/createServerScheduleService';
 import {createServerTeamPageServices} from '@/core/createServerTeamPageServices';
 import {SupabaseLaunchRepository} from '@/domain/launch/SupabaseLaunchRepository';
 import {createClient} from '@/lib/supabase/server';
-import {createAdminClient} from '@/lib/supabase/admin';
-import {SupabaseMatchRosterRepository} from '@/domain/match-roster/SupabaseMatchRosterRepository';
-import {isMatchRosterLocked} from '@/domain/match-roster/MatchRosterLock';
 import {hasSupabaseConfig} from '@/lib/supabase';
 import {createPublicStandingsService} from '@/core/createPublicStandingsService';
 import type {RecordSummary} from '@/services/statistics/StatisticsTypes';
@@ -68,35 +65,6 @@ async function ScoutingContent({params}: {params: Params}) {
       const published = await new SupabaseStatisticsRepository(db).getPublishedChallengeResults();
       const seasonResults = published.filter(r=>r.seasonId===season.id);
       const teamResults = seasonResults.filter(r=>r.homeTeamId===selected.id||r.awayTeamId===selected.id);
-      const teamEvents = current ? await schedule.getTeamEvents(selected.id) : [];
-      const upcoming = teamEvents.filter(e=>e.bucket==='upcoming').sort((a,b)=>a.dateTime.getTime()-b.dateTime.getTime())[0];
-      const choices = [
-        ...(upcoming ? [{id:upcoming.id,label:'Upcoming · '+upcoming.date}] : []),
-        ...teamResults.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>({id:r.challengeId,label:r.date})),
-      ];
-      const matchChoice = choices.find(c=>c.id===param(params,'match')) ?? (upcoming ? choices[0] : undefined);
-      let lockedIds: Set<string> | undefined;
-      let lockedNotice = '';
-      if (matchChoice) {
-        const matchRepo = new SupabaseMatchRosterRepository(db);
-        try {
-          const match = await matchRepo.getAttendanceMatch(matchChoice.id);
-          if (match && match.status!=='Cancelled' && isMatchRosterLocked(match) && [match.homeTeamId,match.awayTeamId].includes(selected.id)) {
-            // Captains can only read their own unlock rows under RLS. Check the selected match on the server,
-            // and never expose unlock details or draft attendance. No roster mutation from scouting.
-            if (!process.env.SUPABASE_SERVICE_ROLE_KEY) throw Error('Unlock status unavailable');
-            const {data: unlocks,error: unlockError} = await (createAdminClient() as any).from('launch_match_roster_unlocks').select('team_id').eq('match_id',matchChoice.id).is('relocked_at',null);
-            if (unlockError) throw unlockError;
-            if (unlocks?.length) lockedNotice='Roster reopened; showing season roster only.';
-            else if (await matchRepo.hasCompleteSnapshot(matchChoice.id)) {
-              const official = (await matchRepo.getOfficialMatchRosters(matchChoice.id)).find(r=>r.teamId===selected.id);
-              if (official) lockedIds=new Set(official.players.map(p=>p.playerId));
-            }
-            if (!lockedIds && !lockedNotice) lockedNotice='Official roster is not available yet.';
-          }
-        } catch {lockedNotice='Official roster status could not be verified.';}
-      }
-      const rosterMode = lockedIds && param(params,'roster')!=='full' ? 'locked' : 'full';
       const scope = param(params,'scope')==='career'?'career':'season';
       const [players, memberships] = await Promise.all([
         repository.getPlayers(),
@@ -105,7 +73,7 @@ async function ScoutingContent({params}: {params: Params}) {
       if (memberships.error) throw memberships.error;
       const categories = new Map<string,string>((memberships.data ?? []).map((m: {player_id:string;roster_category:string})=>[m.player_id,m.roster_category]));
       const historicalNames = new Map(teamResults.flatMap(r=>r.playerResults.filter(p=>p.teamId===selected.id).map(p=>[p.playerId,p.playerName] as const)));
-      const roster = players.filter(p=>rosterMode==='locked'?lockedIds?.has(p.id):current?p.active&&categories.has(p.id):categories.has(p.id)||historicalNames.has(p.id));
+      const roster = players.filter(p=>current?p.active&&categories.has(p.id):categories.has(p.id)||historicalNames.has(p.id));
       // Current ratings are not historical season ratings; hide them for past seasons.
       const ci = (p:typeof roster[number])=>current?p.clashIndex:null;
       const pdga = (p:typeof roster[number])=>current?p.pdgaRating:null;
@@ -139,11 +107,8 @@ async function ScoutingContent({params}: {params: Params}) {
         if(entry.outcome==='Win')row.wins++;else if(entry.outcome==='Loss')row.losses++;else row.ties++;
         partners.set(partner.playerId,row);
       }
-      return <>{controls}<section className={styles.panel}><h2>{selected.name} · {rosterMode==='locked'?'Official playing roster':current?'Full season roster':'Recorded season players'}</h2><p>{current?'Current ratings, not frozen match ratings.':'Historical roster coverage may be incomplete; current ratings are hidden.'} Records are wins–losses–ties.</p>
-      {lockedNotice&&<p>{lockedNotice}</p>}
+      return <>{controls}<section className={styles.panel}><h2>{selected.name} · {current?'Season roster':'Recorded season players'}</h2><p>{current?'Tap a player to view their statistics.':'Historical roster coverage may be incomplete; current ratings are hidden.'}</p>
       <form method="get" className={styles.controls}><input type="hidden" name="tab" value="players"/><input type="hidden" name="team" value={selected.id}/><input type="hidden" name="season" value={season.id}/>
-      <label>Match<select name="match" defaultValue={matchChoice?.id??''}><option value="">Automatic</option>{choices.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
-      <label>Roster<select name="roster" defaultValue={param(params,'roster')||'auto'}><option value="auto">Automatic / locked when available</option><option value="full">Season roster</option></select></label>
       <label>Records<select name="scope" defaultValue={scope}><option value="season">Selected season</option><option value="career">Career</option></select></label>
       <label>Player<input name="q" defaultValue={param(params,'q')} placeholder="Search name"/></label><label>Category<select name="category" defaultValue={category}><option value="">All</option>{['Men','Women','Junior'].map(c=><option key={c}>{c}</option>)}</select></label>
       <label>Sort<select name="sort" defaultValue={sort}>{[['ci','Highest CI'],['pdga','Highest PDGA'],['singles','Singles wins'],['doubles','Doubles wins'],['change','CI gain']].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label><button>Apply</button></form>
@@ -154,7 +119,7 @@ async function ScoutingContent({params}: {params: Params}) {
           const change=snapshot.ciMovements.get(p.id)?.ciGain;
           const cardId='scouting-player-'+p.id;
           const detailId=cardId+'-detail';
-          const href=url({player:expanded?'':p.id,q:param(params,'q'),category,sort,scope,match:matchChoice?.id??'',roster:param(params,'roster')||'auto'});
+          const href=url({player:expanded?'':p.id,q:param(params,'q'),category,sort,scope});
           return <article key={p.id} id={cardId} className={`${styles.playerCard} ${expanded?styles.playerCardExpanded:''}`}>
             <Link className={styles.playerToggle} href={href} scroll={false} prefetch={false} aria-expanded={expanded} aria-controls={expanded?detailId:undefined}>
               <span className={styles.playerIdentity}><strong>{p.name}</strong>{categories.get(p.id)&&<small>{categories.get(p.id)}</small>}</span>
