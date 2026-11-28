@@ -200,7 +200,7 @@ export class SupabaseMatchRosterRepository implements MatchRosterRepository {
     const [{data: players, error: playerError}, {data: attendanceRows, error: attendanceError}] = await Promise.all([
       this.supabase
         .from('launch_players')
-        .select('id,name,current_team_id')
+        .select('id,name,gender,current_team_id')
         .eq('current_team_id', teamId)
         .eq('active', true)
         .order('name'),
@@ -217,6 +217,7 @@ export class SupabaseMatchRosterRepository implements MatchRosterRepository {
     return players.map((player) => ({
       playerId: player.id,
       playerName: player.name,
+      gender: player.gender,
       teamId,
       status: statuses.get(player.id) ?? 'Unconfirmed',
     }));
