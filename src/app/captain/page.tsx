@@ -19,6 +19,7 @@ type ApplicationRow = {id: string; profile_id: string; requested_team_id: string
 type SeasonMembershipRow = {player_id: string; roster_category: string};
 type CaptainSeason = {id: string; name: string; startDate: string; canEditRegistrations: boolean};
 type CaptainRosterPlayer = LaunchPlayer & {rosterCategory: string};
+type CaptainMatchEvent = TeamScheduleEvent & {roundLabel?: string};
 
 export default async function CaptainPage({searchParams}: CaptainPageProps) {
   const params = searchParams ? await searchParams : {};
@@ -48,9 +49,9 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
   );
 }
 
-function CaptainDashboard({events, pendingApplications, roster, season, team, showAdmin}: {events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; roster: CaptainRosterPlayer[]; season: CaptainSeason | null; team: LaunchTeam; showAdmin: boolean}) {
+function CaptainDashboard({events, pendingApplications, roster, season, team, showAdmin}: {events: CaptainMatchEvent[]; pendingApplications: TeamApplication[]; roster: CaptainRosterPlayer[]; season: CaptainSeason | null; team: LaunchTeam; showAdmin: boolean}) {
   const upcomingEvents = events.filter((event) => event.bucket === 'upcoming').sort((a,b) => a.dateTime.getTime() - b.dateTime.getTime());
-  const nextMatch = upcomingEvents[0];
+  const shortDate = (event: TeamScheduleEvent) => event.scheduledDate ? new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(event.scheduledDate+'T12:00:00Z')) : event.date;
   const scoutHref = (event: TeamScheduleEvent) => '/captain/scouting?'+new URLSearchParams({team:event.isHome?event.awayTeamId:event.homeTeamId}).toString();
   const rosterCounts = {
     women: roster.filter((player) => player.rosterCategory === 'Women').length,
@@ -63,33 +64,24 @@ function CaptainDashboard({events, pendingApplications, roster, season, team, sh
   return (
     <>
       <nav className={styles.scoutingEntry} aria-label="Team research">
-        <Link className={styles.scoutingAction} href="/captain/scouting">Team Scouting</Link>
-        <small>Research any team or player</small>
+        <Link className={styles.scoutingAction} href="/captain/scouting">
+          <span>Team Scouting<small>Explore any team</small></span><span aria-hidden="true">›</span>
+        </Link>
       </nav>
-      <section className={styles.nextMatch} aria-label="Match preparation">
-        <span className={styles.nextMatchLabel}>Next match</span>
-        {nextMatch ? <>
-          <h2>vs {nextMatch.opponent}</h2>
-          <p>{nextMatch.date} · {nextMatch.time} · {nextMatch.isHome ? 'Home' : 'Away'}</p>
-          <p>{nextMatch.course}</p>
-        </> : <p>No upcoming matches are posted yet.</p>}
-        <nav className={styles.captainActions} aria-label="Match preparation actions">
-          {nextMatch ? <>
-            <Link className={styles.matchAction} href={nextMatch.href + '?manage=roster'}>Manage Roster</Link>
-            <Link className={styles.scoutingAction} href={scoutHref(nextMatch)}>Scout Opponent</Link>
-          </> : null}
-        </nav>
-      </section>
-      {upcomingEvents.length > 1 ? <section className={styles.laterMatches}>
-        <h2>Other upcoming matches</h2>
-        {upcomingEvents.slice(1).map(event => <article className={styles.laterMatch} key={event.id}>
-          <div><strong>vs {event.opponent}</strong><small>{event.date} · {event.isHome ? 'Home' : 'Away'}</small><small>{event.course}</small></div>
-          <div className={styles.opponentActions}>
-            <Link className={styles.laterAction} href={event.href + '?manage=roster'}>Manage Roster</Link>
+      <section className={styles.matchCards} aria-label="Upcoming matches">
+        {upcomingEvents.length ? upcomingEvents.map((event,index) => <article key={event.id} className={styles.nextMatch}>
+          <header className={styles.matchCardHeader} data-next={index===0}>
+            <span className={styles.nextMatchLabel}>{index===0 ? 'Next match'+(event.roundLabel?' · '+event.roundLabel:'') : event.roundLabel??'Upcoming match'}</span>
+            <span className={styles.matchVenue}>{event.isHome?'Home':'Away'}</span>
+          </header>
+          <h2>vs {event.opponent}</h2>
+          <p>{shortDate(event)} · {event.time}{event.course?' · '+event.course:''}</p>
+          <nav className={styles.captainActions} aria-label={'Match preparation against '+event.opponent}>
+            <Link className={styles.matchAction} href={event.href + '?manage=roster'}>Manage Roster</Link>
             <Link className={styles.scoutingAction} href={scoutHref(event)}>Scout Opponent</Link>
-          </div>
-        </article>)}
-      </section> : null}
+          </nav>
+        </article>) : <article className={styles.nextMatch}><p>No upcoming matches are posted yet.</p></article>}
+      </section>
       <details className={styles.adminDetails} open={showAdmin || pendingApplications.length > 0 ? true : undefined}>
         <summary className={styles.adminSummary}><div>Team Administration<br/><small>{roster.length} players · {pendingApplications.length} pending requests</small></div><span aria-hidden="true">⌄</span></summary>
       <div className={styles.grid}>
@@ -203,7 +195,7 @@ function easternDateKey(date = new Date()): string {
 
 function AccessMessage({message}: {message: string}) {return <section className={styles.alert}><strong>{message}</strong><p className={styles.muted}>Sign in with the account your commissioner approved for captain access.</p><Link href="/account">Open account page</Link></section>;}
 
-async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: CaptainRosterPlayer[]; events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; season: CaptainSeason | null} | {ok: false; message: string}> {
+async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: CaptainRosterPlayer[]; events: CaptainMatchEvent[]; pendingApplications: TeamApplication[]; season: CaptainSeason | null} | {ok: false; message: string}> {
   if (!hasSupabaseConfig()) return {ok: false, message: 'League accounts are not configured yet.'};
   try {
     const supabase = await createClient();
@@ -247,7 +239,23 @@ async function getCaptainData(): Promise<{ok: true; team: LaunchTeam; roster: Ca
     const memberships = (membershipRows ?? []) as SeasonMembershipRow[];
     const membershipByPlayer = new Map(memberships.map((membership) => [membership.player_id, membership.roster_category]));
     const roster = players.filter((player) => player.active && membershipByPlayer.has(player.id)).map((player): CaptainRosterPlayer => ({...player, rosterCategory: membershipByPlayer.get(player.id) ?? 'Men'}));
-    return {ok: true, team, roster, events: events.filter((event) => event.homeTeamId === team.id || event.awayTeamId === team.id), pendingApplications, season};
+    const teamEvents = events.filter((event) => event.homeTeamId === team.id || event.awayTeamId === team.id);
+    const roundLabels = new Map<string,string>();
+    const upcomingIds = teamEvents.filter(event=>event.bucket==='upcoming').map(event=>event.id);
+    if (upcomingIds.length) {
+      // Labels are supplemental; a failed lookup must not block roster management.
+      try {
+        const matchRows = await supabase.from('launch_schedule_matches').select('id,round_id').in('id',upcomingIds);
+        if (!matchRows.error && matchRows.data?.length) {
+          const rounds = await supabase.from('launch_rounds').select('id,number,name').in('id',[...new Set(matchRows.data.map(m=>m.round_id))]);
+          if (!rounds.error) {
+            const labels = new Map((rounds.data??[]).map(r=>[r.id,/playoff|final|championship|place/i.test(r.name)?r.name:'Round '+r.number]));
+            for (const m of matchRows.data) {const label=labels.get(m.round_id);if(label)roundLabels.set(m.id,label);}
+          }
+        }
+      } catch { /* Keep the match links available if round metadata cannot load. */ }
+    }
+    return {ok: true, team, roster, events:teamEvents.map(event=>({...event,roundLabel:roundLabels.get(event.id)})), pendingApplications, season};
   } catch {return {ok: false, message: 'Captain Home could not load right now.'};}
 }
 
