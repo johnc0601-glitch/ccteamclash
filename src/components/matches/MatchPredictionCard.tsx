@@ -13,7 +13,7 @@ type Props = {
 };
 
 export function MatchPredictionCard({actor, prediction, awayTeamName, homeTeamName, awayLogo, homeLogo}: Props) {
-  if (!canViewMatchPrediction('CaptainsCommissioner', actor)) return null;
+  if (!canViewMatchPrediction('Commissioner', actor)) return null;
   const probability = prediction.state === 'calculated' ? prediction.homeChanceOfVictory : null;
   const home = probability == null ? null : Math.round(Math.min(.95, Math.max(.05, probability)) * 100);
   const away = home == null ? null : 100 - home;
