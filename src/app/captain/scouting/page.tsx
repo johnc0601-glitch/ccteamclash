@@ -47,18 +47,17 @@ async function ScoutingContent({params}: {params: Params}) {
     ]);
     const teams = teamsRaw.filter(t => t.active).sort((a,b) => a.name.localeCompare(b.name));
     const seasons = seasonsRaw.filter(s => s.published).sort((a,b) => b.year-a.year);
-    const season = seasons.find(s => s.id === param(params,'season')) ?? seasons.find(s => s.id === active?.id) ?? seasons[0];
+    const season = seasons.find(s => s.id === active?.id) ?? seasons[0];
     const own = teams.find(t => t.id === profile.captainTeamId);
     const next = events.filter(e => e.bucket === 'upcoming').sort((a,b) => a.dateTime.getTime()-b.dateTime.getTime())[0];
     const opponent = next && own ? (next.homeTeamId === own.id ? next.awayTeamId : next.homeTeamId) : undefined;
     const selected = teams.find(t => t.id === param(params,'team')) ?? teams.find(t => t.id === opponent) ?? teams.find(t => t.id !== own?.id) ?? teams[0];
     if (!season || !selected) return <p>No published season or team is available.</p>;
     const tab = ['team','players','history'].includes(param(params,'tab')) ? param(params,'tab') : 'team';
-    const url = (extra: Record<string,string>) => '/captain/scouting?' + new URLSearchParams({team:selected.id,season:season.id,tab,...extra}).toString();
+    const url = (extra: Record<string,string>) => '/captain/scouting?' + new URLSearchParams({team:selected.id,tab,...extra}).toString();
     const controls = <><form method="get" className={styles.controls}>
       <input type="hidden" name="tab" value={tab}/>
       <label>Team<select name="team" defaultValue={selected.id}>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
-      <label>Season<select name="season" defaultValue={season.id}>{seasons.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
       <button type="submit">View</button>
     </form><nav aria-label="Scouting sections" className={styles.tabs}>{['team','players','history'].map(t=><Link key={t} aria-current={tab===t?'page':undefined} href={url({tab:t})}>{t[0].toUpperCase()+t.slice(1)}</Link>)}</nav></>;
     if (tab === 'players') {
@@ -106,7 +105,7 @@ async function ScoutingContent({params}: {params: Params}) {
         partners.set(partner.playerId,row);
       }
       return <>{controls}<section className={styles.panel}><h2>{selected.name} · {current?'Season roster':'Recorded season players'}</h2><p>{current?'Tap a player to view their statistics.':'Historical roster coverage may be incomplete; current ratings are hidden.'}</p>
-      <form method="get" className={styles.controls}><input type="hidden" name="tab" value="players"/><input type="hidden" name="team" value={selected.id}/><input type="hidden" name="season" value={season.id}/>
+      <form method="get" className={styles.controls}><input type="hidden" name="tab" value="players"/><input type="hidden" name="team" value={selected.id}/>
       <label>Sort<select name="sort" defaultValue={sort}>{[['ci','Highest CI'],['pdga','Highest PDGA'],['singles','Singles wins'],['doubles','Doubles wins'],['change','CI gain']].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label><button type="submit">Apply</button></form>
       <div className={styles.playerCards} aria-label="Player scouting cards">
         {rows.map(p=>{
