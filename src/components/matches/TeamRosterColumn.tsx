@@ -1,3 +1,4 @@
+import {PlayerName} from '@/components/players/PlayerName';
 import Image from 'next/image';
 import Link from 'next/link';
 import type {LaunchPlayer} from '@/domain/launch/LaunchData';
@@ -39,7 +40,7 @@ export function TeamRosterColumn({team, label}: {team: PublicMatchdayTeam; label
               gap: 12,
             }}
           >
-            <strong>{player.name}</strong>
+            <strong><PlayerName gender={player.gender}>{player.name}</PlayerName></strong>
             <span style={{color: 'var(--cc-muted)', fontSize: 12, fontWeight: 850, whiteSpace: 'nowrap'}}>
               CI: {formatClashIndex(player)}
             </span>
