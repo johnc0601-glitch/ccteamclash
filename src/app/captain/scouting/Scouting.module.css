@@ -30,3 +30,12 @@
 .playerDetails h3{margin:16px 0 5px}
 .playerDetails .table{margin-bottom:8px}
 @media(max-width:600px){.playerToggle{padding:5px 9px;gap:8px;min-height:44px}.playerDetails{padding:10px}.playerMetrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.playerMetric{padding:8px}}
+
+/* Small official logos establish the selected team without adding a new card. */
+.rosterHeading{display:flex;align-items:center;gap:9px}
+.panel .rosterHeading{margin-bottom:8px}
+.rosterLogo{width:34px;height:34px;object-fit:contain;flex:none}
+.comparisonTeam{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.comparisonLogo{width:32px;height:32px;object-fit:contain}
+.resultTeam{display:inline-flex;align-items:center;justify-content:flex-end;gap:5px}
+.resultLogo{width:20px;height:20px;object-fit:contain;flex:none}
