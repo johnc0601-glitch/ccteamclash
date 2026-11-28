@@ -1,5 +1,6 @@
 'use client';
 
+import {PlayerName} from '@/components/players/PlayerName';
 import {useState, type SyntheticEvent} from 'react';
 import type {LazyRosterPlayer} from '@/app/matches/[id]/publicRosterActions';
 import {loadActiveRosterRemainder} from '@/app/matches/[id]/publicRosterActions';
@@ -68,7 +69,7 @@ export function LazyActiveRosterCard({
 function ActivePlayerRow({player}: {player: LazyRosterPlayer}) {
   return (
     <div className={v1.previewPlayer}>
-      <strong>{player.name}</strong>
+      <strong><PlayerName gender={player.gender}>{player.name}</PlayerName></strong>
       <span className={v1.playerMeta}>CI: {formatClashIndex(player)}</span>
     </div>
   );
