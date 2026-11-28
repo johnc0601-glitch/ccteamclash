@@ -116,3 +116,10 @@
 .adminSummary::-webkit-details-marker{display:none}.adminSummary small{font-size:12px;font-weight:600;opacity:.85}.adminSummary span:last-child{font-size:18px}.adminDetails[open] .adminSummary span:last-child{transform:rotate(180deg)}
 .adminDetails .grid{margin-top:12px}
 @media(max-width:560px){.compactHeader{margin-bottom:12px}.nextMatch{padding:14px}.captainActions{gap:8px;margin-top:10px}.matchAction,.scoutingAction{min-height:44px;padding:8px 10px;font-size:12px}.laterMatch{gap:8px}.laterAction{font-size:11px;padding:8px}.adminSummary{flex-wrap:wrap}}
+
+/* General scouting is independent of the match-specific shortcuts. */
+.scoutingEntry{display:flex;align-items:center;gap:12px;margin:0 0 18px;flex-wrap:wrap}
+.scoutingEntry small{color:var(--cc-muted);font-size:12px}
+.laterMatch .opponentActions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;flex-shrink:0}
+.laterMatch .opponentActions .scoutingAction{min-height:40px;font-size:12px;padding:8px 12px}
+@media(max-width:560px){.laterMatch{align-items:flex-start;flex-direction:column;gap:8px}.laterMatch .opponentActions{justify-content:flex-start;gap:8px}.laterMatch .opponentActions .laterAction,.laterMatch .opponentActions .scoutingAction{min-height:44px;padding:8px 10px;font-size:12px}.scoutingEntry{margin-bottom:14px;gap:8px}}
