@@ -20,6 +20,7 @@ export type FinalMatchCourse = {
 export type FinalMatchPlayer = {
   id: string;
   name: string;
+  gender?: string;
 };
 
 export type FinalMatchContest = {
