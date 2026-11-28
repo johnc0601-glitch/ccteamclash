@@ -51,6 +51,7 @@ export default async function CaptainPage({searchParams}: CaptainPageProps) {
 function CaptainDashboard({events, pendingApplications, roster, season, team, showAdmin}: {events: TeamScheduleEvent[]; pendingApplications: TeamApplication[]; roster: CaptainRosterPlayer[]; season: CaptainSeason | null; team: LaunchTeam; showAdmin: boolean}) {
   const upcomingEvents = events.filter((event) => event.bucket === 'upcoming').sort((a,b) => a.dateTime.getTime() - b.dateTime.getTime());
   const nextMatch = upcomingEvents[0];
+  const scoutHref = (event: TeamScheduleEvent) => '/captain/scouting?'+new URLSearchParams({team:event.isHome?event.awayTeamId:event.homeTeamId}).toString();
   const rosterCounts = {
     women: roster.filter((player) => player.rosterCategory === 'Women').length,
     men: roster.filter((player) => player.rosterCategory === 'Men').length,
@@ -61,6 +62,10 @@ function CaptainDashboard({events, pendingApplications, roster, season, team, sh
 
   return (
     <>
+      <nav className={styles.scoutingEntry} aria-label="Team research">
+        <Link className={styles.scoutingAction} href="/captain/scouting">Team Scouting</Link>
+        <small>Research any team or player</small>
+      </nav>
       <section className={styles.nextMatch} aria-label="Match preparation">
         <span className={styles.nextMatchLabel}>Next match</span>
         {nextMatch ? <>
@@ -69,15 +74,20 @@ function CaptainDashboard({events, pendingApplications, roster, season, team, sh
           <p>{nextMatch.course}</p>
         </> : <p>No upcoming matches are posted yet.</p>}
         <nav className={styles.captainActions} aria-label="Match preparation actions">
-          {nextMatch ? <Link className={styles.matchAction} href={nextMatch.href + '?manage=roster'}>Manage Match Roster</Link> : null}
-          <Link className={styles.scoutingAction} href="/captain/scouting">Team Scouting</Link>
+          {nextMatch ? <>
+            <Link className={styles.matchAction} href={nextMatch.href + '?manage=roster'}>Manage Roster</Link>
+            <Link className={styles.scoutingAction} href={scoutHref(nextMatch)}>Scout Opponent</Link>
+          </> : null}
         </nav>
       </section>
       {upcomingEvents.length > 1 ? <section className={styles.laterMatches}>
         <h2>Other upcoming matches</h2>
         {upcomingEvents.slice(1).map(event => <article className={styles.laterMatch} key={event.id}>
           <div><strong>vs {event.opponent}</strong><small>{event.date} · {event.isHome ? 'Home' : 'Away'}</small><small>{event.course}</small></div>
-          <Link className={styles.laterAction} href={event.href + '?manage=roster'}>Manage Roster</Link>
+          <div className={styles.opponentActions}>
+            <Link className={styles.laterAction} href={event.href + '?manage=roster'}>Manage Roster</Link>
+            <Link className={styles.scoutingAction} href={scoutHref(event)}>Scout Opponent</Link>
+          </div>
         </article>)}
       </section> : null}
       <details className={styles.adminDetails} open={showAdmin || pendingApplications.length > 0 ? true : undefined}>
